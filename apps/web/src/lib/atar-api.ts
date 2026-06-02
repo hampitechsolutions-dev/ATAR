@@ -1,0 +1,300 @@
+export type MembershipRole = 'ADMIN' | 'BUYER' | 'SUPPLIER' | 'SELLER';
+export type CompanyType = 'BUYER' | 'SUPPLIER' | 'HYBRID';
+export type RequestStatus =
+  | 'DRAFT'
+  | 'PUBLISHED'
+  | 'REVIEWING'
+  | 'AWARDED'
+  | 'NEGOTIATING'
+  | 'ORDER_ISSUED'
+  | 'CANCELLED';
+export type QuoteStatus = 'DRAFT' | 'SUBMITTED' | 'AWARDED' | 'REJECTED' | 'WITHDRAWN';
+
+export type UserMembership = {
+  id: string;
+  role: MembershipRole;
+  isPrimary: boolean;
+  company: {
+    id: string;
+    name: string;
+    type: CompanyType;
+    country: string;
+    city: string | null;
+  };
+};
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  status: string;
+  memberships: UserMembership[];
+};
+
+export type AuthResponse = {
+  accessToken: string;
+  user: AuthUser;
+};
+
+export type RequestEventRecord = {
+  id: string;
+  type:
+    | 'REQUEST_CREATED'
+    | 'QUOTE_SUBMITTED'
+    | 'QUOTE_UPDATED'
+    | 'REQUEST_AWARDED'
+    | 'NEGOTIATION_STARTED'
+    | 'ORDER_ISSUED'
+    | 'ORDER_UPDATED'
+    | 'ORDER_CONFIRMED'
+    | 'PRODUCTION_STARTED'
+    | 'ORDER_DISPATCHED'
+    | 'ORDER_DELIVERED';
+  title: string;
+  detail: string | null;
+  actorRole: MembershipRole | null;
+  actorCompanyName: string | null;
+  createdAt: string;
+};
+
+export type OrderFulfillmentStatus =
+  | 'ISSUED'
+  | 'CONFIRMED'
+  | 'IN_PRODUCTION'
+  | 'DISPATCHED'
+  | 'DELIVERED';
+
+export type PurchaseOrderRecord = {
+  id: string;
+  requestId: string;
+  orderNumber: string;
+  fulfillmentStatus: OrderFulfillmentStatus;
+  issuedAt: string;
+  promisedDate: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RequestRecord = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: RequestStatus;
+  awardedQuoteId?: string | null;
+  privateRequest: boolean;
+  dueDate: string | null;
+  buyerCompanyId: string;
+  buyerCompany?: {
+    id: string;
+    name: string;
+    type: CompanyType;
+    country: string;
+    city: string | null;
+  };
+  _count?: {
+    quotes: number;
+  };
+  awardedQuote?: QuoteRecord | null;
+  order?: PurchaseOrderRecord | null;
+  events?: RequestEventRecord[];
+  quotes?: QuoteRecord[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type QuoteRecord = {
+  id: string;
+  requestId: string;
+  supplierCompanyId: string;
+  amount: number | null;
+  currency: string;
+  leadTimeDays: number | null;
+  paymentTerms: string | null;
+  technicalComment: string | null;
+  status: QuoteStatus;
+  supplierCompany?: {
+    id: string;
+    name: string;
+    type: CompanyType;
+    country: string;
+    city: string | null;
+  };
+  request?: RequestRecord;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RegisterPayload = {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  companyType: CompanyType;
+  role: Extract<MembershipRole, 'BUYER' | 'SUPPLIER'>;
+};
+
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
+
+export type CreateRequestPayload = {
+  title: string;
+  description: string;
+  category: string;
+  privateRequest?: boolean;
+  dueDate?: string;
+  status?: Extract<RequestStatus, 'DRAFT' | 'PUBLISHED'>;
+};
+
+export type CreateQuotePayload = {
+  amount?: number;
+  currency?: string;
+  leadTimeDays?: number;
+  paymentTerms?: string;
+  technicalComment?: string;
+};
+
+export type AwardQuotePayload = {
+  quoteId: string;
+};
+
+export type ProgressRequestPayload = {
+  action: 'START_NEGOTIATION' | 'ISSUE_ORDER';
+};
+
+export type UpsertOrderPayload = {
+  orderNumber?: string;
+  promisedDate?: string;
+  notes?: string;
+  fulfillmentStatus?: OrderFulfillmentStatus;
+};
+
+export type UpdateFulfillmentPayload = {
+  action:
+    | 'CONFIRM_ORDER'
+    | 'START_PRODUCTION'
+    | 'MARK_DISPATCHED'
+    | 'MARK_DELIVERED';
+};
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+async function parseResponse<T>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type') ?? '';
+  const payload = contentType.includes('application/json')
+    ? await response.json()
+    : await response.text();
+
+  if (!response.ok) {
+    const message =
+      typeof payload === 'string'
+        ? payload
+        : payload.message || payload.error || 'No se pudo completar la solicitud.';
+
+    throw new ApiError(Array.isArray(message) ? message.join(', ') : message, response.status);
+  }
+
+  return payload as T;
+}
+
+async function request<T>(path: string, init?: RequestInit, token?: string): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
+    cache: 'no-store',
+  });
+
+  return parseResponse<T>(response);
+}
+
+export const atarApi = {
+  login(payload: LoginPayload) {
+    return request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  register(payload: RegisterPayload) {
+    return request<AuthResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  me(token: string) {
+    return request<AuthUser>('/auth/me', undefined, token);
+  },
+  getBuyerRequests(token: string) {
+    return request<RequestRecord[]>('/requests/mine', undefined, token);
+  },
+  createRequest(payload: CreateRequestPayload, token: string) {
+    return request<RequestRecord>('/requests', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  getRequestDetail(requestId: string, token: string) {
+    return request<RequestRecord>(`/requests/${requestId}`, undefined, token);
+  },
+  getRequestQuotes(requestId: string, token: string) {
+    return request<QuoteRecord[]>(`/requests/${requestId}/quotes`, undefined, token);
+  },
+  awardQuote(requestId: string, payload: AwardQuotePayload, token: string) {
+    return request<RequestRecord>(`/requests/${requestId}/award`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  progressRequest(requestId: string, payload: ProgressRequestPayload, token: string) {
+    return request<RequestRecord>(`/requests/${requestId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  upsertOrder(requestId: string, payload: UpsertOrderPayload, token: string) {
+    return request<RequestRecord>(`/requests/${requestId}/order`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  updateFulfillment(requestId: string, payload: UpdateFulfillmentPayload, token: string) {
+    return request<RequestRecord>(`/requests/${requestId}/order/fulfillment`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  getOpenRequests(token: string) {
+    return request<RequestRecord[]>('/requests/open', undefined, token);
+  },
+  getSupplierQuotes(token: string) {
+    return request<QuoteRecord[]>('/quotes/mine', undefined, token);
+  },
+  createQuote(requestId: string, payload: CreateQuotePayload, token: string) {
+    return request<QuoteRecord>(`/quotes/request/${requestId}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+};
+
+export const appConfig = {
+  apiUrl: API_URL,
+};

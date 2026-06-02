@@ -1,0 +1,27 @@
+{
+  "name": "atar",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:all": "concurrently -n api,web,mobile -c blue,green,magenta \"npm run dev:api\" \"npm run dev:web\" \"npm run dev:mobile\"",
+    "dev:web": "npm run dev --workspace @atar/web",
+    "dev:api": "npm run start:dev --workspace @atar/api",
+    "dev:mobile": "npm run start --workspace @atar/mobile",
+    "dev:mobile:web": "npm run web --workspace @atar/mobile",
+    "build:web": "npm run build --workspace @atar/web",
+    "build:api": "npm run build --workspace @atar/api",
+    "lint:web": "npm run lint --workspace @atar/web",
+    "lint:api": "npm run lint --workspace @atar/api"
+  },
+  "engines": {
+    "node": ">=20.15.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

@@ -1,0 +1,7 @@
+-- AlterEnum
+ALTER TYPE "RequestStatus" ADD VALUE 'NEGOTIATING';
+ALTER TYPE "RequestStatus" ADD VALUE 'ORDER_ISSUED';
+
+-- AlterEnum
+ALTER TYPE "RequestEventType" ADD VALUE 'NEGOTIATION_STARTED';
+ALTER TYPE "RequestEventType" ADD VALUE 'ORDER_ISSUED';

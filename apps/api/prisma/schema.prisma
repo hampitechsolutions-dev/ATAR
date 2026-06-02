@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+enum MembershipRole {
+  ADMIN
+  BUYER
+  SUPPLIER
+  SELLER
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum CompanyType {
+  BUYER
+  SUPPLIER
+  HYBRID
+}
+
+enum RequestStatus {
+  DRAFT
+  PUBLISHED
+  REVIEWING
+  AWARDED
+  NEGOTIATING
+  ORDER_ISSUED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SUBMITTED
+  AWARDED
+  REJECTED
+  WITHDRAWN
+}
+
+enum RequestEventType {
+  REQUEST_CREATED
+  QUOTE_SUBMITTED
+  QUOTE_UPDATED
+  REQUEST_AWARDED
+  NEGOTIATION_STARTED
+  ORDER_ISSUED
+  ORDER_UPDATED
+  ORDER_CONFIRMED
+  PRODUCTION_STARTED
+  ORDER_DISPATCHED
+  ORDER_DELIVERED
+}
+
+enum OrderFulfillmentStatus {
+  ISSUED
+  CONFIRMED
+  IN_PRODUCTION
+  DISPATCHED
+  DELIVERED
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  status       UserStatus   @default(ACTIVE)
+  memberships  Membership[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Company {
+  id              String          @id @default(cuid())
+  name            String
+  taxId           String?
+  type            CompanyType
+  country         String          @default("AR")
+  city            String?
+  memberships     Membership[]
+  supplierProfile SupplierProfile?
+  requests        Request[]       @relation("BuyerRequests")
+  quotes          Quote[]         @relation("SupplierQuotes")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Membership {
+  id         String         @id @default(cuid())
+  userId     String
+  companyId  String
+  role       MembershipRole
+  isPrimary  Boolean        @default(false)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company    Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now())
+
+  @@unique([userId, companyId, role])
+  @@index([companyId])
+  @@index([userId])
+}
+
+model SupplierProfile {
+  id               String   @id @default(cuid())
+  companyId        String   @unique
+  genericCode      String?
+  leadTimeDays     Int?
+  minimumOrder     Float?
+  logisticsSummary String?
+  financingSummary String?
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Request {
+  id             String        @id @default(cuid())
+  buyerCompanyId String
+  awardedQuoteId String?       @unique
+  title          String
+  description    String
+  category       String
+  status         RequestStatus @default(DRAFT)
+  privateRequest Boolean       @default(false)
+  dueDate        DateTime?
+  buyerCompany   Company       @relation("BuyerRequests", fields: [buyerCompanyId], references: [id], onDelete: Cascade)
+  awardedQuote   Quote?        @relation("AwardedRequestQuote", fields: [awardedQuoteId], references: [id])
+  events         RequestEvent[]
+  order          PurchaseOrder?
+  quotes         Quote[]       @relation("RequestQuotes")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([buyerCompanyId])
+  @@index([status])
+}
+
+model Quote {
+  id                String      @id @default(cuid())
+  requestId         String
+  supplierCompanyId String
+  amount            Float?
+  currency          String      @default("ARS")
+  leadTimeDays      Int?
+  paymentTerms      String?
+  technicalComment  String?
+  status            QuoteStatus @default(DRAFT)
+  awardedForRequest Request?    @relation("AwardedRequestQuote")
+  request           Request     @relation("RequestQuotes", fields: [requestId], references: [id], onDelete: Cascade)
+  supplierCompany   Company     @relation("SupplierQuotes", fields: [supplierCompanyId], references: [id], onDelete: Cascade)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([requestId])
+  @@index([supplierCompanyId])
+}
+
+model RequestEvent {
+  id               String           @id @default(cuid())
+  requestId        String
+  type             RequestEventType
+  title            String
+  detail           String?
+  actorRole        MembershipRole?
+  actorCompanyName String?
+  request          Request          @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  createdAt        DateTime         @default(now())
+
+  @@index([requestId, createdAt])
+}
+
+model PurchaseOrder {
+  id                String                 @id @default(cuid())
+  requestId         String                 @unique
+  orderNumber       String                 @unique
+  fulfillmentStatus OrderFulfillmentStatus @default(ISSUED)
+  issuedAt          DateTime               @default(now())
+  promisedDate      DateTime?
+  notes             String?
+  request           Request                @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}

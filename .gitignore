@@ -1,0 +1,17 @@
+node_modules/
+package-lock.json
+.next/
+dist/
+coverage/
+.expo/
+.expo-shared/
+web-build/
+*.log
+.env
+.env.*
+!.env.example
+.agents/
+skills-lock.json
+apps/api/prisma/dev.db
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
