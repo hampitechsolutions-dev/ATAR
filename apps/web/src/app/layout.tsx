@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   title: "ATAR | Red Comercial Industrial",
   description:
     "Plataforma B2B industrial para gestionar demanda, cotizaciones, CRM comercial y operacion multiplataforma.",
+  icons: {
+    icon: "/logoatar.png",
+    apple: "/logoatar.png",
+  },
 };
 
 export default function RootLayout({
@@ -21,11 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="es"
-      className={`${inter.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-50">
+    <html lang="es" className={`${inter.variable} h-full overflow-x-hidden antialiased`}>
+      <body className="min-h-full flex flex-col overflow-x-hidden bg-white text-slate-950">
         <AuthProvider>
           <SiteHeader />
           {children}

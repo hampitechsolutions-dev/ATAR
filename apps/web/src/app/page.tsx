@@ -1,277 +1,322 @@
-const navItems = [
-  { label: "Inicio", href: "#inicio" },
-  { label: "Como funciona", href: "#como-funciona" },
-  { label: "Proveedores", href: "#proveedores" },
-  { label: "Soluciones", href: "#soluciones" },
-  { label: "Recursos", href: "#recursos" },
-];
+import Image from 'next/image';
 
-const differentiators = [
-  {
-    title: "Industrial",
-    description: "Pensada para procesos reales de compra, abastecimiento y operacion B2B.",
-  },
-  {
-    title: "Confiable",
-    description: "Transparencia, trazabilidad y proveedores verificados en cada operacion.",
-  },
-  {
-    title: "Intuitiva",
-    description: "Experiencias simples para comparar mejor y resolver mas rapido.",
-  },
-  {
-    title: "Escalable",
-    description: "Base flexible para crecer en catalogo, demanda y red comercial.",
-  },
-  {
-    title: "Tecnologica",
-    description: "IA, datos y automatizacion aplicados al comercio industrial.",
-  },
-];
+function FeatureIcon({ name }: { name: 'quote' | 'compare' | 'manage' | 'trust' }) {
+  if (name === 'quote') {
+    return (
+      <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <path
+          d="M14 2H8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V8l-4-6z"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M14 2v6h6"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M9 13h6M9 17h6"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
+      </svg>
+    );
+  }
 
-const categories = [
-  "Bolsas de Polipropileno",
-  "Big Bags",
-  "Bolsas de Papel",
-  "Bobinas y films",
-  "Accesorios industriales",
-];
+  if (name === 'compare') {
+    return (
+      <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <path
+          d="M7 21V7m0 0l-3 3m3-3l3 3"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M17 3v14m0 0l-3-3m3 3l3-3"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
+      </svg>
+    );
+  }
 
-const featuredSuppliers = [
-  { name: "PLASTAR S.A.", location: "Buenos Aires, Argentina", rating: "4.9" },
-  { name: "BOLPACK", location: "Cordoba, Argentina", rating: "4.8" },
-  { name: "POLYMAX", location: "Rosario, Santa Fe", rating: "4.9" },
-  { name: "FLEXIBAG", location: "Mendoza, Argentina", rating: "4.7" },
-];
+  if (name === 'manage') {
+    return (
+      <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <path
+          d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M3.3 7.3L12 12l8.7-4.7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
+        <path
+          d="M12 22V12"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
+      </svg>
+    );
+  }
 
-const steps = [
-  {
-    index: "1",
-    title: "Publica tu necesidad",
-    description: "Subi tu pedido o licitacion con detalle tecnico, archivos y tiempos requeridos.",
-  },
-  {
-    index: "2",
-    title: "Recibi cotizaciones",
-    description: "Los proveedores responden en privado sin ver la oferta de los demas.",
-  },
-  {
-    index: "3",
-    title: "Compara con contexto",
-    description: "Evalua precio, plazo, condiciones, reputacion y capacidad tecnica.",
-  },
-  {
-    index: "4",
-    title: "Adjudica y gestiona",
-    description: "Confirma la compra y deja trazabilidad del proceso comercial.",
-  },
-  {
-    index: "5",
-    title: "Escala la operacion",
-    description: "Centraliza demanda, seguimiento, CRM y fuerza comercial en un solo lugar.",
-  },
-];
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path
+        d="M9 12l2 2 4-4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
 
-const stats = [
-  { label: "Proveedores verificados", value: "+2.500" },
-  { label: "Industrias conectadas", value: "+15.000" },
-  { label: "Cotizaciones gestionadas", value: "+45.000" },
-  { label: "Paises objetivo", value: "+12" },
-];
+function SiteFooter() {
+  return (
+    <footer className="bg-slate-950 text-slate-200">
+      <div className="mx-auto w-full max-w-7xl px-6 py-14 lg:px-10">
+        <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Image alt="ATAR" height={32} src="/logoatar.png" width={32} />
+              <p className="text-lg font-semibold text-white">ATAR</p>
+            </div>
+            <p className="max-w-sm text-sm leading-7 text-slate-400">
+              La plataforma industrial que conecta industrias con los mejores proveedores de
+              bolsas industriales.
+            </p>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <p className="font-semibold text-white">Soluciones</p>
+            <a className="block text-slate-400 hover:text-slate-200" href="/#soluciones">
+              Para compradores
+            </a>
+            <a className="block text-slate-400 hover:text-slate-200" href="/#soluciones">
+              Para proveedores
+            </a>
+            <a className="block text-slate-400 hover:text-slate-200" href="/proveedores">
+              Cotizaciones
+            </a>
+            <a className="block text-slate-400 hover:text-slate-200" href="/proveedores">
+              Gestión de proveedores
+            </a>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <p className="font-semibold text-white">Recursos</p>
+            <a className="block text-slate-400 hover:text-slate-200" href="/#recursos">
+              Centro de ayuda
+            </a>
+            <a className="block text-slate-400 hover:text-slate-200" href="/#recursos">
+              Guías
+            </a>
+            <a className="block text-slate-400 hover:text-slate-200" href="/#recursos">
+              Blog
+            </a>
+            <a className="block text-slate-400 hover:text-slate-200" href="/#recursos">
+              Preguntas frecuentes
+            </a>
+          </div>
+
+          <div className="rounded-[1.5rem] bg-white/10 p-5">
+            <p className="text-sm font-semibold text-white">¿Listo para empezar?</p>
+            <p className="mt-2 text-sm leading-7 text-slate-400">
+              Crea tu cuenta gratis y empezá a comprar de forma más eficiente.
+            </p>
+            <a
+              className="mt-5 inline-flex w-full justify-center rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+              href="/acceso"
+            >
+              Crear cuenta gratis
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-8 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>© 2026 ATAR. Todos los derechos reservados.</p>
+          <div className="flex flex-wrap gap-4">
+            <a className="hover:text-slate-300" href="#">
+              Términos y condiciones
+            </a>
+            <a className="hover:text-slate-300" href="#">
+              Política de privacidad
+            </a>
+            <a className="hover:text-slate-300" href="#">
+              Política de cookies
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
 
 export default function Home() {
+  const stats = [
+    { value: '+850', label: 'Proveedores verificados' },
+    { value: '+2.500', label: 'Industrias compradoras' },
+    { value: '+18.000', label: 'Solicitudes registradas' },
+    { value: '+30.000', label: 'Pedidos concretados' },
+  ];
+
+  const platformFeatures = [
+    {
+      icon: 'quote' as const,
+      title: 'Solicitá cotizaciones',
+      description:
+        'Enviá tu solicitud y recibí múltiples cotizaciones de proveedores verificados.',
+    },
+    {
+      icon: 'compare' as const,
+      title: 'Compará y elegí',
+      description:
+        'Compará precios, plazos, calidades y condiciones para tomar la mejor decisión.',
+    },
+    {
+      icon: 'manage' as const,
+      title: 'Gestioná tus pedidos',
+      description:
+        'Hacé seguimiento de tus pedidos, entregas y facturación desde tu panel.',
+    },
+    {
+      icon: 'trust' as const,
+      title: 'Comprá con confianza',
+      description:
+        'Operá con seguridad dentro de la plataforma y con el respaldo de ATAR.',
+    },
+  ];
+
+  const categoryCards = [
+    'Bolsas de polipropileno',
+    'Bolsas para escombros',
+    'Bolsas laminadas',
+    'Bolsas de rafia',
+    'Bolsas con fuelle',
+    'Bolsas a medida',
+  ];
+
   return (
-    <main className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),_transparent_30%),linear-gradient(180deg,#030712_0%,#020617_56%,#f8fafc_56%,#f8fafc_100%)]">
-      <section id="inicio" className="mx-auto flex w-full max-w-7xl flex-col gap-14 px-6 py-16 lg:px-10 lg:py-24">
-        <nav className="hidden items-center gap-7 text-sm text-slate-300 lg:flex">
-          {navItems.map((item) => (
-            <a key={item.label} href={item.href} className="transition hover:text-white">
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div className="space-y-8">
-            <div className="inline-flex rounded-full border border-violet-400/30 bg-violet-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-violet-200">
-              Antepropuesta integrada al producto
-            </div>
-            <div className="space-y-5">
-              <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
-                Conectamos industrias con los mejores proveedores.
-              </h1>
-              <p className="max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
-                Simplifica la compra industrial. Solicita cotizaciones, compara proveedores
-                y gestiona pedidos desde una plataforma clara, moderna y pensada para
-                operacion real.
-              </p>
-            </div>
-            <div className="flex flex-col gap-4 sm:flex-row">
+    <main className="min-h-screen bg-white text-slate-950">
+      <section className="relative overflow-hidden">
+        <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
+          <div className="grid gap-10 lg:grid-cols-[0.48fr_0.52fr] lg:items-center">
+            <div className="space-y-7">
+
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+              Conectamos industrias con los mejores proveedores de{' '}
+              <span className="text-indigo-600">bolsas industriales</span>
+            </h1>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
               <a
+                className="inline-flex justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
                 href="/acceso"
-                className="rounded-full bg-gradient-to-r from-sky-500 to-violet-500 px-6 py-3 text-center font-semibold text-white transition hover:opacity-90"
               >
                 Crear cuenta gratis
               </a>
               <a
-                href="#como-funciona"
-                className="rounded-full border border-white/15 px-6 py-3 text-center font-semibold text-slate-100 transition hover:border-white/30 hover:bg-white/5"
+                className="inline-flex justify-center rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                href="/como-funciona"
               >
-                Ver como funciona
+                Ver cómo funciona
               </a>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold text-white">Proveedores verificados</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Seguridad, confianza y documentacion en un mismo flujo.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold text-white">Cotizaciones rapidas</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Solicita, compara y decide en minutos, no en dias.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold text-white">Compra optimizada</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Mejor contexto para precio, plazo, calidad y respaldo.
-                </p>
-              </div>
-            </div>
+
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-sky-500/20 via-transparent to-violet-500/20 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/80 p-4 shadow-2xl shadow-slate-950/60">
-              <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-white">ATAR web</p>
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Plataforma industrial
-                  </p>
-                </div>
-                <div className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-300">
-                  Home principal
-                </div>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="rounded-[1.75rem] border border-white/10 bg-white p-5 text-slate-950">
-                  <div className="flex items-center justify-between text-sm text-slate-500">
-                    <span className="rounded-full bg-violet-50 px-3 py-1 font-medium text-violet-600">
-                      Plataforma industrial
-                    </span>
-                    <span>Web</span>
-                  </div>
-                  <h2 className="mt-5 max-w-md text-3xl font-semibold tracking-tight text-slate-950">
-                    Conectamos industrias con los mejores proveedores de bolsas industriales.
-                  </h2>
-                  <p className="mt-4 max-w-md text-sm leading-7 text-slate-600">
-                    Simplifica tu abastecimiento. Solicita cotizaciones, compara alternativas
-                    y centraliza tus pedidos desde un solo lugar.
-                  </p>
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    {categories.slice(0, 4).map((category) => (
-                      <div
-                        key={category}
-                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
-                      >
-                        {category}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-4">
-                  <div className="rounded-[1.75rem] border border-sky-400/20 bg-gradient-to-br from-sky-500/20 to-violet-500/20 p-5">
-                    <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/80 p-5">
-                      <p className="text-xs uppercase tracking-[0.2em] text-sky-300">
-                        Mobile app
-                      </p>
-                      <h3 className="mt-3 text-2xl font-semibold text-white">
-                        Seguimiento rapido desde cualquier lugar.
-                      </h3>
-                      <div className="mt-5 space-y-3">
-                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                          Pedidos abiertos
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                          Respuesta de cotizaciones
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                          Estado de adjudicaciones
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/80 p-4">
-                      <p className="text-3xl font-semibold text-white">+2.500</p>
-                      <p className="mt-2 text-sm text-slate-400">Proveedores verificados</p>
-                    </div>
-                    <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/80 p-4">
-                      <p className="text-3xl font-semibold text-white">24/7</p>
-                      <p className="mt-2 text-sm text-slate-400">Soporte y operacion continua</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="relative h-[320px] w-full sm:h-[420px] lg:hidden">
+              <Image
+                alt="Hero ATAR"
+                className="object-contain object-right"
+                fill
+                priority
+                sizes="100vw"
+                src="/hero.png"
+              />
             </div>
+            <div className="hidden lg:block lg:h-[520px]" />
+          </div>
+
+          <div className="pointer-events-none absolute right-0 top-10 hidden h-[520px] w-[min(58rem,56vw)] lg:block">
+            <Image
+              alt="Hero ATAR"
+              className="object-contain object-right"
+              fill
+              priority
+              sizes="(min-width: 1024px) 52vw, 100vw"
+              src="/hero.png"
+            />
           </div>
         </div>
 
-        <div className="grid gap-4 rounded-[2rem] border border-white/10 bg-slate-950/60 p-6 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-white/8 bg-white/4 p-5">
-              <p className="text-3xl font-semibold text-white">{stat.value}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">{stat.label}</p>
+        <div className="mt-10 grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((item) => (
+            <div key={item.label} className="rounded-2xl bg-slate-50 p-5">
+              <p className="text-3xl font-semibold text-slate-950">{item.value}</p>
+              <p className="mt-2 text-sm text-slate-600">{item.label}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section id="como-funciona" className="border-y border-slate-200 bg-slate-50">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-6 py-20 lg:px-10">
-          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-            <div className="space-y-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-violet-600">
-                Como funciona
+      <section id="soluciones" className="border-t border-slate-200 bg-white">
+        <div className="mx-auto w-full max-w-7xl px-6 py-14 lg:px-10 lg:py-16">
+          <div className="grid gap-10 lg:grid-cols-[0.36fr_0.64fr] lg:items-start">
+            <div className="space-y-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-indigo-600">
+                TODO LO QUE NECESITÁS, EN UN SOLO LUGAR
               </p>
-              <h2 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                Conectamos industrias en 5 pasos simples.
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Una plataforma pensada para la industria
               </h2>
-              <p className="max-w-xl text-lg leading-8 text-slate-600">
-                Un proceso claro y transparente para publicar necesidades, recibir
-                cotizaciones privadas y tomar mejores decisiones con informacion real.
+              <p className="max-w-md text-sm leading-7 text-slate-500">
+                Optimizá tu tiempo y asegurá las mejores condiciones de compra con herramientas
+                diseñadas para vos.
               </p>
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="font-semibold text-slate-950">Transparente</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Informacion clara para comparar mejor y decidir con mas contexto.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="font-semibold text-slate-950">Rapido</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Menos telefono, menos Excel, menos friccion operativa.
-                  </p>
-                </div>
-              </div>
+              <a className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600" href="/como-funciona">
+                Conocé todas las funcionalidades <span aria-hidden="true">→</span>
+              </a>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {steps.map((step) => (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {platformFeatures.map((feature) => (
                 <article
-                  key={step.index}
-                  className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm"
+                  key={feature.title}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500/15 to-violet-500/15 text-lg font-semibold text-violet-700">
-                    {step.index}
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+                    <FeatureIcon name={feature.icon} />
                   </div>
-                  <h3 className="mt-5 text-lg font-semibold text-slate-950">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{step.description}</p>
+                  <h3 className="mt-5 text-sm font-semibold text-slate-950">{feature.title}</h3>
+                  <p className="mt-2 text-xs leading-6 text-slate-500">{feature.description}</p>
                 </article>
               ))}
             </div>
@@ -279,212 +324,175 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="proveedores" className="bg-slate-50">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-20 lg:px-10">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-4">
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-violet-600">
-                Marketplace activo
+      <section className="border-t border-slate-200 bg-slate-50">
+        <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:px-10">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
+                Todo tipo de bolsas industriales
               </p>
-              <h2 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                Un ecosistema industrial claro, confiable y moderno.
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Encontrá la bolsa ideal para tu industria
               </h2>
-              <p className="max-w-3xl text-lg leading-8 text-slate-600">
-                La antepropuesta visual apunta a una plataforma limpia, potente y directa.
-                Esta version web toma esa linea para comunicar confianza, tecnologia y
-                operacion industrial real.
-              </p>
             </div>
             <a
-              href="#cta"
-              className="inline-flex rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+              className="inline-flex rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              href="/proveedores"
             >
-              Ver todas las categorias
+              Ver todas las categorías →
             </a>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {categories.map((category, index) => (
-              <div
-                key={category}
-                className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <div className="mb-4 h-32 rounded-2xl bg-gradient-to-br from-slate-200 via-slate-100 to-white" />
-                <p className="font-semibold text-slate-950">{category}</p>
-                <p className="mt-2 text-sm text-slate-600">Categoria {index + 1}</p>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {categoryCards.map((category) => (
+              <div key={category} className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="relative mb-4 h-28 overflow-hidden rounded-2xl bg-slate-100">
+                  <Image
+                    alt="Big bag"
+                    className="object-cover"
+                    fill
+                    sizes="(min-width: 1280px) 180px, (min-width: 1024px) 220px, (min-width: 640px) 45vw, 90vw"
+                    src="/bigbag.jfif"
+                  />
+                </div>
+                <p className="text-sm font-semibold text-slate-950">{category}</p>
               </div>
             ))}
-          </div>
-
-          <div className="rounded-[2rem] bg-slate-950 p-6 shadow-2xl shadow-slate-300/30">
-            <div className="flex flex-col gap-3 pb-6 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-sky-300">
-                  Marketplace destacados
-                </p>
-                <h3 className="mt-3 text-3xl font-semibold text-white">
-                  Proveedores con presencia y reputacion.
-                </h3>
-              </div>
-              <p className="max-w-2xl text-sm leading-7 text-slate-400">
-                La propuesta visual muestra marcas fuertes, datos resumidos y acceso rapido.
-                Esta seccion conserva ese enfoque para construir confianza desde la home.
-              </p>
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-4">
-              {featuredSuppliers.map((supplier) => (
-                <article
-                  key={supplier.name}
-                  className="rounded-[1.5rem] border border-white/8 bg-white/5 p-5"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sm font-bold text-slate-950">
-                      {supplier.name.slice(0, 2)}
-                    </div>
-                    <span className="rounded-full bg-amber-400/15 px-3 py-1 text-sm font-semibold text-amber-300">
-                      {supplier.rating}
-                    </span>
-                  </div>
-                  <h4 className="mt-5 text-lg font-semibold text-white">{supplier.name}</h4>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{supplier.location}</p>
-                  <a
-                    href="#cta"
-                    className="mt-5 inline-flex text-sm font-semibold text-sky-300 transition hover:text-sky-200"
-                  >
-                    Ver perfil
-                  </a>
-                </article>
-              ))}
-            </div>
           </div>
         </div>
       </section>
 
-      <section id="soluciones" className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-20 lg:px-10">
-          <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-violet-600">
-              Concepto visual
-            </p>
-            <h2 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Tecnologia para conectar. Confianza para crecer.
-            </h2>
-            <p className="max-w-3xl text-lg leading-8 text-slate-600">
-              La antepropuesta aporta una identidad clara: industrial, confiable, intuitiva,
-              escalable y tecnologica. Esa linea ya se refleja en la estructura y tono de la
-              web.
-            </p>
-          </div>
+      <section className="border-t border-slate-200 bg-white">
+        <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:px-10">
+          <div className="grid gap-10 lg:grid-cols-[0.45fr_0.55fr] lg:items-center">
+            <div className="space-y-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
+                Para proveedores
+              </p>
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Mostrá tu capacidad. Conseguí más clientes.
+              </h2>
+              <p className="max-w-xl text-base leading-8 text-slate-600">
+                Sumate a una red de empresas que buscan proveedores confiables. Mostrá tu
+                propuesta de valor y ganá nuevas oportunidades de compra.
+              </p>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {differentiators.map((item) => (
-              <article
-                key={item.title}
-                className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl text-violet-600 shadow-sm">
-                  •
+              <div className="space-y-2 text-sm text-slate-700">
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-indigo-600" />
+                  Recibí solicitudes de compra calificadas
                 </div>
-                <h3 className="mt-5 text-lg font-semibold text-slate-950">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{item.description}</p>
-              </article>
-            ))}
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-indigo-600" />
+                  Gestioná cotizaciones en minutos
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-indigo-600" />
+                  Destacate con reputación y verificaciones
+                </div>
+              </div>
+
+              <a
+                className="inline-flex justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+                href="/acceso"
+              >
+                Quiero ser proveedor
+              </a>
+            </div>
+
+            <Image
+              alt="Dashboard ATAR"
+              className="h-auto w-full"
+              height={720}
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              src="/dash.png"
+              width={1200}
+            />
           </div>
         </div>
       </section>
 
       <section id="recursos" className="border-t border-slate-200 bg-slate-50">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-20 lg:px-10">
-          <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-violet-600">
-              Recursos
-            </p>
-            <h2 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Base documental y estrategica para seguir construyendo.
-            </h2>
-            <p className="max-w-3xl text-lg leading-8 text-slate-600">
-              La propuesta visual no queda aislada: ya convive con la definicion de producto,
-              arquitectura y roadmap del proyecto para que diseño y negocio avancen juntos.
-            </p>
-          </div>
-
+        <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:px-10">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-                Producto
+            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">
+                Compradores
               </p>
-              <h3 className="mt-4 text-xl font-semibold text-slate-950">Fundacion del producto</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Vision, actores, fases y decisiones clave del negocio.
+              <p className="mt-4 text-lg font-semibold text-slate-950">
+                Mejores decisiones de compra
               </p>
-            </article>
-            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-                MVP
-              </p>
-              <h3 className="mt-4 text-xl font-semibold text-slate-950">PRD web + app</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Alcance inicial, roles y funcionalidades de la primera version.
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                Compará ofertas con contexto y trazabilidad.
               </p>
             </article>
-            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-                Arquitectura
+            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">
+                Proveedores
               </p>
-              <h3 className="mt-4 text-xl font-semibold text-slate-950">Base tecnica</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Monorepo, web, mobile, API y lineamientos de implementacion.
+              <p className="mt-4 text-lg font-semibold text-slate-950">
+                Más oportunidades calificadas
+              </p>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                Respondé solicitudes reales y destacá tu propuesta.
               </p>
             </article>
-            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-                Branding
+            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">
+                Operación
               </p>
-              <h3 className="mt-4 text-xl font-semibold text-slate-950">Identidad visual</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Paleta, tono, principios de UI y direccion grafica inicial.
+              <p className="mt-4 text-lg font-semibold text-slate-950">
+                Seguimiento y control
+              </p>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                Flujo de pedidos, documentación y reportes.
+              </p>
+            </article>
+            <article className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">
+                Soporte
+              </p>
+              <p className="mt-4 text-lg font-semibold text-slate-950">
+                Acompañamiento experto
+              </p>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                Equipo especializado para cada etapa del proceso.
               </p>
             </article>
           </div>
         </div>
       </section>
 
-      <section id="cta" className="bg-slate-950">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16 lg:px-10">
-          <div className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-slate-900 via-slate-950 to-violet-950/60 p-8 lg:p-12">
-            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-              <div className="space-y-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-sky-300">
-                  Ecosistema industrial
-                </p>
-                <h2 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                  Un punto de encuentro entre la demanda y la oferta industrial.
-                </h2>
-                <p className="max-w-2xl text-lg leading-8 text-slate-300">
-                  Ya existe una base visual y de producto mas consistente. El siguiente paso es
-                  conectar esta experiencia web con login, dashboard comprador y flujo real de
-                  pedidos sobre la API que ya esta implementada.
+      <section className="bg-slate-950">
+        <div className="mx-auto w-full max-w-7xl px-6 py-14 lg:px-10">
+          <div className="rounded-[2rem] bg-[linear-gradient(135deg,#0b1220_0%,#1f1b4f_55%,#312e81_100%)] p-8 text-white lg:p-12">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3">
+                <h2 className="text-3xl font-semibold">Comprá mejor. Producí más.</h2>
+                <p className="max-w-2xl text-sm leading-7 text-slate-200">
+                  Unificá demanda, cotizaciones y seguimiento operativo en una sola plataforma.
                 </p>
               </div>
-              <div className="grid gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <a
-                  href="#inicio"
-                  className="rounded-full bg-gradient-to-r from-sky-500 to-violet-500 px-6 py-4 text-center font-semibold text-white transition hover:opacity-90"
+                  className="inline-flex justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+                  href="/acceso"
                 >
-                  Seguir construyendo la experiencia
+                  Iniciar sesión
                 </a>
                 <a
-                  href="#proveedores"
-                  className="rounded-full border border-white/15 px-6 py-4 text-center font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5"
+                  className="inline-flex justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+                  href="/acceso"
                 >
-                  Ver propuesta comercial
+                  Crear cuenta gratis
                 </a>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }
