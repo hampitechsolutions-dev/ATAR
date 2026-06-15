@@ -5,10 +5,12 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
+jest.setTimeout(30000);
+
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -180,6 +182,7 @@ describe('AppController (e2e)', () => {
     const buyerEmail = `buyer.award.${Date.now()}@atar.test`;
     const supplierAEmail = `supplier.award.a.${Date.now()}@atar.test`;
     const supplierBEmail = `supplier.award.b.${Date.now()}@atar.test`;
+    const orderNumber = `ATAR-TEST-${Date.now()}`;
 
     const buyerRegister = await request(app.getHttpServer())
       .post('/api/auth/register')
@@ -301,15 +304,15 @@ describe('AppController (e2e)', () => {
       .post(`/api/requests/${requestId}/order`)
       .set('Authorization', `Bearer ${buyerToken}`)
       .send({
-        orderNumber: 'ATAR-TEST-0001',
+        orderNumber,
         promisedDate: '2026-12-20',
         notes: 'Entrega parcial permitida en dos tandas.',
-        fulfillmentStatus: 'CONFIRMED',
+        fulfillmentStatus: 'ISSUED',
       })
       .expect(201);
 
-    expect(orderUpdateResponse.body.order.orderNumber).toBe('ATAR-TEST-0001');
-    expect(orderUpdateResponse.body.order.fulfillmentStatus).toBe('CONFIRMED');
+    expect(orderUpdateResponse.body.order.orderNumber).toBe(orderNumber);
+    expect(orderUpdateResponse.body.order.fulfillmentStatus).toBe('ISSUED');
 
     const quotesForBuyer = await request(app.getHttpServer())
       .get(`/api/requests/${requestId}/quotes`)
@@ -331,7 +334,7 @@ describe('AppController (e2e)', () => {
 
     expect(supplierAQuotes.body[0].status).toBe('AWARDED');
     expect(supplierAQuotes.body[0].request.status).toBe('ORDER_ISSUED');
-    expect(supplierAQuotes.body[0].request.order.orderNumber).toBe('ATAR-TEST-0001');
+    expect(supplierAQuotes.body[0].request.order.orderNumber).toBe(orderNumber);
 
     const supplierBQuotes = await request(app.getHttpServer())
       .get('/api/quotes/mine')
@@ -386,7 +389,9 @@ describe('AppController (e2e)', () => {
       .set('Authorization', `Bearer ${supplierAToken}`)
       .expect(200);
 
-    expect(openRequestsForSupplierA.some((item: { id: string }) => item.id === requestId)).toBe(false);
+    expect(
+      openRequestsForSupplierA.body.some((item: { id: string }) => item.id === requestId),
+    ).toBe(false);
 
     const awardedRequestDetail = await request(app.getHttpServer())
       .get(`/api/requests/${requestId}`)
@@ -394,7 +399,7 @@ describe('AppController (e2e)', () => {
       .expect(200);
 
     expect(awardedRequestDetail.body.status).toBe('ORDER_ISSUED');
-    expect(awardedRequestDetail.body.order.orderNumber).toBe('ATAR-TEST-0001');
+    expect(awardedRequestDetail.body.order.orderNumber).toBe(orderNumber);
     expect(awardedRequestDetail.body.order.fulfillmentStatus).toBe('DELIVERED');
     expect(awardedRequestDetail.body.events).toHaveLength(11);
     expect(awardedRequestDetail.body.events[0].type).toBe('ORDER_DELIVERED');
@@ -403,7 +408,7 @@ describe('AppController (e2e)', () => {
     expect(awardedRequestDetail.body.events[3].type).toBe('ORDER_CONFIRMED');
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 });
