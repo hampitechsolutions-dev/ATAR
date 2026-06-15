@@ -3,11 +3,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
+import {
+  DashboardCard,
+  DashboardDarkCard,
+  DashboardEmptyState,
+  DashboardHero,
+  DashboardSectionHeading,
+  DashboardShell,
+  DashboardStatCard,
+  dashboardInputClassName,
+  dashboardPrimaryButtonClassName,
+  dashboardSecondaryButtonClassName,
+  dashboardTextareaClassName,
+} from '@/components/dashboard/dashboard-ui';
 import { atarApi, type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
 import {
   clearSession,
-  getPrimaryCompanyName,
   getPrimaryMembershipRole,
   loadSession,
   saveSession,
@@ -16,8 +27,12 @@ import {
 
 const initialForm = {
   title: '',
+  productName: '',
   category: '',
   description: '',
+  quantityRequested: '1',
+  referenceUnitPrice: '',
+  preferredSupplierName: '',
   dueDate: '',
   privateRequest: false,
 };
@@ -200,6 +215,17 @@ export default function DashboardCompradorPage() {
     return Math.min(...amounts);
   }, [quotes]);
 
+  const estimatedRequestTotal = useMemo(() => {
+    const quantity = Number(form.quantityRequested);
+    const unitPrice = Number(form.referenceUnitPrice);
+
+    if (!Number.isFinite(quantity) || quantity < 1 || !Number.isFinite(unitPrice) || unitPrice < 0) {
+      return 0;
+    }
+
+    return quantity * unitPrice;
+  }, [form.quantityRequested, form.referenceUnitPrice]);
+
   async function refreshRequests(token: string, nextSelectedRequestId?: string | null) {
     const buyerRequests = await atarApi.getBuyerRequests(token);
     setRequests(buyerRequests);
@@ -228,8 +254,13 @@ export default function DashboardCompradorPage() {
       const createdRequest = await atarApi.createRequest(
         {
           title: form.title,
+          productName: form.productName || undefined,
           category: form.category,
           description: form.description,
+          quantityRequested: Number(form.quantityRequested) || undefined,
+          referenceUnitPrice: Number(form.referenceUnitPrice) || undefined,
+          estimatedTotalCost: estimatedRequestTotal || undefined,
+          preferredSupplierName: form.preferredSupplierName || undefined,
           dueDate: form.dueDate || undefined,
           privateRequest: form.privateRequest,
           status: 'PUBLISHED',
@@ -260,243 +291,308 @@ export default function DashboardCompradorPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[0.2fr_0.8fr] lg:px-10">
-        <DashboardSidebar role="buyer" session={session} />
-
-        <section className="space-y-6">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Buenas tardes, {session?.user.firstName}</p>
-                <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Dashboard comprador</h1>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Centraliza solicitudes, cotizaciones y decisiones de compra sobre la API real del proyecto.
-                </p>
-              </div>
-              <a
-                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                href="/proveedores"
-              >
-                Ver proveedores
-              </a>
+    <DashboardShell role="buyer" session={session}>
+      <DashboardHero
+        actions={
+          <>
+            <Link className={dashboardPrimaryButtonClassName} href="/proveedores">
+              Ver proveedores
+            </Link>
+            <Link className={dashboardSecondaryButtonClassName} href="/dashboard/comprador/cotizaciones">
+              Ver cotizaciones
+            </Link>
+            <Link className={dashboardSecondaryButtonClassName} href="/dashboard/comprador/solicitudes">
+              Ver todas mis solicitudes
+            </Link>
+          </>
+        }
+        aside={
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-[1.5rem] border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+              <p className="text-xs uppercase tracking-[0.18em] text-indigo-600">
+                Comprador activo
+              </p>
+              <p className="mt-2 font-semibold">{session?.user.firstName}</p>
             </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <article className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Solicitudes activas</p>
-                <p className="mt-3 text-3xl font-semibold text-slate-950">{activeRequests}</p>
-              </article>
-              <article className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Cotizaciones recibidas</p>
-                <p className="mt-3 text-3xl font-semibold text-slate-950">{totalQuotes}</p>
-              </article>
-              <article className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Solicitudes con propuestas</p>
-                <p className="mt-3 text-3xl font-semibold text-slate-950">{requestsWithProposals}</p>
-              </article>
-              <article className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Mejor oferta visible</p>
-                <p className="mt-3 text-3xl font-semibold text-slate-950">
-                  {bestQuotedAmount > 0 ? formatCurrency(bestQuotedAmount) : 'Sin cotizacion'}
-                </p>
-              </article>
+            <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Decision</p>
+              <p className="mt-2 font-semibold text-slate-950">
+                {requestsWithProposals} solicitudes comparables
+              </p>
             </div>
           </div>
+        }
+        description="Centraliza solicitudes, cotizaciones y decisiones de compra con la misma identidad visual del sitio publico y foco en una operacion clara, rapida y escalable."
+        eyebrow="Panel comprador"
+        title={
+          <>
+            Gestiona compras con <span className="text-indigo-600">trazabilidad total</span>
+          </>
+        }
+      />
 
-          {error ? <div className="rounded-[1.5rem] bg-rose-100 px-5 py-4 text-sm text-rose-800">{error}</div> : null}
-          {message ? <div className="rounded-[1.5rem] bg-emerald-100 px-5 py-4 text-sm text-emerald-800">{message}</div> : null}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <DashboardStatCard helper="En seguimiento" label="Solicitudes activas" value={activeRequests} />
+        <DashboardStatCard helper="Visibilidad total" label="Cotizaciones recibidas" value={totalQuotes} />
+        <DashboardStatCard
+          helper="Con comparador"
+          label="Solicitudes con propuestas"
+          value={requestsWithProposals}
+        />
+        <DashboardStatCard
+          helper="Mejor propuesta"
+          label="Oferta visible"
+          value={bestQuotedAmount > 0 ? formatCurrency(bestQuotedAmount) : 'Sin cotizacion'}
+        />
+      </div>
 
-          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950">Nueva solicitud</h2>
-                  <p className="mt-1 text-sm text-slate-500">Publica un pedido y habilita la comparacion de propuestas.</p>
-                </div>
-              </div>
+      {error ? <div className="rounded-[1.5rem] bg-rose-100 px-5 py-4 text-sm text-rose-800">{error}</div> : null}
+      {message ? <div className="rounded-[1.5rem] bg-emerald-100 px-5 py-4 text-sm text-emerald-800">{message}</div> : null}
 
-              <form className="mt-5 space-y-4" onSubmit={handleCreateRequest}>
-                <label className="block space-y-2 text-sm">
-                  <span className="text-slate-700">Titulo</span>
-                  <input
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-400"
-                    onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                    placeholder="Ej. Bobinas de polipropileno"
-                    required
-                    value={form.title}
-                  />
-                </label>
-                <label className="block space-y-2 text-sm">
-                  <span className="text-slate-700">Categoria</span>
-                  <input
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-400"
-                    onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-                    placeholder="Packaging, quimicos, maquinaria..."
-                    required
-                    value={form.category}
-                  />
-                </label>
-                <label className="block space-y-2 text-sm">
-                  <span className="text-slate-700">Descripcion tecnica</span>
-                  <textarea
-                    className="min-h-32 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-400"
-                    onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                    placeholder="Detalla requerimientos, volumen, especificaciones y condiciones."
-                    required
-                    value={form.description}
-                  />
-                </label>
-                <div className="grid gap-4 sm:grid-cols-[0.7fr_0.3fr]">
-                  <label className="block space-y-2 text-sm">
-                    <span className="text-slate-700">Fecha limite</span>
-                    <input
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-400"
-                      onChange={(event) => setForm((current) => ({ ...current, dueDate: event.target.value }))}
-                      type="date"
-                      value={form.dueDate}
-                    />
-                  </label>
-                  <label className="mt-8 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    <input
-                      checked={form.privateRequest}
-                      onChange={(event) => setForm((current) => ({ ...current, privateRequest: event.target.checked }))}
-                      type="checkbox"
-                    />
-                    Pedido privado
-                  </label>
-                </div>
-                <button
-                  className="w-full rounded-full bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={submitting}
-                  type="submit"
-                >
-                  {submitting ? 'Publicando...' : 'Publicar solicitud'}
-                </button>
-              </form>
+      <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+        <DashboardCard>
+          <DashboardSectionHeading
+            description="Publica un pedido con el mismo criterio visual y operativo del resto del panel."
+            title="Nueva solicitud"
+          />
+
+          <form className="mt-5 space-y-4" onSubmit={handleCreateRequest}>
+            <label className="block space-y-2 text-sm">
+              <span className="text-slate-700">Titulo</span>
+              <input
+                className={dashboardInputClassName}
+                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                placeholder="Ej. Bobinas de polipropileno"
+                required
+                value={form.title}
+              />
+            </label>
+            <label className="block space-y-2 text-sm">
+              <span className="text-slate-700">Producto o referencia</span>
+              <input
+                className={dashboardInputClassName}
+                onChange={(event) => setForm((current) => ({ ...current, productName: event.target.value }))}
+                placeholder="Ej. Bobina laminada industrial 120 micrones"
+                value={form.productName}
+              />
+            </label>
+            <label className="block space-y-2 text-sm">
+              <span className="text-slate-700">Categoria</span>
+              <input
+                className={dashboardInputClassName}
+                onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+                placeholder="Packaging, quimicos, maquinaria..."
+                required
+                value={form.category}
+              />
+            </label>
+            <label className="block space-y-2 text-sm">
+              <span className="text-slate-700">Descripcion tecnica</span>
+              <textarea
+                className={dashboardTextareaClassName}
+                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Detalla requerimientos, volumen, especificaciones y condiciones."
+                required
+                value={form.description}
+              />
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block space-y-2 text-sm">
+                <span className="text-slate-700">Cantidad solicitada</span>
+                <input
+                  className={dashboardInputClassName}
+                  min="1"
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, quantityRequested: event.target.value }))
+                  }
+                  required
+                  type="number"
+                  value={form.quantityRequested}
+                />
+              </label>
+              <label className="block space-y-2 text-sm">
+                <span className="text-slate-700">Precio unitario referencial</span>
+                <input
+                  className={dashboardInputClassName}
+                  min="0"
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, referenceUnitPrice: event.target.value }))
+                  }
+                  placeholder="2500"
+                  step="0.01"
+                  type="number"
+                  value={form.referenceUnitPrice}
+                />
+              </label>
             </div>
+            <label className="block space-y-2 text-sm">
+              <span className="text-slate-700">Proveedor preferido</span>
+              <input
+                className={dashboardInputClassName}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, preferredSupplierName: event.target.value }))
+                }
+                placeholder="Opcional: nombre del proveedor o fabricante"
+                value={form.preferredSupplierName}
+              />
+            </label>
+            <div className="rounded-[1.5rem] border border-indigo-200 bg-indigo-50 px-4 py-4 text-sm text-indigo-900">
+              <p className="text-xs uppercase tracking-[0.18em] text-indigo-600">Estimacion</p>
+              <p className="mt-2 text-lg font-semibold">
+                {estimatedRequestTotal > 0 ? formatCurrency(estimatedRequestTotal) : 'Completa cantidad y precio referencial'}
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[0.7fr_0.3fr]">
+              <label className="block space-y-2 text-sm">
+                <span className="text-slate-700">Fecha limite</span>
+                <input
+                  className={dashboardInputClassName}
+                  onChange={(event) => setForm((current) => ({ ...current, dueDate: event.target.value }))}
+                  type="date"
+                  value={form.dueDate}
+                />
+              </label>
+              <label className="mt-8 flex items-center gap-3 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                <input
+                  checked={form.privateRequest}
+                  onChange={(event) => setForm((current) => ({ ...current, privateRequest: event.target.checked }))}
+                  type="checkbox"
+                />
+                Pedido privado
+              </label>
+            </div>
+            <button
+              className={`w-full ${dashboardPrimaryButtonClassName}`}
+              disabled={submitting}
+              type="submit"
+            >
+              {submitting ? 'Publicando...' : 'Publicar solicitud'}
+            </button>
+          </form>
+        </DashboardCard>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950">Mis solicitudes</h2>
-                  <p className="mt-1 text-sm text-slate-500">Selecciona una solicitud para revisar sus cotizaciones.</p>
-                </div>
+        <DashboardCard>
+          <DashboardSectionHeading
+            action={
+              <button
+                className={dashboardSecondaryButtonClassName}
+                onClick={() => {
+                  if (session) {
+                    void refreshRequests(session.accessToken);
+                  }
+                }}
+                type="button"
+              >
+                Actualizar
+              </button>
+            }
+            description="Selecciona una solicitud para revisar sus cotizaciones y pasar al comparador."
+            title="Mis solicitudes"
+          />
+
+          <div className="mt-5 space-y-4">
+            {requests.length === 0 ? (
+              <DashboardEmptyState
+                description="Todavia no tienes solicitudes creadas. Usa el formulario para publicar la primera."
+                title="Sin solicitudes"
+              />
+            ) : (
+              requests.map((request) => (
                 <button
-                  className="text-sm font-semibold text-violet-600"
-                  onClick={() => {
-                    if (session) {
-                      void refreshRequests(session.accessToken);
-                    }
-                  }}
+                  key={request.id}
+                  className={`w-full rounded-[1.5rem] border p-4 text-left transition ${
+                    selectedRequestId === request.id
+                      ? 'border-indigo-300 bg-indigo-50 shadow-[0_12px_24px_rgba(99,102,241,0.12)]'
+                      : 'border-slate-200 bg-slate-50/80 hover:border-slate-300 hover:bg-white'
+                  }`}
+                  onClick={() => setSelectedRequestId(request.id)}
                   type="button"
                 >
-                  Actualizar
-                </button>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                {requests.length === 0 ? (
-                  <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-sm text-slate-500">
-                    Todavia no tienes solicitudes creadas. Usa el formulario para publicar la primera.
-                  </div>
-                ) : (
-                  requests.map((request) => (
-                    <button
-                      key={request.id}
-                      className={`w-full rounded-[1.5rem] border p-4 text-left transition ${
-                        selectedRequestId === request.id
-                          ? 'border-violet-300 bg-violet-50'
-                          : 'border-slate-200 bg-slate-50 hover:border-slate-300'
-                      }`}
-                      onClick={() => setSelectedRequestId(request.id)}
-                      type="button"
-                    >
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{request.category}</p>
-                          <h3 className="mt-2 text-lg font-semibold text-slate-950">{request.title}</h3>
-                          <p className="mt-1 text-sm text-slate-500">Fecha limite: {formatDate(request.dueDate)}</p>
-                        </div>
-                        <div className="flex flex-col items-start gap-2 lg:items-end">
-                          {request.awardedQuoteId ? (
-                            <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                              Adjudicada
-                            </span>
-                          ) : null}
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${getRequestStatusStyles(request.status)}`}
-                          >
-                            {request.status}
-                          </span>
-                          <span className="text-sm text-slate-500">{request._count?.quotes ?? 0} cotizaciones</span>
-                          <Link
-                            className="text-sm font-semibold text-violet-700"
-                            href={`/dashboard/comprador/solicitudes/${request.id}`}
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            Ver comparador
-                          </Link>
-                        </div>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] bg-gradient-to-r from-sky-600 to-violet-600 p-6 text-white shadow-2xl shadow-sky-200/50">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold">Cotizaciones de la solicitud seleccionada</h2>
-                <p className="mt-2 text-sm leading-7 text-sky-50">
-                  {selectedRequest ? selectedRequest.description : 'Selecciona una solicitud para ver las propuestas recibidas.'}
-                </p>
-              </div>
-              {selectedRequest ? (
-                <div className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white">
-                  {selectedRequest.title}
-                </div>
-              ) : null}
-            </div>
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {quotes.length === 0 ? (
-                <div className="rounded-[1.5rem] border border-white/15 bg-white/10 p-4 text-sm text-sky-50 md:col-span-2 xl:col-span-3">
-                  No hay cotizaciones cargadas para esta solicitud todavia.
-                </div>
-              ) : (
-                quotes.map((quote) => (
-                  <article key={quote.id} className="rounded-[1.5rem] border border-white/15 bg-white/10 p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xs uppercase tracking-[0.2em] text-sky-100">{quote.supplierCompany?.name ?? 'Proveedor'}</p>
-                      <span
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getQuoteStatusStyles(quote.status)}`}
-                      >
-                        {quote.status}
-                      </span>
-                      {selectedRequest?.awardedQuoteId === quote.id ? (
-                        <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-100">
-                          Ganadora
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{request.category}</p>
+                      <h3 className="mt-2 text-lg font-semibold text-slate-950">{request.title}</h3>
+                      <p className="mt-1 text-sm text-slate-500">Fecha limite: {formatDate(request.dueDate)}</p>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 lg:items-end">
+                      {request.awardedQuoteId ? (
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          Adjudicada
                         </span>
                       ) : null}
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${getRequestStatusStyles(request.status)}`}
+                      >
+                        {request.status}
+                      </span>
+                      <span className="text-sm text-slate-500">{request._count?.quotes ?? 0} cotizaciones</span>
+                      <Link
+                        className="text-sm font-semibold text-indigo-700"
+                        href={`/dashboard/comprador/solicitudes/${request.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        Ver comparador
+                      </Link>
                     </div>
-                    <p className="mt-3 text-2xl font-semibold text-white">
-                      {quote.amount ? formatCurrency(quote.amount) : 'A consultar'}
-                    </p>
-                    <p className="mt-2 text-sm text-sky-50">Plazo: {quote.leadTimeDays ?? '-'} dias</p>
-                    <p className="mt-1 text-sm text-sky-50">Pago: {quote.paymentTerms ?? 'No informado'}</p>
-                    <p className="mt-3 text-sm leading-6 text-sky-50">
-                      {quote.technicalComment ?? 'Sin comentario tecnico.'}
-                    </p>
-                  </article>
-                ))
-              )}
-            </div>
+                  </div>
+                </button>
+              ))
+            )}
           </div>
-        </section>
+        </DashboardCard>
       </div>
-    </main>
+
+      <DashboardDarkCard>
+        <DashboardSectionHeading
+          action={
+            selectedRequest ? (
+              <div className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white">
+                {selectedRequest.title}
+              </div>
+            ) : null
+          }
+          description={
+            selectedRequest
+              ? selectedRequest.description
+              : 'Selecciona una solicitud para ver las propuestas recibidas.'
+          }
+          title={<span className="text-white">Cotizaciones de la solicitud seleccionada</span>}
+        />
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {quotes.length === 0 ? (
+            <div className="rounded-[1.5rem] border border-white/15 bg-white/10 p-4 text-sm text-sky-50 md:col-span-2 xl:col-span-3">
+              No hay cotizaciones cargadas para esta solicitud todavia.
+            </div>
+          ) : (
+            quotes.map((quote) => (
+              <article key={quote.id} className="rounded-[1.5rem] border border-white/15 bg-white/10 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-sky-100">{quote.supplierCompany?.name ?? 'Proveedor'}</p>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getQuoteStatusStyles(quote.status)}`}
+                  >
+                    {quote.status}
+                  </span>
+                  {selectedRequest?.awardedQuoteId === quote.id ? (
+                    <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-100">
+                      Ganadora
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-3 text-2xl font-semibold text-white">
+                  {quote.amount ? formatCurrency(quote.amount) : 'A consultar'}
+                </p>
+                <p className="mt-2 text-sm text-sky-50">Plazo: {quote.leadTimeDays ?? '-'} dias</p>
+                <p className="mt-1 text-sm text-sky-50">Pago: {quote.paymentTerms ?? 'No informado'}</p>
+                <p className="mt-3 text-sm leading-6 text-sky-50">
+                  {quote.technicalComment ?? 'Sin comentario tecnico.'}
+                </p>
+              </article>
+            ))
+          )}
+        </div>
+      </DashboardDarkCard>
+    </DashboardShell>
   );
 }

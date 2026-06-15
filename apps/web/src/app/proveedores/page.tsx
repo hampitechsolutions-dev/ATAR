@@ -1,4 +1,5 @@
 import { providerDirectory, supplierCategories, supplierFilters } from '@/lib/provider-directory';
+import { productCatalog } from '@/lib/product-catalog';
 import Image from 'next/image';
 
 function SiteFooter() {
@@ -89,6 +90,8 @@ export default function ProveedoresPage() {
     { value: '18', label: 'Categorías industriales' },
     { value: '98%', label: 'Índice de aprobación promedio' },
   ];
+
+  const featuredProduct = productCatalog[0];
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
@@ -229,13 +232,13 @@ export default function ProveedoresPage() {
                       <div className="flex flex-col gap-2 sm:flex-row lg:flex-col lg:items-end">
                         <a
                           className="inline-flex justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                          href="/contacto"
+                          href={`/productos/${featuredProduct.slug}`}
                         >
-                          Ver perfil
+                          Ver producto
                         </a>
                         <a
                           className="inline-flex justify-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
-                          href="/acceso"
+                          href={`/productos/${featuredProduct.slug}`}
                         >
                           Solicitar cotización
                         </a>

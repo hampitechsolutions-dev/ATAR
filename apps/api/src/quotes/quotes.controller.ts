@@ -10,6 +10,11 @@ import { QuotesService } from './quotes.service';
 export class QuotesController {
   constructor(private readonly quotesService: QuotesService) {}
 
+  @Get('buyer/mine')
+  findBuyerMine(@CurrentUser() user: AuthUser) {
+    return this.quotesService.findBuyerMine(user);
+  }
+
   @Post('request/:requestId')
   create(
     @CurrentUser() user: AuthUser,
@@ -22,5 +27,10 @@ export class QuotesController {
   @Get('mine')
   findMine(@CurrentUser() user: AuthUser) {
     return this.quotesService.findMine(user);
+  }
+
+  @Get(':id')
+  findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.quotesService.findOne(user, id);
   }
 }

@@ -37,8 +37,13 @@ export class RequestsService {
       data: {
         buyerCompanyId,
         title: dto.title,
+        productName: dto.productName,
         description: dto.description,
         category: dto.category,
+        quantityRequested: dto.quantityRequested,
+        referenceUnitPrice: dto.referenceUnitPrice,
+        estimatedTotalCost: dto.estimatedTotalCost,
+        preferredSupplierName: dto.preferredSupplierName,
         privateRequest: dto.privateRequest ?? false,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         status,

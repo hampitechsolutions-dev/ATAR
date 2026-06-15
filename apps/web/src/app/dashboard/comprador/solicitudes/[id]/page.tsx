@@ -5,6 +5,20 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
 import {
+  DashboardCard,
+  DashboardDarkCard,
+  DashboardEmptyState,
+  DashboardHero,
+  DashboardInfoBadge,
+  DashboardSectionHeading,
+  DashboardShell,
+  DashboardStatCard,
+  dashboardInputClassName,
+  dashboardPrimaryButtonClassName,
+  dashboardSecondaryButtonClassName,
+  dashboardTextareaClassName,
+} from '@/components/dashboard/dashboard-ui';
+import {
   atarApi,
   type OrderFulfillmentStatus,
   type QuoteRecord,
@@ -373,313 +387,406 @@ export default function BuyerRequestDetailPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-950">
-        <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">Cargando detalle...</div>
-      </main>
+      <DashboardShell role="buyer" session={session}>
+        <DashboardEmptyState
+          description="Estamos preparando el comparador, el timeline y el seguimiento comercial."
+          title="Cargando detalle..."
+        />
+      </DashboardShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-8 lg:px-10">
-        <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-violet-600">Detalle de solicitud</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{request?.title ?? 'Solicitud no encontrada'}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{request?.description ?? 'No se pudo localizar esta solicitud dentro de tu cuenta.'}</p>
-            {request?.awardedQuote ? (
-              <p className="mt-4 inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800">
-                {getRequestStatusLabel(request.status)} con {request.awardedQuote.supplierCompany?.name ?? 'proveedor seleccionado'}
-              </p>
-            ) : null}
+    <DashboardShell role="buyer" session={session}>
+      <DashboardHero
+        actions={
+          <>
+            <Link className={dashboardSecondaryButtonClassName} href="/dashboard/comprador/solicitudes">
+              Volver a solicitudes
+            </Link>
+            <Link className={dashboardPrimaryButtonClassName} href="/dashboard/comprador">
+              Volver al dashboard
+            </Link>
+          </>
+        }
+        aside={
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-[1.5rem] border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+              <p className="text-xs uppercase tracking-[0.18em] text-indigo-600">Cotizaciones</p>
+              <p className="mt-2 font-semibold">{quotes.length} propuestas visibles</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Fecha limite</p>
+              <p className="mt-2 font-semibold text-slate-950">{formatDate(request?.dueDate ?? null)}</p>
+            </div>
           </div>
-          <Link
-            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            href="/dashboard/comprador"
-          >
-            Volver al dashboard
-          </Link>
+        }
+        description={
+          request?.description ?? 'No se pudo localizar esta solicitud dentro de tu cuenta.'
+        }
+        eyebrow="Detalle de solicitud"
+        title={
+          <>
+            {request?.title ?? 'Solicitud no encontrada'}{' '}
+            {request ? (
+              <span className="text-indigo-600">
+                {getRequestStatusLabel(request.status)}
+              </span>
+            ) : null}
+          </>
+        }
+      />
+
+      {request?.awardedQuote ? (
+        <div className="flex flex-wrap gap-3">
+          <DashboardInfoBadge tone="emerald">
+            {getRequestStatusLabel(request.status)} con{' '}
+            {request.awardedQuote.supplierCompany?.name ?? 'proveedor seleccionado'}
+          </DashboardInfoBadge>
+          {request.order ? (
+            <DashboardInfoBadge tone="indigo">
+              Orden {request.order.orderNumber}
+            </DashboardInfoBadge>
+          ) : null}
         </div>
+      ) : null}
 
-        {error ? <div className="rounded-[1.5rem] bg-rose-100 px-5 py-4 text-sm text-rose-800">{error}</div> : null}
-        {message ? <div className="rounded-[1.5rem] bg-emerald-100 px-5 py-4 text-sm text-emerald-800">{message}</div> : null}
+      {error ? (
+        <div className="rounded-[1.5rem] bg-rose-100 px-5 py-4 text-sm text-rose-800">{error}</div>
+      ) : null}
+      {message ? (
+        <div className="rounded-[1.5rem] bg-emerald-100 px-5 py-4 text-sm text-emerald-800">
+          {message}
+        </div>
+      ) : null}
 
-        <div className="grid gap-6 xl:grid-cols-[0.75fr_1.25fr]">
-          <section className="space-y-6">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-950">Resumen</h2>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Categoria</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">{request?.category ?? '-'}</p>
-                </div>
-                <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Estado</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">
-                    {request ? getRequestStatusLabel(request.status) : '-'}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <DashboardStatCard
+          helper="Categoria"
+          label="Solicitud"
+          value={request?.category ?? '-'}
+        />
+        <DashboardStatCard
+          helper="Estado actual"
+          label="Estado"
+          value={request ? getRequestStatusLabel(request.status) : '-'}
+        />
+        <DashboardStatCard
+          helper="Comparador"
+          label="Mejor precio"
+          value={bestPrice ? formatCurrency(bestPrice.amount) : 'Sin datos'}
+        />
+        <DashboardStatCard
+          helper="Lead time"
+          label="Entrega mas rapida"
+          value={fastest?.leadTimeDays ? `${fastest.leadTimeDays} dias` : 'Sin datos'}
+        />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+        <section className="space-y-6">
+          <DashboardCard>
+            <DashboardSectionHeading
+              description="Resumen comercial de la solicitud y su posicion actual dentro del flujo."
+              title="Resumen"
+            />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Categoria</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{request?.category ?? '-'}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Estado</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">
+                  {request ? getRequestStatusLabel(request.status) : '-'}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Cantidad de propuestas</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{quotes.length}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Fecha limite</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">
+                  {formatDate(request?.dueDate ?? null)}
+                </p>
+              </div>
+            </div>
+          </DashboardCard>
+
+          {request?.awardedQuote ? (
+            <DashboardCard className="border-emerald-200 bg-emerald-50/80">
+              <DashboardSectionHeading
+                description="Proveedor seleccionado y proximo paso comercial."
+                title="Oferta adjudicada"
+              />
+              <p className="mt-4 text-sm leading-7 text-emerald-900">
+                Se selecciono a {request.awardedQuote.supplierCompany?.name ?? 'un proveedor'} por{' '}
+                {formatCurrency(request.awardedQuote.amount)} con plazo estimado de{' '}
+                {request.awardedQuote.leadTimeDays ?? '-'} dias.
+              </p>
+              <p className="mt-2 text-sm text-emerald-900">
+                Condiciones: {request.awardedQuote.paymentTerms ?? 'No informadas'}
+              </p>
+              {request.order ? (
+                <div className="mt-4 rounded-[1.5rem] border border-emerald-200 bg-white/80 p-4">
+                  <p className="text-sm font-semibold text-emerald-900">Orden {request.order.orderNumber}</p>
+                  <p className="mt-1 text-sm text-emerald-800">
+                    Estado de cumplimiento: {getFulfillmentLabel(request.order.fulfillmentStatus)}
+                  </p>
+                  <p className="mt-1 text-sm text-emerald-800">
+                    Fecha prometida: {formatDate(request.order.promisedDate)}
                   </p>
                 </div>
-                <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Mejor precio</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">{bestPrice ? formatCurrency(bestPrice.amount) : 'Sin datos'}</p>
-                </div>
-                <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Entrega mas rapida</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">{fastest?.leadTimeDays ? `${fastest.leadTimeDays} dias` : 'Sin datos'}</p>
-                </div>
-              </div>
-            </div>
-            {request?.awardedQuote ? (
-              <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-emerald-900">Oferta adjudicada</h2>
-                <p className="mt-3 text-sm leading-7 text-emerald-800">
-                  Se selecciono a {request.awardedQuote.supplierCompany?.name ?? 'un proveedor'} por {formatCurrency(request.awardedQuote.amount)} con plazo estimado de{' '}
-                  {request.awardedQuote.leadTimeDays ?? '-'} dias.
-                </p>
-                <p className="mt-3 text-sm text-emerald-800">
-                  Condiciones: {request.awardedQuote.paymentTerms ?? 'No informadas'}
-                </p>
-                {request.order ? (
-                  <div className="mt-4 rounded-[1.5rem] border border-emerald-200 bg-white/70 p-4">
-                    <p className="text-sm font-semibold text-emerald-900">Orden {request.order.orderNumber}</p>
-                    <p className="mt-1 text-sm text-emerald-800">
-                      Estado de cumplimiento: {getFulfillmentLabel(request.order.fulfillmentStatus)}
-                    </p>
-                    <p className="mt-1 text-sm text-emerald-800">
-                      Fecha prometida: {formatDate(request.order.promisedDate)}
-                    </p>
-                  </div>
-                ) : null}
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {request.status === 'AWARDED' ? (
-                    <button
-                      className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-                      disabled={progressingAction !== null}
-                      onClick={() => void handleProgress('START_NEGOTIATION')}
-                      type="button"
-                    >
-                      {progressingAction === 'START_NEGOTIATION'
-                        ? 'Iniciando negociacion...'
-                        : 'Iniciar negociacion'}
-                    </button>
-                  ) : null}
-                  {(request.status === 'AWARDED' || request.status === 'NEGOTIATING') ? (
-                    <button
-                      className="rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-                      disabled={progressingAction !== null}
-                      onClick={() => void handleProgress('ISSUE_ORDER')}
-                      type="button"
-                    >
-                      {progressingAction === 'ISSUE_ORDER' ? 'Emitiendo orden...' : 'Emitir orden'}
-                    </button>
-                  ) : null}
-                  {request.status === 'ORDER_ISSUED' ? (
-                    <span className="rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-800">
-                      Orden comercial emitida
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-            {request?.status === 'ORDER_ISSUED' ? (
-              <div className="rounded-[2rem] border border-violet-200 bg-violet-50 p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold text-violet-950">Orden y seguimiento</h2>
-                    <p className="mt-1 text-sm text-violet-800">
-                      Carga los datos operativos de la orden emitida para compartir seguimiento con el proveedor.
-                    </p>
-                  </div>
-                  {request.order ? (
-                    <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-violet-800">
-                      {request.order.orderNumber}
-                    </span>
-                  ) : null}
-                </div>
-                {request.order ? (
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <span
-                      className={`rounded-full px-4 py-2 text-sm font-semibold ${getFulfillmentTone(request.order.fulfillmentStatus)}`}
-                    >
-                      {getFulfillmentLabel(request.order.fulfillmentStatus)}
-                    </span>
-                    <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-violet-800">
-                      Fecha prometida: {formatDate(request.order.promisedDate)}
-                    </span>
-                  </div>
-                ) : null}
-                <form className="mt-5 space-y-4" onSubmit={handleSaveOrder}>
-                  <label className="block space-y-2 text-sm">
-                    <span className="text-violet-900">Numero de orden</span>
-                    <input
-                      className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
-                      onChange={(event) => setOrderForm((current) => ({ ...current, orderNumber: event.target.value }))}
-                      value={orderForm.orderNumber}
-                    />
-                  </label>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="block space-y-2 text-sm">
-                      <span className="text-violet-900">Fecha prometida</span>
-                      <input
-                        className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
-                        onChange={(event) => setOrderForm((current) => ({ ...current, promisedDate: event.target.value }))}
-                        type="date"
-                        value={orderForm.promisedDate}
-                      />
-                    </label>
-                    <label className="block space-y-2 text-sm">
-                      <span className="text-violet-900">Estado de cumplimiento</span>
-                      <select
-                        className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
-                        onChange={(event) =>
-                          setOrderForm((current) => ({
-                            ...current,
-                            fulfillmentStatus: event.target.value as OrderFulfillmentStatus,
-                          }))
-                        }
-                        value={orderForm.fulfillmentStatus}
-                      >
-                        <option value="ISSUED">Emitida</option>
-                        <option value="CONFIRMED">Confirmada</option>
-                        <option value="IN_PRODUCTION">En produccion</option>
-                        <option value="DISPATCHED">Despachada</option>
-                        <option value="DELIVERED">Entregada</option>
-                      </select>
-                    </label>
-                  </div>
-                  <label className="block space-y-2 text-sm">
-                    <span className="text-violet-900">Notas operativas</span>
-                    <textarea
-                      className="min-h-28 w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
-                      onChange={(event) => setOrderForm((current) => ({ ...current, notes: event.target.value }))}
-                      placeholder="Condiciones logisticas, contacto, ventanas de entrega o notas comerciales."
-                      value={orderForm.notes}
-                    />
-                  </label>
+              ) : null}
+              <div className="mt-5 flex flex-wrap gap-3">
+                {request.status === 'AWARDED' ? (
                   <button
-                    className="rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={savingOrder}
-                    type="submit"
+                    className="inline-flex items-center justify-center rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={progressingAction !== null}
+                    onClick={() => void handleProgress('START_NEGOTIATION')}
+                    type="button"
                   >
-                    {savingOrder ? 'Guardando orden...' : 'Guardar orden'}
+                    {progressingAction === 'START_NEGOTIATION'
+                      ? 'Iniciando negociacion...'
+                      : 'Iniciar negociacion'}
                   </button>
-                </form>
+                ) : null}
+                {request.status === 'AWARDED' || request.status === 'NEGOTIATING' ? (
+                  <button
+                    className={dashboardPrimaryButtonClassName}
+                    disabled={progressingAction !== null}
+                    onClick={() => void handleProgress('ISSUE_ORDER')}
+                    type="button"
+                  >
+                    {progressingAction === 'ISSUE_ORDER' ? 'Emitiendo orden...' : 'Emitir orden'}
+                  </button>
+                ) : null}
+                {request.status === 'ORDER_ISSUED' ? (
+                  <DashboardInfoBadge tone="indigo">Orden comercial emitida</DashboardInfoBadge>
+                ) : null}
               </div>
-            ) : null}
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950">Timeline</h2>
-                  <p className="mt-1 text-sm text-slate-500">Historial comercial de la solicitud en orden cronologico inverso.</p>
+            </DashboardCard>
+          ) : null}
+
+          {request?.status === 'ORDER_ISSUED' ? (
+            <DashboardCard className="border-indigo-200 bg-indigo-50/70">
+              <DashboardSectionHeading
+                action={
+                  request.order ? (
+                    <DashboardInfoBadge tone="indigo">{request.order.orderNumber}</DashboardInfoBadge>
+                  ) : null
+                }
+                description="Carga los datos operativos de la orden emitida para compartir seguimiento con el proveedor."
+                title="Orden y seguimiento"
+              />
+              {request.order ? (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <span
+                    className={`rounded-full px-4 py-2 text-sm font-semibold ${getFulfillmentTone(request.order.fulfillmentStatus)}`}
+                  >
+                    {getFulfillmentLabel(request.order.fulfillmentStatus)}
+                  </span>
+                  <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-indigo-800">
+                    Fecha prometida: {formatDate(request.order.promisedDate)}
+                  </span>
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
-                  {request?.events?.length ?? 0} eventos
-                </span>
-              </div>
-              <div className="mt-5 space-y-4">
-                {request?.events?.length ? (
-                  request.events.map((event) => (
-                    <article key={event.id} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getEventStyles(event.type)}`}>
-                              {event.type}
-                            </span>
-                            {event.actorCompanyName ? (
-                              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                {event.actorCompanyName}
-                              </span>
-                            ) : null}
-                          </div>
-                          <h3 className="mt-3 text-base font-semibold text-slate-950">{event.title}</h3>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">{event.detail ?? 'Sin detalle adicional.'}</p>
-                        </div>
-                        <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                          {formatDateTime(event.createdAt)}
-                        </span>
-                      </div>
-                    </article>
-                  ))
-                ) : (
-                  <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-sm text-slate-500">
-                    Todavia no hay eventos registrados para esta solicitud.
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+              ) : null}
+              <form className="mt-5 space-y-4" onSubmit={handleSaveOrder}>
+                <label className="block space-y-2 text-sm">
+                  <span className="text-indigo-950">Numero de orden</span>
+                  <input
+                    className={dashboardInputClassName}
+                    onChange={(event) =>
+                      setOrderForm((current) => ({ ...current, orderNumber: event.target.value }))
+                    }
+                    value={orderForm.orderNumber}
+                  />
+                </label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-2 text-sm">
+                    <span className="text-indigo-950">Fecha prometida</span>
+                    <input
+                      className={dashboardInputClassName}
+                      onChange={(event) =>
+                        setOrderForm((current) => ({ ...current, promisedDate: event.target.value }))
+                      }
+                      type="date"
+                      value={orderForm.promisedDate}
+                    />
+                  </label>
+                  <label className="block space-y-2 text-sm">
+                    <span className="text-indigo-950">Estado de cumplimiento</span>
+                    <select
+                      className={dashboardInputClassName}
+                      onChange={(event) =>
+                        setOrderForm((current) => ({
+                          ...current,
+                          fulfillmentStatus: event.target.value as OrderFulfillmentStatus,
+                        }))
+                      }
+                      value={orderForm.fulfillmentStatus}
+                    >
+                      <option value="ISSUED">Emitida</option>
+                      <option value="CONFIRMED">Confirmada</option>
+                      <option value="IN_PRODUCTION">En produccion</option>
+                      <option value="DISPATCHED">Despachada</option>
+                      <option value="DELIVERED">Entregada</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="block space-y-2 text-sm">
+                  <span className="text-indigo-950">Notas operativas</span>
+                  <textarea
+                    className={dashboardTextareaClassName}
+                    onChange={(event) =>
+                      setOrderForm((current) => ({ ...current, notes: event.target.value }))
+                    }
+                    placeholder="Condiciones logisticas, contacto, ventanas de entrega o notas comerciales."
+                    value={orderForm.notes}
+                  />
+                </label>
+                <button
+                  className={dashboardPrimaryButtonClassName}
+                  disabled={savingOrder}
+                  type="submit"
+                >
+                  {savingOrder ? 'Guardando orden...' : 'Guardar orden'}
+                </button>
+              </form>
+            </DashboardCard>
+          ) : null}
 
-          <section className="rounded-[2rem] bg-gradient-to-r from-sky-600 to-violet-600 p-6 text-white shadow-2xl shadow-sky-200/50">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold">Comparador de cotizaciones</h2>
-                <p className="mt-2 text-sm leading-7 text-sky-50">Las propuestas se ordenan por precio estimado y mantienen visibles plazo, pago y comentario tecnico.</p>
-              </div>
-              <div className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white">
-                {sortedQuotes.length} propuestas
-              </div>
-            </div>
-
-            <div className="mt-5 overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/10">
-              <div className="grid grid-cols-[1.2fr_0.7fr_0.6fr_0.9fr] gap-3 border-b border-white/15 px-5 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-sky-100">
-                <span>Proveedor</span>
-                <span>Precio</span>
-                <span>Plazo</span>
-                <span>Pago</span>
-              </div>
-              {sortedQuotes.length === 0 ? (
-                <div className="px-5 py-8 text-sm text-sky-50">Todavia no hay cotizaciones cargadas para esta solicitud.</div>
-              ) : (
-                sortedQuotes.map((quote, index) => (
-                  <div key={quote.id} className="border-b border-white/10 px-5 py-5 last:border-b-0">
-                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.2fr_0.7fr_0.6fr_0.9fr] lg:items-center">
+          <DashboardCard>
+            <DashboardSectionHeading
+              action={
+                <DashboardInfoBadge>{request?.events?.length ?? 0} eventos</DashboardInfoBadge>
+              }
+              description="Historial comercial de la solicitud en orden cronologico inverso."
+              title="Timeline"
+            />
+            <div className="mt-5 space-y-4">
+              {request?.events?.length ? (
+                request.events.map((event) => (
+                  <article key={event.id} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-semibold text-white">{quote.supplierCompany?.name ?? 'Proveedor'}</p>
-                          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getQuoteStatusStyles(quote.status)}`}>
-                            {quote.status}
+                          <span
+                            className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getEventStyles(event.type)}`}
+                          >
+                            {event.type}
                           </span>
-                          {request?.awardedQuoteId === quote.id ? (
-                            <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-100">
-                              Ganadora
+                          {event.actorCompanyName ? (
+                            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              {event.actorCompanyName}
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-sky-50">{quote.technicalComment ?? 'Sin comentario tecnico.'}</p>
+                        <h3 className="mt-3 text-base font-semibold text-slate-950">{event.title}</h3>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          {event.detail ?? 'Sin detalle adicional.'}
+                        </p>
                       </div>
-                      <div>
-                        <p className="text-lg font-semibold text-white">{formatCurrency(quote.amount)}</p>
-                        {index === 0 && request?.awardedQuoteId !== quote.id ? (
-                          <p className="mt-1 text-xs uppercase tracking-[0.2em] text-emerald-200">Mejor precio</p>
-                        ) : null}
-                      </div>
-                      <div>
-                        <p className="text-lg font-semibold text-white">{quote.leadTimeDays ?? '-'}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.2em] text-sky-100">dias</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">{quote.paymentTerms ?? 'No informado'}</p>
-                        {!request?.awardedQuoteId &&
-                        (request?.status === 'PUBLISHED' || request?.status === 'REVIEWING') ? (
-                          <button
-                            className="mt-3 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            disabled={awardingQuoteId !== null || quote.status !== 'SUBMITTED'}
-                            onClick={() => void handleAward(quote.id)}
-                            type="button"
-                          >
-                            {awardingQuoteId === quote.id ? 'Adjudicando...' : 'Adjudicar'}
-                          </button>
-                        ) : null}
-                      </div>
+                      <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                        {formatDateTime(event.createdAt)}
+                      </span>
                     </div>
-                  </div>
+                  </article>
                 ))
+              ) : (
+                <DashboardEmptyState
+                  description="Todavia no hay eventos registrados para esta solicitud."
+                  title="Sin timeline"
+                />
               )}
             </div>
-          </section>
-        </div>
+          </DashboardCard>
+        </section>
+
+        <DashboardDarkCard>
+          <DashboardSectionHeading
+            action={
+              <div className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white">
+                {sortedQuotes.length} propuestas
+              </div>
+            }
+            description="Las propuestas se ordenan por precio estimado y mantienen visibles plazo, pago y comentario tecnico."
+            title={<span className="text-white">Comparador de cotizaciones</span>}
+          />
+
+          <div className="mt-5 space-y-4">
+            {sortedQuotes.length === 0 ? (
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 px-5 py-8 text-sm text-sky-50">
+                Todavia no hay cotizaciones cargadas para esta solicitud.
+              </div>
+            ) : (
+              sortedQuotes.map((quote, index) => (
+                <article
+                  key={quote.id}
+                  className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5"
+                >
+                  <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[1.2fr_0.7fr_0.6fr_0.9fr] xl:items-start">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-white">
+                          {quote.supplierCompany?.name ?? 'Proveedor'}
+                        </p>
+                        <span
+                          className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getQuoteStatusStyles(quote.status)}`}
+                        >
+                          {quote.status}
+                        </span>
+                        {request?.awardedQuoteId === quote.id ? (
+                          <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-100">
+                            Ganadora
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-sky-50">
+                        {quote.technicalComment ?? 'Sin comentario tecnico.'}
+                      </p>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 xl:border-0 xl:bg-transparent xl:px-0 xl:py-0">
+                      <p className="text-xs uppercase tracking-[0.18em] text-sky-100 xl:hidden">Precio</p>
+                      <p className="mt-1 text-lg font-semibold text-white xl:mt-0">
+                        {formatCurrency(quote.amount)}
+                      </p>
+                      {index === 0 && request?.awardedQuoteId !== quote.id ? (
+                        <p className="mt-1 text-xs uppercase tracking-[0.2em] text-emerald-200">Mejor precio</p>
+                      ) : null}
+                    </div>
+                    <div className="rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 xl:border-0 xl:bg-transparent xl:px-0 xl:py-0">
+                      <p className="text-xs uppercase tracking-[0.18em] text-sky-100 xl:hidden">Plazo</p>
+                      <p className="mt-1 text-lg font-semibold text-white xl:mt-0">
+                        {quote.leadTimeDays ?? '-'}
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.2em] text-sky-100">dias</p>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 xl:border-0 xl:bg-transparent xl:px-0 xl:py-0">
+                      <p className="text-xs uppercase tracking-[0.18em] text-sky-100 xl:hidden">Pago</p>
+                      <p className="mt-1 text-sm font-medium text-white xl:mt-0">
+                        {quote.paymentTerms ?? 'No informado'}
+                      </p>
+                      {!request?.awardedQuoteId &&
+                      (request?.status === 'PUBLISHED' || request?.status === 'REVIEWING') ? (
+                        <button
+                          className="mt-3 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={awardingQuoteId !== null || quote.status !== 'SUBMITTED'}
+                          onClick={() => void handleAward(quote.id)}
+                          type="button"
+                        >
+                          {awardingQuoteId === quote.id ? 'Adjudicando...' : 'Adjudicar'}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </DashboardDarkCard>
       </div>
-    </main>
+    </DashboardShell>
   );
 }
