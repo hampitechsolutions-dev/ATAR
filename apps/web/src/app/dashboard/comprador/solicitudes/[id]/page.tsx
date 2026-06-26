@@ -1,23 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
-import {
-  DashboardCard,
-  DashboardDarkCard,
-  DashboardEmptyState,
-  DashboardHero,
-  DashboardInfoBadge,
-  DashboardSectionHeading,
-  DashboardShell,
-  DashboardStatCard,
-  dashboardInputClassName,
-  dashboardPrimaryButtonClassName,
-  dashboardSecondaryButtonClassName,
-  dashboardTextareaClassName,
-} from '@/components/dashboard/dashboard-ui';
 import {
   atarApi,
   type OrderFulfillmentStatus,
@@ -123,6 +110,30 @@ function getEventStyles(type: RequestEventRecord['type']) {
   return 'bg-slate-100 text-slate-700 border-slate-200';
 }
 
+function getRequestStatusStyles(status: RequestRecord['status']) {
+  if (status === 'ORDER_ISSUED') {
+    return 'bg-indigo-100 text-indigo-700';
+  }
+
+  if (status === 'NEGOTIATING') {
+    return 'bg-emerald-100 text-emerald-700';
+  }
+
+  if (status === 'AWARDED') {
+    return 'bg-emerald-100 text-emerald-700';
+  }
+
+  if (status === 'REVIEWING') {
+    return 'bg-amber-100 text-amber-700';
+  }
+
+  if (status === 'CANCELLED') {
+    return 'bg-rose-100 text-rose-700';
+  }
+
+  return 'bg-indigo-100 text-indigo-700';
+}
+
 function getRequestStatusLabel(status: RequestRecord['status']) {
   if (status === 'AWARDED') {
     return 'Adjudicada';
@@ -177,6 +188,143 @@ function getFulfillmentTone(status: OrderFulfillmentStatus) {
   }
 
   return 'bg-violet-100 text-violet-800';
+}
+
+const requestCategoryImages: Record<string, string> = {
+  'Big Bags': '/bigbag.png',
+  'Bolsas PP': '/bolsapp.png',
+  Polipropileno: '/rollo.png',
+  Polietileno: '/bolsapp.png',
+  'Rollos y Telas': '/rollo.png',
+  Sacos: '/saco.png',
+  'A medida': '/amedida.png',
+  Tintas: '/amedida.png',
+};
+
+function parseRequestDescription(description: string) {
+  return description
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const separatorIndex = line.indexOf(':');
+      if (separatorIndex === -1) {
+        return { label: 'Detalle', value: line };
+      }
+
+      return {
+        label: line.slice(0, separatorIndex).trim(),
+        value: line.slice(separatorIndex + 1).trim(),
+      };
+    });
+}
+
+function getDetailIcon(label: string) {
+  const normalized = label.toLowerCase();
+
+  if (normalized.includes('producto')) return 'package';
+  if (normalized.includes('material')) return 'layers';
+  if (normalized.includes('gramaje') || normalized.includes('cantidad')) return 'scale';
+  if (normalized.includes('medidas') || normalized.includes('medida')) return 'ruler';
+  if (normalized.includes('fuelle') || normalized.includes('laminado') || normalized.includes('micro') || normalized.includes('cierre')) return 'grid';
+  if (normalized.includes('impres')) return 'printer';
+  if (normalized.includes('entrega')) return 'pin';
+  if (normalized.includes('fecha')) return 'calendar';
+  if (normalized.includes('horario')) return 'clock';
+  if (normalized.includes('contacto')) return 'user';
+  if (normalized.includes('telefono')) return 'phone';
+  if (normalized.includes('archivo') || normalized.includes('adjuntar')) return 'file';
+  return 'dot';
+}
+
+function DetailIcon({ type }: { type: ReturnType<typeof getDetailIcon> }) {
+  if (type === 'package') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'layers') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M12 4l7 4-7 4-7-4 7-4zM5 12l7 4 7-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'scale') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M6 7h12M8 7l1.5 10h5L16 7M12 7V4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'ruler') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M4 8l4-4 12 12-4 4L4 8zM9 7l1.5 1.5M12 10l1.5 1.5M15 13l1.5 1.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'grid') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'printer') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M7 8V4h10v4M7 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-2M7 14h10v6H7z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'user') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'file') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6zM14 2v6h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'dot') {
+    return <span className="h-2.5 w-2.5 rounded-full bg-current" />;
+  }
+  if (type === 'pin') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1118 0z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+        <path d="M12 10a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'calendar') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (type === 'clock') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+        <path d="M12 7v5l3 2" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.86 19.86 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.86 19.86 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.12.9.33 1.77.62 2.6a2 2 0 01-.45 2.11L8.04 9.96a16 16 0 006 6l1.53-1.26a2 2 0 012.11-.45c.83.29 1.7.5 2.6.62A2 2 0 0122 16.92z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
 }
 
 export default function BuyerRequestDetailPage() {
@@ -384,409 +532,360 @@ export default function BuyerRequestDetailPage() {
       .filter((quote) => typeof quote.leadTimeDays === 'number')
       .sort((a, b) => (a.leadTimeDays ?? 9999) - (b.leadTimeDays ?? 9999))[0] ?? null;
   }, [quotes]);
+  const parsedDescription = useMemo(() => parseRequestDescription(request?.description ?? ''), [request?.description]);
+  const attachmentItems = useMemo(
+    () => parsedDescription.filter((item) => item.label.toLowerCase().includes('adjuntar') || item.label.toLowerCase().includes('archivo')),
+    [parsedDescription],
+  );
+  const deliveryItems = useMemo(
+    () =>
+      parsedDescription.filter((item) => {
+        const label = item.label.toLowerCase();
+        return (
+          label.includes('entrega') ||
+          label.includes('fecha') ||
+          label.includes('horario') ||
+          label.includes('contacto') ||
+          label.includes('telefono')
+        );
+      }),
+    [parsedDescription],
+  );
+  const detailItems = useMemo(() => {
+    const items = [
+      { label: 'Producto', value: request?.category ?? '-' },
+      ...parsedDescription.filter((item) => {
+        const label = item.label.toLowerCase();
+        return (
+          !label.includes('entrega') &&
+          !label.includes('fecha') &&
+          !label.includes('horario') &&
+          !label.includes('contacto') &&
+          !label.includes('telefono') &&
+          !label.includes('adjuntar') &&
+          !label.includes('archivo')
+        );
+      }),
+    ];
+
+    const uniqueItems = items.filter((item, index) => index === items.findIndex((candidate) => candidate.label === item.label));
+    return uniqueItems;
+  }, [parsedDescription, request?.category]);
+  const supplierCards = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; city: string; tag: string }>();
+
+    for (const quote of sortedQuotes) {
+      const company = quote.supplierCompany;
+      if (!company) continue;
+
+      if (!map.has(company.id)) {
+        map.set(company.id, {
+          id: company.id,
+          name: company.name,
+          city: [company.city, company.country].filter(Boolean).join(', '),
+          tag: `Especialista en ${request?.category ?? 'solicitudes industriales'}`,
+        });
+      }
+    }
+
+    if (request?.awardedQuote?.supplierCompany && !map.has(request.awardedQuote.supplierCompany.id)) {
+      map.set(request.awardedQuote.supplierCompany.id, {
+        id: request.awardedQuote.supplierCompany.id,
+        name: request.awardedQuote.supplierCompany.name,
+        city: [request.awardedQuote.supplierCompany.city, request.awardedQuote.supplierCompany.country].filter(Boolean).join(', '),
+        tag: `Especialista en ${request.category}`,
+      });
+    }
+
+    return Array.from(map.values()).slice(0, 3);
+  }, [request?.awardedQuote?.supplierCompany, request?.category, sortedQuotes]);
+  const requestTimeline = useMemo(() => (request?.events ?? []).slice(0, 4), [request?.events]);
+  const requestCreatedLabel = request ? formatDateTime(request.createdAt) : '-';
+  const fileCardName =
+    attachmentItems[0]?.value.split(',').map((item) => item.trim()).filter(Boolean)[0] ||
+    `especificaciones_${(request?.category ?? 'solicitud').toLowerCase().replace(/\s+/g, '_')}.pdf`;
+  const fileCardMeta = bestPrice ? `${formatCurrency(bestPrice.amount)} · Mejor oferta registrada` : 'PDF · Archivo adjunto';
 
   if (loading) {
     return (
-      <DashboardShell role="buyer" session={session}>
-        <DashboardEmptyState
-          description="Estamos preparando el comparador, el timeline y el seguimiento comercial."
-          title="Cargando detalle..."
-        />
-      </DashboardShell>
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-950">
+        <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">Cargando detalle...</div>
+      </main>
     );
   }
 
   return (
-    <DashboardShell role="buyer" session={session}>
-      <DashboardHero
-        actions={
-          <>
-            <Link className={dashboardSecondaryButtonClassName} href="/dashboard/comprador/solicitudes">
-              Volver a solicitudes
-            </Link>
-            <Link className={dashboardPrimaryButtonClassName} href="/dashboard/comprador">
-              Volver al dashboard
-            </Link>
-          </>
-        }
-        aside={
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-[1.5rem] border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-              <p className="text-xs uppercase tracking-[0.18em] text-indigo-600">Cotizaciones</p>
-              <p className="mt-2 font-semibold">{quotes.length} propuestas visibles</p>
-            </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Fecha limite</p>
-              <p className="mt-2 font-semibold text-slate-950">{formatDate(request?.dueDate ?? null)}</p>
-            </div>
-          </div>
-        }
-        description={
-          request?.description ?? 'No se pudo localizar esta solicitud dentro de tu cuenta.'
-        }
-        eyebrow="Detalle de solicitud"
-        title={
-          <>
-            {request?.title ?? 'Solicitud no encontrada'}{' '}
-            {request ? (
-              <span className="text-indigo-600">
-                {getRequestStatusLabel(request.status)}
-              </span>
-            ) : null}
-          </>
-        }
-      />
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-5 px-4 py-5 lg:px-6 xl:px-8">
+        <Link
+          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+          href="/dashboard/comprador/solicitudes"
+        >
+          <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </svg>
+          Volver a solicitudes
+        </Link>
 
-      {request?.awardedQuote ? (
-        <div className="flex flex-wrap gap-3">
-          <DashboardInfoBadge tone="emerald">
-            {getRequestStatusLabel(request.status)} con{' '}
-            {request.awardedQuote.supplierCompany?.name ?? 'proveedor seleccionado'}
-          </DashboardInfoBadge>
-          {request.order ? (
-            <DashboardInfoBadge tone="indigo">
-              Orden {request.order.orderNumber}
-            </DashboardInfoBadge>
-          ) : null}
-        </div>
-      ) : null}
+        {error ? <div className="rounded-[18px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{error}</div> : null}
+        {message ? <div className="rounded-[18px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">{message}</div> : null}
 
-      {error ? (
-        <div className="rounded-[1.5rem] bg-rose-100 px-5 py-4 text-sm text-rose-800">{error}</div>
-      ) : null}
-      {message ? (
-        <div className="rounded-[1.5rem] bg-emerald-100 px-5 py-4 text-sm text-emerald-800">
-          {message}
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <DashboardStatCard
-          helper="Categoria"
-          label="Solicitud"
-          value={request?.category ?? '-'}
-        />
-        <DashboardStatCard
-          helper="Estado actual"
-          label="Estado"
-          value={request ? getRequestStatusLabel(request.status) : '-'}
-        />
-        <DashboardStatCard
-          helper="Comparador"
-          label="Mejor precio"
-          value={bestPrice ? formatCurrency(bestPrice.amount) : 'Sin datos'}
-        />
-        <DashboardStatCard
-          helper="Lead time"
-          label="Entrega mas rapida"
-          value={fastest?.leadTimeDays ? `${fastest.leadTimeDays} dias` : 'Sin datos'}
-        />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-        <section className="space-y-6">
-          <DashboardCard>
-            <DashboardSectionHeading
-              description="Resumen comercial de la solicitud y su posicion actual dentro del flujo."
-              title="Resumen"
-            />
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Categoria</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">{request?.category ?? '-'}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Estado</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">
-                  {request ? getRequestStatusLabel(request.status) : '-'}
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Cantidad de propuestas</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">{quotes.length}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Fecha limite</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">
-                  {formatDate(request?.dueDate ?? null)}
-                </p>
-              </div>
-            </div>
-          </DashboardCard>
-
-          {request?.awardedQuote ? (
-            <DashboardCard className="border-emerald-200 bg-emerald-50/80">
-              <DashboardSectionHeading
-                description="Proveedor seleccionado y proximo paso comercial."
-                title="Oferta adjudicada"
-              />
-              <p className="mt-4 text-sm leading-7 text-emerald-900">
-                Se selecciono a {request.awardedQuote.supplierCompany?.name ?? 'un proveedor'} por{' '}
-                {formatCurrency(request.awardedQuote.amount)} con plazo estimado de{' '}
-                {request.awardedQuote.leadTimeDays ?? '-'} dias.
-              </p>
-              <p className="mt-2 text-sm text-emerald-900">
-                Condiciones: {request.awardedQuote.paymentTerms ?? 'No informadas'}
-              </p>
-              {request.order ? (
-                <div className="mt-4 rounded-[1.5rem] border border-emerald-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-emerald-900">Orden {request.order.orderNumber}</p>
-                  <p className="mt-1 text-sm text-emerald-800">
-                    Estado de cumplimiento: {getFulfillmentLabel(request.order.fulfillmentStatus)}
-                  </p>
-                  <p className="mt-1 text-sm text-emerald-800">
-                    Fecha prometida: {formatDate(request.order.promisedDate)}
-                  </p>
-                </div>
-              ) : null}
-              <div className="mt-5 flex flex-wrap gap-3">
-                {request.status === 'AWARDED' ? (
-                  <button
-                    className="inline-flex items-center justify-center rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={progressingAction !== null}
-                    onClick={() => void handleProgress('START_NEGOTIATION')}
-                    type="button"
-                  >
-                    {progressingAction === 'START_NEGOTIATION'
-                      ? 'Iniciando negociacion...'
-                      : 'Iniciar negociacion'}
-                  </button>
-                ) : null}
-                {request.status === 'AWARDED' || request.status === 'NEGOTIATING' ? (
-                  <button
-                    className={dashboardPrimaryButtonClassName}
-                    disabled={progressingAction !== null}
-                    onClick={() => void handleProgress('ISSUE_ORDER')}
-                    type="button"
-                  >
-                    {progressingAction === 'ISSUE_ORDER' ? 'Emitiendo orden...' : 'Emitir orden'}
-                  </button>
-                ) : null}
-                {request.status === 'ORDER_ISSUED' ? (
-                  <DashboardInfoBadge tone="indigo">Orden comercial emitida</DashboardInfoBadge>
-                ) : null}
-              </div>
-            </DashboardCard>
-          ) : null}
-
-          {request?.status === 'ORDER_ISSUED' ? (
-            <DashboardCard className="border-indigo-200 bg-indigo-50/70">
-              <DashboardSectionHeading
-                action={
-                  request.order ? (
-                    <DashboardInfoBadge tone="indigo">{request.order.orderNumber}</DashboardInfoBadge>
-                  ) : null
-                }
-                description="Carga los datos operativos de la orden emitida para compartir seguimiento con el proveedor."
-                title="Orden y seguimiento"
-              />
-              {request.order ? (
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <span
-                    className={`rounded-full px-4 py-2 text-sm font-semibold ${getFulfillmentTone(request.order.fulfillmentStatus)}`}
-                  >
-                    {getFulfillmentLabel(request.order.fulfillmentStatus)}
-                  </span>
-                  <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-indigo-800">
-                    Fecha prometida: {formatDate(request.order.promisedDate)}
-                  </span>
-                </div>
-              ) : null}
-              <form className="mt-5 space-y-4" onSubmit={handleSaveOrder}>
-                <label className="block space-y-2 text-sm">
-                  <span className="text-indigo-950">Numero de orden</span>
-                  <input
-                    className={dashboardInputClassName}
-                    onChange={(event) =>
-                      setOrderForm((current) => ({ ...current, orderNumber: event.target.value }))
-                    }
-                    value={orderForm.orderNumber}
-                  />
-                </label>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block space-y-2 text-sm">
-                    <span className="text-indigo-950">Fecha prometida</span>
-                    <input
-                      className={dashboardInputClassName}
-                      onChange={(event) =>
-                        setOrderForm((current) => ({ ...current, promisedDate: event.target.value }))
-                      }
-                      type="date"
-                      value={orderForm.promisedDate}
-                    />
-                  </label>
-                  <label className="block space-y-2 text-sm">
-                    <span className="text-indigo-950">Estado de cumplimiento</span>
-                    <select
-                      className={dashboardInputClassName}
-                      onChange={(event) =>
-                        setOrderForm((current) => ({
-                          ...current,
-                          fulfillmentStatus: event.target.value as OrderFulfillmentStatus,
-                        }))
-                      }
-                      value={orderForm.fulfillmentStatus}
-                    >
-                      <option value="ISSUED">Emitida</option>
-                      <option value="CONFIRMED">Confirmada</option>
-                      <option value="IN_PRODUCTION">En produccion</option>
-                      <option value="DISPATCHED">Despachada</option>
-                      <option value="DELIVERED">Entregada</option>
-                    </select>
-                  </label>
-                </div>
-                <label className="block space-y-2 text-sm">
-                  <span className="text-indigo-950">Notas operativas</span>
-                  <textarea
-                    className={dashboardTextareaClassName}
-                    onChange={(event) =>
-                      setOrderForm((current) => ({ ...current, notes: event.target.value }))
-                    }
-                    placeholder="Condiciones logisticas, contacto, ventanas de entrega o notas comerciales."
-                    value={orderForm.notes}
-                  />
-                </label>
-                <button
-                  className={dashboardPrimaryButtonClassName}
-                  disabled={savingOrder}
-                  type="submit"
-                >
-                  {savingOrder ? 'Guardando orden...' : 'Guardar orden'}
-                </button>
-              </form>
-            </DashboardCard>
-          ) : null}
-
-          <DashboardCard>
-            <DashboardSectionHeading
-              action={
-                <DashboardInfoBadge>{request?.events?.length ?? 0} eventos</DashboardInfoBadge>
-              }
-              description="Historial comercial de la solicitud en orden cronologico inverso."
-              title="Timeline"
-            />
-            <div className="mt-5 space-y-4">
-              {request?.events?.length ? (
-                request.events.map((event) => (
-                  <article key={event.id} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getEventStyles(event.type)}`}
-                          >
-                            {event.type}
-                          </span>
-                          {event.actorCompanyName ? (
-                            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                              {event.actorCompanyName}
-                            </span>
-                          ) : null}
-                        </div>
-                        <h3 className="mt-3 text-base font-semibold text-slate-950">{event.title}</h3>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">
-                          {event.detail ?? 'Sin detalle adicional.'}
-                        </p>
-                      </div>
-                      <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                        {formatDateTime(event.createdAt)}
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_360px] 2xl:grid-cols-[minmax(0,1.7fr)_380px]">
+          <section className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#4f46ff]">Solicitud publicada</p>
+                <h1 className="mt-3 text-[40px] font-semibold tracking-[-0.05em] text-slate-950">{request?.title ?? 'Solicitud no encontrada'}</h1>
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-slate-500">
+                  <span>ID de solicitud: <span className="font-semibold text-[#6474a3]">#{requestId}</span></span>
+                  <span className="h-1 w-1 rounded-full bg-slate-300" />
+                  <span>Creada el {requestCreatedLabel}</span>
+                  {request ? (
+                    <>
+                      <span className="h-1 w-1 rounded-full bg-slate-300" />
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${getRequestStatusStyles(request.status)}`}>
+                        {getRequestStatusLabel(request.status)}
                       </span>
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <DashboardEmptyState
-                  description="Todavia no hay eventos registrados para esta solicitud."
-                  title="Sin timeline"
-                />
-              )}
+                    </>
+                  ) : null}
+                </div>
+              </div>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                type="button"
+              >
+                Acciones
+                <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+              </button>
             </div>
-          </DashboardCard>
-        </section>
 
-        <DashboardDarkCard>
-          <DashboardSectionHeading
-            action={
-              <div className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white">
-                {sortedQuotes.length} propuestas
-              </div>
-            }
-            description="Las propuestas se ordenan por precio estimado y mantienen visibles plazo, pago y comentario tecnico."
-            title={<span className="text-white">Comparador de cotizaciones</span>}
-          />
-
-          <div className="mt-5 space-y-4">
-            {sortedQuotes.length === 0 ? (
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 px-5 py-8 text-sm text-sky-50">
-                Todavia no hay cotizaciones cargadas para esta solicitud.
-              </div>
-            ) : (
-              sortedQuotes.map((quote, index) => (
-                <article
-                  key={quote.id}
-                  className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5"
-                >
-                  <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[1.2fr_0.7fr_0.6fr_0.9fr] xl:items-start">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold text-white">
-                          {quote.supplierCompany?.name ?? 'Proveedor'}
-                        </p>
-                        <span
-                          className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${getQuoteStatusStyles(quote.status)}`}
-                        >
-                          {quote.status}
-                        </span>
-                        {request?.awardedQuoteId === quote.id ? (
-                          <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-100">
-                            Ganadora
-                          </span>
-                        ) : null}
+            <div className="space-y-6 pt-6">
+              <section>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                    <DetailIcon type="file" />
+                  </span>
+                  <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Detalle de la solicitud</h2>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+                  {detailItems.map((item) => (
+                    <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-200 bg-white px-4 py-4">
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <DetailIcon type={getDetailIcon(item.label)} />
+                        <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-sky-50">
-                        {quote.technicalComment ?? 'Sin comentario tecnico.'}
-                      </p>
+                      <p className="mt-3 text-[15px] font-semibold leading-6 text-slate-950">{item.value || '-'}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section className="border-t border-slate-100 pt-6">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                    <DetailIcon type="pin" />
+                  </span>
+                  <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Información de entrega y contacto</h2>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  {deliveryItems.length ? (
+                    deliveryItems.map((item) => (
+                      <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-200 bg-white px-4 py-4">
+                        <div className="flex items-center gap-2 text-slate-400">
+                          <DetailIcon type={getDetailIcon(item.label)} />
+                          <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
+                        </div>
+                        <p className="mt-3 text-[15px] font-semibold leading-6 text-slate-950">{item.value || '-'}</p>
+                      </article>
+                    ))
+                  ) : (
+                    <article className="rounded-[16px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500 md:col-span-2 xl:col-span-3">
+                      Aún no hay información de entrega cargada en esta solicitud.
+                    </article>
+                  )}
+                </div>
+              </section>
+
+              <section className="border-t border-slate-100 pt-6">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                    <DetailIcon type="file" />
+                  </span>
+                  <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Archivos adjuntos</h2>
+                </div>
+                <div className="mt-4 rounded-[18px] border border-slate-200 bg-white p-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-rose-50 text-[11px] font-bold text-rose-500">
+                        PDF
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-semibold text-slate-950">{fileCardName}</p>
+                        <p className="mt-1 text-[12px] text-slate-500">{fileCardMeta}</p>
+                      </div>
                     </div>
-                    <div className="rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 xl:border-0 xl:bg-transparent xl:px-0 xl:py-0">
-                      <p className="text-xs uppercase tracking-[0.18em] text-sky-100 xl:hidden">Precio</p>
-                      <p className="mt-1 text-lg font-semibold text-white xl:mt-0">
-                        {formatCurrency(quote.amount)}
-                      </p>
-                      {index === 0 && request?.awardedQuoteId !== quote.id ? (
-                        <p className="mt-1 text-xs uppercase tracking-[0.2em] text-emerald-200">Mejor precio</p>
-                      ) : null}
-                    </div>
-                    <div className="rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 xl:border-0 xl:bg-transparent xl:px-0 xl:py-0">
-                      <p className="text-xs uppercase tracking-[0.18em] text-sky-100 xl:hidden">Plazo</p>
-                      <p className="mt-1 text-lg font-semibold text-white xl:mt-0">
-                        {quote.leadTimeDays ?? '-'}
-                      </p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.2em] text-sky-100">dias</p>
-                    </div>
-                    <div className="rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 xl:border-0 xl:bg-transparent xl:px-0 xl:py-0">
-                      <p className="text-xs uppercase tracking-[0.18em] text-sky-100 xl:hidden">Pago</p>
-                      <p className="mt-1 text-sm font-medium text-white xl:mt-0">
-                        {quote.paymentTerms ?? 'No informado'}
-                      </p>
-                      {!request?.awardedQuoteId &&
-                      (request?.status === 'PUBLISHED' || request?.status === 'REVIEWING') ? (
-                        <button
-                          className="mt-3 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={awardingQuoteId !== null || quote.status !== 'SUBMITTED'}
-                          onClick={() => void handleAward(quote.id)}
-                          type="button"
-                        >
-                          {awardingQuoteId === quote.id ? 'Adjudicando...' : 'Adjudicar'}
-                        </button>
-                      ) : null}
-                    </div>
+                    <button className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-slate-200 text-slate-500 transition hover:bg-slate-50" type="button">
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M12 3v12M7 10l5 5 5-5M5 21h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                    </button>
                   </div>
-                </article>
-              ))
-            )}
+                </div>
+              </section>
+
+              <div className="rounded-[16px] bg-[#f5f7ff] px-4 py-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white text-[#4f46ff] shadow-sm">
+                    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <path d="M12 22s8-4 8-10V6l-8-3-8 3v6c0 6 8 10 8 10z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="text-[13px] font-semibold text-[#243252]">Tu información está protegida</p>
+                    <p className="mt-1 text-[12px] leading-5 text-[#6474a3]">Solo los proveedores seleccionados pueden ver los detalles completos de esta solicitud.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <aside className="space-y-5">
+            <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950">Proveedores seleccionados</h2>
+                  <p className="mt-1 text-[12px] leading-5 text-slate-500">Estos proveedores recibirán tu solicitud y podrán enviarte propuestas.</p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {supplierCards.length ? (
+                  supplierCards.map((provider) => (
+                    <article key={provider.id} className="rounded-[18px] border border-slate-200 bg-white p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 gap-3">
+                          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px] bg-[#eef2ff] text-xl font-bold text-[#4f46ff]">
+                            {provider.name.slice(0, 1)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-[15px] font-semibold text-slate-950">{provider.name}</p>
+                            <p className="mt-1 truncate text-[12px] text-slate-500">{provider.city}</p>
+                            <span className="mt-2 inline-flex rounded-full bg-[#eef2ff] px-2.5 py-1 text-[10px] font-semibold text-[#4f46ff]">
+                              {provider.tag}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-600">
+                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100">
+                            <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
+                              <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                            </svg>
+                          </span>
+                          Verificado
+                        </span>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                    Todavía no hay proveedores vinculados a esta solicitud.
+                  </div>
+                )}
+
+                <button
+                  className="flex w-full items-center justify-center gap-3 rounded-[16px] bg-slate-50 px-4 py-4 text-[13px] font-semibold text-[#4f46ff] transition hover:bg-[#f5f7ff]"
+                  onClick={() => router.push(`/dashboard/comprador/solicitudes/nueva?category=${encodeURIComponent(request?.category ?? '')}&step=4`)}
+                  type="button"
+                >
+                  <span className="text-lg leading-none">+</span>
+                  Agregar más proveedores
+                </button>
+              </div>
+            </section>
+
+            <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950">Timeline</h2>
+                  <p className="mt-1 text-[12px] leading-5 text-slate-500">Historial comercial de la solicitud en orden cronológico inverso.</p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {requestTimeline.length} evento{requestTimeline.length === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              <div className="mt-5">
+                {requestTimeline.length ? (
+                  <div className="relative space-y-4 pl-6 before:absolute before:left-[9px] before:top-2 before:h-[calc(100%-18px)] before:w-px before:bg-slate-200">
+                    {requestTimeline.map((event) => (
+                      <div key={event.id} className="relative">
+                        <span className="absolute -left-6 top-4 h-[10px] w-[10px] rounded-full bg-[#4f46ff] ring-4 ring-white" />
+                        <article className="rounded-[18px] border border-slate-200 bg-white p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${getEventStyles(event.type)}`}>
+                                {event.type}
+                              </span>
+                              <h3 className="mt-3 text-[15px] font-semibold text-slate-950">{event.title}</h3>
+                              <p className="mt-1 text-[13px] leading-6 text-slate-500">{event.detail ?? 'La solicitud registró un cambio operativo.'}</p>
+                              <p className="mt-3 text-[12px] font-semibold text-slate-500">{event.actorCompanyName ?? request?.buyerCompany?.name ?? 'Compradora Demo SA'}</p>
+                            </div>
+                            <span className="shrink-0 text-right text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
+                              {formatDateTime(event.createdAt)}
+                            </span>
+                          </div>
+                        </article>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                    Todavía no hay eventos registrados para esta solicitud.
+                  </div>
+                )}
+              </div>
+            </section>
+          </aside>
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-[20px] border border-slate-200 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between">
+          <Link
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            href="/dashboard/comprador/solicitudes"
+          >
+            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            </svg>
+            Volver
+          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-sm font-semibold text-[#4f46ff] transition hover:bg-[#f8f9ff]"
+              onClick={() => setMessage('Borrador guardado localmente.')}
+              type="button"
+            >
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <path d="M6 4h12l2 2v14H4V4h2zm2 0v5h8V4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+              Guardar borrador
+            </button>
+            <button
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-[#1847ff] px-5 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(24,71,255,0.24)] transition hover:bg-[#0f3ff5]"
+              onClick={() => router.push(`/dashboard/comprador/solicitudes/nueva?category=${encodeURIComponent(request?.category ?? '')}`)}
+              type="button"
+            >
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <path d="M12 20h9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                <path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+              Editar solicitud
+            </button>
           </div>
-        </DashboardDarkCard>
+        </div>
       </div>
-    </DashboardShell>
+    </main>
   );
 }

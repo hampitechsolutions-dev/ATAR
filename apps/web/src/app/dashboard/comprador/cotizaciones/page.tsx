@@ -1,34 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import {
-  DashboardCard,
-  DashboardEmptyState,
-  DashboardHero,
-  DashboardShell,
-  DashboardStatCard,
-  dashboardInputClassName,
-  dashboardSecondaryButtonClassName,
-} from '@/components/dashboard/dashboard-ui';
-import { atarApi, type QuoteRecord } from '@/lib/atar-api';
-import {
-  clearSession,
-  getPrimaryMembershipRole,
-  loadSession,
-  saveSession,
-  type WebSession,
-} from '@/lib/session';
+import { useMemo, useState } from 'react';
+import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 
-function formatCurrency(value: number | null | undefined, currency = 'ARS') {
+function formatCurrency(value: number | null | undefined) {
   if (typeof value !== 'number') {
-    return 'A consultar';
+    return 'A convenir';
   }
 
   return new Intl.NumberFormat('es-AR', {
     style: 'currency',
-    currency,
+    currency: 'ARS',
     maximumFractionDigits: 0,
   }).format(value);
 }
@@ -40,244 +23,134 @@ function formatDate(value: string | null | undefined) {
 
   return new Intl.DateTimeFormat('es-AR', {
     day: '2-digit',
-    month: '2-digit',
+    month: 'short',
     year: 'numeric',
   }).format(new Date(value));
 }
 
-function getStatusLabel(status: QuoteRecord['status']) {
-  if (status === 'SUBMITTED') {
-    return 'Pendiente';
-  }
-
-  if (status === 'AWARDED') {
-    return 'Aceptada';
-  }
-
-  if (status === 'REJECTED') {
-    return 'Rechazada';
-  }
-
-  return status;
-}
-
-function getStatusTone(status: QuoteRecord['status']) {
-  if (status === 'AWARDED') {
-    return 'bg-emerald-100 text-emerald-800';
-  }
-
-  if (status === 'REJECTED') {
-    return 'bg-rose-100 text-rose-800';
-  }
-
-  return 'bg-amber-100 text-amber-800';
-}
-
 export default function BuyerQuotesPage() {
-  const router = useRouter();
-  const [session, setSession] = useState<WebSession | null>(null);
-  const [quotes, setQuotes] = useState<QuoteRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { requests, loading, error } = useBuyerDashboardData();
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'ALL' | QuoteRecord['status']>('ALL');
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function bootstrap() {
-      const storedSession = loadSession();
-      if (!storedSession) {
-        router.replace('/acceso');
-        return;
-      }
-
-      if (getPrimaryMembershipRole(storedSession.user) !== 'BUYER') {
-        router.replace('/dashboard/proveedor');
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const [user, buyerQuotes] = await Promise.all([
-          atarApi.me(storedSession.accessToken),
-          atarApi.getBuyerQuotes(storedSession.accessToken),
-        ]);
-
-        if (cancelled) {
-          return;
+  const quotedRequests = useMemo(() => {
+    return requests
+      .filter((request) => (request._count?.quotes ?? 0) > 0)
+      .filter((request) => {
+        const query = search.trim().toLowerCase();
+        if (!query) {
+          return true;
         }
 
-        const nextSession = {
-          accessToken: storedSession.accessToken,
-          user,
-        };
-        saveSession(nextSession);
-        setSession(nextSession);
-        setQuotes(buyerQuotes);
-      } catch (bootstrapError) {
-        clearSession();
-        if (!cancelled) {
-          setError(
-            bootstrapError instanceof Error
-              ? bootstrapError.message
-              : 'No se pudo cargar la central de cotizaciones.',
-          );
-          router.replace('/acceso');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
+        const provider = request.awardedQuote?.supplierCompany?.name ?? '';
+        return (
+          request.title.toLowerCase().includes(query) ||
+          request.category.toLowerCase().includes(query) ||
+          provider.toLowerCase().includes(query)
+        );
+      });
+  }, [requests, search]);
 
-    void bootstrap();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
-
-  const filteredQuotes = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return quotes.filter((quote) => {
-      const matchesStatus = status === 'ALL' || quote.status === status;
-      const haystack = [
-        quote.request?.title,
-        quote.request?.productName,
-        quote.supplierCompany?.name,
-        quote.request?.category,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-
-      const matchesSearch = query.length === 0 || haystack.includes(query);
-      return matchesStatus && matchesSearch;
-    });
-  }, [quotes, search, status]);
-
-  const pendingCount = useMemo(
-    () => quotes.filter((quote) => quote.status === 'SUBMITTED').length,
-    [quotes],
-  );
-  const acceptedCount = useMemo(
-    () => quotes.filter((quote) => quote.status === 'AWARDED').length,
-    [quotes],
-  );
-  const rejectedCount = useMemo(
-    () => quotes.filter((quote) => quote.status === 'REJECTED').length,
-    [quotes],
-  );
+  const awardedCount = quotedRequests.filter((request) => request.awardedQuoteId).length;
+  const totalQuotes = quotedRequests.reduce((acc, request) => acc + (request._count?.quotes ?? 0), 0);
 
   return (
-    <DashboardShell role="buyer" session={session}>
-      <DashboardHero
-        actions={
-          <Link className={dashboardSecondaryButtonClassName} href="/dashboard/comprador">
-            Volver al dashboard
-          </Link>
-        }
-        description="Centraliza en una sola vista todas las cotizaciones recibidas, con estado, monto, vencimiento y acceso directo al detalle comercial."
-        eyebrow="Central de cotizaciones"
-        title={
-          <>
-            Tus cotizaciones en <span className="text-indigo-600">un solo clic</span>
-          </>
-        }
-      />
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Cotizaciones</h1>
+          <p className="mt-1 text-sm text-slate-500">Compará propuestas y seguí cada respuesta de proveedor</p>
+        </div>
 
-      {error ? (
-        <div className="rounded-[1.5rem] bg-rose-100 px-5 py-4 text-sm text-rose-800">{error}</div>
-      ) : null}
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <DashboardStatCard helper="En revision" label="Pendientes" value={pendingCount} />
-        <DashboardStatCard helper="Ganadas" label="Aceptadas" value={acceptedCount} />
-        <DashboardStatCard helper="Descartadas" label="Rechazadas" value={rejectedCount} />
-      </div>
-
-      <DashboardCard>
-        <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
+        <div className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm lg:w-[320px]">
+          <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </svg>
           <input
-            className={dashboardInputClassName}
+            className="w-full bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por producto, solicitud, proveedor o categoria"
+            placeholder="Buscar por solicitud o proveedor..."
             value={search}
           />
-          <select
-            className={dashboardInputClassName}
-            onChange={(event) => setStatus(event.target.value as 'ALL' | QuoteRecord['status'])}
-            value={status}
-          >
-            <option value="ALL">Todos los estados</option>
-            <option value="SUBMITTED">Pendiente</option>
-            <option value="AWARDED">Aceptada</option>
-            <option value="REJECTED">Rechazada</option>
-          </select>
         </div>
-      </DashboardCard>
+      </div>
 
-      <div className="space-y-4">
+      {error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          { label: 'Solicitudes cotizadas', value: quotedRequests.length, tone: 'bg-indigo-50 text-indigo-600' },
+          { label: 'Cotizaciones recibidas', value: totalQuotes, tone: 'bg-violet-50 text-violet-600' },
+          { label: 'Propuestas adjudicadas', value: awardedCount, tone: 'bg-emerald-50 text-emerald-600' },
+        ].map((card) => (
+          <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                <path d="M14 2v6h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+            </div>
+            <p className="mt-4 text-2xl font-semibold text-slate-950">{card.value}</p>
+            <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
+          </article>
+        ))}
+      </div>
+
+      <section className="space-y-4">
         {loading ? (
-          <DashboardEmptyState
-            description="Estamos recopilando todas tus cotizaciones."
-            title="Cargando cotizaciones..."
-          />
-        ) : filteredQuotes.length === 0 ? (
-          <DashboardEmptyState
-            description="No encontramos cotizaciones con esos filtros."
-            title="Sin cotizaciones"
-          />
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-6 text-sm text-slate-500 shadow-sm">
+            Cargando cotizaciones...
+          </div>
+        ) : quotedRequests.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-sm text-slate-500 shadow-sm">
+            Todavía no tenés cotizaciones para mostrar.
+          </div>
         ) : (
-          filteredQuotes.map((quote) => (
-            <DashboardCard key={quote.id}>
+          quotedRequests.map((request) => (
+            <article key={request.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getStatusTone(
-                        quote.status,
-                      )}`}
-                    >
-                      {getStatusLabel(quote.status)}
-                    </span>
-                    <span className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                      {quote.request?.category ?? 'Solicitud'}
-                    </span>
-                  </div>
-                  <h2 className="text-xl font-semibold text-slate-950">
-                    {quote.request?.productName ?? quote.request?.title ?? 'Cotizacion sin titulo'}
-                  </h2>
-                  <p className="text-sm text-slate-600">
-                    Vendedor: {quote.supplierCompany?.name ?? 'Proveedor'}
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Vencimiento: {formatDate(quote.request?.dueDate)}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{request.category}</p>
+                  <h2 className="mt-2 text-lg font-semibold text-slate-950">{request.title}</h2>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {request._count?.quotes ?? 0} propuestas recibidas
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[320px] lg:grid-cols-1">
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm text-slate-500">Monto total</p>
-                    <p className="mt-2 text-lg font-semibold text-slate-950">
-                      {formatCurrency(quote.amount, quote.currency)}
-                    </p>
-                  </div>
-                  <Link
-                    className="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
-                    href={`/dashboard/comprador/cotizaciones/${quote.id}`}
-                  >
-                    Ver detalle completo
-                  </Link>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  <p>
+                    Mejor oferta:{' '}
+                    <span className="font-semibold text-slate-950">{formatCurrency(request.awardedQuote?.amount)}</span>
+                  </p>
+                  <p className="mt-1">
+                    Actualizado:{' '}
+                    <span className="font-semibold text-slate-950">{formatDate(request.updatedAt)}</span>
+                  </p>
                 </div>
               </div>
-            </DashboardCard>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                  href={`/dashboard/comprador/solicitudes/${request.id}`}
+                >
+                  Ver comparativa
+                </Link>
+                <Link
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  href="/dashboard/comprador/pedidos"
+                >
+                  Ir a pedidos
+                </Link>
+              </div>
+            </article>
           ))
         )}
-      </div>
-    </DashboardShell>
+      </section>
+    </div>
   );
 }
