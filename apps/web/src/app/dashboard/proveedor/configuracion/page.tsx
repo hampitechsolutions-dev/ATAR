@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
+import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 import {
   loadSupplierSettings,
@@ -39,11 +39,8 @@ export default function SupplierSettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[0.22fr_0.78fr] lg:px-10">
-        <DashboardSidebar role="supplier" session={session} />
-
-        <section className="space-y-6">
+    <SupplierDashboardShell session={session}>
+      <section className="space-y-6">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">Preferencias del proveedor</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
@@ -189,8 +186,7 @@ export default function SupplierSettingsPage() {
               </div>
             </div>
           </div>
-        </section>
-      </div>
-    </main>
+      </section>
+    </SupplierDashboardShell>
   );
 }

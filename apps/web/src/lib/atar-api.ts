@@ -182,7 +182,7 @@ export type UpdateFulfillmentPayload = {
     | 'MARK_DELIVERED';
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export class ApiError extends Error {
   status: number;
@@ -213,17 +213,22 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 async function request<T>(path: string, init?: RequestInit, token?: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers ?? {}),
-    },
-    cache: 'no-store',
-  });
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init?.headers ?? {}),
+      },
+      cache: 'no-store',
+    });
 
-  return parseResponse<T>(response);
+    return parseResponse<T>(response);
+  } catch (error) {
+    const hint = `No se pudo conectar a la API (${API_URL}). Asegurate de levantar @atar/api y/o configurar NEXT_PUBLIC_API_URL correctamente.`;
+    throw new ApiError(error instanceof Error ? `${hint} ${error.message}` : hint, 0);
+  }
 }
 
 export const atarApi = {
