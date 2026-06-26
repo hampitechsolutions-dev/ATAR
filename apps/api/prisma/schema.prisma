@@ -67,6 +67,12 @@ enum OrderFulfillmentStatus {
   DELIVERED
 }
 
+enum ConversationContextType {
+  PRODUCT
+  REQUEST
+  QUOTE
+}
+
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
@@ -127,13 +133,19 @@ model Request {
   buyerCompanyId String
   awardedQuoteId String?       @unique
   title          String
+  productName    String?
   description    String
   category       String
+  quantityRequested Int?
+  referenceUnitPrice Float?
+  estimatedTotalCost Float?
+  preferredSupplierName String?
   status         RequestStatus @default(DRAFT)
   privateRequest Boolean       @default(false)
   dueDate        DateTime?
   buyerCompany   Company       @relation("BuyerRequests", fields: [buyerCompanyId], references: [id], onDelete: Cascade)
   awardedQuote   Quote?        @relation("AwardedRequestQuote", fields: [awardedQuoteId], references: [id])
+  conversations  Conversation[]
   events         RequestEvent[]
   order          PurchaseOrder?
   quotes         Quote[]       @relation("RequestQuotes")
@@ -155,6 +167,7 @@ model Quote {
   technicalComment  String?
   status            QuoteStatus @default(DRAFT)
   awardedForRequest Request?    @relation("AwardedRequestQuote")
+  conversations     Conversation[]
   request           Request     @relation("RequestQuotes", fields: [requestId], references: [id], onDelete: Cascade)
   supplierCompany   Company     @relation("SupplierQuotes", fields: [supplierCompanyId], references: [id], onDelete: Cascade)
   createdAt         DateTime    @default(now())
@@ -189,4 +202,46 @@ model PurchaseOrder {
   request           Request                @relation(fields: [requestId], references: [id], onDelete: Cascade)
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
+}
+
+model Conversation {
+  id                 String                  @id @default(cuid())
+  requestId          String?
+  quoteId            String?
+  contextType        ConversationContextType
+  contextTitle       String
+  buyerCompanyId     String
+  supplierCompanyId  String
+  lastMessageAt      DateTime?
+  request            Request?                @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  quote              Quote?                  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  messages           ConversationMessage[]
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@index([buyerCompanyId, lastMessageAt])
+  @@index([supplierCompanyId, lastMessageAt])
+  @@index([requestId])
+  @@index([quoteId])
+  @@unique([quoteId, supplierCompanyId])
+}
+
+model ConversationMessage {
+  id                     String         @id @default(cuid())
+  conversationId         String
+  senderUserId           String
+  senderRole             MembershipRole
+  senderCompanyName      String?
+  body                   String
+  attachmentName         String?
+  attachmentMimeType     String?
+  attachmentSize         Int?
+  attachmentBase64       String?
+  emailNotificationQueuedAt DateTime?
+  buyerReadAt            DateTime?
+  supplierReadAt         DateTime?
+  conversation           Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt              DateTime       @default(now())
+
+  @@index([conversationId, createdAt])
 }

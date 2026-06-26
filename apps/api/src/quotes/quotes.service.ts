@@ -148,6 +148,65 @@ export class QuotesService {
     });
   }
 
+  async findBuyerMine(user: AuthUser) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+
+    return this.prisma.quote.findMany({
+      where: {
+        request: {
+          buyerCompanyId,
+        },
+      },
+      include: {
+        request: {
+          include: {
+            buyerCompany: true,
+            order: true,
+          },
+        },
+        supplierCompany: true,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+  }
+
+  async findOne(user: AuthUser, id: string) {
+    const quote = await this.prisma.quote.findUnique({
+      where: { id },
+      include: {
+        supplierCompany: true,
+        request: {
+          include: {
+            buyerCompany: true,
+            order: true,
+          },
+        },
+      },
+    });
+
+    if (!quote) {
+      throw new NotFoundException('Cotizacion no encontrada.');
+    }
+
+    if (this.isAdmin(user)) {
+      return quote;
+    }
+
+    const buyerCompanyId = this.getOptionalCompanyId(user, MembershipRole.BUYER);
+    if (buyerCompanyId && quote.request.buyerCompanyId === buyerCompanyId) {
+      return quote;
+    }
+
+    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER);
+    if (supplierCompanyId && quote.supplierCompanyId === supplierCompanyId) {
+      return quote;
+    }
+
+    throw new ForbiddenException('No tenes acceso a esta cotizacion.');
+  }
+
   private getCompanyIdForRole(user: AuthUser, role: MembershipRole) {
     const membership = user.memberships.find((item) => item.role === role);
     if (!membership) {
@@ -166,5 +225,13 @@ export class QuotesService {
     });
 
     return company?.name ?? null;
+  }
+
+  private getOptionalCompanyId(user: AuthUser, role: MembershipRole) {
+    return user.memberships.find((item) => item.role === role)?.companyId;
+  }
+
+  private isAdmin(user: AuthUser) {
+    return user.memberships.some((item) => item.role === MembershipRole.ADMIN);
   }
 }

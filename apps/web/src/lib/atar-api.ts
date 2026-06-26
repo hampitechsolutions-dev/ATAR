@@ -80,8 +80,13 @@ export type PurchaseOrderRecord = {
 export type RequestRecord = {
   id: string;
   title: string;
+  productName?: string | null;
   description: string;
   category: string;
+  quantityRequested?: number | null;
+  referenceUnitPrice?: number | null;
+  estimatedTotalCost?: number | null;
+  preferredSupplierName?: string | null;
   status: RequestStatus;
   awardedQuoteId?: string | null;
   privateRequest: boolean;
@@ -144,8 +149,13 @@ export type LoginPayload = {
 
 export type CreateRequestPayload = {
   title: string;
+  productName?: string;
   description: string;
   category: string;
+  quantityRequested?: number;
+  referenceUnitPrice?: number;
+  estimatedTotalCost?: number;
+  preferredSupplierName?: string;
   privateRequest?: boolean;
   dueDate?: string;
   status?: Extract<RequestStatus, 'DRAFT' | 'PUBLISHED'>;
@@ -180,6 +190,83 @@ export type UpdateFulfillmentPayload = {
     | 'START_PRODUCTION'
     | 'MARK_DISPATCHED'
     | 'MARK_DELIVERED';
+};
+
+export type ConversationContextType = 'PRODUCT' | 'REQUEST' | 'QUOTE';
+
+export type ConversationMessageRecord = {
+  id: string;
+  body: string;
+  senderRole: MembershipRole;
+  senderCompanyName: string | null;
+  attachmentName?: string | null;
+  attachmentMimeType?: string | null;
+  attachmentSize?: number | null;
+  attachmentBase64?: string | null;
+  emailNotificationQueuedAt?: string | null;
+  createdAt: string;
+  buyerReadAt?: string | null;
+  supplierReadAt?: string | null;
+};
+
+export type ConversationRecord = {
+  id: string;
+  contextType: ConversationContextType;
+  contextTitle: string;
+  requestId?: string | null;
+  quoteId?: string | null;
+  buyerCompanyId: string;
+  buyerCompanyName: string;
+  supplierCompanyId: string;
+  supplierCompanyName: string;
+  lastMessageAt?: string | null;
+  unreadCount: number;
+  request?: {
+    id: string;
+    title: string;
+    productName?: string | null;
+    category: string;
+    buyerCompanyId: string;
+  } | null;
+  quote?: {
+    id: string;
+    requestId: string;
+    supplierCompanyId: string;
+  } | null;
+  lastMessage?: {
+    id: string;
+    body: string;
+    createdAt: string;
+    senderRole: MembershipRole;
+    senderCompanyName: string | null;
+  } | null;
+  messages?: ConversationMessageRecord[];
+};
+
+export type CreateProductConversationPayload = {
+  productName: string;
+  supplierCompanyName: string;
+};
+
+export type ListConversationsParams = {
+  contextType?: ConversationContextType;
+  search?: string;
+  from?: string;
+  to?: string;
+};
+
+export type ListConversationMessagesParams = {
+  search?: string;
+  from?: string;
+  to?: string;
+};
+
+export type SendConversationMessagePayload = {
+  body?: string;
+  attachmentName?: string;
+  attachmentMimeType?: string;
+  attachmentSize?: number;
+  attachmentBase64?: string;
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
@@ -229,6 +316,22 @@ async function request<T>(path: string, init?: RequestInit, token?: string): Pro
     const hint = `No se pudo conectar a la API (${API_URL}). Asegurate de levantar @atar/api y/o configurar NEXT_PUBLIC_API_URL correctamente.`;
     throw new ApiError(error instanceof Error ? `${hint} ${error.message}` : hint, 0);
   }
+}
+
+function buildQuery(params?: Record<string, string | undefined>) {
+  if (!params) {
+    return '';
+  }
+
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      searchParams.set(key, value);
+    }
+  }
+
+  const query = searchParams.toString();
+  return query ? `?${query}` : '';
 }
 
 export const atarApi = {
@@ -291,6 +394,65 @@ export const atarApi = {
   },
   getSupplierQuotes(token: string) {
     return request<QuoteRecord[]>('/quotes/mine', undefined, token);
+  },
+  getBuyerQuotes(token: string) {
+    return request<QuoteRecord[]>('/quotes/buyer/mine', undefined, token);
+  },
+  getQuoteDetail(quoteId: string, token: string) {
+    return request<QuoteRecord>(`/quotes/${quoteId}`, undefined, token);
+  },
+  getConversations(params: ListConversationsParams | undefined, token: string) {
+    return request<ConversationRecord[]>(
+      `/conversations${buildQuery(
+        params
+          ? {
+              contextType: params.contextType,
+              search: params.search,
+              from: params.from,
+              to: params.to,
+            }
+          : undefined,
+      )}`,
+      undefined,
+      token,
+    );
+  },
+  getConversation(conversationId: string, params: ListConversationMessagesParams | undefined, token: string) {
+    return request<ConversationRecord>(
+      `/conversations/${conversationId}${buildQuery(
+        params
+          ? {
+              search: params.search,
+              from: params.from,
+              to: params.to,
+            }
+          : undefined,
+      )}`,
+      undefined,
+      token,
+    );
+  },
+  getOrCreateProductConversation(payload: CreateProductConversationPayload, token: string) {
+    return request<ConversationRecord>('/conversations/product', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  getOrCreateQuoteConversation(quoteId: string, token: string) {
+    return request<ConversationRecord>(`/conversations/quote/${quoteId}`, {
+      method: 'POST',
+    }, token);
+  },
+  sendConversationMessage(conversationId: string, payload: SendConversationMessagePayload, token: string) {
+    return request<ConversationRecord>(`/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  markConversationRead(conversationId: string, token: string) {
+    return request<{ conversationId: string; readAt: string }>(`/conversations/${conversationId}/read`, {
+      method: 'POST',
+    }, token);
   },
   createQuote(requestId: string, payload: CreateQuotePayload, token: string) {
     return request<QuoteRecord>(`/quotes/request/${requestId}`, {
