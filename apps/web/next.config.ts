@@ -1,5 +1,14 @@
 import type { NextConfig } from 'next';
 
+const hasExternalApiUrl = Boolean(process.env.NEXT_PUBLIC_API_URL);
+const isVercelBuild = Boolean(process.env.VERCEL);
+
+if (isVercelBuild && !hasExternalApiUrl) {
+  throw new Error(
+    'NEXT_PUBLIC_API_URL es obligatoria para desplegar apps/web en Vercel. Configura una API remota antes de publicar.',
+  );
+}
+
 const nextConfig: NextConfig = {
   images: {
     localPatterns: [
@@ -9,7 +18,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    if (process.env.NEXT_PUBLIC_API_URL) {
+    if (hasExternalApiUrl || process.env.NODE_ENV !== 'development') {
       return [];
     }
 

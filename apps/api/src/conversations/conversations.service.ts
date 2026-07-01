@@ -11,6 +11,7 @@ import {
 } from '@prisma/client';
 import type { AuthUser } from '../auth/auth-user.interface';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConversationsGateway } from './conversations.gateway';
 import { CreateProductConversationDto } from './dto/create-product-conversation.dto';
 import { ListConversationsQueryDto } from './dto/list-conversations-query.dto';
 import { ListMessagesQueryDto } from './dto/list-messages-query.dto';
@@ -40,7 +41,10 @@ type ConversationWithRelations = Prisma.ConversationGetPayload<{
 
 @Injectable()
 export class ConversationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly conversationsGateway: ConversationsGateway,
+  ) {}
 
   async list(user: AuthUser, query: ListConversationsQueryDto) {
     const conversations = await this.prisma.conversation.findMany({
@@ -239,6 +243,12 @@ export class ConversationsService {
       }),
     ]);
 
+    this.conversationsGateway.emitConversationUpdated({
+      id,
+      buyerCompanyId: conversation.buyerCompanyId,
+      supplierCompanyId: conversation.supplierCompanyId,
+    });
+
     return this.findOne(user, id, {});
   }
 
@@ -290,6 +300,13 @@ export class ConversationsService {
         participant.role === MembershipRole.BUYER
           ? { buyerReadAt: now }
           : { supplierReadAt: now },
+    });
+
+    this.conversationsGateway.emitConversationRead({
+      id,
+      buyerCompanyId: conversation.buyerCompanyId,
+      supplierCompanyId: conversation.supplierCompanyId,
+      readByRole: participant.role,
     });
 
     return {

@@ -4,14 +4,18 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   atarApi,
+  type MembershipRole,
   type ConversationRecord,
   type SendConversationMessagePayload,
 } from '@/lib/atar-api';
+import { getConversationSocket } from '@/lib/conversation-socket';
 import { loadSession, type WebSession } from '@/lib/session';
 import {
   DashboardCard,
   DashboardEmptyState,
+  DashboardInfoBadge,
   dashboardInputClassName,
+  dashboardGhostButtonClassName,
   dashboardPrimaryButtonClassName,
   dashboardSecondaryButtonClassName,
   dashboardTextareaClassName,
@@ -37,6 +41,72 @@ function formatDateTime(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function resolveParticipantRole(
+  session: WebSession | null,
+  conversation: ConversationRecord | null,
+): Extract<MembershipRole, 'BUYER' | 'SUPPLIER'> | null {
+  if (!session || !conversation) {
+    return null;
+  }
+
+  const buyerMatch = session.user.memberships.some(
+    (membership) => membership.role === 'BUYER' && membership.company.id === conversation.buyerCompanyId,
+  );
+  if (buyerMatch) {
+    return 'BUYER';
+  }
+
+  const supplierMatch = session.user.memberships.some(
+    (membership) =>
+      membership.role === 'SUPPLIER' && membership.company.id === conversation.supplierCompanyId,
+  );
+  if (supplierMatch) {
+    return 'SUPPLIER';
+  }
+
+  return null;
+}
+
+function getRolePath(
+  session: WebSession | null,
+  participantRole: Extract<MembershipRole, 'BUYER' | 'SUPPLIER'> | null,
+) {
+  if (participantRole === 'SUPPLIER') {
+    return 'proveedor';
+  }
+
+  if (participantRole === 'BUYER') {
+    return 'comprador';
+  }
+
+  const hasSupplierRole = session?.user.memberships.some((membership) => membership.role === 'SUPPLIER');
+  return hasSupplierRole ? 'proveedor' : 'comprador';
+}
+
+function getContextLabel(contextType: ConversationRecord['contextType']) {
+  if (contextType === 'PRODUCT') {
+    return 'Producto';
+  }
+
+  if (contextType === 'QUOTE') {
+    return 'Cotizacion';
+  }
+
+  return 'Solicitud';
+}
+
+function getContextTone(contextType: ConversationRecord['contextType']) {
+  if (contextType === 'PRODUCT') {
+    return 'sky' as const;
+  }
+
+  if (contextType === 'QUOTE') {
+    return 'indigo' as const;
+  }
+
+  return 'amber' as const;
 }
 
 async function fileToBase64(file: File) {
@@ -74,7 +144,12 @@ export default function ConversationPanel({
   const [to, setTo] = useState('');
   const [sending, setSending] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const markReadAttempted = useRef<string | null>(null);
+  const [liveConnected, setLiveConnected] = useState(false);
+  const [typingState, setTypingState] = useState<{
+    senderRole: MembershipRole;
+    isTyping: boolean;
+  } | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -85,12 +160,14 @@ export default function ConversationPanel({
     setActiveSession(loadSession());
   }, [session]);
 
-  const refreshConversation = useCallback(async () => {
+  const refreshConversation = useCallback(async (options?: { silent?: boolean }) => {
     if (!activeSession?.accessToken) {
       return;
     }
 
-    setLoading(true);
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -129,7 +206,7 @@ export default function ConversationPanel({
         );
       }
 
-      const detail = await atarApi.getConversation(
+      let detail = await atarApi.getConversation(
         ensuredConversation.id,
         {
           search: search || undefined,
@@ -139,12 +216,20 @@ export default function ConversationPanel({
         activeSession.accessToken,
       );
 
-      setConversation(detail);
-
-      if (detail.unreadCount > 0 && markReadAttempted.current !== detail.id) {
-        markReadAttempted.current = detail.id;
+      if (detail.unreadCount > 0) {
         await atarApi.markConversationRead(detail.id, activeSession.accessToken);
+        detail = await atarApi.getConversation(
+          detail.id,
+          {
+            search: search || undefined,
+            from: from || undefined,
+            to: to || undefined,
+          },
+          activeSession.accessToken,
+        );
       }
+
+      setConversation(detail);
     } catch (conversationError) {
       setError(
         conversationError instanceof Error
@@ -152,7 +237,9 @@ export default function ConversationPanel({
           : 'No se pudo abrir la conversacion.',
       );
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   }, [activeSession?.accessToken, conversationId, from, mode, productName, quoteId, search, supplierCompanyName, to]);
 
@@ -160,19 +247,83 @@ export default function ConversationPanel({
     void refreshConversation();
   }, [refreshConversation]);
 
+  const participantRole = useMemo(
+    () => resolveParticipantRole(activeSession, conversation),
+    [activeSession, conversation],
+  );
+
   useEffect(() => {
     if (!activeSession?.accessToken) {
+      setLiveConnected(false);
       return;
     }
 
-    const interval = window.setInterval(() => {
-      void refreshConversation();
-    }, 2000);
+    const socket = getConversationSocket(activeSession.accessToken);
+    const syncConversation = (payload: { conversationId: string }) => {
+      if (conversation?.id && payload.conversationId === conversation.id) {
+        void refreshConversation({ silent: true });
+      }
+    };
+    const handleTyping = (payload: {
+      conversationId: string;
+      senderRole: MembershipRole;
+      isTyping: boolean;
+    }) => {
+      if (!conversation?.id || payload.conversationId !== conversation.id) {
+        return;
+      }
+
+      if (participantRole && payload.senderRole === participantRole) {
+        return;
+      }
+
+      setTypingState(
+        payload.isTyping
+          ? {
+              senderRole: payload.senderRole,
+              isTyping: true,
+            }
+          : null,
+      );
+    };
+    const handleConnect = () => setLiveConnected(true);
+    const handleDisconnect = () => setLiveConnected(false);
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('conversation:updated', syncConversation);
+    socket.on('conversation:read', syncConversation);
+    socket.on('conversation:typing', handleTyping);
+
+    if (socket.connected) {
+      setLiveConnected(true);
+    }
 
     return () => {
-      window.clearInterval(interval);
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('conversation:updated', syncConversation);
+      socket.off('conversation:read', syncConversation);
+      socket.off('conversation:typing', handleTyping);
     };
-  }, [activeSession?.accessToken, refreshConversation]);
+  }, [activeSession?.accessToken, conversation?.id, participantRole, refreshConversation]);
+
+  useEffect(() => {
+    if (!activeSession?.accessToken || !conversation?.id) {
+      return;
+    }
+
+    const socket = getConversationSocket(activeSession.accessToken);
+    socket.emit('conversation:join', {
+      conversationId: conversation.id,
+    });
+
+    return () => {
+      socket.emit('conversation:leave', {
+        conversationId: conversation.id,
+      });
+    };
+  }, [activeSession?.accessToken, conversation?.id]);
 
   const attachmentHint = useMemo(() => {
     if (!selectedFile) {
@@ -182,6 +333,96 @@ export default function ConversationPanel({
     return `${selectedFile.name} (${Math.round(selectedFile.size / 1024)} KB)`;
   }, [selectedFile]);
 
+  const typingLabel = useMemo(() => {
+    if (!typingState?.isTyping || !conversation) {
+      return null;
+    }
+
+    if (typingState.senderRole === 'BUYER') {
+      return `${conversation.buyerCompanyName} esta escribiendo...`;
+    }
+
+    if (typingState.senderRole === 'SUPPLIER') {
+      return `${conversation.supplierCompanyName} esta escribiendo...`;
+    }
+
+    return 'La otra parte esta escribiendo...';
+  }, [conversation, typingState]);
+
+  const rolePath = useMemo(
+    () => getRolePath(activeSession, participantRole),
+    [activeSession, participantRole],
+  );
+
+  const detailHref = useMemo(() => {
+    if (!conversation) {
+      return null;
+    }
+
+    if (conversation.quoteId) {
+      return `/dashboard/${rolePath}/cotizaciones/${conversation.quoteId}`;
+    }
+
+    if (conversation.requestId && rolePath === 'comprador') {
+      return `/dashboard/comprador/solicitudes/${conversation.requestId}`;
+    }
+
+    return null;
+  }, [conversation, rolePath]);
+
+  const detailLabel = useMemo(() => {
+    if (!conversation) {
+      return null;
+    }
+
+    if (conversation.quoteId) {
+      return 'Ver cotizacion';
+    }
+
+    if (conversation.requestId && rolePath === 'comprador') {
+      return 'Ver solicitud';
+    }
+
+    return null;
+  }, [conversation, rolePath]);
+
+  const counterpartLabel = useMemo(() => {
+    if (!conversation) {
+      return null;
+    }
+
+    return rolePath === 'comprador'
+      ? conversation.supplierCompanyName
+      : conversation.buyerCompanyName;
+  }, [conversation, rolePath]);
+
+  const messageCount = conversation?.messages?.length ?? 0;
+  const attachmentCount =
+    conversation?.messages?.filter((item) => item.attachmentBase64 && item.attachmentName).length ?? 0;
+  const hasActiveFilters = search.length > 0 || from.length > 0 || to.length > 0;
+  const canSend = message.trim().length > 0 || Boolean(selectedFile);
+
+  function resetFilters() {
+    setSearch('');
+    setFrom('');
+    setTo('');
+  }
+
+  const emitTypingState = useCallback(
+    (isTyping: boolean) => {
+      if (!activeSession?.accessToken || !conversation?.id) {
+        return;
+      }
+
+      const socket = getConversationSocket(activeSession.accessToken);
+      socket.emit('conversation:typing', {
+        conversationId: conversation.id,
+        isTyping,
+      });
+    },
+    [activeSession?.accessToken, conversation?.id],
+  );
+
   async function handleSend() {
     if (!activeSession?.accessToken || !conversation) {
       return;
@@ -190,6 +431,7 @@ export default function ConversationPanel({
     try {
       setSending(true);
       setError(null);
+      emitTypingState(false);
 
       const payload: SendConversationMessagePayload = {
         body: message.trim() || undefined,
@@ -215,12 +457,44 @@ export default function ConversationPanel({
       setConversation(nextConversation);
       setMessage('');
       setSelectedFile(null);
+      setTypingState(null);
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : 'No se pudo enviar el mensaje.');
     } finally {
       setSending(false);
     }
   }
+
+  function handleMessageChange(nextValue: string) {
+    setMessage(nextValue);
+
+    if (!conversation?.id || !liveConnected) {
+      return;
+    }
+
+    emitTypingState(nextValue.trim().length > 0);
+
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = window.setTimeout(() => {
+      emitTypingState(false);
+      typingTimeoutRef.current = null;
+    }, 1200);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+
+      if (conversation?.id && liveConnected) {
+        emitTypingState(false);
+      }
+    };
+  }, [conversation?.id, emitTypingState, liveConnected]);
 
   if (!activeSession?.accessToken) {
     return (
@@ -244,31 +518,119 @@ export default function ConversationPanel({
           <p className="mt-2 text-sm leading-7 text-slate-600">{description}</p>
         </div>
         {conversation ? (
-          <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-            {conversation.unreadCount} sin leer
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                liveConnected
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'bg-amber-50 text-amber-700'
+              }`}
+            >
+              {liveConnected ? 'Tiempo real activo' : 'Reconectando chat'}
+            </div>
+            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+              {conversation.unreadCount} sin leer
+            </div>
           </div>
         ) : null}
       </div>
 
-      <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_180px_180px]">
-        <input
-          className={dashboardInputClassName}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar mensajes por contenido"
-          value={search}
-        />
-        <input
-          className={dashboardInputClassName}
-          onChange={(event) => setFrom(event.target.value)}
-          type="date"
-          value={from}
-        />
-        <input
-          className={dashboardInputClassName}
-          onChange={(event) => setTo(event.target.value)}
-          type="date"
-          value={to}
-        />
+      {conversation ? (
+        <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,0.7fr)]">
+          <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <DashboardInfoBadge tone={getContextTone(conversation.contextType)}>
+                {getContextLabel(conversation.contextType)}
+              </DashboardInfoBadge>
+              <DashboardInfoBadge tone={conversation.unreadCount > 0 ? 'rose' : 'emerald'}>
+                {conversation.unreadCount > 0 ? `${conversation.unreadCount} sin leer` : 'Al dia'}
+              </DashboardInfoBadge>
+            </div>
+            <h3 className="mt-3 text-lg font-semibold text-slate-950">{conversation.contextTitle}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {rolePath === 'comprador' ? 'Proveedor vinculado' : 'Comprador vinculado'}: {counterpartLabel}
+            </p>
+            {conversation.request?.category ? (
+              <p className="mt-1 text-sm text-slate-500">
+                Categoria: {conversation.request.category}
+                {conversation.request.productName ? ` · Producto: ${conversation.request.productName}` : ''}
+              </p>
+            ) : null}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                className={dashboardSecondaryButtonClassName}
+                href={`/dashboard/${rolePath}/mensajes`}
+              >
+                Volver al inbox
+              </Link>
+              {detailHref && detailLabel ? (
+                <Link className={dashboardGhostButtonClassName} href={detailHref}>
+                  {detailLabel}
+                </Link>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
+              <p className="text-sm text-slate-500">Mensajes visibles</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{messageCount}</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
+              <p className="text-sm text-slate-500">Adjuntos</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{attachmentCount}</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
+              <p className="text-sm text-slate-500">Ultima actividad</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-950">
+                {formatDateTime(conversation.lastMessageAt ?? conversation.messages?.[0]?.createdAt ?? new Date().toISOString())}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-5 rounded-[1.75rem] border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-950">Buscar dentro de la conversacion</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Filtra por contenido o rango de fechas para retomar mensajes clave.
+              </p>
+            </div>
+            {hasActiveFilters ? (
+              <button
+                className={dashboardSecondaryButtonClassName}
+                onClick={resetFilters}
+                type="button"
+              >
+                Limpiar filtros
+              </button>
+            ) : null}
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
+            <input
+              className={dashboardInputClassName}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar mensajes por contenido"
+              value={search}
+            />
+            <input
+              className={dashboardInputClassName}
+              onChange={(event) => setFrom(event.target.value)}
+              type="date"
+              value={from}
+            />
+            <input
+              className={dashboardInputClassName}
+              onChange={(event) => setTo(event.target.value)}
+              type="date"
+              value={to}
+            />
+          </div>
+        </div>
       </div>
 
       {error ? (
@@ -291,6 +653,13 @@ export default function ConversationPanel({
         ) : (
           conversation.messages?.map((item) => {
             const isBuyerMessage = item.senderRole === 'BUYER';
+            const isOwnMessage = participantRole ? item.senderRole === participantRole : false;
+            const readAt =
+              participantRole === 'BUYER'
+                ? item.supplierReadAt
+                : participantRole === 'SUPPLIER'
+                  ? item.buyerReadAt
+                  : null;
 
             return (
               <article
@@ -318,6 +687,11 @@ export default function ConversationPanel({
                         Descargar {item.attachmentName}
                       </a>
                     ) : null}
+                    {isOwnMessage ? (
+                      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {readAt ? `Visto ${formatDateTime(readAt)}` : 'Enviado'}
+                      </p>
+                    ) : null}
                   </div>
                   <span className="text-xs uppercase tracking-[0.16em] text-slate-500">
                     {formatDateTime(item.createdAt)}
@@ -330,25 +704,41 @@ export default function ConversationPanel({
       </div>
 
       <div className="mt-5 space-y-4">
+        {typingLabel ? (
+          <div className="rounded-[1.25rem] border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700">
+            {typingLabel}
+          </div>
+        ) : null}
         <textarea
           className={dashboardTextareaClassName}
-          onChange={(event) => setMessage(event.target.value)}
+          onChange={(event) => handleMessageChange(event.target.value)}
           placeholder="Escribe tu mensaje o consulta comercial..."
           value={message}
         />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label className="inline-flex cursor-pointer items-center gap-3 text-sm text-slate-600">
-            <span className={dashboardSecondaryButtonClassName}>Adjuntar archivo</span>
-            <input
-              className="hidden"
-              onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-              type="file"
-            />
-            <span>{attachmentHint}</span>
-          </label>
+          <div className="flex flex-col gap-3">
+            <label className="inline-flex cursor-pointer items-center gap-3 text-sm text-slate-600">
+              <span className={dashboardSecondaryButtonClassName}>Adjuntar archivo</span>
+              <input
+                className="hidden"
+                onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+                type="file"
+              />
+              <span>{attachmentHint}</span>
+            </label>
+            {selectedFile ? (
+              <button
+                className="inline-flex w-fit items-center text-sm font-semibold text-slate-500 transition hover:text-slate-800"
+                onClick={() => setSelectedFile(null)}
+                type="button"
+              >
+                Quitar adjunto
+              </button>
+            ) : null}
+          </div>
           <button
             className={dashboardPrimaryButtonClassName}
-            disabled={sending}
+            disabled={sending || !canSend}
             onClick={() => void handleSend()}
             type="button"
           >
