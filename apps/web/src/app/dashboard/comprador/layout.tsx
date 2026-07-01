@@ -9,15 +9,17 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
   const { session } = useAuth();
   const pathname = usePathname();
   const isBuyerHome = pathname === '/dashboard/comprador';
+  const isBuyerPanel = pathname?.startsWith('/dashboard/comprador/panel');
   const isBuyerWizard = pathname?.startsWith('/dashboard/comprador/solicitudes/nueva');
   const isBuyerRequestDetail =
     pathname?.startsWith('/dashboard/comprador/solicitudes/') && !pathname?.startsWith('/dashboard/comprador/solicitudes/nueva');
+  const isFullBleed = isBuyerHome || isBuyerPanel;
 
   return (
     <AuthGuard allowedRole="BUYER">
       <div className="min-h-screen bg-[#f5f7fb] text-slate-950">
         <BuyerMarketplaceHeader session={session} />
-        {isBuyerHome ? (
+        {isFullBleed ? (
           <div>{children}</div>
         ) : (
           <main
