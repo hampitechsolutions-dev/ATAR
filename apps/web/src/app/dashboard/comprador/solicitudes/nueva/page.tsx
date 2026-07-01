@@ -683,13 +683,21 @@ export default function BuyerNewRequestWizardPage() {
         .filter(Boolean)
         .join('\n');
 
+      const trimmedDeliveryDate = draft.deliveryDate.trim();
+      const parsedDeliveryDate =
+        draft.deliveryDateMode === 'exact' && trimmedDeliveryDate ? new Date(trimmedDeliveryDate) : null;
+      const dueDate =
+        parsedDeliveryDate && !Number.isNaN(parsedDeliveryDate.getTime())
+          ? parsedDeliveryDate.toISOString()
+          : undefined;
+
       const created = await atarApi.createRequest(
         {
           title,
           description,
           category: draft.category,
           status: 'PUBLISHED',
-          dueDate: draft.deliveryDate,
+          dueDate,
           privateRequest: false,
         },
         session.accessToken,
@@ -794,41 +802,54 @@ export default function BuyerNewRequestWizardPage() {
                   return (
                     <button
                       key={option.label}
-                      className={`group relative flex h-[168px] flex-col overflow-hidden rounded-[18px] border p-4 text-left transition duration-300 ${
+                      className={`group relative flex h-full min-h-[210px] flex-col overflow-hidden rounded-[20px] border text-left transition duration-300 ${
                         active
-                          ? 'border-[#4f46ff] bg-[#f8f9ff] shadow-[0_18px_40px_rgba(79,70,255,0.10)]'
-                          : 'border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)] hover:border-[#cfd3ff] hover:shadow-[0_14px_32px_rgba(15,23,42,0.06)]'
+                          ? 'border-[#4f46ff] shadow-[0_22px_46px_rgba(79,70,255,0.18)] ring-1 ring-[#4f46ff]'
+                          : 'border-slate-200 shadow-[0_10px_26px_rgba(15,23,42,0.05)] hover:-translate-y-1 hover:border-[#c9cdff] hover:shadow-[0_26px_48px_rgba(15,23,42,0.12)]'
                       }`}
                       onClick={() => setDraft((current) => ({ ...current, category: option.label }))}
                       type="button"
                     >
                       {active ? (
-                        <span className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#4f46ff] text-white shadow-[0_10px_24px_rgba(79,70,255,0.26)]">
+                        <span className="absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#4f46ff] text-white shadow-[0_10px_24px_rgba(79,70,255,0.30)]">
                           <Icon name="check" />
                         </span>
                       ) : null}
 
-                      <div className="flex flex-1 flex-col">
-                        <div className="relative h-[88px] overflow-hidden rounded-[14px] bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,255,0.07),transparent_48%),linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)]">
-                          <div
-                            className={`relative h-[98px] w-full transition duration-300 ${
-                              active ? 'scale-[1.08]' : 'group-hover:scale-[1.04]'
-                            } ${option.imageClassName ?? ''}`}
-                          >
-                            <Image alt={option.label} className="object-contain" fill sizes="(min-width: 1280px) 240px, 100vw" src={option.imageSrc} />
-                          </div>
+                      <div className="relative flex-1 overflow-hidden bg-[radial-gradient(circle_at_50%_16%,rgba(79,70,255,0.12),transparent_60%),linear-gradient(180deg,#ffffff_0%,#f2f3ff_100%)]">
+                        <div
+                          className={`absolute inset-0 transition duration-500 ease-out ${
+                            active ? 'scale-[1.06]' : 'group-hover:scale-[1.05]'
+                          } ${option.imageClassName ?? ''}`}
+                        >
+                          <Image
+                            alt={option.label}
+                            className="object-contain drop-shadow-[0_16px_26px_rgba(15,23,42,0.10)]"
+                            fill
+                            sizes="(min-width: 1280px) 300px, (min-width: 768px) 50vw, 100vw"
+                            src={option.imageSrc}
+                          />
                         </div>
-                        <div>
-                          <p className="mt-3 text-[15px] font-semibold tracking-[-0.03em] text-slate-950">{option.label}</p>
-                          <p className="mt-1 text-[11px] leading-4 text-slate-500">{option.subtitle}</p>
-                        </div>
+                      </div>
 
-                        <div className="mt-auto flex items-center justify-between pt-3">
-                          <span className={`text-[11px] font-semibold ${active ? 'text-[#4f46ff]' : 'text-slate-700 group-hover:text-[#4f46ff]'}`}>Seleccionar</span>
-                          <span className={`text-[#4f46ff] transition duration-300 ${active ? 'translate-x-0 opacity-100' : 'translate-x-[-4px] opacity-0 group-hover:translate-x-0 group-hover:opacity-100'}`}>
-                            <Icon name="arrow" />
-                          </span>
+                      <div
+                        className={`flex items-center justify-between gap-3 border-t px-4 py-3.5 transition duration-300 ${
+                          active ? 'border-[#e2e0ff] bg-[#f8f9ff]' : 'border-slate-100 bg-white'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-[15px] font-semibold tracking-[-0.03em] text-slate-950">{option.label}</p>
+                          <p className="mt-0.5 truncate text-[11px] leading-4 text-slate-500">{option.subtitle}</p>
                         </div>
+                        <span
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition duration-300 ${
+                            active
+                              ? 'bg-[#4f46ff] text-white'
+                              : 'bg-[#eef2ff] text-[#4f46ff] group-hover:bg-[#4f46ff] group-hover:text-white group-hover:translate-x-0.5'
+                          }`}
+                        >
+                          <Icon name="arrow" />
+                        </span>
                       </div>
                     </button>
                   );

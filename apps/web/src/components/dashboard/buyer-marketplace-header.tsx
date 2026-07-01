@@ -138,6 +138,20 @@ export default function BuyerMarketplaceHeader({
             ) : null}
           </Link>
 
+          <Link
+            className={
+              pathname?.startsWith('/dashboard/comprador/panel')
+                ? 'relative text-slate-950'
+                : 'hover:text-slate-950'
+            }
+            href="/dashboard/comprador/panel"
+          >
+            Panel
+            {pathname?.startsWith('/dashboard/comprador/panel') ? (
+              <span className="absolute -bottom-[11px] left-0 h-[2px] w-full rounded-full bg-[#4f46ff]" />
+            ) : null}
+          </Link>
+
           <div className="relative" ref={productsRef}>
             <button
               className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-950"
