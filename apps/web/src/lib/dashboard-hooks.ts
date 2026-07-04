@@ -6,6 +6,7 @@ import { atarApi, type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
 import {
   clearSession,
   getPrimaryMembershipRole,
+  isHybridUser,
   loadSession,
   saveSession,
   type WebSession,
@@ -25,7 +26,7 @@ export function useBuyerDashboardData() {
       return null;
     }
 
-    if (getPrimaryMembershipRole(storedSession.user) !== 'BUYER') {
+    if (getPrimaryMembershipRole(storedSession.user) !== 'BUYER' && !isHybridUser(storedSession.user)) {
       router.replace('/dashboard/proveedor');
       return null;
     }
@@ -103,7 +104,7 @@ export function useSupplierDashboardData() {
       return null;
     }
 
-    if (getPrimaryMembershipRole(storedSession.user) !== 'SUPPLIER') {
+    if (getPrimaryMembershipRole(storedSession.user) !== 'SUPPLIER' && !isHybridUser(storedSession.user)) {
       router.replace('/dashboard/comprador');
       return null;
     }

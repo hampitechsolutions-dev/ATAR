@@ -376,11 +376,18 @@ function saveDraft(nextDraft: RequestDraft) {
   window.localStorage.setItem(DRAFT_KEY, JSON.stringify(nextDraft));
 }
 
-function Icon({ name }: { name: 'arrow' | 'check' | 'pin' | 'calendar' | 'clock' | 'phone' | 'truck' }) {
+function Icon({ name }: { name: 'arrow' | 'chev-left' | 'check' | 'pin' | 'calendar' | 'clock' | 'phone' | 'truck' }) {
   if (name === 'arrow') {
     return (
       <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
         <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (name === 'chev-left') {
+    return (
+      <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
       </svg>
     );
   }
@@ -751,7 +758,26 @@ export default function BuyerNewRequestWizardPage() {
 
   return (
     <div className="flex h-[calc(100vh-88px)] flex-col gap-4 overflow-hidden">
-      <div className="flex h-14 shrink-0 items-center rounded-[22px] border border-slate-200 bg-white px-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] xl:hidden">
+      <div className="flex h-11 shrink-0 items-center gap-3 sm:hidden">
+        <button
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100"
+          onClick={() => (step === 1 ? router.push('/dashboard/comprador') : goBack())}
+          type="button"
+        >
+          <Icon name="chev-left" />
+        </button>
+        <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-full rounded-full bg-[#4f46ff] transition-all"
+            style={{ width: `${(step / steps.length) * 100}%` }}
+          />
+        </div>
+        <span className="shrink-0 text-xs font-semibold text-slate-500">
+          Paso {step} de {steps.length}
+        </span>
+      </div>
+
+      <div className="hidden h-14 shrink-0 items-center rounded-[22px] border border-slate-200 bg-white px-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:flex xl:hidden">
         <div className="grid w-full grid-cols-5 gap-3">
           {steps.map((item, index) => {
             const isActive = item.key === step;
@@ -790,19 +816,19 @@ export default function BuyerNewRequestWizardPage() {
           {step === 1 ? (
             <div className="flex h-full flex-col">
               <div className="shrink-0 space-y-1">
-                <h1 className="text-[30px] font-semibold leading-[1] tracking-[-0.05em] text-slate-950">Empecemos por el producto.</h1>
+                <h1 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[30px] sm:leading-[1] sm:tracking-[-0.05em] text-slate-950">Empecemos por el producto.</h1>
                 <p className="text-[13px] leading-5 text-slate-500">
                   Seleccioná la categoría que mejor describa lo que necesitás.
                 </p>
               </div>
 
-              <div className="mt-5 grid flex-1 auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-5 grid flex-1 auto-rows-fr gap-3 grid-cols-2 sm:gap-4 xl:grid-cols-4">
                 {categoryOptions.map((option) => {
                   const active = draft.category === option.label;
                   return (
                     <button
                       key={option.label}
-                      className={`group relative flex h-full min-h-[210px] flex-col overflow-hidden rounded-[20px] border text-left transition duration-300 ${
+                      className={`group relative flex h-full min-h-[150px] flex-col overflow-hidden rounded-[20px] border text-left transition duration-300 sm:min-h-[210px] ${
                         active
                           ? 'border-[#4f46ff] shadow-[0_22px_46px_rgba(79,70,255,0.18)] ring-1 ring-[#4f46ff]'
                           : 'border-slate-200 shadow-[0_10px_26px_rgba(15,23,42,0.05)] hover:-translate-y-1 hover:border-[#c9cdff] hover:shadow-[0_26px_48px_rgba(15,23,42,0.12)]'
@@ -862,7 +888,7 @@ export default function BuyerNewRequestWizardPage() {
             <div className="flex h-full flex-col">
               <div className="flex shrink-0 items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <h1 className="text-[30px] font-semibold leading-[1] tracking-[-0.05em] text-slate-950">Configuremos el producto.</h1>
+                  <h1 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[30px] sm:leading-[1] sm:tracking-[-0.05em] text-slate-950">Configuremos el producto.</h1>
                   <p className="text-[13px] leading-5 text-slate-500">Cuantos más detalles agregues, mejores serán las cotizaciones.</p>
                 </div>
                 <div className="hidden pt-1 md:block">
@@ -1065,7 +1091,7 @@ export default function BuyerNewRequestWizardPage() {
           {step === 3 ? (
             <div className="flex h-full flex-col">
               <div className="shrink-0 space-y-1">
-                <h1 className="text-[30px] font-semibold leading-[1] tracking-[-0.05em] text-slate-950">¿Dónde y cuándo necesitás recibir tu pedido?</h1>
+                <h1 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[30px] sm:leading-[1] sm:tracking-[-0.05em] text-slate-950">¿Dónde y cuándo necesitás recibir tu pedido?</h1>
                 <p className="text-[13px] leading-5 text-slate-500">Completá la información de entrega para que los proveedores puedan calcular costos y tiempos.</p>
               </div>
 
@@ -1299,7 +1325,7 @@ export default function BuyerNewRequestWizardPage() {
           {step === 4 ? (
             <div className="flex h-full flex-col">
               <div className="shrink-0 space-y-1">
-                <h1 className="text-[30px] font-semibold leading-[1] tracking-[-0.05em] text-slate-950">¿A quién querés invitar a cotizar?</h1>
+                <h1 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[30px] sm:leading-[1] sm:tracking-[-0.05em] text-slate-950">¿A quién querés invitar a cotizar?</h1>
                 <p className="text-[13px] leading-5 text-slate-500">Seleccioná los proveedores que querés invitar a participar.</p>
               </div>
 
@@ -1437,7 +1463,7 @@ export default function BuyerNewRequestWizardPage() {
           {step === 5 ? (
             <div className="flex h-full flex-col">
               <div className="shrink-0 space-y-1">
-                <h1 className="text-[30px] font-semibold leading-[1] tracking-[-0.05em] text-slate-950">Revisá antes de enviar.</h1>
+                <h1 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[30px] sm:leading-[1] sm:tracking-[-0.05em] text-slate-950">Revisá antes de enviar.</h1>
                 <p className="text-[13px] leading-5 text-slate-500">Confirmá que todo esté correcto y enviá la solicitud a los proveedores seleccionados.</p>
               </div>
 
@@ -1717,38 +1743,24 @@ export default function BuyerNewRequestWizardPage() {
         </aside>
       </div>
 
-      <div className="flex h-16 shrink-0 items-center justify-between rounded-[22px] border border-slate-200 bg-white px-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:hidden">
-        <button
-          className="inline-flex h-10 items-center justify-center rounded-[16px] border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          onClick={() => {
-            if (step === 1) {
-              router.push('/dashboard/comprador');
-              return;
-            }
-            goBack();
-          }}
-          type="button"
-        >
-          ← Volver
-        </button>
-
+      <div className="shrink-0 lg:hidden">
         {step < 5 ? (
           <button
-            className="inline-flex h-10 items-center justify-center rounded-[16px] bg-[#4f46ff] px-5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+            className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
             disabled={submitting || !canContinue}
             onClick={goNext}
             type="button"
           >
-            Continuar →
+            Continuar
           </button>
         ) : (
           <button
-            className="inline-flex h-10 items-center justify-center rounded-[16px] bg-[#4f46ff] px-5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+            className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
             disabled={submitting}
             onClick={handleSubmit}
             type="button"
           >
-            {submitting ? 'Enviando...' : 'Enviar solicitud →'}
+            {submitting ? 'Enviando...' : 'Enviar solicitud'}
           </button>
         )}
       </div>

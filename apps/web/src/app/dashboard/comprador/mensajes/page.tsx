@@ -433,7 +433,7 @@ export default function BuyerMessagesPage() {
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)]">
+          <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)]">
             <div className="px-5 py-4">
               <div className="flex items-center justify-center">
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-500">
@@ -443,7 +443,7 @@ export default function BuyerMessagesPage() {
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto px-5 pb-4">
-              <div className="space-y-4">
+              <div className="mx-auto w-full max-w-[880px] space-y-5">
                 {currentMessages.map((message) => {
                   const isBuyer = message.author === 'buyer';
                   return (
@@ -453,10 +453,10 @@ export default function BuyerMessagesPage() {
                     >
                       {!isBuyer ? <SupplierLogo value={selectedConversation.logo} /> : null}
                       <div
-                        className={`max-w-[78%] rounded-[1.35rem] px-4 py-3 text-sm shadow-sm ${
+                        className={`max-w-[78%] rounded-[1.35rem] px-4 py-3 text-sm ${
                           isBuyer
-                            ? 'rounded-br-md bg-indigo-50 text-slate-700'
-                            : 'rounded-bl-md bg-slate-50 text-slate-700'
+                            ? 'rounded-br-md bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-[0_10px_26px_rgba(79,70,229,0.22)]'
+                            : 'rounded-bl-md border border-slate-200 bg-white text-slate-700 shadow-[0_6px_18px_rgba(15,23,42,0.05)]'
                         }`}
                       >
                         {message.body.map((line) => (
@@ -465,12 +465,12 @@ export default function BuyerMessagesPage() {
                           </p>
                         ))}
                         <div
-                          className={`mt-2 text-[11px] ${
-                            isBuyer ? 'text-right text-slate-400' : 'text-slate-400'
+                          className={`mt-1.5 flex items-center gap-1 text-[11px] ${
+                            isBuyer ? 'justify-end text-indigo-100' : 'text-slate-400'
                           }`}
                         >
                           {message.time}
-                          {isBuyer ? '  ✓✓' : ''}
+                          {isBuyer ? <span>✓✓</span> : null}
                         </div>
                       </div>
                     </div>
@@ -480,8 +480,8 @@ export default function BuyerMessagesPage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-200 px-5 py-4">
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          <div className="border-t border-slate-200 bg-white px-5 py-4">
+            <div className="mx-auto flex w-full max-w-[880px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
               <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" type="button">
                 <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                   <path d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l8.49-8.49a4 4 0 115.66 5.66L9.41 17.4a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />

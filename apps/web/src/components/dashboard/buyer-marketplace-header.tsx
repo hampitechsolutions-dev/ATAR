@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type WebSession } from '@/lib/session';
+import WorkspaceSwitcher from './workspace-switcher';
 
 type NavItem = {
   label: string;
@@ -121,9 +122,6 @@ export default function BuyerMarketplaceHeader({
           <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
           <div className="leading-tight">
             <p className="text-sm font-bold text-slate-950">ATAR</p>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Soluciones en envases industriales
-            </p>
           </div>
         </div>
 
@@ -197,6 +195,8 @@ export default function BuyerMarketplaceHeader({
         </nav>
 
         <div className="flex items-center gap-3">
+          <WorkspaceSwitcher className="hidden lg:inline-flex" />
+
           <Link
             className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700"
             href="/dashboard/comprador/mensajes"

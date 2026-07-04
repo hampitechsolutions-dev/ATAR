@@ -1,4 +1,4 @@
-import type { AuthResponse, AuthUser, MembershipRole } from './atar-api';
+import type { AuthResponse, AuthUser, CompanyType, MembershipRole } from './atar-api';
 
 export const SESSION_STORAGE_KEY = 'atar.session';
 
@@ -54,6 +54,20 @@ export function getPrimaryMembershipRole(user: AuthUser): MembershipRole | null 
 
 export function getPrimaryCompanyName(user: AuthUser): string {
   return user.memberships.find((membership) => membership.isPrimary)?.company.name ?? user.memberships[0]?.company.name ?? 'Mi empresa';
+}
+
+export function getPrimaryCompanyType(user: AuthUser): CompanyType | null {
+  return (
+    user.memberships.find((membership) => membership.isPrimary)?.company.type ??
+    user.memberships[0]?.company.type ??
+    null
+  );
+}
+
+// Una empresa HYBRID compra materia prima y vende productos: puede operar como
+// comprador y proveedor a la vez.
+export function isHybridUser(user: AuthUser): boolean {
+  return user.memberships.some((membership) => membership.company.type === 'HYBRID');
 }
 
 export function getDefaultDashboardPath(user: AuthUser): string {

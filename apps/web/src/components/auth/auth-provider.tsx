@@ -15,6 +15,7 @@ import {
   clearSession,
   getDefaultDashboardPath,
   getPrimaryMembershipRole,
+  isHybridUser,
   loadSession,
   saveSession,
   type WebSession,
@@ -26,6 +27,7 @@ type AuthContextValue = {
   isHydrated: boolean;
   isAuthenticated: boolean;
   role: ReturnType<typeof getPrimaryMembershipRole>;
+  isHybrid: boolean;
   signIn: (response: AuthResponse) => void;
   signOut: () => void;
   refreshSession: () => Promise<WebSession | null>;
@@ -86,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isHydrated,
       isAuthenticated: Boolean(session),
       role,
+      isHybrid: session ? isHybridUser(session.user) : false,
       signIn,
       signOut,
       refreshSession,

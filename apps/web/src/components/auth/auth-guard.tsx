@@ -13,7 +13,11 @@ export default function AuthGuard({
   allowedRole?: MembershipRole;
 }) {
   const router = useRouter();
-  const { isHydrated, isAuthenticated, role, getDefaultPath } = useAuth();
+  const { isHydrated, isAuthenticated, role, isHybrid, getDefaultPath } = useAuth();
+
+  // Los usuarios HYBRID pueden operar como comprador y proveedor, así que no se
+  // bloquean por rol en ninguno de los dos dashboards.
+  const roleDenied = Boolean(allowedRole && role && role !== allowedRole && !isHybrid);
 
   useEffect(() => {
     if (!isHydrated) {
@@ -25,12 +29,12 @@ export default function AuthGuard({
       return;
     }
 
-    if (allowedRole && role && role !== allowedRole) {
+    if (roleDenied) {
       router.replace(getDefaultPath());
     }
-  }, [allowedRole, getDefaultPath, isAuthenticated, isHydrated, role, router]);
+  }, [getDefaultPath, isAuthenticated, isHydrated, roleDenied, router]);
 
-  if (!isHydrated || !isAuthenticated || (allowedRole && role && role !== allowedRole)) {
+  if (!isHydrated || !isAuthenticated || roleDenied) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-950">
         <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">
