@@ -81,6 +81,22 @@ Variables recomendadas:
 - `NEXT_PUBLIC_APP_ENV=production`
 - `NEXT_PUBLIC_APP_NAME=ATAR`
 
+## Variables Opcionales Para Emails
+
+Si queres habilitar emails transaccionales desde la `api`, agrega estas variables en `Railway`:
+
+```env
+RESEND_API_KEY=re_xxxxxxxxx
+EMAIL_FROM=ATAR <notificaciones@tu-dominio.com>
+APP_WEB_URL=https://tu-web.vercel.app
+```
+
+Notas:
+
+- `RESEND_API_KEY` habilita el envio real de emails para notificaciones comerciales;
+- `EMAIL_FROM` debe usar un remitente validado en el proveedor;
+- `APP_WEB_URL` se usa para convertir links internos como `/dashboard/...` en URLs absolutas dentro del email.
+
 ## Configuracion En La API
 
 En la `api` remota, asegurarse de incluir el dominio real de `Vercel` en `CORS_ORIGIN`.

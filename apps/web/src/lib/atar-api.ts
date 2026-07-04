@@ -193,6 +193,18 @@ export type UpdateFulfillmentPayload = {
 };
 
 export type ConversationContextType = 'PRODUCT' | 'REQUEST' | 'QUOTE';
+export type NotificationType =
+  | 'QUOTE_SUBMITTED'
+  | 'QUOTE_UPDATED'
+  | 'QUOTE_AWARDED'
+  | 'QUOTE_REJECTED'
+  | 'NEGOTIATION_STARTED'
+  | 'ORDER_ISSUED'
+  | 'ORDER_UPDATED'
+  | 'FULFILLMENT_UPDATED'
+  | 'NEW_MESSAGE';
+export type NotificationEmailStatus = 'PENDING' | 'SENT' | 'SKIPPED' | 'FAILED';
+export type PushChannel = 'WEB' | 'MOBILE_EXPO';
 
 export type ConversationMessageRecord = {
   id: string;
@@ -267,6 +279,41 @@ export type SendConversationMessagePayload = {
   attachmentMimeType?: string;
   attachmentSize?: number;
   attachmentBase64?: string;
+};
+
+export type NotificationRecord = {
+  id: string;
+  userId: string;
+  companyId: string;
+  type: NotificationType;
+  title: string;
+  detail?: string | null;
+  href?: string | null;
+  metadata?: unknown;
+  readAt?: string | null;
+  emailStatus: NotificationEmailStatus;
+  emailSentAt?: string | null;
+  emailError?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NotificationsResponse = {
+  items: NotificationRecord[];
+  unreadCount: number;
+};
+
+export type PushConfigResponse = {
+  webPushEnabled: boolean;
+  webPushPublicKey: string | null;
+};
+
+export type RegisterPushEndpointPayload = {
+  channel: PushChannel;
+  endpoint: string;
+  payload?: Record<string, unknown>;
+  userAgent?: string;
+  deviceName?: string;
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
@@ -397,6 +444,51 @@ export const atarApi = {
   },
   getBuyerQuotes(token: string) {
     return request<QuoteRecord[]>('/quotes/buyer/mine', undefined, token);
+  },
+  getNotifications(
+    params: {
+      unreadOnly?: boolean;
+      limit?: number;
+    } | undefined,
+    token: string,
+  ) {
+    return request<NotificationsResponse>(
+      `/notifications${buildQuery(
+        params
+          ? {
+              unreadOnly: typeof params.unreadOnly === 'boolean' ? String(params.unreadOnly) : undefined,
+              limit: typeof params.limit === 'number' ? String(params.limit) : undefined,
+            }
+          : undefined,
+      )}`,
+      undefined,
+      token,
+    );
+  },
+  markNotificationRead(notificationId: string, token: string) {
+    return request<NotificationRecord>(`/notifications/${notificationId}/read`, {
+      method: 'POST',
+    }, token);
+  },
+  markAllNotificationsRead(token: string) {
+    return request<NotificationsResponse>('/notifications/read-all', {
+      method: 'POST',
+    }, token);
+  },
+  getPushConfig(token: string) {
+    return request<PushConfigResponse>('/notifications/push/config', undefined, token);
+  },
+  registerPushEndpoint(payload: RegisterPushEndpointPayload, token: string) {
+    return request<{ id: string }>(`/notifications/push/register`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  removePushEndpoint(endpoint: string, token: string) {
+    return request<{ ok: true }>(`/notifications/push/remove`, {
+      method: 'POST',
+      body: JSON.stringify({ endpoint }),
+    }, token);
   },
   getQuoteDetail(quoteId: string, token: string) {
     return request<QuoteRecord>(`/quotes/${quoteId}`, undefined, token);

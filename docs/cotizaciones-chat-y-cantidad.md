@@ -42,7 +42,9 @@ Este bloque simplifica el flujo de solicitud para compradores y agrega un canal 
   - mensajes persistentes
   - adjuntos base64 hasta `10 MB`
   - marcado de lectura
-  - polling en cliente cada `2s`
+  - actualizacion en tiempo real con `WebSocket`
+  - indicador de escritura
+  - estados de lectura visibles
 
 ## Cambios tecnicos
 
@@ -81,14 +83,14 @@ Este bloque simplifica el flujo de solicitud para compradores y agrega un canal 
 
 ## Limitaciones actuales
 
-- La entrega "tiempo real" se implementa hoy con polling cada `2s`, no con WebSocket.
-- El campo `emailNotificationQueuedAt` deja trazabilidad de cola, pero no hay proveedor SMTP integrado todavia.
+- Los adjuntos del chat siguen almacenandose en base64 dentro de la base y conviene migrarlos a storage externo.
+- Los emails transaccionales ahora pueden enviarse con proveedor externo, pero dependen de configurar `RESEND_API_KEY`, `EMAIL_FROM` y `APP_WEB_URL` en la API desplegada.
+- Las notificaciones push web/mobile todavia no estan implementadas.
 - Las pruebas de usabilidad con 10 compradores no pueden automatizarse desde este entorno; queda preparado el flujo para testeo manual con usuarios reales.
 - El catalogo de productos sigue siendo una capa controlada de demo sobre el dominio real de `requests/quotes`.
 
 ## Siguiente evolucion recomendada
 
-1. Reemplazar polling por WebSocket o SSE.
-2. Integrar proveedor real de correo para notificaciones.
-3. Agregar storage externo para adjuntos en lugar de base64 en base de datos.
-4. Unificar `producto` real en backend para eliminar el catalogo demo.
+1. Agregar push real para web/mobile sobre los mismos eventos de negocio.
+2. Migrar adjuntos del chat a storage externo en lugar de base64.
+3. Unificar `producto` real en backend para eliminar el catalogo demo.
