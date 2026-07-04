@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  CompanyType,
   MembershipRole,
   OrderFulfillmentStatus,
   QuoteStatus,
@@ -553,11 +554,18 @@ export class RequestsService {
 
   private getCompanyIdForRole(user: AuthUser, role: MembershipRole) {
     const membership = user.memberships.find((item) => item.role === role);
-    if (!membership) {
-      throw new ForbiddenException(`La operacion requiere rol ${role}.`);
+    if (membership) {
+      return membership.companyId;
     }
 
-    return membership.companyId;
+    // Una empresa HYBRID compra y vende, así que su membresía sirve para
+    // cualquier rol aunque tenga otro rol asignado.
+    const hybridMembership = user.memberships.find((item) => item.companyType === CompanyType.HYBRID);
+    if (hybridMembership) {
+      return hybridMembership.companyId;
+    }
+
+    throw new ForbiddenException(`La operacion requiere rol ${role}.`);
   }
 
   private getOptionalCompanyId(user: AuthUser, role: MembershipRole) {
