@@ -1,4 +1,4 @@
-import { MembershipRole } from '@prisma/client';
+import { CompanyType, MembershipRole } from '@prisma/client';
 
 export type AuthUser = {
   userId: string;
@@ -6,5 +6,6 @@ export type AuthUser = {
   memberships: Array<{
     role: MembershipRole;
     companyId: string;
+    companyType?: CompanyType;
   }>;
 };

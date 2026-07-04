@@ -394,7 +394,7 @@ export default function SupplierQuotesPage() {
         <div className="space-y-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-[#1f2373]">
+              <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
                 Cotizaciones
               </h1>
               <p className="mt-1 text-sm text-[#7e85b2]">
@@ -431,13 +431,13 @@ export default function SupplierQuotesPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
             <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
               <div className="flex items-start gap-3">
                 <QuoteMetricIcon kind="all" />
                 <div>
                   <p className="text-xs font-semibold text-[#8b92bc]">Todas</p>
-                  <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.total}</p>
+                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.total}</p>
                   <p className="mt-1 text-[11px] text-[#8d95be]">vs semana pasada</p>
                 </div>
               </div>
@@ -447,7 +447,7 @@ export default function SupplierQuotesPage() {
                 <QuoteMetricIcon kind="draft" />
                 <div>
                   <p className="text-xs font-semibold text-[#8b92bc]">Borradores</p>
-                  <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.draft}</p>
+                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.draft}</p>
                 </div>
               </div>
             </article>
@@ -456,7 +456,7 @@ export default function SupplierQuotesPage() {
                 <QuoteMetricIcon kind="submitted" />
                 <div>
                   <p className="text-xs font-semibold text-[#8b92bc]">Enviadas</p>
-                  <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.submitted}</p>
+                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.submitted}</p>
                   <p className="mt-1 text-[11px] text-[#45b97a]">+2 vs semana pasada</p>
                 </div>
               </div>
@@ -466,7 +466,7 @@ export default function SupplierQuotesPage() {
                 <QuoteMetricIcon kind="awarded" />
                 <div>
                   <p className="text-xs font-semibold text-[#8b92bc]">Aceptadas</p>
-                  <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.awarded}</p>
+                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.awarded}</p>
                   <p className="mt-1 text-[11px] text-[#45b97a]">+1 vs semana pasada</p>
                 </div>
               </div>
@@ -476,7 +476,7 @@ export default function SupplierQuotesPage() {
                 <QuoteMetricIcon kind="rejected" />
                 <div>
                   <p className="text-xs font-semibold text-[#8b92bc]">Rechazadas</p>
-                  <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.rejected}</p>
+                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.rejected}</p>
                 </div>
               </div>
             </article>
@@ -521,8 +521,8 @@ export default function SupplierQuotesPage() {
                 No hay cotizaciones para este filtro.
               </div>
             ) : (
-              <div>
-                <table className="w-full table-fixed">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] table-fixed">
                   <thead>
                     <tr className="border-b border-[#edf0fb] text-left text-[11px] uppercase tracking-[0.16em] text-[#9aa1c8]">
                       <th className="w-[20%] px-5 py-4 font-semibold">ID Cotizacion</th>
@@ -640,7 +640,7 @@ export default function SupplierQuotesPage() {
           </div>
         </div>
 
-        <aside className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <aside className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-[#27305f]">Rendimiento</h2>
@@ -692,7 +692,7 @@ export default function SupplierQuotesPage() {
             <h2 className="text-sm font-semibold text-[#27305f]">Tiempo de respuesta</h2>
             <div className="mt-4 flex items-end justify-between">
               <div>
-                <p className="text-[30px] font-semibold text-[#1f2373]">{avgResponseHours}</p>
+                <p className="text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{avgResponseHours}</p>
                 <p className="mt-1 text-[11px] text-[#45b97a]">-18% vs 30 dias anteriores</p>
               </div>
             </div>

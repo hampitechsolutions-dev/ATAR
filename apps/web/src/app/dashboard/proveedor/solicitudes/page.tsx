@@ -389,13 +389,13 @@ export default function SupplierRequestsPage() {
       searchPlaceholder="Buscar solicitudes por producto, empresa o ubicacion..."
       session={session}
     >
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-4">
           <div className="rounded-[28px] border border-[#e7eaf3] bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.04)]">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-[#1f2373]">
+                  <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
                     Solicitudes
                   </h1>
                   <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#f0edff] px-2 text-xs font-semibold text-[#5546ff]">
@@ -492,7 +492,7 @@ export default function SupplierRequestsPage() {
                     key={item.request.id}
                     className={`relative px-5 py-4 before:absolute before:bottom-4 before:left-0 before:top-4 before:w-[3px] ${item.accentClass}`}
                   >
-                    <div className="grid gap-4 xl:grid-cols-[96px_minmax(0,1.5fr)_minmax(0,0.9fr)_90px_110px_126px_36px] xl:items-center">
+                    <div className="flex flex-col gap-3 xl:grid xl:grid-cols-[96px_minmax(0,1.5fr)_minmax(0,0.9fr)_90px_110px_126px_36px] xl:items-center xl:gap-4">
                       <div className="space-y-2">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${item.badgeClass}`}
@@ -522,34 +522,36 @@ export default function SupplierRequestsPage() {
                         </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#a1a8cc]">
-                          Solicitado por
-                        </p>
-                        <p className="mt-1 truncate text-sm font-semibold text-[#27305f]">
-                          {item.requester}
-                        </p>
-                        <p className="mt-1 truncate text-xs text-[#8d95be]">
-                          {item.request.category}
-                        </p>
-                      </div>
+                      <div className="grid grid-cols-3 gap-2 border-t border-[#eef1fb] pt-3 xl:contents xl:border-0 xl:pt-0">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#a1a8cc]">
+                            Solicitado por
+                          </p>
+                          <p className="mt-1 truncate text-sm font-semibold text-[#27305f]">
+                            {item.requester}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-[#8d95be]">
+                            {item.request.category}
+                          </p>
+                        </div>
 
-                      <div>
-                        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#a1a8cc]">
-                          Fecha
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-[#27305f]">
-                          {item.updatedLabel}
-                        </p>
-                      </div>
+                        <div>
+                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#a1a8cc]">
+                            Fecha
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-[#27305f]">
+                            {item.updatedLabel}
+                          </p>
+                        </div>
 
-                      <div>
-                        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#a1a8cc]">
-                          Cierre estimado
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-[#27305f]">
-                          {item.dueLabel}
-                        </p>
+                        <div>
+                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#a1a8cc]">
+                            Cierre estimado
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-[#27305f]">
+                            {item.dueLabel}
+                          </p>
+                        </div>
                       </div>
 
                       <div className="flex flex-col items-start gap-2 xl:items-end">
@@ -559,7 +561,7 @@ export default function SupplierRequestsPage() {
                           {item.quoteLabel}
                         </span>
                         <button
-                          className="inline-flex h-9 items-center justify-center rounded-xl border border-[#dfe3f5] px-4 text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff]"
+                          className="inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#dfe3f5] px-4 text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff] xl:w-auto"
                           type="button"
                         >
                           Ver detalle
@@ -567,7 +569,7 @@ export default function SupplierRequestsPage() {
                       </div>
 
                       <button
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#e7eaf3] text-[#7c84af] transition hover:bg-[#f7f8fe]"
+                        className="hidden h-9 w-9 items-center justify-center rounded-xl border border-[#e7eaf3] text-[#7c84af] transition hover:bg-[#f7f8fe] xl:inline-flex"
                         type="button"
                       >
                         <DotsIcon />

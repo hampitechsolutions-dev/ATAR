@@ -58,7 +58,7 @@ export default function SupplierSettingsPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-6 xl:grid-cols-[1fr_0.85fr]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.85fr]">
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-slate-950">Preferencias operativas</h2>
               <p className="mt-1 text-sm text-slate-500">

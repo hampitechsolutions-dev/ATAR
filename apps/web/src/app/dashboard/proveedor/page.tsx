@@ -1,9 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import SupplierAccountMenu from '@/components/dashboard/supplier-account-menu';
 import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
+import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
+import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
 import { type OrderFulfillmentStatus, type RequestRecord } from '@/lib/atar-api';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 import { getPrimaryCompanyName } from '@/lib/session';
@@ -168,7 +171,6 @@ function getProductionLabel(status: OrderFulfillmentStatus) {
 
 export default function DashboardProveedorPage() {
   const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const companyName = session ? getPrimaryCompanyName(session.user) : 'PackBag S.A.';
 
@@ -284,30 +286,14 @@ export default function DashboardProveedorPage() {
           <DashboardSidebar className="sticky top-0 h-screen" role="supplier" session={session} />
         </div>
 
-        {isSidebarOpen ? (
-          <div className="fixed inset-0 z-40 lg:hidden">
-            <div className="absolute inset-0 bg-slate-950/50" onClick={() => setIsSidebarOpen(false)} />
-            <div className="absolute inset-y-0 left-0 w-[264px]">
-              <DashboardSidebar className="h-full" onNavigate={() => setIsSidebarOpen(false)} role="supplier" session={session} />
-            </div>
-          </div>
-        ) : null}
-
         <section className="min-w-0 flex-1 overflow-hidden">
           <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
             <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
               <div className="flex min-w-0 items-center gap-3">
-                <button
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 lg:hidden"
-                  onClick={() => setIsSidebarOpen(true)}
-                  type="button"
-                >
-                  <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <path d="M4 6h16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    <path d="M4 12h16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    <path d="M4 18h16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  </svg>
-                </button>
+                <Link href="/dashboard/proveedor" className="flex shrink-0 items-center gap-2 lg:hidden">
+                  <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
+                  <span className="text-base font-bold text-slate-950">ATAR</span>
+                </Link>
 
                 <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm md:flex md:max-w-[460px] xl:max-w-[520px]">
                   <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
@@ -319,6 +305,7 @@ export default function DashboardProveedorPage() {
               </div>
 
               <div className="flex items-center gap-2">
+                <WorkspaceSwitcher className="hidden sm:inline-flex" />
                 <button className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
                   Invitar a un miembro
                 </button>
@@ -345,7 +332,7 @@ export default function DashboardProveedorPage() {
             </div>
           </header>
 
-          <div className="h-[calc(100dvh-121px)] overflow-y-auto px-4 py-4 md:h-[calc(100dvh-73px)] lg:px-6">
+          <div className="h-[calc(100dvh-121px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-4 md:h-[calc(100dvh-73px)] lg:px-6 lg:pb-6">
             {error ? (
               <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {error}
@@ -370,9 +357,9 @@ export default function DashboardProveedorPage() {
               </button>
             </div>
 
-            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_278px]">
+            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_278px]">
               <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {[
                     { label: 'Solicitudes nuevas', value: openRequests.length, delta: '+33% vs ayer', icon: 'requests' as const, tone: 'bg-indigo-50 text-indigo-600' },
                     { label: 'Cotizaciones aceptadas', value: dashboardData.awardedQuotes.length, delta: '+20% vs ayer', icon: 'quotes' as const, tone: 'bg-emerald-50 text-emerald-600' },
@@ -390,7 +377,7 @@ export default function DashboardProveedorPage() {
                   ))}
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr_0.95fr]">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_0.95fr_0.95fr]">
                   <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-950">Solicitudes recientes</p>
@@ -506,7 +493,7 @@ export default function DashboardProveedorPage() {
                   </section>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
                   <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-950">Rendimiento de cotizaciones</p>
@@ -514,7 +501,7 @@ export default function DashboardProveedorPage() {
                         Ultimos 30 dias
                       </button>
                     </div>
-                    <div className="mt-4 grid gap-4 lg:grid-cols-[210px_1fr] lg:items-center">
+                    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[210px_1fr] lg:items-center">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <div
                           className="relative h-36 w-36 rounded-full"
@@ -677,6 +664,8 @@ export default function DashboardProveedorPage() {
           </div>
         </section>
       </div>
+
+      <SupplierBottomNav />
     </main>
   );
 }

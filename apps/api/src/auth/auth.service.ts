@@ -68,6 +68,7 @@ export class AuthService {
       memberships: serializedUser.memberships.map((membership) => ({
         role: membership.role,
         companyId: membership.company.id,
+        companyType: membership.company.type,
       })),
     });
 

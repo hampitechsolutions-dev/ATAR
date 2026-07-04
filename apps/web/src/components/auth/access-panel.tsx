@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
 import { ApiError, atarApi, type RegisterPayload } from '@/lib/atar-api';
-import { getDefaultDashboardPath } from '@/lib/session';
+import { getDefaultDashboardPath, loadSession } from '@/lib/session';
 
 const roleOptions = [
   { value: 'BUYER', label: 'Comprador' },
@@ -31,14 +31,21 @@ export default function AccessPanel() {
     email: '',
     password: '',
     role: 'BUYER' as RegisterPayload['role'],
+    hybrid: false,
   });
 
   const companyType = useMemo<RegisterPayload['companyType']>(() => {
+    if (form.hybrid) {
+      return 'HYBRID';
+    }
     return form.role === 'SUPPLIER' ? 'SUPPLIER' : 'BUYER';
-  }, [form.role]);
+  }, [form.hybrid, form.role]);
 
   useEffect(() => {
-    if (isHydrated && isAuthenticated && !isTransitioning) {
+    // Solo redirigimos si hay una sesión realmente guardada. Si un dashboard
+    // limpió la sesión (p. ej. por un token viejo) el estado en memoria puede
+    // quedar desincronizado; sin este chequeo se produciría un loop /acceso ⇄ dashboard.
+    if (isHydrated && isAuthenticated && !isTransitioning && loadSession()) {
       router.replace(getDefaultPath());
     }
   }, [getDefaultPath, isAuthenticated, isHydrated, isTransitioning, router]);
@@ -257,6 +264,31 @@ export default function AccessPanel() {
                   value={form.companyName}
                 />
               </label>
+
+              <button
+                aria-pressed={form.hybrid}
+                className={`flex items-start gap-3 rounded-2xl border px-3 py-3 text-left transition sm:col-span-2 ${
+                  form.hybrid ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-white hover:bg-slate-50'
+                }`}
+                onClick={() => updateField('hybrid', !form.hybrid)}
+                type="button"
+              >
+                <span
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                    form.hybrid ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-transparent'
+                  }`}
+                >
+                  <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+                  </svg>
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-slate-950">Mi empresa compra y vende</span>
+                  <span className="mt-0.5 block text-[11px] font-medium leading-4 text-slate-500">
+                    Comprás materia prima e insumos, y también vendés productos. Vas a poder alternar entre comprar y vender.
+                  </span>
+                </span>
+              </button>
             </div>
           ) : null}
 

@@ -548,7 +548,7 @@ export default function SupplierReportsPage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-[#1f2373]">
+            <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
               Estadisticas
             </h1>
             <p className="mt-1 text-sm text-[#7e85b2]">
@@ -586,7 +586,7 @@ export default function SupplierReportsPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
           {[
             {
               title: 'Ventas totales',
@@ -639,7 +639,7 @@ export default function SupplierReportsPage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[#8b92bc]">{card.title}</p>
-                  <p className="mt-1 text-[28px] font-semibold text-[#1f2373]">{card.value}</p>
+                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">{card.value}</p>
                   <p className={`mt-1 text-[11px] ${card.tone}`}>
                     {card.change}{' '}
                     <span className="text-[#8d95be]">{card.note}</span>
@@ -650,14 +650,14 @@ export default function SupplierReportsPage() {
           ))}
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
           <div className="space-y-4">
-            <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_0.95fr]">
               <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-[#27305f]">Ventas totales</h2>
-                    <p className="mt-2 text-[28px] font-semibold text-[#1f2373]">
+                    <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
                       {loading ? '-' : formatCurrency(analytics.totalSales)}
                     </p>
                     <p className="mt-1 text-[11px] text-emerald-500">
@@ -696,7 +696,7 @@ export default function SupplierReportsPage() {
               </article>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.9fr_1.1fr]">
               <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
                 <h2 className="text-sm font-semibold text-[#27305f]">Rendimiento de cotizaciones</h2>
                 <div className="mt-4 flex flex-col items-center gap-4 xl:flex-row xl:items-center">

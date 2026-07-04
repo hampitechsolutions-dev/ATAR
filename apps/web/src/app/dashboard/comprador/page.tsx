@@ -149,7 +149,7 @@ export default function DashboardCompradorPage() {
   }
 
   return (
-    <main className="relative flex min-h-[calc(100vh-57px)] flex-col justify-center overflow-hidden px-4 py-4">
+    <main className="relative flex min-h-[calc(100vh-133px)] flex-col justify-center overflow-hidden px-4 py-4 lg:min-h-[calc(100vh-57px)]">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
         {decor.map((item, index) => (
           // eslint-disable-next-line @next/next/no-img-element

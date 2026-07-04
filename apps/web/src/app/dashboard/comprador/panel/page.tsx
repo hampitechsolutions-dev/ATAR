@@ -125,7 +125,7 @@ function CategoryIcon({ imageSrc }: { imageSrc?: string }) {
   if (imageSrc) {
     return (
       <div className="relative h-full w-full overflow-hidden">
-        <Image alt="" className="object-contain p-3" fill sizes="220px" src={imageSrc} />
+        <Image alt="" className="object-contain p-1.5" fill sizes="120px" src={imageSrc} />
       </div>
     );
   }
@@ -251,15 +251,15 @@ export default function DashboardCompradorPanelPage() {
                 Gestioná tus solicitudes, cotizaciones y pedidos desde un solo lugar.
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-[#4f46ff] px-5 text-sm font-semibold text-white shadow-[0_14px_35px_rgba(79,70,255,0.35)]"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#4f46ff] px-5 text-sm font-semibold text-white shadow-[0_14px_35px_rgba(79,70,255,0.35)] sm:w-auto"
                   href="/dashboard/comprador/solicitudes/nueva"
                 >
                   Nueva solicitud de cotización
                 </Link>
                 <Link
-                  className="inline-flex h-11 items-center justify-center rounded-xl border border-white/25 px-5 text-sm font-semibold text-white hover:bg-white/10"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-white/25 px-5 text-sm font-semibold text-white hover:bg-white/10 sm:w-auto"
                   href="/dashboard/comprador/solicitudes"
                 >
                   Ver mis solicitudes
@@ -289,17 +289,17 @@ export default function DashboardCompradorPanelPage() {
           </div>
         ) : null}
 
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {kpis.map((kpi) => (
-            <div key={kpi.label} className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef2ff] text-[#4f46ff]">
+            <div key={kpi.label} className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#eef2ff] text-[#4f46ff] sm:h-10 sm:w-10">
                 <Icon name={kpi.icon} />
               </span>
-              <p className="mt-4 text-[28px] font-semibold leading-none tracking-[-0.03em] text-slate-950">
+              <p className="mt-3 text-[24px] font-semibold leading-none tracking-[-0.03em] text-slate-950 sm:mt-4 sm:text-[28px]">
                 {kpi.value}
               </p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">{kpi.label}</p>
-              <p className="mt-1 text-xs text-slate-500">{kpi.hint}</p>
+              <p className="mt-2 text-[13px] font-semibold text-slate-950 sm:text-sm">{kpi.label}</p>
+              <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">{kpi.hint}</p>
             </div>
           ))}
         </section>
@@ -313,24 +313,19 @@ export default function DashboardCompradorPanelPage() {
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 xl:grid-cols-8 [&::-webkit-scrollbar]:hidden">
             {categories.map((category) => (
               <Link
                 key={category.label}
-                className="group flex min-h-[268px] flex-col rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
+                className="group flex w-[98px] shrink-0 flex-col items-center rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_6px_18px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(15,23,42,0.08)] sm:w-auto"
                 href={category.href}
               >
-                <div className="relative flex min-h-[180px] flex-1 items-center justify-center">
+                <div className="relative flex h-16 w-full items-center justify-center">
                   <CategoryIcon imageSrc={category.imageSrc} />
                 </div>
-                <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] font-semibold tracking-[-0.02em] text-slate-950">{category.label}</p>
-                  </div>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full text-[#2563ff] transition group-hover:translate-x-0.5">
-                    <Icon name="chev-right" />
-                  </span>
-                </div>
+                <p className="mt-2 w-full truncate text-center text-[12px] font-semibold tracking-[-0.02em] text-slate-950">
+                  {category.label}
+                </p>
               </Link>
             ))}
           </div>
@@ -423,46 +418,75 @@ export default function DashboardCompradorPanelPage() {
           </div>
 
           <div className="mt-4 overflow-hidden rounded-[18px] border border-slate-200">
-            <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.6fr_0.9fr_52px] gap-0 bg-slate-50 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              <span>Solicitud</span>
-              <span>Productos</span>
-              <span>Fecha</span>
-              <span>Propuestas</span>
-              <span>Estado</span>
-              <span className="text-right">Acc.</span>
-            </div>
             {recentRequests.length === 0 ? (
               <div className="px-4 py-6 text-sm text-slate-500">Todavía no tenés solicitudes.</div>
             ) : (
-              recentRequests.map((row) => (
-                <div
-                  key={row.id}
-                  className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.6fr_0.9fr_52px] items-center gap-0 border-t border-slate-200 px-4 py-3 text-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-slate-950">#{row.code}</p>
+              <>
+                {/* Desktop: tabla */}
+                <div className="hidden sm:block">
+                  <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.6fr_0.9fr_52px] gap-0 bg-slate-50 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    <span>Solicitud</span>
+                    <span>Productos</span>
+                    <span>Fecha</span>
+                    <span>Propuestas</span>
+                    <span>Estado</span>
+                    <span className="text-right">Acc.</span>
                   </div>
-                  <p className="truncate text-xs text-slate-600">{row.product}</p>
-                  <p className="text-xs text-slate-600">{row.date}</p>
-                  <p className="text-xs font-semibold text-slate-700">{row.quotes}</p>
-                  <span className={`inline-flex w-fit rounded-full px-3 py-1 text-[11px] font-semibold ${row.statusTone}`}>
-                    {row.statusLabel}
-                  </span>
-                  <div className="flex justify-end">
-                    <Link
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      href="/dashboard/comprador/solicitudes"
+                  {recentRequests.map((row) => (
+                    <div
+                      key={row.id}
+                      className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.6fr_0.9fr_52px] items-center gap-0 border-t border-slate-200 px-4 py-3 text-sm"
                     >
-                      <Icon name="eye" />
-                    </Link>
-                  </div>
+                      <p className="truncate text-xs font-semibold text-slate-950">#{row.code}</p>
+                      <p className="truncate text-xs text-slate-600">{row.product}</p>
+                      <p className="text-xs text-slate-600">{row.date}</p>
+                      <p className="text-xs font-semibold text-slate-700">{row.quotes}</p>
+                      <span className={`inline-flex w-fit rounded-full px-3 py-1 text-[11px] font-semibold ${row.statusTone}`}>
+                        {row.statusLabel}
+                      </span>
+                      <div className="flex justify-end">
+                        <Link
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                          href="/dashboard/comprador/solicitudes"
+                        >
+                          <Icon name="eye" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))
+
+                {/* Mobile: lista de tarjetas */}
+                <div className="divide-y divide-slate-200 sm:hidden">
+                  {recentRequests.map((row) => (
+                    <Link
+                      key={row.id}
+                      href="/dashboard/comprador/solicitudes"
+                      className="flex items-center justify-between gap-3 px-4 py-3 active:bg-slate-50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-xs font-semibold text-slate-950">#{row.code}</p>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${row.statusTone}`}>
+                            {row.statusLabel}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-[11px] text-slate-500">
+                          {row.product} · {row.date} · {row.quotes} propuesta{row.quotes === 1 ? '' : 's'}
+                        </p>
+                      </div>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500">
+                        <Icon name="eye" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </section>
 
-        <section className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr]">
+        <section>
           <div className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef2ff] text-[#4f46ff]">
@@ -477,18 +501,6 @@ export default function DashboardCompradorPanelPage() {
               Contactar asesor
             </button>
           </div>
-
-          {[
-            { title: 'Amplia red', text: '+1.200 proveedores verificados' },
-            { title: 'Ahorro de tiempo', text: 'Cotizás una vez, recibís múltiples ofertas' },
-            { title: 'Mejores decisiones', text: 'Compará precio, calidad y tiempos de entrega' },
-            { title: 'Seguridad', text: 'Transacciones protegidas y confidenciales' },
-          ].map((item) => (
-            <div key={item.title} className="rounded-[22px] border border-slate-200 bg-white px-5 py-5 shadow-sm">
-              <p className="text-xs font-semibold text-slate-950">{item.title}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">{item.text}</p>
-            </div>
-          ))}
         </section>
       </main>
     </>

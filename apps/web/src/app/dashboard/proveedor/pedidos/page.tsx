@@ -396,7 +396,7 @@ export default function SupplierOrdersPage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-[#1f2373]">
+            <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
               Pedidos
             </h1>
             <p className="mt-1 text-sm text-[#7e85b2]">
@@ -443,13 +443,13 @@ export default function SupplierOrdersPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="active" />
               <div>
                 <p className="text-xs font-semibold text-[#8b92bc]">Pedidos activos</p>
-                <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.active}</p>
+                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.active}</p>
               </div>
             </div>
           </article>
@@ -459,7 +459,7 @@ export default function SupplierOrdersPage() {
               <MetricIcon kind="production" />
               <div>
                 <p className="text-xs font-semibold text-[#8b92bc]">En produccion</p>
-                <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.production}</p>
+                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.production}</p>
               </div>
             </div>
           </article>
@@ -469,7 +469,7 @@ export default function SupplierOrdersPage() {
               <MetricIcon kind="transit" />
               <div>
                 <p className="text-xs font-semibold text-[#8b92bc]">En transito</p>
-                <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.transit}</p>
+                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.transit}</p>
               </div>
             </div>
           </article>
@@ -479,7 +479,7 @@ export default function SupplierOrdersPage() {
               <MetricIcon kind="delivered" />
               <div>
                 <p className="text-xs font-semibold text-[#8b92bc]">Entregados</p>
-                <p className="mt-1 text-[30px] font-semibold text-[#1f2373]">{metrics.delivered}</p>
+                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.delivered}</p>
               </div>
             </div>
           </article>
@@ -494,7 +494,7 @@ export default function SupplierOrdersPage() {
             No hay pedidos que coincidan con tu busqueda.
           </div>
         ) : (
-          <div className="grid gap-4 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {columns.map((column) => (
               <section
                 key={column.key}
