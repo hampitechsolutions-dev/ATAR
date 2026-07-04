@@ -316,6 +316,16 @@ export type RegisterPushEndpointPayload = {
   deviceName?: string;
 };
 
+export type SupplierDirectoryRecord = {
+  id: string;
+  name: string;
+  city: string | null;
+  country: string;
+  companyType: CompanyType;
+  description: string;
+  tags: string[];
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export class ApiError extends Error {
@@ -396,6 +406,9 @@ export const atarApi = {
   },
   me(token: string) {
     return request<AuthUser>('/auth/me', undefined, token);
+  },
+  getSuppliers(token: string) {
+    return request<SupplierDirectoryRecord[]>('/users/suppliers', undefined, token);
   },
   getBuyerRequests(token: string) {
     return request<RequestRecord[]>('/requests/mine', undefined, token);
