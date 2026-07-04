@@ -7,9 +7,11 @@ import {
 import {
   ConversationContextType,
   MembershipRole,
+  NotificationType,
   Prisma,
 } from '@prisma/client';
 import type { AuthUser } from '../auth/auth-user.interface';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConversationsGateway } from './conversations.gateway';
 import { CreateProductConversationDto } from './dto/create-product-conversation.dto';
@@ -44,6 +46,7 @@ export class ConversationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly conversationsGateway: ConversationsGateway,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async list(user: AuthUser, query: ListConversationsQueryDto) {
@@ -247,6 +250,33 @@ export class ConversationsService {
       id,
       buyerCompanyId: conversation.buyerCompanyId,
       supplierCompanyId: conversation.supplierCompanyId,
+    });
+
+    const recipientCompanyId =
+      participant.role === MembershipRole.BUYER
+        ? conversation.supplierCompanyId
+        : conversation.buyerCompanyId;
+    const recipientRole =
+      participant.role === MembershipRole.BUYER ? MembershipRole.SUPPLIER : MembershipRole.BUYER;
+    const href =
+      participant.role === MembershipRole.BUYER
+        ? `/dashboard/proveedor/mensajes/${id}`
+        : `/dashboard/comprador/mensajes/${id}`;
+
+    await this.notificationsService.createForCompany({
+      companyId: recipientCompanyId,
+      roles: [recipientRole],
+      excludeUserId: user.userId,
+      type: NotificationType.NEW_MESSAGE,
+      title: 'Nuevo mensaje en conversacion',
+      detail: `${participant.companyName ?? 'La otra parte'} envio un nuevo mensaje sobre ${conversation.contextTitle}.`,
+      href,
+      metadata: {
+        conversationId: id,
+        contextType: conversation.contextType,
+        requestId: conversation.requestId,
+        quoteId: conversation.quoteId,
+      },
     });
 
     return this.findOne(user, id, {});
