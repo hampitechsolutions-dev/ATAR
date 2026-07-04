@@ -116,7 +116,7 @@ function getGreeting() {
 }
 
 export default function DashboardCompradorPage() {
-  const { session, loading } = useBuyerDashboardData();
+  const { session, requests, loading } = useBuyerDashboardData();
 
   const firstName = session?.user.firstName ?? '';
   const greeting = useMemo(() => getGreeting(), []);
@@ -124,12 +124,29 @@ export default function DashboardCompradorPage() {
   const cotizacionPerks = ['Cotizaciones rápidas', 'Múltiples proveedores', 'Compará precios y plazos'];
   const panelPerks = ['Ver solicitudes y cotizaciones', 'Gestionar pedidos', 'Administrar tu cuenta'];
 
-  const stats: { icon: IconName; value: string; text: string }[] = [
-    { icon: 'shield', value: '+200', text: 'Proveedores verificados' },
-    { icon: 'rosette', value: '100%', text: 'Plataforma segura y confiable' },
-    { icon: 'clock', value: 'Cotizaciones', text: 'en menos de 24 hs' },
-    { icon: 'headset', value: 'Soporte experto', text: 'Estamos para ayudarte en lo que necesites' },
-  ];
+  const stats: { icon: IconName; value: string; text: string }[] = useMemo(() => {
+    const activeRequests = requests.filter((request) =>
+      ['DRAFT', 'PUBLISHED', 'REVIEWING', 'NEGOTIATING'].includes(request.status),
+    ).length;
+    const issuedOrders = requests.filter((request) => Boolean(request.order)).length;
+    const receivedQuotes = requests.reduce(
+      (sum, request) => sum + (request._count?.quotes ?? request.quotes?.length ?? 0),
+      0,
+    );
+    const invitedSuppliers = new Set(
+      requests
+        .flatMap((request) => (request.preferredSupplierName ?? '').split('|'))
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ).size;
+
+    return [
+      { icon: 'shield', value: String(activeRequests), text: 'Solicitudes activas' },
+      { icon: 'rosette', value: String(receivedQuotes), text: 'Cotizaciones recibidas' },
+      { icon: 'clock', value: String(issuedOrders), text: 'Pedidos emitidos' },
+      { icon: 'headset', value: String(invitedSuppliers), text: 'Proveedores invitados' },
+    ];
+  }, [requests]);
 
   const decor: { src: string; w: number; dur: number; delay: number; opacity: number; pos: CSSProperties }[] = [
     { src: '/bigbag.png', w: 230, dur: 8, delay: 0, opacity: 0.34, pos: { top: '9%', left: '2%' } },

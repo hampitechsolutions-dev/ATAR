@@ -78,13 +78,11 @@ export default function AccessPanel() {
   function useDemoCredentials(role: RegisterPayload['role']) {
     setMode('login');
     setError(null);
-    setMessage(null);
-    setForm((current) => ({
-      ...current,
-      role,
-      email: role === 'SUPPLIER' ? 'proveedor.demo@atar.test' : 'comprador.demo@atar.test',
-      password: 'Password123',
-    }));
+    setMessage(
+      role === 'SUPPLIER'
+        ? 'Ingresa con una cuenta proveedora real registrada en la plataforma.'
+        : 'Ingresa con una cuenta compradora real registrada en la plataforma.',
+    );
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -121,7 +119,7 @@ export default function AccessPanel() {
       setTransitionProgress(0);
       const fallback = mode === 'login' ? 'No se pudo iniciar sesion.' : 'No se pudo crear la cuenta.';
       if (submissionError instanceof ApiError && submissionError.status === 401) {
-        setError('Credenciales invalidas. Revisá email/contraseña (sin espacios) o usá los accesos demo.');
+        setError('Credenciales invalidas. Revisá email y contraseña.');
       } else {
         setError(submissionError instanceof Error ? submissionError.message : fallback);
       }
@@ -419,14 +417,14 @@ export default function AccessPanel() {
                 onClick={() => useDemoCredentials('BUYER')}
                 type="button"
               >
-                Usar demo comprador
+                Ayuda comprador
               </button>
               <button
                 className="flex h-9 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                 onClick={() => useDemoCredentials('SUPPLIER')}
                 type="button"
               >
-                Usar demo proveedor
+                Ayuda proveedor
               </button>
             </div>
           ) : null}

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -153,17 +152,6 @@ function getFulfillmentTone(status: OrderFulfillmentStatus) {
 
   return 'bg-violet-100 text-violet-800';
 }
-
-const requestCategoryImages: Record<string, string> = {
-  'Big Bags': '/bigbag.png',
-  'Bolsas PP': '/bolsapp.png',
-  Polipropileno: '/rollo.png',
-  Polietileno: '/bolsapp.png',
-  'Rollos y Telas': '/rollo.png',
-  Sacos: '/saco.png',
-  'A medida': '/amedida.png',
-  Tintas: '/amedida.png',
-};
 
 function parseRequestDescription(description: string) {
   return description
@@ -792,7 +780,7 @@ export default function BuyerRequestDetailPage() {
                             <div className="min-w-0">
                               <h3 className="text-[15px] font-semibold text-slate-950">{event.title}</h3>
                               <p className="mt-1 text-[13px] leading-6 text-slate-500">{event.detail ?? 'La solicitud registró un cambio operativo.'}</p>
-                              <p className="mt-3 text-[12px] font-semibold text-slate-500">{event.actorCompanyName ?? request?.buyerCompany?.name ?? 'Compradora Demo SA'}</p>
+                              <p className="mt-3 text-[12px] font-semibold text-slate-500">{event.actorCompanyName ?? request?.buyerCompany?.name ?? 'Comprador'}</p>
                             </div>
                             <span className="shrink-0 text-right text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
                               {formatDateTime(event.createdAt)}

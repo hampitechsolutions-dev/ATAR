@@ -97,6 +97,20 @@ enum PushChannel {
   MOBILE_EXPO
 }
 
+enum RequestCatalogFieldType {
+  CHOICES
+  SEGMENTED
+  INPUT
+  QUANTITY
+  UPLOADER
+  TEXTAREA
+}
+
+enum RequestCatalogInputType {
+  TEXT
+  DATE
+}
+
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
@@ -152,6 +166,44 @@ model SupplierProfile {
   company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model RequestCatalogCategory {
+  id             String                    @id @default(cuid())
+  label          String                    @unique
+  subtitle       String?
+  imageSrc       String?
+  imageClassName String?
+  searchKeywords String[]
+  sortOrder      Int                       @default(0)
+  isActive       Boolean                   @default(true)
+  fields         RequestCatalogField[]
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model RequestCatalogField {
+  id          String                  @id @default(cuid())
+  categoryId  String
+  key         String
+  label       String
+  type        RequestCatalogFieldType
+  options     String[]
+  placeholder String?
+  helper      String?
+  required    Boolean                 @default(false)
+  fullWidth   Boolean                 @default(false)
+  inputType   RequestCatalogInputType?
+  sortOrder   Int                     @default(0)
+  isActive    Boolean                 @default(true)
+  category    RequestCatalogCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@unique([categoryId, key])
+  @@index([categoryId, isActive, sortOrder])
 }
 
 model Request {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ConversationPanel from '@/components/chat/conversation-panel';
 import {
@@ -11,49 +11,60 @@ import {
   dashboardPrimaryButtonClassName,
   dashboardSecondaryButtonClassName,
 } from '@/components/dashboard/dashboard-ui';
-import { atarApi } from '@/lib/atar-api';
-import { findProductBySlug } from '@/lib/product-catalog';
+import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
+import { getSupplierCategoryLabel, getSupplierLocation } from '@/lib/provider-directory';
 import { getPrimaryMembershipRole, loadSession } from '@/lib/session';
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams<{ slug: string }>();
-  const product = findProductBySlug(typeof params.slug === 'string' ? params.slug : '');
+  const [supplier, setSupplier] = useState<SupplierDirectoryRecord | null>(null);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState('1');
   const [dueDate, setDueDate] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const numericQuantity = Number(quantity);
-  const quantityError = useMemo(() => {
-    if (!Number.isFinite(numericQuantity) || !Number.isInteger(numericQuantity)) {
-      return 'La cantidad debe ser numerica y entera.';
+  useEffect(() => {
+    if (typeof params.slug !== 'string') {
+      return;
     }
 
-    if (numericQuantity < 1) {
-      return 'La cantidad minima es 1.';
+    let cancelled = false;
+
+    async function loadSupplier() {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await atarApi.getMarketplaceSupplierBySlug(params.slug);
+        if (!cancelled) {
+          setSupplier(response);
+        }
+      } catch (loadSupplierError) {
+        if (!cancelled) {
+          setError(
+            loadSupplierError instanceof Error
+              ? loadSupplierError.message
+              : 'No se pudo cargar la ficha del proveedor.',
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     }
 
-    if (product && numericQuantity > product.stockAvailable) {
-      return 'La cantidad supera el stock disponible informado.';
-    }
+    void loadSupplier();
 
-    return null;
-  }, [numericQuantity, product]);
-
-  const estimatedTotal = product ? numericQuantity * product.unitReferencePrice : 0;
+    return () => {
+      cancelled = true;
+    };
+  }, [params.slug]);
 
   async function handleQuickRequest() {
-    if (!product || quantityError) {
+    if (!supplier) {
       return;
     }
 
@@ -73,16 +84,15 @@ export default function ProductDetailPage() {
       setError(null);
       const request = await atarApi.createRequest(
         {
-          title: `Solicitud de cotizacion - ${product.name}`,
-          productName: product.name,
-          category: product.category,
+          title: `Solicitud de cotización - ${supplier.name}`,
+          productName: supplier.genericCode ?? supplier.name,
+          category: getSupplierCategoryLabel(supplier.companyType),
           description:
             description.trim() ||
-            `Solicitud generada desde ficha de producto para ${product.name}.`,
-          quantityRequested: numericQuantity,
-          referenceUnitPrice: product.unitReferencePrice,
-          estimatedTotalCost: estimatedTotal,
-          preferredSupplierName: product.supplierName,
+            `Solicitud generada desde la ficha pública del proveedor ${supplier.name}.`,
+          quantityRequested: Number(quantity) || undefined,
+          preferredSupplierName: supplier.name,
+          privateRequest: true,
           dueDate: dueDate || undefined,
           status: 'PUBLISHED',
         },
@@ -101,13 +111,23 @@ export default function ProductDetailPage() {
     }
   }
 
-  if (!product) {
+  if (loading) {
     return (
       <main className="min-h-screen bg-slate-50 px-6 py-16 text-slate-950 lg:px-10">
         <div className="mx-auto max-w-4xl rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold">Producto no encontrado</h1>
+          <p className="text-sm text-slate-600">Cargando ficha del proveedor...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!supplier) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-6 py-16 text-slate-950 lg:px-10">
+        <div className="mx-auto max-w-4xl rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+          <h1 className="text-2xl font-semibold">Proveedor no encontrado</h1>
           <p className="mt-3 text-sm text-slate-600">
-            La ficha solicitada no existe o fue removida del catálogo demo.
+            La ficha solicitada no existe en la base actual.
           </p>
         </div>
       </main>
@@ -125,69 +145,71 @@ export default function ProductDetailPage() {
               </Link>
               <button
                 className={dashboardPrimaryButtonClassName}
-                disabled={Boolean(quantityError) || submitting}
+                disabled={submitting}
                 onClick={() => void handleQuickRequest()}
                 type="button"
               >
-                {submitting ? 'Creando solicitud...' : 'Solicitar cotizacion'}
+                {submitting ? 'Creando solicitud...' : 'Solicitar cotización'}
               </button>
             </>
           }
           aside={
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               <div className="rounded-[1.5rem] border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-indigo-600">Proveedor</p>
-                <p className="mt-2 font-semibold">{product.supplierName}</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-indigo-600">Ubicación</p>
+                <p className="mt-2 font-semibold">{getSupplierLocation(supplier.city, supplier.country)}</p>
               </div>
               <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Lead time</p>
-                <p className="mt-2 font-semibold text-slate-950">{product.leadTimeLabel}</p>
+                <p className="mt-2 font-semibold text-slate-950">
+                  {typeof supplier.leadTimeDays === 'number' ? `${supplier.leadTimeDays} días` : 'No informado'}
+                </p>
               </div>
             </div>
           }
-          description={product.description}
-          eyebrow={product.category}
+          description={supplier.description ?? 'Proveedor activo registrado en la red ATAR.'}
+          eyebrow={getSupplierCategoryLabel(supplier.companyType)}
           title={
             <>
-              {product.name} <span className="text-indigo-600">en solicitud rapida</span>
+              {supplier.name} <span className="text-indigo-600">en solicitud rápida</span>
             </>
           }
         />
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <DashboardCard>
-            <h2 className="text-xl font-semibold text-slate-950">Especificaciones</h2>
+            <h2 className="text-xl font-semibold text-slate-950">Ficha real del proveedor</h2>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Precio unitario referencial</p>
+                <p className="text-sm text-slate-500">Código genérico</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950">
-                  {formatCurrency(product.unitReferencePrice)} / {product.unitLabel}
+                  {supplier.genericCode || 'No informado'}
                 </p>
               </div>
               <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Stock informado</p>
+                <p className="text-sm text-slate-500">Pedido mínimo</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950">
-                  {product.stockAvailable} {product.unitLabel}
+                  {typeof supplier.minimumOrder === 'number' ? supplier.minimumOrder : 'No informado'}
                 </p>
               </div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2">
-              {product.specs.map((spec) => (
+              {supplier.tags.map((tag) => (
                 <span
-                  key={spec}
+                  key={tag}
                   className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700"
                 >
-                  {spec}
+                  {tag}
                 </span>
               ))}
             </div>
           </DashboardCard>
 
           <DashboardCard>
-            <h2 className="text-xl font-semibold text-slate-950">Solicitar cotizacion</h2>
+            <h2 className="text-xl font-semibold text-slate-950">Solicitar cotización</h2>
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              Completa la cantidad y publica la solicitud sin volver a cargar el contexto del producto.
+              Publica una solicitud privada dirigida a este proveedor sin cargar datos inventados.
             </p>
 
             <div className="mt-5 space-y-4">
@@ -204,7 +226,7 @@ export default function ProductDetailPage() {
               </label>
 
               <label className="block space-y-2 text-sm">
-                <span className="text-slate-700">Fecha limite</span>
+                <span className="text-slate-700">Fecha límite</span>
                 <input
                   className={dashboardInputClassName}
                   onChange={(event) => setDueDate(event.target.value)}
@@ -223,13 +245,6 @@ export default function ProductDetailPage() {
                 />
               </label>
 
-              <div className="rounded-[1.5rem] border border-indigo-200 bg-indigo-50 px-4 py-4 text-sm text-indigo-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-indigo-600">Costo estimado</p>
-                <p className="mt-2 text-xl font-semibold">
-                  {quantityError ? quantityError : formatCurrency(estimatedTotal)}
-                </p>
-              </div>
-
               {error ? (
                 <div className="rounded-[1.25rem] bg-rose-100 px-4 py-3 text-sm text-rose-800">
                   {error}
@@ -241,10 +256,10 @@ export default function ProductDetailPage() {
 
         <ConversationPanel
           mode="product"
-          productName={product.name}
-          supplierCompanyName={product.supplierName}
+          productName={supplier.genericCode ?? supplier.name}
+          supplierCompanyName={supplier.name}
           title="Consultar antes de cotizar"
-          description="Abre una conversación contextual sobre este producto para validar especificaciones, disponibilidad o condiciones comerciales antes de publicar la solicitud."
+          description="Abre una conversación contextual con este proveedor para validar disponibilidad, condiciones o capacidad."
         />
       </div>
     </main>

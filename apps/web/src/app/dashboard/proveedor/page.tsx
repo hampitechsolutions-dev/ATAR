@@ -36,6 +36,13 @@ function formatRelativeTime(value: string) {
   return `Hace ${days} d`;
 }
 
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat('es-AR', {
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date(value));
+}
+
 function getRequestTag(status: RequestRecord['status']) {
   if (status === 'REVIEWING') {
     return 'Nueva';
@@ -172,7 +179,7 @@ function getProductionLabel(status: OrderFulfillmentStatus) {
 export default function DashboardProveedorPage() {
   const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
 
-  const companyName = session ? getPrimaryCompanyName(session.user) : 'PackBag S.A.';
+  const companyName = session ? getPrimaryCompanyName(session.user) : 'Tu empresa';
 
   const dashboardData = useMemo(() => {
     const sortedRequests = [...openRequests].sort(
@@ -185,6 +192,7 @@ export default function DashboardProveedorPage() {
     const awardedQuotes = sortedQuotes.filter((quote) => quote.status === 'AWARDED');
     const submittedQuotes = sortedQuotes.filter((quote) => quote.status === 'SUBMITTED');
     const rejectedQuotes = sortedQuotes.filter((quote) => quote.status === 'REJECTED');
+    const privateRequests = sortedRequests.filter((request) => request.privateRequest);
     const openOpportunities = sortedRequests.filter(
       (request) => !sortedQuotes.some((quote) => quote.requestId === request.id),
     );
@@ -236,12 +244,16 @@ export default function DashboardProveedorPage() {
 
     const topClients = [...clientMap.values()].sort((a, b) => b.amount - a.amount).slice(0, 3);
     const totalSales = awardedQuotes.reduce((acc, quote) => acc + (quote.amount ?? 0), 0);
-    const occupancy = Math.max(42, Math.min(88, 46 + stageCounts.production * 9 + stageCounts.pending * 5));
+    const nextPromisedDate = activeOrders
+      .map((quote) => quote.request?.order?.promisedDate)
+      .filter((value): value is string => Boolean(value))
+      .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())[0] ?? null;
 
     return {
       awardedQuotes,
       submittedQuotes,
       rejectedQuotes,
+      privateRequests,
       openOpportunities,
       activeOrders,
       stageCounts,
@@ -249,7 +261,7 @@ export default function DashboardProveedorPage() {
       recentActivity,
       topClients,
       totalSales,
-      occupancy,
+      nextPromisedDate,
     };
   }, [myQuotes, openRequests]);
 
@@ -264,9 +276,15 @@ export default function DashboardProveedorPage() {
   }).format(new Date());
 
   const pendingTasks = [
-    { label: `Responder ${Math.max(1, dashboardData.openOpportunities.length)} solicitudes`, due: 'Alta prioridad' },
-    { label: `Enviar ${Math.max(1, dashboardData.submittedQuotes.length || 2)} cotizaciones`, due: 'Hoy' },
-    { label: 'Actualizar catalogo', due: 'Esta semana' },
+    ...(dashboardData.openOpportunities.length > 0
+      ? [{ label: `Responder ${dashboardData.openOpportunities.length} solicitudes abiertas`, due: 'Pendiente' }]
+      : []),
+    ...(dashboardData.submittedQuotes.length > 0
+      ? [{ label: `Dar seguimiento a ${dashboardData.submittedQuotes.length} cotizaciones enviadas`, due: 'Pendiente' }]
+      : []),
+    ...(dashboardData.activeOrders.length > 0
+      ? [{ label: `Actualizar ${dashboardData.activeOrders.length} pedidos en curso`, due: 'Operativo' }]
+      : []),
   ];
 
   if (loading) {
@@ -309,13 +327,11 @@ export default function DashboardProveedorPage() {
                 <button className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
                   Invitar a un miembro
                 </button>
-                <button className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex" type="button">
+                <button className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex" type="button">
                   <HeaderActionIcon kind="chat" />
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">2</span>
                 </button>
-                <button className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex" type="button">
+                <button className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex" type="button">
                   <HeaderActionIcon kind="bell" />
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">3</span>
                 </button>
                 <SupplierAccountMenu session={session} />
               </div>
@@ -361,10 +377,10 @@ export default function DashboardProveedorPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {[
-                    { label: 'Solicitudes nuevas', value: openRequests.length, delta: '+33% vs ayer', icon: 'requests' as const, tone: 'bg-indigo-50 text-indigo-600' },
-                    { label: 'Cotizaciones aceptadas', value: dashboardData.awardedQuotes.length, delta: '+20% vs ayer', icon: 'quotes' as const, tone: 'bg-emerald-50 text-emerald-600' },
-                    { label: 'Oportunidades', value: dashboardData.openOpportunities.length, delta: `+${Math.max(8, dashboardData.openOpportunities.length * 4)}% semanal`, icon: 'money' as const, tone: 'bg-amber-50 text-amber-600' },
-                    { label: 'Ventas (mes actual)', value: formatCurrency(dashboardData.totalSales), delta: '+12% vs mes pasado', icon: 'sales' as const, tone: 'bg-sky-50 text-sky-600' },
+                    { label: 'Solicitudes nuevas', value: openRequests.length, detail: `${dashboardData.privateRequests.length} privadas para tu empresa`, icon: 'requests' as const, tone: 'bg-indigo-50 text-indigo-600' },
+                    { label: 'Cotizaciones aceptadas', value: dashboardData.awardedQuotes.length, detail: `${dashboardData.submittedQuotes.length} pendientes de respuesta`, icon: 'quotes' as const, tone: 'bg-emerald-50 text-emerald-600' },
+                    { label: 'Oportunidades', value: dashboardData.openOpportunities.length, detail: `${Math.max(0, openRequests.length - dashboardData.openOpportunities.length)} ya respondidas`, icon: 'money' as const, tone: 'bg-amber-50 text-amber-600' },
+                    { label: 'Ventas concretadas', value: formatCurrency(dashboardData.totalSales), detail: `${dashboardData.activeOrders.length} pedidos activos`, icon: 'sales' as const, tone: 'bg-sky-50 text-sky-600' },
                   ].map((card) => (
                     <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                       <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
@@ -372,7 +388,7 @@ export default function DashboardProveedorPage() {
                       </span>
                       <p className="mt-4 text-[1.55rem] font-semibold tracking-tight text-slate-950">{card.value}</p>
                       <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
-                      <p className="mt-2 text-[11px] text-emerald-600">{card.delta}</p>
+                      <p className="mt-2 text-[11px] text-slate-500">{card.detail}</p>
                     </article>
                   ))}
                 </div>
@@ -403,7 +419,7 @@ export default function DashboardProveedorPage() {
                                   {request.buyerCompany?.name ?? 'Cliente'}
                                 </p>
                                 <p className="mt-0.5 text-[11px] text-slate-400">
-                                  {request.buyerCompany?.city ?? 'Argentina'}
+                                  {request.buyerCompany?.city ?? request.buyerCompany?.country ?? 'Sin ubicacion'}
                                 </p>
                               </div>
                             </div>
@@ -455,7 +471,7 @@ export default function DashboardProveedorPage() {
                       ))}
                     </div>
                     <div className="mt-4 flex items-center justify-between rounded-2xl bg-indigo-50 px-3 py-3 text-[11px] text-indigo-700">
-                      <span>{Math.max(1, dashboardData.stageCounts.production)} pedidos requieren tu atencion</span>
+                      <span>{dashboardData.stageCounts.production} pedidos en produccion</span>
                       <Link className="font-semibold" href="/dashboard/proveedor/pedidos">
                         Revisar
                       </Link>
@@ -464,31 +480,28 @@ export default function DashboardProveedorPage() {
 
                   <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-950">Estado de produccion</p>
+                      <p className="text-sm font-semibold text-slate-950">Calendario operativo</p>
                       <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/pedidos">
-                        Ver calendario
+                        Ver pedidos
                       </Link>
                     </div>
                     <div className="mt-6 flex items-end justify-between gap-3">
                       <div>
-                        <p className="text-xs text-slate-500">Ocupacion actual</p>
+                        <p className="text-xs text-slate-500">Proxima fecha comprometida</p>
                         <p className="mt-1 text-[2rem] font-semibold tracking-tight text-indigo-600">
-                          {dashboardData.occupancy}%
+                          {dashboardData.nextPromisedDate ? formatShortDate(dashboardData.nextPromisedDate) : '--'}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[11px] text-slate-400">Disponible este mes</p>
+                        <p className="text-[11px] text-slate-400">Pedidos con fecha comprometida</p>
                         <p className="mt-1 text-lg font-semibold text-slate-950">
-                          {Math.max(24, 120 - dashboardData.activeOrders.length * 8)} ton
+                          {dashboardData.activeOrders.filter((quote) => quote.request?.order?.promisedDate).length}
                         </p>
                       </div>
                     </div>
-                    <div className="mt-4 h-2 rounded-full bg-slate-100">
-                      <div className="h-2 rounded-full bg-[linear-gradient(90deg,#5b4bff_0%,#6d5dfc_100%)]" style={{ width: `${dashboardData.occupancy}%` }} />
-                    </div>
                     <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-3">
-                      <p className="text-[11px] text-slate-500">Proxima disponibilidad</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-950">15 de Junio</p>
+                      <p className="text-[11px] text-slate-500">Pedidos en produccion</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-950">{dashboardData.stageCounts.production}</p>
                     </div>
                   </section>
                 </div>
@@ -498,7 +511,7 @@ export default function DashboardProveedorPage() {
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-950">Rendimiento de cotizaciones</p>
                       <button className="inline-flex h-8 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-semibold text-slate-600" type="button">
-                        Ultimos 30 dias
+                        Datos acumulados
                       </button>
                     </div>
                     <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[210px_1fr] lg:items-center">
@@ -535,7 +548,9 @@ export default function DashboardProveedorPage() {
                         <p className="text-[11px] text-slate-400">Tasa de aceptacion</p>
                         <div className="mt-1 flex items-baseline gap-2">
                           <p className="text-3xl font-semibold tracking-tight text-slate-950">{acceptanceRate}%</p>
-                          <span className="text-xs font-semibold text-emerald-600">+8% vs periodo anterior</span>
+                          <span className="text-xs text-slate-500">
+                            {dashboardData.awardedQuotes.length} cotizaciones adjudicadas
+                          </span>
                         </div>
                         <div className="mt-4">
                           <MiniLineChart />
@@ -565,12 +580,12 @@ export default function DashboardProveedorPage() {
                               </div>
                               <div>
                                 <p className="text-sm font-semibold text-slate-950">{client.name}</p>
-                                <p className="mt-0.5 text-[11px] text-slate-500">{client.orders} pedidos</p>
+                                <p className="mt-0.5 text-[11px] text-slate-500">{client.orders} cotizaciones</p>
                               </div>
                             </div>
                             <div className="text-right">
                               <p className="text-xs font-semibold text-slate-950">{formatCurrency(client.amount)}</p>
-                              <p className="mt-1 text-[11px] text-amber-500">★★★★★</p>
+                              <p className="mt-1 text-[11px] text-slate-500">{client.orders} cotizaciones</p>
                             </div>
                           </article>
                         ))
@@ -598,10 +613,9 @@ export default function DashboardProveedorPage() {
                       <button className="hidden h-9 items-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
                         Completar perfil
                       </button>
-                      <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[conic-gradient(#5b4bff_0deg_270deg,#E2E8F0_270deg_360deg)]">
-                        <div className="absolute inset-[4px] rounded-full bg-white" />
-                        <span className="relative text-[11px] font-semibold text-indigo-600">75%</span>
-                      </div>
+                      <span className="rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-700">
+                        Basado en tu actividad real
+                      </span>
                     </div>
                   </div>
                 </section>
@@ -640,17 +654,23 @@ export default function DashboardProveedorPage() {
                 <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="text-sm font-semibold text-slate-950">Tareas pendientes</p>
                   <div className="mt-4 space-y-3">
-                    {pendingTasks.map((task) => (
-                      <div key={task.label} className="flex items-start gap-3 rounded-2xl border border-slate-200 px-3 py-3">
-                        <span className="mt-0.5 h-4 w-4 rounded border border-slate-300 bg-white" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-slate-700">{task.label}</p>
-                        </div>
-                        <span className={`shrink-0 text-[11px] ${task.due === 'Alta prioridad' ? 'text-rose-500' : 'text-slate-400'}`}>
-                          {task.due}
-                        </span>
+                    {pendingTasks.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                        No hay tareas pendientes generadas por tus pedidos y cotizaciones actuales.
                       </div>
-                    ))}
+                    ) : (
+                      pendingTasks.map((task) => (
+                        <div key={task.label} className="flex items-start gap-3 rounded-2xl border border-slate-200 px-3 py-3">
+                          <span className="mt-0.5 h-4 w-4 rounded border border-slate-300 bg-white" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-slate-700">{task.label}</p>
+                          </div>
+                          <span className="shrink-0 text-[11px] text-slate-400">
+                            {task.due}
+                          </span>
+                        </div>
+                      ))
+                    )}
                   </div>
                   <Link className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
                     Ver todas las tareas

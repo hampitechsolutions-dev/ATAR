@@ -6,8 +6,8 @@ import { COLORS } from '@/src/constants/theme';
 
 export default function LoginScreen() {
   const { signIn } = useMobileAuth();
-  const [email, setEmail] = useState('comprador.demo@atar.test');
-  const [password, setPassword] = useState('Password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
