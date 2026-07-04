@@ -52,7 +52,7 @@ export default function SupplierNotificationsPage() {
     <SupplierDashboardShell searchPlaceholder="Buscar alertas o novedades..." session={session}>
       <section className="space-y-4">
         <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-          <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-[#1f2373]">
+          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
             Notificaciones
           </h1>
           <p className="mt-1 text-sm text-[#7e85b2]">
