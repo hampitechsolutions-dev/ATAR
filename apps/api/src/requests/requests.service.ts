@@ -7,12 +7,14 @@ import {
 import {
   CompanyType,
   MembershipRole,
+  NotificationType,
   OrderFulfillmentStatus,
   QuoteStatus,
   RequestEventType,
   RequestStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { FulfillmentAction } from './dto/update-fulfillment.dto';
@@ -21,7 +23,10 @@ import { UpsertOrderDto } from './dto/upsert-order.dto';
 
 @Injectable()
 export class RequestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async create(user: AuthUser, dto: CreateRequestDto) {
     const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
@@ -193,7 +198,7 @@ export class RequestsService {
       }),
     ]);
 
-    return this.prisma.request.findUnique({
+    const updatedRequest = await this.prisma.request.findUnique({
       where: { id },
       include: {
         buyerCompany: true,
@@ -218,6 +223,43 @@ export class RequestsService {
         },
       },
     });
+
+    if (selectedQuote.supplierCompanyId) {
+      await this.notificationsService.createForCompany({
+        companyId: selectedQuote.supplierCompanyId,
+        roles: [MembershipRole.SUPPLIER],
+        excludeUserId: user.userId,
+        type: NotificationType.QUOTE_AWARDED,
+        title: 'Cotizacion adjudicada',
+        detail: `${request.title} fue adjudicada a tu empresa.`,
+        href: `/dashboard/proveedor/cotizaciones/${selectedQuote.id}`,
+        metadata: {
+          requestId: id,
+          quoteId: selectedQuote.id,
+        },
+      });
+    }
+
+    const rejectedQuotes = request.quotes.filter((quote) => quote.id !== selectedQuote.id);
+    await Promise.all(
+      rejectedQuotes.map((quote) =>
+        this.notificationsService.createForCompany({
+          companyId: quote.supplierCompanyId,
+          roles: [MembershipRole.SUPPLIER],
+          excludeUserId: user.userId,
+          type: NotificationType.QUOTE_REJECTED,
+          title: 'Cotizacion no adjudicada',
+          detail: `La solicitud ${request.title} fue adjudicada a otro proveedor.`,
+          href: `/dashboard/proveedor/cotizaciones/${quote.id}`,
+          metadata: {
+            requestId: id,
+            quoteId: quote.id,
+          },
+        }),
+      ),
+    );
+
+    return updatedRequest;
   }
 
   async progress(user: AuthUser, id: string, action: ProgressRequestAction) {
@@ -284,7 +326,7 @@ export class RequestsService {
       ...(orderUpsert ? [orderUpsert] : []),
     ]);
 
-    return this.prisma.request.findUnique({
+    const updatedRequest = await this.prisma.request.findUnique({
       where: { id },
       include: {
         buyerCompany: true,
@@ -309,6 +351,35 @@ export class RequestsService {
         },
       },
     });
+
+    const notificationType =
+      action === 'START_NEGOTIATION'
+        ? NotificationType.NEGOTIATION_STARTED
+        : NotificationType.ORDER_ISSUED;
+    const notificationTitle =
+      action === 'START_NEGOTIATION' ? 'Negociacion iniciada' : 'Orden emitida';
+    const notificationDetail =
+      action === 'START_NEGOTIATION'
+        ? `${buyerCompanyName ?? 'El comprador'} inicio una negociacion sobre ${request.title}.`
+        : `${buyerCompanyName ?? 'El comprador'} emitio la orden comercial para ${request.title}.`;
+
+    if (request.awardedQuote?.supplierCompanyId) {
+      await this.notificationsService.createForCompany({
+        companyId: request.awardedQuote.supplierCompanyId,
+        roles: [MembershipRole.SUPPLIER],
+        excludeUserId: user.userId,
+        type: notificationType,
+        title: notificationTitle,
+        detail: notificationDetail,
+        href: `/dashboard/proveedor/cotizaciones/${request.awardedQuote.id}`,
+        metadata: {
+          requestId: id,
+          quoteId: request.awardedQuote.id,
+        },
+      });
+    }
+
+    return updatedRequest;
   }
 
   async upsertOrder(user: AuthUser, id: string, dto: UpsertOrderDto) {
@@ -368,7 +439,7 @@ export class RequestsService {
       }),
     ]);
 
-    return this.prisma.request.findUnique({
+    const updatedRequest = await this.prisma.request.findUnique({
       where: { id },
       include: {
         buyerCompany: true,
@@ -393,6 +464,32 @@ export class RequestsService {
         },
       },
     });
+
+    const awardedQuote = await this.prisma.quote.findUnique({
+      where: { id: request.awardedQuoteId ?? '' },
+      select: {
+        id: true,
+        supplierCompanyId: true,
+      },
+    });
+
+    if (awardedQuote?.supplierCompanyId) {
+      await this.notificationsService.createForCompany({
+        companyId: awardedQuote.supplierCompanyId,
+        roles: [MembershipRole.SUPPLIER],
+        excludeUserId: user.userId,
+        type: NotificationType.ORDER_UPDATED,
+        title: 'Orden actualizada',
+        detail: `${buyerCompanyName ?? 'El comprador'} actualizo la orden de ${request.title}.`,
+        href: `/dashboard/proveedor/cotizaciones/${awardedQuote.id}`,
+        metadata: {
+          requestId: id,
+          quoteId: awardedQuote.id,
+        },
+      });
+    }
+
+    return updatedRequest;
   }
 
   async updateFulfillment(user: AuthUser, id: string, action: FulfillmentAction) {
@@ -446,7 +543,7 @@ export class RequestsService {
       }),
     ]);
 
-    return this.prisma.request.findUnique({
+    const updatedRequest = await this.prisma.request.findUnique({
       where: { id },
       include: {
         buyerCompany: true,
@@ -471,6 +568,23 @@ export class RequestsService {
         },
       },
     });
+
+    await this.notificationsService.createForCompany({
+      companyId: request.buyerCompanyId,
+      roles: [MembershipRole.BUYER],
+      excludeUserId: user.userId,
+      type: NotificationType.FULFILLMENT_UPDATED,
+      title: transition.title,
+      detail: `${supplierCompanyName ?? 'El proveedor adjudicado'} actualizo el estado operativo de ${request.title}.`,
+      href: `/dashboard/comprador/solicitudes/${id}`,
+      metadata: {
+        requestId: id,
+        supplierCompanyId,
+        fulfillmentStatus: transition.nextStatus,
+      },
+    });
+
+    return updatedRequest;
   }
 
   async findOne(user: AuthUser, id: string) {

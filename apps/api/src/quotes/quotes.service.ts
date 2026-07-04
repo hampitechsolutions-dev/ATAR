@@ -7,17 +7,22 @@ import {
 import {
   CompanyType,
   MembershipRole,
+  NotificationType,
   QuoteStatus,
   RequestEventType,
   RequestStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 
 @Injectable()
 export class QuotesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async create(user: AuthUser, requestId: string, dto: CreateQuoteDto) {
     const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER);
@@ -85,6 +90,21 @@ export class QuotesService {
         }),
       ]);
 
+      await this.notificationsService.createForCompany({
+        companyId: request.buyerCompanyId,
+        roles: [MembershipRole.BUYER],
+        excludeUserId: user.userId,
+        type: NotificationType.QUOTE_UPDATED,
+        title: 'Cotizacion actualizada',
+        detail: `${supplierCompanyName ?? 'Un proveedor'} actualizo su propuesta para ${request.title}.`,
+        href: `/dashboard/comprador/cotizaciones/${updatedQuote.id}`,
+        metadata: {
+          quoteId: updatedQuote.id,
+          requestId,
+          supplierCompanyId,
+        },
+      });
+
       return updatedQuote;
     }
 
@@ -123,6 +143,21 @@ export class QuotesService {
         },
       }),
     ]);
+
+    await this.notificationsService.createForCompany({
+      companyId: request.buyerCompanyId,
+      roles: [MembershipRole.BUYER],
+      excludeUserId: user.userId,
+      type: NotificationType.QUOTE_SUBMITTED,
+      title: 'Nueva cotizacion recibida',
+      detail: `${supplierCompanyName ?? 'Un proveedor'} envio una propuesta para ${request.title}.`,
+      href: `/dashboard/comprador/cotizaciones/${createdQuote.id}`,
+      metadata: {
+        quoteId: createdQuote.id,
+        requestId,
+        supplierCompanyId,
+      },
+    });
 
     return createdQuote;
   }

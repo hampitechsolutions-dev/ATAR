@@ -73,6 +73,30 @@ enum ConversationContextType {
   QUOTE
 }
 
+enum NotificationType {
+  QUOTE_SUBMITTED
+  QUOTE_UPDATED
+  QUOTE_AWARDED
+  QUOTE_REJECTED
+  NEGOTIATION_STARTED
+  ORDER_ISSUED
+  ORDER_UPDATED
+  FULFILLMENT_UPDATED
+  NEW_MESSAGE
+}
+
+enum NotificationEmailStatus {
+  PENDING
+  SENT
+  SKIPPED
+  FAILED
+}
+
+enum PushChannel {
+  WEB
+  MOBILE_EXPO
+}
+
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
@@ -81,6 +105,8 @@ model User {
   lastName     String
   status       UserStatus   @default(ACTIVE)
   memberships  Membership[]
+  notifications Notification[]
+  pushEndpoints PushEndpoint[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }
@@ -244,4 +270,46 @@ model ConversationMessage {
   createdAt              DateTime       @default(now())
 
   @@index([conversationId, createdAt])
+}
+
+model Notification {
+  id          String                  @id @default(cuid())
+  userId      String
+  companyId   String
+  type        NotificationType
+  title       String
+  detail      String?
+  href        String?
+  metadata    Json?
+  readAt      DateTime?
+  emailStatus NotificationEmailStatus @default(PENDING)
+  emailSentAt DateTime?
+  emailError  String?
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([companyId, createdAt])
+  @@index([type, createdAt])
+}
+
+model PushEndpoint {
+  id         String      @id @default(cuid())
+  userId     String
+  companyId  String
+  channel    PushChannel
+  endpoint   String      @unique
+  payload    Json?
+  userAgent  String?
+  deviceName String?
+  isActive   Boolean     @default(true)
+  lastSeenAt DateTime    @default(now())
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, channel, isActive])
+  @@index([companyId, channel, isActive])
 }

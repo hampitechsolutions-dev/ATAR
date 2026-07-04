@@ -20,6 +20,7 @@ import {
   saveSession,
   type WebSession,
 } from '@/lib/session';
+import { disableWebPush, enableWebPush } from '@/lib/push-notifications';
 
 type AuthContextValue = {
   session: WebSession | null;
@@ -47,9 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(() => {
+    if (session?.accessToken) {
+      void disableWebPush(session.accessToken);
+    }
     clearSession();
     setSession(null);
-  }, []);
+  }, [session?.accessToken]);
 
   const signIn = useCallback((response: AuthResponse) => {
     const nextSession = authResponseToSession(response);
@@ -95,6 +99,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getDefaultPath: () => (session ? getDefaultDashboardPath(session.user) : '/acceso'),
     };
   }, [isHydrated, refreshSession, session, signIn, signOut]);
+
+  useEffect(() => {
+    if (!session?.accessToken) {
+      return;
+    }
+
+    void enableWebPush(session.accessToken);
+  }, [session?.accessToken]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -77,6 +77,7 @@ La primera etapa debe enfocarse en validar adopcion con un MVP simple:
 - Ver `docs/entornos.md` para el montaje de desarrollo, staging y produccion.
 - Ver `docs/supabase-github-setup.md` para el setup externo actual de base de datos y repositorio.
 - Ver `docs/deploy-staging.md` para publicar `web` + `api` en un staging real conectado a `Supabase`.
+- Ver `docs/deploy-vercel.md` para publicar `apps/web` en `Vercel` apuntando a una `api` remota.
 
 ## Base Tecnica Actual
 

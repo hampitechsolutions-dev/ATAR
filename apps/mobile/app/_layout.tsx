@@ -1,6 +1,8 @@
 import 'react-native-reanimated';
 import '../global.css';
 import { Stack } from 'expo-router';
+import { MobileAuthProvider } from '@/src/providers/auth-provider';
+import { MobilePushProvider } from '@/src/providers/push-provider';
 
 export const unstable_settings = {
   initialRouteName: 'splash',
@@ -8,10 +10,14 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="splash" />
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+    <MobileAuthProvider>
+      <MobilePushProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="splash" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+      </MobilePushProvider>
+    </MobileAuthProvider>
   );
 }
