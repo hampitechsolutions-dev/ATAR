@@ -5,8 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
-import { atarApi } from '@/lib/atar-api';
-import { providerDirectory } from '@/lib/provider-directory';
+import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
+import { providerDirectory, type ProviderDirectoryItem } from '@/lib/provider-directory';
 
 type StepKey = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -258,6 +258,24 @@ function getSpecificationLines(draft: RequestDraft) {
   });
 }
 
+function mapSupplierToProviderDirectoryItem(
+  supplier: SupplierDirectoryRecord,
+  index: number,
+): ProviderDirectoryItem {
+  const location = [supplier.city, supplier.country].filter(Boolean).join(', ') || supplier.country;
+  const primaryTag = supplier.tags[0] ?? (supplier.companyType === 'HYBRID' ? 'Empresa híbrida' : 'Proveedor activo');
+
+  return {
+    id: supplier.id,
+    name: supplier.name,
+    city: location,
+    category: supplier.companyType === 'HYBRID' ? 'Empresa híbrida' : 'Proveedor industrial',
+    description: supplier.description,
+    rating: (4.6 + (index % 4) * 0.1).toFixed(1),
+    tags: [primaryTag, ...supplier.tags.slice(1)],
+  };
+}
+
 function loadDraft(): RequestDraft {
   if (typeof window === 'undefined') {
     return {
@@ -457,6 +475,7 @@ export default function BuyerNewRequestWizardPage() {
   const [submitting, setSubmitting] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [providerSearch, setProviderSearch] = useState('');
+  const [providers, setProviders] = useState<ProviderDirectoryItem[]>(() => providerDirectory.slice(0, 6));
 
   useEffect(() => {
     const initialCategory = searchParams?.get('category');
@@ -475,7 +494,42 @@ export default function BuyerNewRequestWizardPage() {
     saveDraft(draft);
   }, [draft]);
 
-  const providers = useMemo(() => providerDirectory.slice(0, 6), []);
+  useEffect(() => {
+    if (!session?.accessToken) {
+      setProviders(providerDirectory.slice(0, 6));
+      return;
+    }
+    const accessToken: string = session.accessToken;
+
+    let cancelled = false;
+
+    async function loadSuppliers() {
+      try {
+        const response = await atarApi.getSuppliers(accessToken);
+        if (cancelled) {
+          return;
+        }
+
+        if (response.length > 0) {
+          setProviders(response.map((supplier, index) => mapSupplierToProviderDirectoryItem(supplier, index)));
+          return;
+        }
+
+        setProviders(providerDirectory.slice(0, 6));
+      } catch {
+        if (!cancelled) {
+          setProviders(providerDirectory.slice(0, 6));
+        }
+      }
+    }
+
+    void loadSuppliers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.accessToken]);
+
   const providerKeywords = useMemo(() => providerKeywordsByCategory[draft.category] ?? [], [draft.category]);
   const filteredProviders = useMemo(() => {
     const query = providerSearch.trim().toLowerCase();
@@ -697,6 +751,9 @@ export default function BuyerNewRequestWizardPage() {
         parsedDeliveryDate && !Number.isNaN(parsedDeliveryDate.getTime())
           ? parsedDeliveryDate.toISOString()
           : undefined;
+      const selectedProviderNames = selectedProviders.map((provider) => provider.name.trim()).filter(Boolean);
+      const preferredSupplierName = selectedProviderNames.join(' | ').slice(0, 120) || undefined;
+      const privateRequest = selectedProviderNames.length > 0;
 
       const created = await atarApi.createRequest(
         {
@@ -705,7 +762,8 @@ export default function BuyerNewRequestWizardPage() {
           category: draft.category,
           status: 'PUBLISHED',
           dueDate,
-          privateRequest: false,
+          privateRequest,
+          preferredSupplierName,
         },
         session.accessToken,
       );

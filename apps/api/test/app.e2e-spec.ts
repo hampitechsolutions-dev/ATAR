@@ -178,6 +178,118 @@ describe('AppController (e2e)', () => {
     expect(requestDetail.body.events[1].type).toBe('REQUEST_CREATED');
   });
 
+  it('shows a private request only to the selected supplier and blocks other suppliers', async () => {
+    const buyerEmail = `buyer.private.${Date.now()}@atar.test`;
+    const invitedSupplierEmail = `supplier.invited.${Date.now()}@atar.test`;
+    const otherSupplierEmail = `supplier.other.${Date.now()}@atar.test`;
+
+    const buyerRegister = await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send({
+        email: buyerEmail,
+        password: 'Password123',
+        firstName: 'Julia',
+        lastName: 'Compradora',
+        companyName: 'Compradora Privada SA',
+        companyType: 'BUYER',
+        role: 'BUYER',
+      })
+      .expect(201);
+
+    const invitedSupplierRegister = await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send({
+        email: invitedSupplierEmail,
+        password: 'Password123',
+        firstName: 'Diego',
+        lastName: 'Invitado',
+        companyName: 'Proveedor Invitado SRL',
+        companyType: 'SUPPLIER',
+        role: 'SUPPLIER',
+      })
+      .expect(201);
+
+    const otherSupplierRegister = await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send({
+        email: otherSupplierEmail,
+        password: 'Password123',
+        firstName: 'Nora',
+        lastName: 'No Invitada',
+        companyName: 'Proveedor Externo SRL',
+        companyType: 'SUPPLIER',
+        role: 'SUPPLIER',
+      })
+      .expect(201);
+
+    const buyerToken = buyerRegister.body.accessToken;
+    const invitedSupplierToken = invitedSupplierRegister.body.accessToken;
+    const otherSupplierToken = otherSupplierRegister.body.accessToken;
+
+    const requestResponse = await request(app.getHttpServer())
+      .post('/api/requests')
+      .set('Authorization', `Bearer ${buyerToken}`)
+      .send({
+        title: 'Solicitud privada de bobinas',
+        description: 'Solicitud privada para proveedor invitado con requerimientos técnicos específicos.',
+        category: 'Packaging',
+        privateRequest: true,
+        preferredSupplierName: 'Proveedor Invitado SRL',
+        status: 'PUBLISHED',
+      })
+      .expect(201);
+
+    const requestId = requestResponse.body.id;
+
+    const invitedOpenRequests = await request(app.getHttpServer())
+      .get('/api/requests/open')
+      .set('Authorization', `Bearer ${invitedSupplierToken}`)
+      .expect(200);
+
+    expect(invitedOpenRequests.body.some((item: { id: string }) => item.id === requestId)).toBe(true);
+
+    const otherOpenRequests = await request(app.getHttpServer())
+      .get('/api/requests/open')
+      .set('Authorization', `Bearer ${otherSupplierToken}`)
+      .expect(200);
+
+    expect(otherOpenRequests.body.some((item: { id: string }) => item.id === requestId)).toBe(false);
+
+    await request(app.getHttpServer())
+      .get(`/api/requests/${requestId}`)
+      .set('Authorization', `Bearer ${invitedSupplierToken}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/api/requests/${requestId}`)
+      .set('Authorization', `Bearer ${otherSupplierToken}`)
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .post(`/api/quotes/request/${requestId}`)
+      .set('Authorization', `Bearer ${invitedSupplierToken}`)
+      .send({
+        amount: 780000,
+        currency: 'ARS',
+        leadTimeDays: 6,
+        paymentTerms: '30 dias',
+        technicalComment: 'Propuesta privada para el comprador.',
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/quotes/request/${requestId}`)
+      .set('Authorization', `Bearer ${otherSupplierToken}`)
+      .send({
+        amount: 810000,
+        currency: 'ARS',
+        leadTimeDays: 8,
+        paymentTerms: 'Contado',
+        technicalComment: 'No debería poder cotizar.',
+      })
+      .expect(403);
+  });
+
   it('allows a buyer to award a submitted quote and closes the request', async () => {
     const buyerEmail = `buyer.award.${Date.now()}@atar.test`;
     const supplierAEmail = `supplier.award.a.${Date.now()}@atar.test`;
