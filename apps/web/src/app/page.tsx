@@ -1,4 +1,8 @@
+'use client';
+
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import { atarApi, type MarketplaceStatsRecord } from '@/lib/atar-api';
 
 function FeatureIcon({ name }: { name: 'quote' | 'compare' | 'manage' | 'trust' }) {
   if (name === 'quote') {
@@ -180,12 +184,30 @@ function SiteFooter() {
 }
 
 export default function Home() {
-  const stats = [
-    { value: '+850', label: 'Proveedores verificados' },
-    { value: '+2.500', label: 'Industrias compradoras' },
-    { value: '+18.000', label: 'Solicitudes registradas' },
-    { value: '+30.000', label: 'Pedidos concretados' },
-  ];
+  const [stats, setStats] = useState<MarketplaceStatsRecord | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStats() {
+      try {
+        const response = await atarApi.getMarketplaceStats();
+        if (!cancelled) {
+          setStats(response);
+        }
+      } catch {
+        if (!cancelled) {
+          setStats(null);
+        }
+      }
+    }
+
+    void loadStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const platformFeatures = [
     {
@@ -214,14 +236,7 @@ export default function Home() {
     },
   ];
 
-  const categoryCards = [
-    'Bolsas de polipropileno',
-    'Bolsas para escombros',
-    'Bolsas laminadas',
-    'Bolsas de rafia',
-    'Bolsas con fuelle',
-    'Bolsas a medida',
-  ];
+  const categoryCards = stats?.topCategories ?? [];
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
@@ -278,9 +293,18 @@ export default function Home() {
         </div>
 
         <div className="mt-10 grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((item) => (
+          {[
+            { value: stats?.suppliersCount, label: 'Proveedores verificados' },
+            { value: stats?.buyersCount, label: 'Industrias compradoras' },
+            { value: stats?.requestsCount, label: 'Solicitudes registradas' },
+            { value: stats?.ordersCount, label: 'Pedidos concretados' },
+          ].map((item) => (
             <div key={item.label} className="rounded-2xl bg-slate-50 p-5">
-              <p className="text-3xl font-semibold text-slate-950">{item.value}</p>
+              <p className="text-3xl font-semibold text-slate-950">
+                {typeof item.value === 'number'
+                  ? new Intl.NumberFormat('es-AR').format(item.value)
+                  : '-'}
+              </p>
               <p className="mt-2 text-sm text-slate-600">{item.label}</p>
             </div>
           ))}
@@ -344,8 +368,13 @@ export default function Home() {
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {categoryCards.map((category) => (
-              <div key={category} className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+            {categoryCards.length === 0 ? (
+              <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500 xl:col-span-6">
+                Aún no hay suficiente actividad registrada para mostrar categorías destacadas.
+              </div>
+            ) : (
+              categoryCards.map((category) => (
+                <div key={category.label} className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="relative mb-4 h-28 overflow-hidden rounded-2xl bg-slate-100">
                   <Image
                     alt="Big bag"
@@ -355,9 +384,13 @@ export default function Home() {
                     src="/bigbag.jfif"
                   />
                 </div>
-                <p className="text-sm font-semibold text-slate-950">{category}</p>
-              </div>
-            ))}
+                  <p className="text-sm font-semibold text-slate-950">{category.label}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {new Intl.NumberFormat('es-AR').format(category.requestCount)} solicitudes
+                  </p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

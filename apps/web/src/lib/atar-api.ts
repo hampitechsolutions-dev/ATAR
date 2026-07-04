@@ -318,12 +318,59 @@ export type RegisterPushEndpointPayload = {
 
 export type SupplierDirectoryRecord = {
   id: string;
+  slug: string;
   name: string;
   city: string | null;
   country: string;
   companyType: CompanyType;
-  description: string;
+  description: string | null;
+  genericCode: string | null;
+  leadTimeDays: number | null;
+  minimumOrder: number | null;
   tags: string[];
+};
+
+export type RequestCatalogFieldType =
+  | 'choices'
+  | 'segmented'
+  | 'input'
+  | 'quantity'
+  | 'uploader'
+  | 'textarea';
+
+export type RequestCatalogInputType = 'text' | 'date';
+
+export type RequestCatalogFieldRecord = {
+  id: string;
+  label: string;
+  type: RequestCatalogFieldType;
+  options: string[];
+  placeholder: string | null;
+  helper: string | null;
+  required: boolean;
+  fullWidth: boolean;
+  inputType: RequestCatalogInputType | null;
+};
+
+export type RequestCatalogCategoryRecord = {
+  id: string;
+  label: string;
+  subtitle: string | null;
+  imageSrc: string | null;
+  imageClassName: string | null;
+  searchKeywords: string[];
+  fields: RequestCatalogFieldRecord[];
+};
+
+export type MarketplaceStatsRecord = {
+  suppliersCount: number;
+  buyersCount: number;
+  requestsCount: number;
+  ordersCount: number;
+  topCategories: Array<{
+    label: string;
+    requestCount: number;
+  }>;
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
@@ -409,6 +456,18 @@ export const atarApi = {
   },
   getSuppliers(token: string) {
     return request<SupplierDirectoryRecord[]>('/users/suppliers', undefined, token);
+  },
+  getMarketplaceSuppliers() {
+    return request<SupplierDirectoryRecord[]>('/catalog/suppliers');
+  },
+  getMarketplaceStats() {
+    return request<MarketplaceStatsRecord>('/catalog/stats');
+  },
+  getRequestCategories() {
+    return request<RequestCatalogCategoryRecord[]>('/catalog/request-categories');
+  },
+  getMarketplaceSupplierBySlug(slug: string) {
+    return request<SupplierDirectoryRecord>(`/catalog/suppliers/${slug}`);
   },
   getBuyerRequests(token: string) {
     return request<RequestRecord[]>('/requests/mine', undefined, token);

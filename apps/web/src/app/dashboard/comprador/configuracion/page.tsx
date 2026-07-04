@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { atarApi } from '@/lib/atar-api';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 import { getPrimaryCompanyName } from '@/lib/session';
 
@@ -14,7 +15,7 @@ const SETTINGS_KEY = 'atar:buyer:settings';
 const defaultSettings: BuyerSettings = {
   notificationsEnabled: true,
   compactView: false,
-  preferredCategory: 'Big Bags',
+  preferredCategory: '',
 };
 
 function loadBuyerSettings() {
@@ -42,9 +43,41 @@ export default function BuyerSettingsPage() {
   const { session, loading } = useBuyerDashboardData();
   const [settings, setSettings] = useState<BuyerSettings>(defaultSettings);
   const [message, setMessage] = useState<string | null>(null);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
 
   useEffect(() => {
     setSettings(loadBuyerSettings());
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      try {
+        const response = await atarApi.getRequestCategories();
+        if (cancelled) {
+          return;
+        }
+
+        const options = response.map((item) => item.label);
+        setCategoryOptions(options);
+        setSettings((current) => ({
+          ...current,
+          preferredCategory:
+            current.preferredCategory || options[0] || '',
+        }));
+      } catch {
+        if (!cancelled) {
+          setCategoryOptions([]);
+        }
+      }
+    }
+
+    void loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function updateSettings(patch: Partial<BuyerSettings>) {
@@ -97,7 +130,8 @@ export default function BuyerSettingsPage() {
                 onChange={(event) => updateSettings({ preferredCategory: event.target.value })}
                 value={settings.preferredCategory}
               >
-                {['Big Bags', 'Polipropileno', 'Laminados', 'Rafia', 'Film Stretch'].map((option) => (
+                <option value="">Sin preferencia</option>
+                {categoryOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
