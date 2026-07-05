@@ -21,32 +21,49 @@ function formatRelative(value: string) {
   return `Hace ${Math.round(hours / 24)} d`;
 }
 
+function resolveMobileNotificationHref(href?: string | null) {
+  if (!href) {
+    return '/' as const;
+  }
+
+  if (href.startsWith('/dashboard/')) {
+    return '/' as const;
+  }
+
+  return href as never;
+}
+
 export default function HomeScreen() {
   const { session, isHydrated } = useMobileAuth();
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const accessToken = session?.accessToken ?? null;
 
   useEffect(() => {
     if (!isHydrated) {
       return;
     }
 
-    if (!session?.accessToken) {
+    if (!accessToken) {
       router.replace('/login');
       return;
     }
-    const accessToken: string = session.accessToken;
+    const token = accessToken;
 
     let cancelled = false;
 
     async function loadNotifications() {
       try {
         setError(null);
-        const response = await mobileApi.getNotifications(accessToken);
+        const response = await mobileApi.getNotifications(token);
+        const nextResponse =
+          response.unreadCount > 0
+            ? await mobileApi.markAllNotificationsRead(token)
+            : response;
         if (!cancelled) {
-          setNotifications(response.items);
-          setUnreadCount(response.unreadCount);
+          setNotifications(nextResponse.items);
+          setUnreadCount(nextResponse.unreadCount);
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -60,7 +77,7 @@ export default function HomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isHydrated, session?.accessToken]);
+  }, [accessToken, isHydrated]);
 
   if (!session) {
     return (
@@ -109,10 +126,20 @@ export default function HomeScreen() {
           <Pressable
             key={notification.id}
             className="rounded-3xl border px-4 py-4"
-            onPress={() => {
-              if (notification.href && !notification.href.startsWith('/dashboard')) {
-                router.push(notification.href as never);
+            onPress={async () => {
+              if (!notification.readAt) {
+                try {
+                  const updated = await mobileApi.markNotificationRead(notification.id, session.accessToken);
+                  setNotifications((current) =>
+                    current.map((item) => (item.id === updated.id ? updated : item)),
+                  );
+                  setUnreadCount((current) => Math.max(0, current - 1));
+                } catch {
+                  // Si falla el marcado no bloqueamos la navegación del usuario.
+                }
               }
+
+              router.push(resolveMobileNotificationHref(notification.href));
             }}
             style={{
               borderColor: notification.readAt ? COLORS.border : '#C7D2FE',

@@ -113,6 +113,16 @@ export const mobileApi = {
   getNotifications(token: string) {
     return request<NotificationsResponse>('/notifications?limit=20', undefined, token);
   },
+  markNotificationRead(id: string, token: string) {
+    return request<NotificationRecord>(`/notifications/${id}/read`, {
+      method: 'POST',
+    }, token);
+  },
+  markAllNotificationsRead(token: string) {
+    return request<NotificationsResponse>('/notifications/read-all', {
+      method: 'POST',
+    }, token);
+  },
   registerPushEndpoint(payload: RegisterPushEndpointPayload, token: string) {
     return request<{ id: string }>('/notifications/push/register', {
       method: 'POST',

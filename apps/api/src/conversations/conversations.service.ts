@@ -262,14 +262,18 @@ export class ConversationsService {
       participant.role === MembershipRole.BUYER
         ? `/dashboard/proveedor/mensajes/${id}`
         : `/dashboard/comprador/mensajes/${id}`;
+    const senderCompanyName = participant.companyName?.trim() || 'La otra parte';
+    const preview = trimmedBody.length > 160 ? `${trimmedBody.slice(0, 157).trimEnd()}...` : trimmedBody;
 
     await this.notificationsService.createForCompany({
       companyId: recipientCompanyId,
       roles: [recipientRole],
       excludeUserId: user.userId,
       type: NotificationType.NEW_MESSAGE,
-      title: 'Nuevo mensaje en conversacion',
-      detail: `${participant.companyName ?? 'La otra parte'} envio un nuevo mensaje sobre ${conversation.contextTitle}.`,
+      title: `Nuevo mensaje de ${senderCompanyName}`,
+      detail: preview
+        ? `${senderCompanyName} escribio sobre ${conversation.contextTitle}: "${preview}"`
+        : `${senderCompanyName} envio un nuevo mensaje sobre ${conversation.contextTitle}.`,
       href,
       metadata: {
         conversationId: id,

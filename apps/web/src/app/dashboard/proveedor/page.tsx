@@ -8,7 +8,7 @@ import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
 import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
 import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
 import { type OrderFulfillmentStatus, type RequestRecord } from '@/lib/atar-api';
-import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
+import { useSupplierDashboardData, useSupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
 import { getPrimaryCompanyName } from '@/lib/session';
 
 function formatCurrency(value: number) {
@@ -178,6 +178,11 @@ function getProductionLabel(status: OrderFulfillmentStatus) {
 
 export default function DashboardProveedorPage() {
   const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
+  const counters = useSupplierWorkspaceCounters({
+    accessToken: session?.accessToken,
+    openRequests,
+    myQuotes,
+  });
 
   const companyName = session ? getPrimaryCompanyName(session.user) : 'Tu empresa';
 
@@ -301,7 +306,12 @@ export default function DashboardProveedorPage() {
     <main className="h-screen overflow-hidden bg-[#f5f7fb] text-slate-950">
       <div className="flex h-full">
         <div className="hidden h-full w-[264px] shrink-0 lg:block">
-          <DashboardSidebar className="sticky top-0 h-screen" role="supplier" session={session} />
+          <DashboardSidebar
+            className="sticky top-0 h-screen"
+            role="supplier"
+            session={session}
+            supplierCounters={counters}
+          />
         </div>
 
         <section className="min-w-0 flex-1 overflow-hidden">
@@ -327,12 +337,28 @@ export default function DashboardProveedorPage() {
                 <button className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
                   Invitar a un miembro
                 </button>
-                <button className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex" type="button">
+                <Link
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  href="/dashboard/proveedor/mensajes"
+                >
                   <HeaderActionIcon kind="chat" />
-                </button>
-                <button className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex" type="button">
+                  {counters.unreadMessagesCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                      {counters.unreadMessagesCount}
+                    </span>
+                  ) : null}
+                </Link>
+                <Link
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  href="/dashboard/proveedor/notificaciones"
+                >
                   <HeaderActionIcon kind="bell" />
-                </button>
+                  {counters.unreadNotificationsCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                      {counters.unreadNotificationsCount}
+                    </span>
+                  ) : null}
+                </Link>
                 <SupplierAccountMenu session={session} />
               </div>
             </div>
