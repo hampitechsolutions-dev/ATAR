@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { atarApi, type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
+import {
+  atarApi,
+  type ConversationRecord,
+  type QuoteRecord,
+  type RequestRecord,
+} from '@/lib/atar-api';
 import {
   clearSession,
   getPrimaryMembershipRole,
@@ -11,6 +16,22 @@ import {
   saveSession,
   type WebSession,
 } from '@/lib/session';
+
+export type SupplierWorkspaceCounters = {
+  openRequestsCount: number;
+  myQuotesCount: number;
+  activeOrdersCount: number;
+  unreadMessagesCount: number;
+  unreadNotificationsCount: number;
+};
+
+export const SUPPLIER_COUNTERS_REFRESH_EVENT = 'atar:supplier-counters-refresh';
+
+type SupplierWorkspaceCounterOptions = {
+  accessToken?: string;
+  openRequests?: RequestRecord[];
+  myQuotes?: QuoteRecord[];
+};
 
 export function useBuyerDashboardData() {
   const router = useRouter();
@@ -168,4 +189,89 @@ export function useSupplierDashboardData() {
     setError,
     refresh,
   };
+}
+
+export function useSupplierWorkspaceCounters({
+  accessToken,
+  openRequests,
+  myQuotes,
+}: SupplierWorkspaceCounterOptions) {
+  const [counters, setCounters] = useState<SupplierWorkspaceCounters>({
+    openRequestsCount: openRequests?.length ?? 0,
+    myQuotesCount: myQuotes?.length ?? 0,
+    activeOrdersCount:
+      myQuotes?.filter((quote) => quote.request?.order).length ?? 0,
+    unreadMessagesCount: 0,
+    unreadNotificationsCount: 0,
+  });
+
+  useEffect(() => {
+    setCounters((current) => ({
+      ...current,
+      openRequestsCount: openRequests?.length ?? current.openRequestsCount,
+      myQuotesCount: myQuotes?.length ?? current.myQuotesCount,
+      activeOrdersCount:
+        myQuotes?.filter((quote) => quote.request?.order).length ?? current.activeOrdersCount,
+    }));
+  }, [myQuotes, openRequests]);
+
+  const refreshCounters = useCallback(async () => {
+    if (!accessToken) {
+      return;
+    }
+
+    const token = accessToken;
+    const requestsPromise = openRequests
+      ? Promise.resolve(openRequests)
+      : atarApi.getOpenRequests(token);
+    const quotesPromise = myQuotes
+      ? Promise.resolve(myQuotes)
+      : atarApi.getSupplierQuotes(token);
+
+    try {
+      const [requests, quotes, conversations, notifications] = await Promise.all([
+        requestsPromise,
+        quotesPromise,
+        atarApi.getConversations(undefined, token),
+        atarApi.getNotifications({ limit: 1 }, token),
+      ]);
+
+      setCounters({
+        openRequestsCount: requests.length,
+        myQuotesCount: quotes.length,
+        activeOrdersCount: quotes.filter((quote) => quote.request?.order).length,
+        unreadMessagesCount: sumUnreadMessages(conversations),
+        unreadNotificationsCount: notifications.unreadCount,
+      });
+    } catch {
+      setCounters((current) => ({
+        ...current,
+        openRequestsCount: openRequests?.length ?? current.openRequestsCount,
+        myQuotesCount: myQuotes?.length ?? current.myQuotesCount,
+        activeOrdersCount:
+          myQuotes?.filter((quote) => quote.request?.order).length ?? current.activeOrdersCount,
+      }));
+    }
+  }, [accessToken, myQuotes, openRequests]);
+
+  useEffect(() => {
+    void refreshCounters();
+  }, [refreshCounters]);
+
+  useEffect(() => {
+    function handleRefresh() {
+      void refreshCounters();
+    }
+
+    window.addEventListener(SUPPLIER_COUNTERS_REFRESH_EVENT, handleRefresh);
+    return () => {
+      window.removeEventListener(SUPPLIER_COUNTERS_REFRESH_EVENT, handleRefresh);
+    };
+  }, [refreshCounters]);
+
+  return counters;
+}
+
+function sumUnreadMessages(conversations: ConversationRecord[]) {
+  return conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
 }
