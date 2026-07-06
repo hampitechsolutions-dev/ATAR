@@ -113,7 +113,6 @@ export default function AccessPanel() {
       setMessage('Sesion iniciada correctamente. Preparando tu dashboard...');
       await new Promise((resolve) => window.setTimeout(resolve, 1400));
       router.replace(destination);
-      router.refresh();
     } catch (submissionError) {
       setIsTransitioning(false);
       setTransitionProgress(0);
