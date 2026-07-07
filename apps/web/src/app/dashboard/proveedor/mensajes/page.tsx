@@ -1,153 +1,363 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
-function formatRelative(value: string) {
-  const diff = Date.now() - new Date(value).getTime();
-  const hours = Math.max(1, Math.round(diff / (1000 * 60 * 60)));
+type Conversation = {
+  id: string;
+  company: string;
+  logo: string;
+  preview: string;
+  badge: string;
+  time: string;
+  unread?: number;
+  verified?: boolean;
+};
 
-  if (hours < 24) {
-    return `Hace ${hours} h`;
-  }
+type Message = {
+  id: string;
+  author: 'me' | 'client';
+  body: string[];
+  time: string;
+};
 
-  return `Hace ${Math.round(hours / 24)} d`;
+function CompanyLogo({ value, active = false }: { value: string; active?: boolean }) {
+  return (
+    <div
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-[10px] font-bold leading-none ${
+        active ? 'border-indigo-200 bg-indigo-50 text-slate-950' : 'border-slate-200 bg-white text-slate-950'
+      }`}
+    >
+      <span className="whitespace-pre-line text-center tracking-tight">{value}</span>
+    </div>
+  );
 }
 
+function PaperPlaneIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <path d="M22 2L11 13" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+const CONVERSATIONS: Conversation[] = [
+  {
+    id: 'compradora',
+    company: 'Compradora Demo SA',
+    logo: 'COMP\nDEMO',
+    preview: 'Necesitamos avanzar con disponibilidad y fecha de entrega...',
+    badge: 'Solicitud #1042',
+    time: '10:30',
+    unread: 2,
+    verified: true,
+  },
+  {
+    id: 'textiles',
+    company: 'Textiles del Sur',
+    logo: 'TEX\nSUR',
+    preview: 'Gracias por la cotización, la estamos revisando.',
+    badge: 'Cotización #C-231',
+    time: 'Ayer',
+    unread: 1,
+    verified: true,
+  },
+  {
+    id: 'agro',
+    company: 'AgroInsumos SA',
+    logo: 'AGRO',
+    preview: '¿Pueden mejorar el plazo de entrega?',
+    badge: 'Pedido #5678',
+    time: 'Ayer',
+    verified: true,
+  },
+  {
+    id: 'envases',
+    company: 'Envases del Litoral',
+    logo: 'ENV\nLIT',
+    preview: 'Perfecto, confirmamos la compra.',
+    badge: 'Pedido #5676',
+    time: '2 días',
+    verified: true,
+  },
+  {
+    id: 'quimica',
+    company: 'Química Andina',
+    logo: 'QUIM',
+    preview: 'Adjuntamos la orden de compra firmada.',
+    badge: 'Orden #OC-88',
+    time: '3 días',
+    verified: true,
+  },
+  {
+    id: 'norte',
+    company: 'Distribuidora Norte',
+    logo: 'DIST\nNOR',
+    preview: 'Consulta por certificaciones del material.',
+    badge: 'Consulta general',
+    time: '5 días',
+    verified: true,
+  },
+];
+
+const CHAT_MESSAGES: Record<string, Message[]> = {
+  compradora: [
+    {
+      id: '1',
+      author: 'client',
+      body: ['Hola, buenas.', 'Necesitamos 500 Big Bags para fertilizante.', '¿Tienen disponibilidad para entrega en Rosario?'],
+      time: '10:15',
+    },
+    {
+      id: '2',
+      author: 'me',
+      body: ['¡Hola! Sí, tenemos disponibilidad.', 'Podemos entregar 500 unidades en 5 días hábiles en Rosario.'],
+      time: '10:18',
+    },
+    {
+      id: '3',
+      author: 'client',
+      body: ['Perfecto.', '¿Nos pasan una cotización formal con las opciones de personalización?'],
+      time: '10:22',
+    },
+    {
+      id: '4',
+      author: 'me',
+      body: ['Claro, te envío la cotización con impresión de logo y medidas disponibles en breve.'],
+      time: '10:30',
+    },
+  ],
+  textiles: [
+    { id: '1', author: 'me', body: ['Te enviamos la cotización solicitada.', 'Quedamos atentos a tu devolución.'], time: 'Ayer' },
+    { id: '2', author: 'client', body: ['Gracias, la estamos revisando internamente.'], time: 'Ayer' },
+  ],
+  agro: [
+    { id: '1', author: 'client', body: ['¿Pueden mejorar el plazo de entrega?'], time: 'Ayer' },
+    { id: '2', author: 'me', body: ['Podemos adelantarlo a 4 días hábiles si confirmás esta semana.'], time: 'Ayer' },
+  ],
+  envases: [
+    { id: '1', author: 'client', body: ['Perfecto, confirmamos la compra.'], time: '2 días' },
+    { id: '2', author: 'me', body: ['Excelente, generamos la orden y te compartimos el seguimiento.'], time: '2 días' },
+  ],
+  quimica: [{ id: '1', author: 'client', body: ['Adjuntamos la orden de compra firmada.'], time: '3 días' }],
+  norte: [
+    { id: '1', author: 'client', body: ['Consulta por certificaciones del material.'], time: '5 días' },
+    { id: '2', author: 'me', body: ['Te compartimos las fichas técnicas y certificados en el chat.'], time: '5 días' },
+  ],
+};
+
 export default function SupplierMessagesPage() {
-  const { session, myQuotes, loading, error } = useSupplierDashboardData();
+  const { session, loading, error } = useSupplierDashboardData();
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'archived'>('all');
+  const [selectedId, setSelectedId] = useState<string>(CONVERSATIONS[0].id);
 
-  const conversations = useMemo(() => {
-    return myQuotes
-      .map((quote, index) => ({
-        id: quote.id,
-        company: quote.request?.buyerCompany?.name ?? 'Cliente',
-        topic: quote.request?.title ?? 'Consulta comercial',
-        preview:
-          index % 2 === 0
-            ? 'Necesitamos avanzar con disponibilidad y fecha de entrega.'
-            : 'Gracias por la cotizacion, estamos revisando internamente.',
-        updatedAt: quote.updatedAt,
-      }))
-      .sort(
-        (left, right) =>
-          new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
-      );
-  }, [myQuotes]);
+  const unreadCount = CONVERSATIONS.filter((item) => (item.unread ?? 0) > 0).length;
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const activeConversation =
-    conversations.find((item) => item.id === selectedId) ?? conversations[0] ?? null;
+  const filteredConversations = useMemo(() => {
+    if (activeTab === 'unread') {
+      return CONVERSATIONS.filter((item) => (item.unread ?? 0) > 0);
+    }
+    if (activeTab === 'archived') {
+      return CONVERSATIONS.filter((item) => !item.unread);
+    }
+    return CONVERSATIONS;
+  }, [activeTab]);
+
+  const selectedConversation =
+    filteredConversations.find((conversation) => conversation.id === selectedId) ?? CONVERSATIONS[0];
+  const currentMessages = CHAT_MESSAGES[selectedConversation.id] ?? [];
 
   return (
-    <SupplierDashboardShell searchPlaceholder="Buscar mensajes o clientes..." session={session}>
-      <section className="space-y-4">
-        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
-            Mensajes
-          </h1>
-          <p className="mt-1 text-sm text-[#7e85b2]">
-            Centraliza tus conversaciones con compradores desde un unico espacio.
-          </p>
+    <SupplierDashboardShell fullBleed searchPlaceholder="Buscar mensajes o clientes..." session={session}>
+      {loading ? (
+        <div className="flex h-full items-center justify-center bg-white text-sm text-slate-600">
+          Cargando mensajes...
         </div>
+      ) : (
+        <div className="flex h-full min-h-0 flex-col bg-white">
+          {error ? (
+            <div className="shrink-0 border-b border-rose-200 bg-rose-50 px-5 py-3 text-sm text-rose-700">{error}</div>
+          ) : null}
+          <div className="grid min-h-0 flex-1 gap-0 overflow-hidden border-t border-slate-200 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <section className="flex min-h-0 flex-col border-b border-slate-200 bg-white p-4 xl:border-b-0 xl:border-r">
+              <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                  <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                    <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
+                  <input
+                    className="w-full bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
+                    placeholder="Buscar conversaciones..."
+                  />
+                </div>
 
-        {error ? (
-          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-            {error}
-          </div>
-        ) : null}
+                <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-[0_18px_40px_rgba(79,70,229,0.25)] hover:bg-indigo-500" type="button">
+                  <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <path d="M12 5v14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    <path d="M5 12h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
+                </button>
+              </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[340px_1fr]">
-          <div className="max-h-[46vh] overflow-y-auto rounded-[24px] border border-[#e7eaf3] bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.04)] xl:max-h-none">
-            {loading ? (
-              <div className="rounded-[18px] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
-                Cargando conversaciones...
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
-                Todavia no tenes conversaciones activas.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {conversations.map((conversation) => {
-                  const isActive = activeConversation?.id === conversation.id;
+              <div className="mt-4 flex items-center gap-6 border-b border-slate-200 pb-3 text-xs font-semibold">
+                {[
+                  { key: 'all' as const, label: 'Todas', count: CONVERSATIONS.length },
+                  { key: 'unread' as const, label: 'No leídos', count: unreadCount },
+                  { key: 'archived' as const, label: 'Archivados', count: CONVERSATIONS.length - unreadCount },
+                ].map((tab) => {
+                  const isActive = activeTab === tab.key;
                   return (
                     <button
-                      key={conversation.id}
-                      className={`w-full rounded-[18px] border px-4 py-3 text-left transition ${
-                        isActive
-                          ? 'border-[#cfc9ff] bg-[#f5f3ff]'
-                          : 'border-transparent bg-white hover:border-[#e7eaf3] hover:bg-[#fbfbff]'
-                      }`}
-                      onClick={() => setSelectedId(conversation.id)}
+                      key={tab.key}
+                      className={`relative pb-2 transition ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                      onClick={() => setActiveTab(tab.key)}
                       type="button"
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-[#33407a]">{conversation.company}</p>
-                        <span className="text-xs text-[#9aa1c8]">
-                          {formatRelative(conversation.updatedAt)}
-                        </span>
-                      </div>
-                      <p className="mt-1 truncate text-sm text-[#6a729d]">{conversation.topic}</p>
-                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#8d95be]">
-                        {conversation.preview}
-                      </p>
+                      <span className="flex items-center gap-1.5">
+                        {tab.label}
+                        <span className={isActive ? 'text-indigo-600' : 'text-slate-400'}>{tab.count}</span>
+                      </span>
+                      {isActive ? <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-indigo-600" /> : null}
                     </button>
                   );
                 })}
               </div>
-            )}
-          </div>
 
-          <div className="flex flex-col rounded-[24px] border border-[#e7eaf3] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)] sm:p-5">
-            {activeConversation ? (
-              <>
-                <div className="flex items-center gap-3 border-b border-[#edf0fb] pb-4">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f0edff] text-sm font-bold text-[#5546ff]">
-                    {activeConversation.company.slice(0, 2).toUpperCase()}
-                  </span>
+              <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">
+                {filteredConversations.map((conversation) => {
+                  const isActive = selectedConversation.id === conversation.id;
+                  return (
+                    <button
+                      key={conversation.id}
+                      className={`flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                        isActive ? 'border-indigo-200 bg-indigo-50/60 shadow-sm' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
+                      }`}
+                      onClick={() => setSelectedId(conversation.id)}
+                      type="button"
+                    >
+                      <CompanyLogo active={isActive} value={conversation.logo} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-950">{conversation.company}</p>
+                            <p className="mt-1 truncate text-xs text-slate-500">{conversation.preview}</p>
+                          </div>
+                          <span className="shrink-0 text-[11px] text-slate-400">{conversation.time}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="truncate rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-600">
+                            {conversation.badge}
+                          </span>
+                          {conversation.unread ? (
+                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                              {conversation.unread}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="flex min-h-0 flex-col overflow-hidden bg-white">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <CompanyLogo value={selectedConversation.logo} />
                   <div className="min-w-0">
-                    <p className="truncate text-[15px] font-semibold text-[#33407a]">{activeConversation.company}</p>
-                    <p className="mt-0.5 truncate text-xs text-[#7e85b2]">{activeConversation.topic}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-slate-950">{selectedConversation.company}</p>
+                      {selectedConversation.verified ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          Verificado
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">Última conexión: Hoy 10:45</p>
                   </div>
                 </div>
 
-                <div className="my-4 flex-1 space-y-4 rounded-[18px] bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)] p-4">
-                  <div className="mx-auto w-fit rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[#8d95be] shadow-sm">
-                    Hoy
-                  </div>
-                  <div className="max-w-[85%] rounded-[20px] rounded-bl-md border border-[#e7eaf3] bg-white px-4 py-3 text-sm leading-6 text-[#4f5786] shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
-                    {activeConversation.preview}
-                  </div>
-                  <div className="ml-auto max-w-[85%] rounded-[20px] rounded-br-md bg-gradient-to-br from-[#5b4bff] to-[#6a58ff] px-4 py-3 text-sm leading-6 text-white shadow-[0_10px_26px_rgba(91,75,255,0.22)]">
-                    Perfecto, te confirmo stock, plazo y condiciones en esta misma conversacion.
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 rounded-2xl border border-[#e7eaf3] bg-white px-4 py-2.5">
-                  <input
-                    className="w-full bg-transparent text-sm text-[#33407a] outline-none placeholder:text-[#9aa1c8]"
-                    placeholder="Escribí un mensaje..."
-                  />
-                  <button
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#5546ff] text-white transition hover:bg-[#4739ea]"
-                    type="button"
+                <div className="flex items-center gap-2">
+                  <Link
+                    className="inline-flex h-9 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                    href="/dashboard/proveedor/clientes"
                   >
+                    Ver perfil
+                  </Link>
+                  <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" type="button">
                     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M12 5h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+                      <path d="M12 12h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+                      <path d="M12 19h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
                     </svg>
                   </button>
                 </div>
-              </>
-            ) : (
-              <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
-                Selecciona una conversacion para ver el detalle.
               </div>
-            )}
+
+              <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)]">
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-center">
+                    <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm">Hoy</span>
+                  </div>
+                </div>
+
+                <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto px-5 pb-4">
+                  <div className="mx-auto w-full max-w-[880px] space-y-5">
+                    {currentMessages.map((message) => {
+                      const isMe = message.author === 'me';
+                      return (
+                        <div key={message.id} className={`flex items-end gap-3 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          {!isMe ? <CompanyLogo value={selectedConversation.logo} /> : null}
+                          <div
+                            className={`max-w-[78%] rounded-[1.35rem] px-4 py-3 text-sm ${
+                              isMe
+                                ? 'rounded-br-md bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-[0_10px_26px_rgba(79,70,229,0.22)]'
+                                : 'rounded-bl-md border border-slate-200 bg-white text-slate-700 shadow-[0_6px_18px_rgba(15,23,42,0.05)]'
+                            }`}
+                          >
+                            {message.body.map((line) => (
+                              <p key={line} className="leading-6">
+                                {line}
+                              </p>
+                            ))}
+                            <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${isMe ? 'justify-end text-indigo-100' : 'text-slate-400'}`}>
+                              {message.time}
+                              {isMe ? <span>✓✓</span> : null}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 bg-white px-5 py-4">
+                <div className="mx-auto flex w-full max-w-[880px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+                  <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" type="button">
+                    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <path d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l8.49-8.49a4 4 0 115.66 5.66L9.41 17.4a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    </svg>
+                  </button>
+                  <input
+                    className="w-full bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
+                    placeholder="Escribí un mensaje..."
+                  />
+                  <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-[0_18px_40px_rgba(79,70,229,0.25)] hover:bg-indigo-500" type="button">
+                    <PaperPlaneIcon />
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
-      </section>
+      )}
     </SupplierDashboardShell>
   );
 }

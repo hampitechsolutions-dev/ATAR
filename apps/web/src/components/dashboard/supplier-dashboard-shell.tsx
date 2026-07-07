@@ -13,6 +13,8 @@ type SupplierDashboardShellProps = {
   children: ReactNode;
   session: WebSession | null;
   searchPlaceholder?: string;
+  // Sin padding y a alto completo (para vistas que llenan todo, como el chat).
+  fullBleed?: boolean;
 };
 
 function HeaderActionIcon({ kind }: { kind: 'chat' | 'bell' }) {
@@ -54,6 +56,7 @@ export default function SupplierDashboardShell({
   children,
   session,
   searchPlaceholder = 'Buscar solicitudes, clientes, productos...',
+  fullBleed = false,
 }: SupplierDashboardShellProps) {
   return (
     <main className="h-screen overflow-hidden bg-[#f5f7fb] text-slate-950">
@@ -126,9 +129,15 @@ export default function SupplierDashboardShell({
             </div>
           </header>
 
-          <div className="h-[calc(100dvh-73px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-4 lg:px-6 lg:pb-6">
-            {children}
-          </div>
+          {fullBleed ? (
+            <div className="h-[calc(100dvh-73px-68px)] overflow-hidden lg:h-[calc(100dvh-73px)]">
+              {children}
+            </div>
+          ) : (
+            <div className="h-[calc(100dvh-73px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-4 lg:px-6 lg:pb-6">
+              {children}
+            </div>
+          )}
         </section>
       </div>
 

@@ -377,7 +377,7 @@ export default function DashboardProveedorPage() {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_0.95fr_0.95fr]">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_1fr]">
                   <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-950">Solicitudes recientes</p>
@@ -462,35 +462,6 @@ export default function DashboardProveedorPage() {
                     </div>
                   </section>
 
-                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-950">Estado de produccion</p>
-                      <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/pedidos">
-                        Ver calendario
-                      </Link>
-                    </div>
-                    <div className="mt-6 flex items-end justify-between gap-3">
-                      <div>
-                        <p className="text-xs text-slate-500">Ocupacion actual</p>
-                        <p className="mt-1 text-[2rem] font-semibold tracking-tight text-indigo-600">
-                          {dashboardData.occupancy}%
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[11px] text-slate-400">Disponible este mes</p>
-                        <p className="mt-1 text-lg font-semibold text-slate-950">
-                          {Math.max(24, 120 - dashboardData.activeOrders.length * 8)} ton
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4 h-2 rounded-full bg-slate-100">
-                      <div className="h-2 rounded-full bg-[linear-gradient(90deg,#5b4bff_0%,#6d5dfc_100%)]" style={{ width: `${dashboardData.occupancy}%` }} />
-                    </div>
-                    <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-3">
-                      <p className="text-[11px] text-slate-500">Proxima disponibilidad</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-950">15 de Junio</p>
-                    </div>
-                  </section>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
