@@ -498,9 +498,15 @@ export default function SupplierReportsPage() {
 
     const periodStart = chartRows[0]?.label ?? formatMonthLong(now);
     const periodEnd = chartRows[chartRows.length - 1]?.label ?? formatMonthLong(now);
-    const salesPerDay = totalSales / 31;
-    const quotesPerDay = quotes.length / 31;
-    const ordersPerDay = receivedOrders.length / 31;
+    const periodStartDate = new Date(now.getFullYear(), now.getMonth() - (chartRows.length - 1), 1);
+    const periodEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const periodDays = Math.max(
+      1,
+      Math.round((periodEndDate.getTime() - periodStartDate.getTime()) / (24 * 60 * 60 * 1000)) + 1,
+    );
+    const salesPerDay = totalSales / periodDays;
+    const quotesPerDay = quotes.length / periodDays;
+    const ordersPerDay = receivedOrders.length / periodDays;
 
     const recentActivity = [...quotes]
       .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
@@ -533,6 +539,7 @@ export default function SupplierReportsPage() {
       monthlyRows: chartRows.reverse(),
       periodStart,
       periodEnd,
+      periodDays,
       salesPerDay,
       quotesPerDay,
       ordersPerDay,
@@ -562,13 +569,13 @@ export default function SupplierReportsPage() {
               type="button"
             >
               <HeaderIcon kind="calendar" />
-              1 May, 2024 - 31 May, 2024
+              {analytics.periodStart} - {analytics.periodEnd}
             </button>
             <button
               className="inline-flex h-10 items-center rounded-xl border border-[#e7eaf3] bg-white px-4 text-sm font-semibold text-[#6d739d]"
               type="button"
             >
-              Ultimos 30 dias
+              Ultimos {analytics.periodDays} dias
             </button>
             <button
               className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d9dbff] bg-white px-4 text-sm font-semibold text-[#5546ff]"
@@ -591,41 +598,31 @@ export default function SupplierReportsPage() {
             {
               title: 'Ventas totales',
               value: loading ? '-' : formatCurrency(analytics.totalSales),
-              change: '+18%',
-              note: 'vs periodo anterior',
-              tone: 'text-emerald-500',
+              note: 'Ventas adjudicadas del periodo',
               icon: 'sales' as const,
             },
             {
               title: 'Cotizaciones enviadas',
               value: loading ? '-' : analytics.sentQuotes,
-              change: '+12%',
-              note: 'vs periodo anterior',
-              tone: 'text-emerald-500',
+              note: 'Cotizaciones registradas',
               icon: 'quotes' as const,
             },
             {
               title: 'Pedidos recibidos',
               value: loading ? '-' : analytics.receivedOrders,
-              change: '+20%',
-              note: 'vs periodo anterior',
-              tone: 'text-emerald-500',
+              note: 'Pedidos emitidos a tu empresa',
               icon: 'orders' as const,
             },
             {
               title: 'Tasa de conversion',
               value: loading ? '-' : `${analytics.conversionRate}%`,
-              change: '+6.3%',
-              note: 'vs periodo anterior',
-              tone: 'text-emerald-500',
+              note: 'Cotizaciones ganadas sobre enviadas',
               icon: 'rate' as const,
             },
             {
               title: 'Clientes nuevos',
               value: loading ? '-' : analytics.newClients,
-              change: '+25%',
-              note: 'vs periodo anterior',
-              tone: 'text-emerald-500',
+              note: 'Clientes activos en el periodo',
               icon: 'clients' as const,
             },
           ].map((card) => (
@@ -640,10 +637,7 @@ export default function SupplierReportsPage() {
                 <div>
                   <p className="text-xs font-semibold text-[#8b92bc]">{card.title}</p>
                   <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">{card.value}</p>
-                  <p className={`mt-1 text-[11px] ${card.tone}`}>
-                    {card.change}{' '}
-                    <span className="text-[#8d95be]">{card.note}</span>
-                  </p>
+                  <p className="mt-1 text-[11px] text-[#8d95be]">{card.note}</p>
                 </div>
               </div>
             </article>
@@ -660,9 +654,7 @@ export default function SupplierReportsPage() {
                     <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
                       {loading ? '-' : formatCurrency(analytics.totalSales)}
                     </p>
-                    <p className="mt-1 text-[11px] text-emerald-500">
-                      +18% <span className="text-[#8d95be]">vs periodo anterior</span>
-                    </p>
+                    <p className="mt-1 text-[11px] text-[#8d95be]">Serie consolidada del periodo analizado</p>
                   </div>
                   <button
                     className="inline-flex h-9 items-center rounded-xl border border-[#edf0fb] bg-white px-3 text-[11px] font-semibold text-[#7b84b1]"
@@ -803,7 +795,7 @@ export default function SupplierReportsPage() {
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-[#8d95be]">Dias en el periodo</span>
-                  <span className="font-semibold text-[#2c3567]">31 dias</span>
+                  <span className="font-semibold text-[#2c3567]">{analytics.periodDays} dias</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-[#8d95be]">Ventas promedio por dia</span>

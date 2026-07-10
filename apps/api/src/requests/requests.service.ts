@@ -103,14 +103,30 @@ export class RequestsService {
   }
 
   async findOpen(user: AuthUser) {
-    this.getCompanyIdForRole(user, MembershipRole.SUPPLIER);
+    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER);
+    const supplierCompanyName = await this.getCompanyNameById(supplierCompanyId);
 
     return this.prisma.request.findMany({
       where: {
-        privateRequest: false,
         status: {
           in: [RequestStatus.PUBLISHED, RequestStatus.REVIEWING],
         },
+        OR: [
+          {
+            privateRequest: false,
+          },
+          ...(supplierCompanyName
+            ? [
+                {
+                  privateRequest: true,
+                  preferredSupplierName: {
+                    contains: supplierCompanyName,
+                    mode: 'insensitive' as const,
+                  },
+                },
+              ]
+            : []),
+        ],
       },
       include: {
         buyerCompany: true,
@@ -625,7 +641,10 @@ export class RequestsService {
     }
 
     if (request.privateRequest) {
-      throw new ForbiddenException('El pedido es privado y no esta disponible para este proveedor.');
+      const supplierCompanyName = await this.getCompanyNameById(supplierCompanyId);
+      if (!this.matchesPreferredSupplier(request.preferredSupplierName, supplierCompanyName)) {
+        throw new ForbiddenException('El pedido es privado y no esta disponible para este proveedor.');
+      }
     }
 
     return {
@@ -807,6 +826,21 @@ export class RequestsService {
   private generateOrderNumber(requestId: string) {
     const compactDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     return `ATAR-${compactDate}-${requestId.slice(-6).toUpperCase()}`;
+  }
+
+  private matchesPreferredSupplier(
+    preferredSupplierName: string | null | undefined,
+    supplierCompanyName: string | null,
+  ) {
+    if (!preferredSupplierName || !supplierCompanyName) {
+      return false;
+    }
+
+    return preferredSupplierName
+      .split('|')
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean)
+      .includes(supplierCompanyName.trim().toLowerCase());
   }
 
   private isAdmin(user: AuthUser) {

@@ -9,6 +9,7 @@ import {
   type SendConversationMessagePayload,
 } from '@/lib/atar-api';
 import { getConversationSocket } from '@/lib/conversation-socket';
+import { SUPPLIER_COUNTERS_REFRESH_EVENT } from '@/lib/dashboard-hooks';
 import { loadSession, type WebSession } from '@/lib/session';
 import {
   DashboardCard,
@@ -227,6 +228,7 @@ export default function ConversationPanel({
           },
           activeSession.accessToken,
         );
+        window.dispatchEvent(new Event(SUPPLIER_COUNTERS_REFRESH_EVENT));
       }
 
       setConversation(detail);

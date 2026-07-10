@@ -5,8 +5,17 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
-import { atarApi } from '@/lib/atar-api';
-import { providerDirectory } from '@/lib/provider-directory';
+import {
+  atarApi,
+  type RequestCatalogCategoryRecord,
+  type RequestCatalogFieldRecord,
+} from '@/lib/atar-api';
+import { mapSupplierToProviderDirectoryItem, type ProviderDirectoryItem } from '@/lib/provider-directory';
+import {
+  findRequestCatalogCategory,
+  getRequestCatalogFields,
+  getRequestCatalogKeywords,
+} from '@/lib/request-catalog';
 
 type StepKey = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -35,20 +44,6 @@ type RequestDraft = {
   selectedProviders: string[];
 };
 
-type SpecModuleType = 'choices' | 'segmented' | 'input' | 'quantity' | 'uploader' | 'textarea';
-
-type SpecModule = {
-  id: string;
-  label: string;
-  type: SpecModuleType;
-  options?: readonly string[];
-  placeholder?: string;
-  helper?: string;
-  required?: boolean;
-  fullWidth?: boolean;
-  inputType?: 'text' | 'date';
-};
-
 const DRAFT_KEY = 'atar:buyer:new-request:draft';
 
 const steps = [
@@ -59,122 +54,7 @@ const steps = [
   { key: 5 as const, label: 'Resumen' },
 ];
 
-const categoryOptions = [
-  { label: 'Big Bags', subtitle: 'FIBC 500 - 2000 kg', imageSrc: '/bigbag.png', imageClassName: 'scale-[1.56] translate-y-4' },
-  { label: 'Bolsas PP', subtitle: 'Tejidas y laminadas', imageSrc: '/bolsapp.png', imageClassName: 'scale-[1.5] translate-y-4' },
-  { label: 'Polipropileno', subtitle: 'Tejidos, rafia y laminados', imageSrc: '/rollo.png', imageClassName: 'scale-[1.64] translate-y-2' },
-  { label: 'Polietileno', subtitle: 'Films, mangas y bobinas', imageSrc: '/bolsapp.png', imageClassName: 'scale-[1.52] translate-y-4' },
-  { label: 'Rollos y Telas', subtitle: 'Polipropileno y otros', imageSrc: '/rollo.png', imageClassName: 'scale-[1.64] translate-y-2' },
-  { label: 'Sacos', subtitle: 'De papel, rafia y mas', imageSrc: '/saco.png', imageClassName: 'scale-[1.5] translate-y-3' },
-  { label: 'A medida', subtitle: 'Desarrollos especiales', imageSrc: '/amedida.png', imageClassName: 'scale-[1.62] translate-y-3' },
-  { label: 'Tintas', subtitle: 'Flexografia e impresion industrial', imageSrc: '/amedida.png', imageClassName: 'scale-[1.52] translate-y-3' },
-] as const;
-
 const quantityShortcuts = ['50', '100', '250', '500', '1000', 'Otro'] as const;
-
-const providerKeywordsByCategory: Record<string, string[]> = {
-  'Big Bags': ['big bag', 'bolsas', 'fibc', 'polipropileno'],
-  'Bolsas PP': ['bolsas', 'packaging', 'polipropileno'],
-  Polipropileno: ['polipropileno', 'plasticos', 'rafia'],
-  Polietileno: ['plasticos', 'filmes', 'envases'],
-  'Rollos y Telas': ['filmes', 'packaging', 'plasticos'],
-  Sacos: ['bolsas', 'packaging', 'industriales'],
-  'A medida': ['atencion personalizada', 'integracion', 'premium'],
-  Tintas: ['impresiones', 'packaging', 'conversion'],
-};
-
-const productSpecModules: Record<string, SpecModule[]> = {
-  'Big Bags': [
-    { id: 'material', label: 'Material', type: 'choices', options: ['Polipropileno virgen', 'Reciclado', 'Laminado', 'Antiestatico'], required: true },
-    { id: 'capacidad', label: 'Capacidad', type: 'segmented', options: ['500 kg', '750 kg', '1000 kg', '1250 kg', '1500 kg', '2000 kg'], required: true },
-    { id: 'tipo-asa', label: 'Tipo de asa', type: 'choices', options: ['Loop', 'Cruzada', 'Tubular', '4 asas'], required: true },
-    { id: 'tipo-boca', label: 'Tipo de boca', type: 'segmented', options: ['Abierta', 'Faldon', 'Carga rapida', 'Valvula'] },
-    { id: 'tipo-fondo', label: 'Tipo de fondo', type: 'segmented', options: ['Plano', 'Descarga parcial', 'Descarga total'] },
-    { id: 'liner', label: 'Liner', type: 'segmented', options: ['Sin liner', 'Suelto', 'Pegado'] },
-    { id: 'impresion', label: 'Impresion', type: 'choices', options: ['Sin impresion', '1 color', '2 colores', 'Cobertura total'] },
-    { id: 'cantidad', label: 'Cantidad', type: 'quantity', required: true },
-    { id: 'adjuntos', label: 'Adjuntar archivos', type: 'uploader', helper: 'PDF, AI, PNG, STEP o DWG' },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', placeholder: 'Indicá medidas, certificaciones, uso o cualquier detalle clave.', fullWidth: true },
-  ],
-  'Bolsas PP': [
-    { id: 'material', label: 'Material', type: 'choices', options: ['Virgen', 'Reciclado', 'Laminado', 'Mixto'], required: true },
-    { id: 'gramaje', label: 'Gramaje', type: 'segmented', options: ['40 g', '55 g', '70 g', '90 g', '120 g'], required: true },
-    { id: 'medidas', label: 'Medidas', type: 'input', placeholder: 'Ej: 50 x 80 cm', required: true },
-    { id: 'fuelle', label: 'Fuelle', type: 'segmented', options: ['Sin fuelle', 'Lateral', 'Base'] },
-    { id: 'laminado', label: 'Laminado', type: 'segmented', options: ['No', '1 cara', '2 caras'] },
-    { id: 'microperforado', label: 'Microperforado', type: 'segmented', options: ['No', 'Si'] },
-    { id: 'tipo-cierre', label: 'Tipo de cierre', type: 'choices', options: ['Abierto', 'Costura', 'Valvula', 'Troquel'] },
-    { id: 'impresion', label: 'Impresion', type: 'choices', options: ['Sin impresion', '1 color', '2 colores', 'Full print'] },
-    { id: 'cantidad', label: 'Cantidad', type: 'quantity', required: true },
-    { id: 'adjuntos', label: 'Adjuntar diseño', type: 'uploader', helper: 'Subí artes, croquis o referencias.' },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', placeholder: 'Agregá detalles sobre sellado, uso o terminaciones.', fullWidth: true },
-  ],
-  Polipropileno: [
-    { id: 'tipo', label: 'Tipo', type: 'choices', options: ['Homopolimero', 'Copolimero', 'Rafia', 'Fibra'], required: true },
-    { id: 'presentacion', label: 'Presentacion', type: 'segmented', options: ['Pellets', 'Rollo', 'Tejido', 'Bobina'], required: true },
-    { id: 'color', label: 'Color', type: 'segmented', options: ['Natural', 'Blanco', 'Negro', 'Personalizado'] },
-    { id: 'indice-fluidez', label: 'Indice de fluidez', type: 'input', placeholder: 'Ej: 3.5 g/10 min' },
-    { id: 'cantidad', label: 'Cantidad', type: 'quantity', required: true },
-    { id: 'frecuencia', label: 'Frecuencia de compra', type: 'segmented', options: ['Unica', 'Mensual', 'Trimestral', 'Programada'] },
-    { id: 'adjuntos', label: 'Adjuntar especificaciones', type: 'uploader', helper: 'Subí ficha técnica o requerimientos.' },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', placeholder: 'Especificá aplicaciones, normas o propiedades buscadas.', fullWidth: true },
-  ],
-  Polietileno: [
-    { id: 'tipo', label: 'Tipo', type: 'choices', options: ['PEAD', 'PEBD', 'PEBDL', 'Reciclado'], required: true },
-    { id: 'presentacion', label: 'Presentacion', type: 'segmented', options: ['Film', 'Manga', 'Bobina', 'Lamina'], required: true },
-    { id: 'espesor', label: 'Espesor', type: 'input', placeholder: 'Ej: 80 micrones' },
-    { id: 'ancho', label: 'Ancho', type: 'input', placeholder: 'Ej: 1200 mm' },
-    { id: 'color', label: 'Color', type: 'segmented', options: ['Natural', 'Blanco', 'Negro', 'Color custom'] },
-    { id: 'uso', label: 'Uso', type: 'choices', options: ['Packaging', 'Industrial', 'Agro', 'Construccion'] },
-    { id: 'cantidad', label: 'Cantidad', type: 'quantity', required: true },
-    { id: 'adjuntos', label: 'Adjuntar ficha tecnica', type: 'uploader', helper: 'Incluí tolerancias o fichas de calidad.' },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', placeholder: 'Agregá requerimientos de aplicación, espesor o acabado.', fullWidth: true },
-  ],
-  'Rollos y Telas': [
-    { id: 'material', label: 'Material', type: 'choices', options: ['PP', 'PE', 'Mixto', 'Reciclado'], required: true },
-    { id: 'ancho', label: 'Ancho', type: 'input', placeholder: 'Ej: 160 cm', required: true },
-    { id: 'largo', label: 'Largo', type: 'input', placeholder: 'Ej: 500 m' },
-    { id: 'espesor', label: 'Espesor', type: 'input', placeholder: 'Ej: 120 micrones' },
-    { id: 'color', label: 'Color', type: 'segmented', options: ['Natural', 'Blanco', 'Negro', 'Custom'] },
-    { id: 'tratamiento-uv', label: 'Tratamiento UV', type: 'segmented', options: ['No', 'UV 6 meses', 'UV 12 meses', 'Reforzado'] },
-    { id: 'laminado', label: 'Laminado', type: 'segmented', options: ['No', 'Simple', 'Doble'] },
-    { id: 'impresion', label: 'Impresion', type: 'choices', options: ['Sin impresion', '1 color', '2 colores', 'Alta cobertura'] },
-    { id: 'cantidad', label: 'Cantidad', type: 'quantity', required: true },
-    { id: 'adjuntos', label: 'Adjuntar plano', type: 'uploader', helper: 'Subí referencia visual, plano o muestra.' },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', placeholder: 'Indicá aplicación, tensión, tratamiento o acabado.', fullWidth: true },
-  ],
-  Sacos: [
-    { id: 'material', label: 'Material', type: 'choices', options: ['Papel', 'Rafia', 'Mixto', 'Laminado'], required: true },
-    { id: 'capacidad', label: 'Capacidad', type: 'segmented', options: ['10 kg', '25 kg', '40 kg', '50 kg', 'Custom'], required: true },
-    { id: 'medidas', label: 'Medidas', type: 'input', placeholder: 'Ej: 45 x 75 cm' },
-    { id: 'costura', label: 'Costura', type: 'segmented', options: ['Simple', 'Doble', 'Termosellada'] },
-    { id: 'valvula', label: 'Valvula', type: 'segmented', options: ['Sin valvula', 'Interna', 'Externa'] },
-    { id: 'impresion', label: 'Impresion', type: 'choices', options: ['Sin impresion', '1 color', '2 colores', '3 colores'] },
-    { id: 'paletizado', label: 'Paletizado', type: 'segmented', options: ['Sin paletizar', 'Estandar', 'Reforzado'] },
-    { id: 'cantidad', label: 'Cantidad', type: 'quantity', required: true },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', placeholder: 'Agregá detalles sobre carga, almacenamiento o despacho.', fullWidth: true },
-  ],
-  'A medida': [
-    { id: 'descripcion-producto', label: 'Descripcion del producto', type: 'textarea', placeholder: 'Contanos qué producto necesitás desarrollar.', required: true, fullWidth: true },
-    { id: 'uso-producto', label: 'Uso del producto', type: 'choices', options: ['Agro', 'Construccion', 'Logistica', 'Retail'], required: true },
-    { id: 'material-deseado', label: 'Material deseado', type: 'choices', options: ['PP', 'PE', 'Papel', 'A definir'] },
-    { id: 'cantidad-estimada', label: 'Cantidad estimada', type: 'quantity', required: true },
-    { id: 'fecha-objetivo', label: 'Fecha objetivo', type: 'input', inputType: 'date', required: true },
-    { id: 'adjuntar-planos', label: 'Adjuntar planos', type: 'uploader', helper: 'PDF, CAD o documentación técnica.' },
-    { id: 'adjuntar-imagenes', label: 'Adjuntar imágenes', type: 'uploader', helper: 'Fotos, renders o referencias visuales.' },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', placeholder: 'Indicá condicionantes, normativas o hitos del proyecto.', fullWidth: true },
-  ],
-  Tintas: [
-    { id: 'tipo-tinta', label: 'Tipo de tinta', type: 'choices', options: ['Flexografica', 'Huecograbado', 'Base agua', 'Base solvente'], required: true },
-    { id: 'base', label: 'Base', type: 'segmented', options: ['Agua', 'Solvente', 'UV', 'Especial'], required: true },
-    { id: 'cantidad-colores', label: 'Cantidad de colores', type: 'segmented', options: ['1', '2', '3', '4+'] },
-    { id: 'pantone', label: 'Pantone', type: 'input', placeholder: 'Ej: Pantone 286 C' },
-    { id: 'sustrato', label: 'Sustrato', type: 'choices', options: ['PP', 'PE', 'Papel', 'Mixto'] },
-    { id: 'cantidad', label: 'Cantidad', type: 'quantity', required: true },
-    { id: 'adjuntos', label: 'Adjuntar diseño', type: 'uploader', helper: 'Subí artes, layout o especificaciones.' },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', placeholder: 'Aclará viscosidad, anilox, secado o requerimientos especiales.', fullWidth: true },
-  ],
-};
 
 const syncedDraftFields: Partial<Record<string, keyof RequestDraft>> = {
   material: 'material',
@@ -187,8 +67,11 @@ const syncedDraftFields: Partial<Record<string, keyof RequestDraft>> = {
   'fecha-objetivo': 'deliveryDate',
 };
 
-function getCategoryOption(category: string) {
-  return categoryOptions.find((option) => option.label === category) ?? null;
+function getCategoryOption(
+  categories: RequestCatalogCategoryRecord[],
+  category: string,
+) {
+  return findRequestCatalogCategory(categories, category);
 }
 
 function clampStep(value: number): StepKey {
@@ -200,8 +83,11 @@ function clampStep(value: number): StepKey {
   return 6;
 }
 
-function getProductModules(category: string) {
-  return productSpecModules[category] ?? [];
+function getProductModules(
+  categories: RequestCatalogCategoryRecord[],
+  category: string,
+): RequestCatalogFieldRecord[] {
+  return getRequestCatalogFields(categories, category);
 }
 
 function getModuleValue(draft: RequestDraft, moduleId: string) {
@@ -233,8 +119,11 @@ function getModuleFiles(draft: RequestDraft, moduleId: string) {
   return draft.uploadedFiles[moduleId] ?? [];
 }
 
-function getStepTwoSummary(draft: RequestDraft) {
-  const modules = getProductModules(draft.category);
+function getStepTwoSummary(
+  categories: RequestCatalogCategoryRecord[],
+  draft: RequestDraft,
+) {
+  const modules = getProductModules(categories, draft.category);
   const values = modules
     .filter((module) => module.type !== 'uploader' && module.id !== 'observaciones')
     .map((module) => getModuleValue(draft, module.id).trim())
@@ -246,8 +135,11 @@ function getStepTwoSummary(draft: RequestDraft) {
   };
 }
 
-function getSpecificationLines(draft: RequestDraft) {
-  return getProductModules(draft.category).flatMap((module) => {
+function getSpecificationLines(
+  categories: RequestCatalogCategoryRecord[],
+  draft: RequestDraft,
+) {
+  return getProductModules(categories, draft.category).flatMap((module) => {
     if (module.type === 'uploader') {
       const fileNames = getModuleFiles(draft, module.id);
       return fileNames.length > 0 ? [`${module.label}: ${fileNames.join(', ')}`] : [];
@@ -274,14 +166,14 @@ function loadDraft(): RequestDraft {
       deliveryCountry: 'Argentina',
       deliveryCity: '',
       deliveryAddressMode: 'saved',
-      deliveryAddressLine: 'Planta San Martin',
+      deliveryAddressLine: '',
       deliveryDate: '',
       deliveryDateMode: 'asap',
       deliveryDateRange: '',
       deliveryNotes: '',
-      deliverySchedule: 'Lunes a viernes 8 a 17 hs',
-      deliveryContactName: 'Mariana Lopez',
-      deliveryPhone: '+54 11 3456 7890',
+      deliverySchedule: '',
+      deliveryContactName: '',
+      deliveryPhone: '',
       selectedProviders: [],
     };
   }
@@ -302,14 +194,14 @@ function loadDraft(): RequestDraft {
       deliveryCountry: 'Argentina',
       deliveryCity: '',
       deliveryAddressMode: 'saved',
-      deliveryAddressLine: 'Planta San Martin',
+      deliveryAddressLine: '',
       deliveryDate: '',
       deliveryDateMode: 'asap',
       deliveryDateRange: '',
       deliveryNotes: '',
-      deliverySchedule: 'Lunes a viernes 8 a 17 hs',
-      deliveryContactName: 'Mariana Lopez',
-      deliveryPhone: '+54 11 3456 7890',
+      deliverySchedule: '',
+      deliveryContactName: '',
+      deliveryPhone: '',
       selectedProviders: [],
     };
   }
@@ -330,14 +222,14 @@ function loadDraft(): RequestDraft {
       deliveryCountry: parsed.deliveryCountry ?? 'Argentina',
       deliveryCity: parsed.deliveryCity ?? '',
       deliveryAddressMode: parsed.deliveryAddressMode ?? 'saved',
-      deliveryAddressLine: parsed.deliveryAddressLine ?? 'Planta San Martin',
+      deliveryAddressLine: parsed.deliveryAddressLine ?? '',
       deliveryDate: parsed.deliveryDate ?? '',
       deliveryDateMode: parsed.deliveryDateMode ?? 'asap',
       deliveryDateRange: parsed.deliveryDateRange ?? '',
       deliveryNotes: parsed.deliveryNotes ?? '',
-      deliverySchedule: parsed.deliverySchedule ?? 'Lunes a viernes 8 a 17 hs',
-      deliveryContactName: parsed.deliveryContactName ?? 'Mariana Lopez',
-      deliveryPhone: parsed.deliveryPhone ?? '+54 11 3456 7890',
+      deliverySchedule: parsed.deliverySchedule ?? '',
+      deliveryContactName: parsed.deliveryContactName ?? '',
+      deliveryPhone: parsed.deliveryPhone ?? '',
       selectedProviders: Array.isArray(parsed.selectedProviders) ? parsed.selectedProviders : [],
     };
   } catch {
@@ -356,14 +248,14 @@ function loadDraft(): RequestDraft {
       deliveryCountry: 'Argentina',
       deliveryCity: '',
       deliveryAddressMode: 'saved',
-      deliveryAddressLine: 'Planta San Martin',
+      deliveryAddressLine: '',
       deliveryDate: '',
       deliveryDateMode: 'asap',
       deliveryDateRange: '',
       deliveryNotes: '',
-      deliverySchedule: 'Lunes a viernes 8 a 17 hs',
-      deliveryContactName: 'Mariana Lopez',
-      deliveryPhone: '+54 11 3456 7890',
+      deliverySchedule: '',
+      deliveryContactName: '',
+      deliveryPhone: '',
       selectedProviders: [],
     };
   }
@@ -457,6 +349,31 @@ export default function BuyerNewRequestWizardPage() {
   const [submitting, setSubmitting] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [providerSearch, setProviderSearch] = useState('');
+  const [providers, setProviders] = useState<ProviderDirectoryItem[]>([]);
+  const [requestCategories, setRequestCategories] = useState<RequestCatalogCategoryRecord[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRequestCategories() {
+      try {
+        const response = await atarApi.getRequestCategories();
+        if (!cancelled) {
+          setRequestCategories(response);
+        }
+      } catch {
+        if (!cancelled) {
+          setRequestCategories([]);
+        }
+      }
+    }
+
+    void loadRequestCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const initialCategory = searchParams?.get('category');
@@ -475,8 +392,65 @@ export default function BuyerNewRequestWizardPage() {
     saveDraft(draft);
   }, [draft]);
 
-  const providers = useMemo(() => providerDirectory.slice(0, 6), []);
-  const providerKeywords = useMemo(() => providerKeywordsByCategory[draft.category] ?? [], [draft.category]);
+  useEffect(() => {
+    if (!session?.accessToken) {
+      setProviders([]);
+      return;
+    }
+    const accessToken: string = session.accessToken;
+
+    let cancelled = false;
+
+    async function loadSuppliers() {
+      try {
+        const response = await atarApi.getSuppliers(accessToken);
+        if (cancelled) {
+          return;
+        }
+
+        if (response.length > 0) {
+          setProviders(response.map((supplier) => mapSupplierToProviderDirectoryItem(supplier)));
+          return;
+        }
+
+        setProviders([]);
+      } catch {
+        if (!cancelled) {
+          setProviders([]);
+        }
+      }
+    }
+
+    void loadSuppliers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.accessToken]);
+
+  useEffect(() => {
+    if (!session?.user) {
+      return;
+    }
+
+    const fullName = [session.user.firstName, session.user.lastName].filter(Boolean).join(' ').trim();
+
+    setDraft((current) => {
+      if (current.deliveryContactName || current.deliveryCountry !== 'Argentina') {
+        return current;
+      }
+
+      return {
+        ...current,
+        deliveryContactName: fullName || current.deliveryContactName,
+      };
+    });
+  }, [session?.user]);
+
+  const providerKeywords = useMemo(
+    () => getRequestCatalogKeywords(requestCategories, draft.category),
+    [draft.category, requestCategories],
+  );
   const filteredProviders = useMemo(() => {
     const query = providerSearch.trim().toLowerCase();
     if (!query) {
@@ -494,7 +468,10 @@ export default function BuyerNewRequestWizardPage() {
     return [...filteredProviders]
       .map((provider) => {
         const haystack = [provider.category, provider.description, provider.tags.join(' ')].join(' ').toLowerCase();
-        const score = providerKeywords.reduce((total, keyword) => total + (haystack.includes(keyword) ? 2 : 0), 0) + Number.parseFloat(provider.rating);
+        const score =
+          providerKeywords.reduce((total, keyword) => total + (haystack.includes(keyword) ? 2 : 0), 0) +
+          provider.tags.length +
+          (typeof provider.leadTimeDays === 'number' ? 1 : 0);
         return { provider, score };
       })
       .sort((left, right) => right.score - left.score)
@@ -507,13 +484,25 @@ export default function BuyerNewRequestWizardPage() {
     return providers.filter((provider) => selected.has(provider.id));
   }, [draft.selectedProviders, providers]);
 
-  const selectedCategory = useMemo(() => getCategoryOption(draft.category), [draft.category]);
-  const currentProductModules = useMemo(() => getProductModules(draft.category), [draft.category]);
-  const stepTwoSummary = useMemo(() => getStepTwoSummary(draft), [draft]);
-  const specificationLines = useMemo(() => getSpecificationLines(draft), [draft]);
+  const selectedCategory = useMemo(
+    () => getCategoryOption(requestCategories, draft.category),
+    [draft.category, requestCategories],
+  );
+  const currentProductModules = useMemo(
+    () => getProductModules(requestCategories, draft.category),
+    [draft.category, requestCategories],
+  );
+  const stepTwoSummary = useMemo(
+    () => getStepTwoSummary(requestCategories, draft),
+    [draft, requestCategories],
+  );
+  const specificationLines = useMemo(
+    () => getSpecificationLines(requestCategories, draft),
+    [draft, requestCategories],
+  );
   const deliveryMapQuery = useMemo(() => {
     if (draft.deliveryAddressMode === 'saved') {
-      return [draft.deliveryAddressLine || 'Planta San Martin', 'Av. San Martin 1230', draft.deliveryCity || 'San Martin', 'Buenos Aires', draft.deliveryCountry || 'Argentina']
+      return [draft.deliveryAddressLine, draft.deliveryCity, draft.deliveryCountry]
         .filter(Boolean)
         .join(', ');
     }
@@ -524,7 +513,7 @@ export default function BuyerNewRequestWizardPage() {
     () => `https://www.google.com/maps?q=${encodeURIComponent(deliveryMapQuery)}&z=15&output=embed`,
     [deliveryMapQuery],
   );
-  const canContinue = step === 1 ? Boolean(draft.category.trim()) : true;
+  const canContinue = step === 1 ? Boolean(selectedCategory) : true;
   const sidebarSteps = [
     {
       key: 1 as const,
@@ -666,7 +655,7 @@ export default function BuyerNewRequestWizardPage() {
     setError(null);
 
     try {
-      const specLines = getSpecificationLines(draft);
+      const specLines = getSpecificationLines(requestCategories, draft);
       const title = draft.title.trim() || `${draft.category} - ${specLines[0]?.replace(/^[^:]+:\s*/, '') || 'Solicitud de cotización'}`;
       const description = [
         ...specLines,
@@ -697,6 +686,9 @@ export default function BuyerNewRequestWizardPage() {
         parsedDeliveryDate && !Number.isNaN(parsedDeliveryDate.getTime())
           ? parsedDeliveryDate.toISOString()
           : undefined;
+      const selectedProviderNames = selectedProviders.map((provider) => provider.name.trim()).filter(Boolean);
+      const preferredSupplierName = selectedProviderNames.join(' | ').slice(0, 120) || undefined;
+      const privateRequest = selectedProviderNames.length > 0;
 
       const created = await atarApi.createRequest(
         {
@@ -705,7 +697,8 @@ export default function BuyerNewRequestWizardPage() {
           category: draft.category,
           status: 'PUBLISHED',
           dueDate,
-          privateRequest: false,
+          privateRequest,
+          preferredSupplierName,
         },
         session.accessToken,
       );
@@ -823,63 +816,71 @@ export default function BuyerNewRequestWizardPage() {
               </div>
 
               <div className="mt-5 grid flex-1 auto-rows-fr gap-3 grid-cols-2 sm:gap-4 xl:grid-cols-4">
-                {categoryOptions.map((option) => {
-                  const active = draft.category === option.label;
-                  return (
-                    <button
-                      key={option.label}
-                      className={`group relative flex h-full min-h-[150px] flex-col overflow-hidden rounded-[20px] border text-left transition duration-300 sm:min-h-[210px] ${
-                        active
-                          ? 'border-[#4f46ff] shadow-[0_22px_46px_rgba(79,70,255,0.18)] ring-1 ring-[#4f46ff]'
-                          : 'border-slate-200 shadow-[0_10px_26px_rgba(15,23,42,0.05)] hover:-translate-y-1 hover:border-[#c9cdff] hover:shadow-[0_26px_48px_rgba(15,23,42,0.12)]'
-                      }`}
-                      onClick={() => setDraft((current) => ({ ...current, category: option.label }))}
-                      type="button"
-                    >
-                      {active ? (
-                        <span className="absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#4f46ff] text-white shadow-[0_10px_24px_rgba(79,70,255,0.30)]">
-                          <Icon name="check" />
-                        </span>
-                      ) : null}
-
-                      <div className="relative flex-1 overflow-hidden bg-[radial-gradient(circle_at_50%_16%,rgba(79,70,255,0.12),transparent_60%),linear-gradient(180deg,#ffffff_0%,#f2f3ff_100%)]">
-                        <div
-                          className={`absolute inset-0 transition duration-500 ease-out ${
-                            active ? 'scale-[1.06]' : 'group-hover:scale-[1.05]'
-                          } ${option.imageClassName ?? ''}`}
-                        >
-                          <Image
-                            alt={option.label}
-                            className="object-contain drop-shadow-[0_16px_26px_rgba(15,23,42,0.10)]"
-                            fill
-                            sizes="(min-width: 1280px) 300px, (min-width: 768px) 50vw, 100vw"
-                            src={option.imageSrc}
-                          />
-                        </div>
-                      </div>
-
-                      <div
-                        className={`flex items-center justify-between gap-3 border-t px-4 py-3.5 transition duration-300 ${
-                          active ? 'border-[#e2e0ff] bg-[#f8f9ff]' : 'border-slate-100 bg-white'
+                {requestCategories.length === 0 ? (
+                  <div className="col-span-full rounded-[20px] border border-dashed border-slate-300 bg-white px-5 py-8 text-sm text-slate-500">
+                    No hay categorías activas cargadas en el catálogo.
+                  </div>
+                ) : (
+                  requestCategories.map((option) => {
+                    const active = draft.category === option.label;
+                    return (
+                      <button
+                        key={option.id}
+                        className={`group relative flex h-full min-h-[150px] flex-col overflow-hidden rounded-[20px] border text-left transition duration-300 sm:min-h-[210px] ${
+                          active
+                            ? 'border-[#4f46ff] shadow-[0_22px_46px_rgba(79,70,255,0.18)] ring-1 ring-[#4f46ff]'
+                            : 'border-slate-200 shadow-[0_10px_26px_rgba(15,23,42,0.05)] hover:-translate-y-1 hover:border-[#c9cdff] hover:shadow-[0_26px_48px_rgba(15,23,42,0.12)]'
                         }`}
+                        onClick={() => setDraft((current) => ({ ...current, category: option.label }))}
+                        type="button"
                       >
-                        <div className="min-w-0">
-                          <p className="truncate text-[15px] font-semibold tracking-[-0.03em] text-slate-950">{option.label}</p>
-                          <p className="mt-0.5 truncate text-[11px] leading-4 text-slate-500">{option.subtitle}</p>
+                        {active ? (
+                          <span className="absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#4f46ff] text-white shadow-[0_10px_24px_rgba(79,70,255,0.30)]">
+                            <Icon name="check" />
+                          </span>
+                        ) : null}
+
+                        <div className="relative flex-1 overflow-hidden bg-[radial-gradient(circle_at_50%_16%,rgba(79,70,255,0.12),transparent_60%),linear-gradient(180deg,#ffffff_0%,#f2f3ff_100%)]">
+                          {option.imageSrc ? (
+                            <div
+                              className={`absolute inset-0 transition duration-500 ease-out ${
+                                active ? 'scale-[1.06]' : 'group-hover:scale-[1.05]'
+                              } ${option.imageClassName ?? ''}`}
+                            >
+                              <Image
+                                alt={option.label}
+                                className="object-contain drop-shadow-[0_16px_26px_rgba(15,23,42,0.10)]"
+                                fill
+                                sizes="(min-width: 1280px) 300px, (min-width: 768px) 50vw, 100vw"
+                                src={option.imageSrc}
+                              />
+                            </div>
+                          ) : null}
                         </div>
-                        <span
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition duration-300 ${
-                            active
-                              ? 'bg-[#4f46ff] text-white'
-                              : 'bg-[#eef2ff] text-[#4f46ff] group-hover:bg-[#4f46ff] group-hover:text-white group-hover:translate-x-0.5'
+
+                        <div
+                          className={`flex items-center justify-between gap-3 border-t px-4 py-3.5 transition duration-300 ${
+                            active ? 'border-[#e2e0ff] bg-[#f8f9ff]' : 'border-slate-100 bg-white'
                           }`}
                         >
-                          <Icon name="arrow" />
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+                          <div className="min-w-0">
+                            <p className="truncate text-[15px] font-semibold tracking-[-0.03em] text-slate-950">{option.label}</p>
+                            <p className="mt-0.5 truncate text-[11px] leading-4 text-slate-500">{option.subtitle}</p>
+                          </div>
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition duration-300 ${
+                              active
+                                ? 'bg-[#4f46ff] text-white'
+                                : 'bg-[#eef2ff] text-[#4f46ff] group-hover:bg-[#4f46ff] group-hover:text-white group-hover:translate-x-0.5'
+                            }`}
+                          >
+                            <Icon name="arrow" />
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
           ) : null}
@@ -981,7 +982,7 @@ export default function BuyerNewRequestWizardPage() {
                         <div className="mt-4">
                           <input
                             className="h-10 w-full rounded-[14px] border border-slate-200 bg-[#fbfcff] px-3.5 text-[13px] text-slate-950 outline-none transition sm:h-11 sm:px-4 focus:border-[#4f46ff] focus:bg-white focus:ring-4 focus:ring-[#4f46ff]/10"
-                            placeholder={module.placeholder}
+                            placeholder={module.placeholder ?? undefined}
                             type={module.inputType ?? 'text'}
                             value={value}
                             onChange={(event) => updateSpecValue(module.id, event.target.value)}
@@ -993,7 +994,7 @@ export default function BuyerNewRequestWizardPage() {
                         <div className="mt-4">
                           <textarea
                             className="h-[88px] w-full resize-none rounded-[16px] border border-slate-200 bg-[#fbfcff] px-3.5 py-3 text-[13px] text-slate-950 outline-none transition sm:h-[96px] sm:px-4 focus:border-[#4f46ff] focus:bg-white focus:ring-4 focus:ring-[#4f46ff]/10"
-                            placeholder={module.placeholder}
+                            placeholder={module.placeholder ?? undefined}
                             value={value}
                             onChange={(event) => updateSpecValue(module.id, event.target.value)}
                           />
@@ -1107,14 +1108,7 @@ export default function BuyerNewRequestWizardPage() {
                             ? 'border-[#4f46ff] bg-[#f5f4ff] text-[#4f46ff]'
                             : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
                         }`}
-                        onClick={() =>
-                          setDraft((current) => ({
-                            ...current,
-                            deliveryAddressMode: 'saved',
-                            deliveryAddressLine: current.deliveryAddressLine || 'Planta San Martin',
-                            deliveryCity: current.deliveryCity || 'San Martin',
-                          }))
-                        }
+                        onClick={() => setDraft((current) => ({ ...current, deliveryAddressMode: 'saved' }))}
                         type="button"
                       >
                         <span className={`h-2.5 w-2.5 rounded-full ${draft.deliveryAddressMode === 'saved' ? 'bg-[#4f46ff]' : 'bg-slate-200'}`} />
@@ -1138,8 +1132,12 @@ export default function BuyerNewRequestWizardPage() {
                       <div className="mt-4 rounded-[16px] border border-slate-200 bg-[#fbfcff] px-4 py-3">
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-[13px] font-semibold text-slate-950">{draft.deliveryAddressLine}</p>
-                            <p className="mt-1 truncate text-[11px] text-slate-500">Av. San Martin 1230, B1679, San Martin, Buenos Aires, Argentina</p>
+                            <p className="text-[13px] font-semibold text-slate-950">
+                              {draft.deliveryAddressLine || 'Sin dirección guardada'}
+                            </p>
+                            <p className="mt-1 truncate text-[11px] text-slate-500">
+                              {[draft.deliveryCity, draft.deliveryCountry].filter(Boolean).join(', ') || 'Completá una dirección real de entrega'}
+                            </p>
                           </div>
                           <span className="text-slate-400">
                             <Icon name="arrow" />
@@ -1383,9 +1381,8 @@ export default function BuyerNewRequestWizardPage() {
                           </span>
                           <p className="mt-4 truncate text-[14px] font-semibold text-slate-950">{provider.name}</p>
                           <p className="mt-1 truncate text-[11px] text-slate-500">{provider.city}</p>
-                          <div className="mt-3 flex items-center gap-1 text-[11px] text-slate-500">
-                            <span className="text-amber-500">★</span>
-                            <span>{provider.rating} ({120 - provider.name.length})</span>
+                          <div className="mt-3 text-[11px] text-slate-500">
+                            {provider.category}
                           </div>
                           <div className="mt-3">
                             <span className="inline-flex rounded-full bg-[#eef2ff] px-2.5 py-1 text-[10px] font-semibold text-[#4f46ff]">
@@ -1407,7 +1404,7 @@ export default function BuyerNewRequestWizardPage() {
                     <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_100px_48px] gap-3 border-b border-slate-100 px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                       <span>Proveedor</span>
                       <span>Ubicación</span>
-                      <span>Calificación</span>
+                      <span>Categoría</span>
                       <span />
                     </div>
 
@@ -1423,10 +1420,7 @@ export default function BuyerNewRequestWizardPage() {
                               <span className="truncate text-[13px] font-semibold text-slate-950">{provider.name}</span>
                             </button>
                             <span className="truncate text-[12px] text-slate-500">{provider.city}</span>
-                            <span className="flex items-center gap-1 text-[12px] text-slate-600">
-                              <span className="text-amber-500">★</span>
-                              {provider.rating}
-                            </span>
+                            <span className="truncate text-[12px] text-slate-600">{provider.category}</span>
                             <button className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-slate-400 transition hover:bg-slate-50 hover:text-slate-600" type="button">
                               <svg aria-hidden="true" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                                 <circle cx="12" cy="5" r="1.8" />
@@ -1442,18 +1436,9 @@ export default function BuyerNewRequestWizardPage() {
 
                   <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
                     <p className="text-[11px] text-slate-500">Mostrando {filteredProviders.length} de {providers.length} proveedores</p>
-                    <div className="flex items-center gap-1.5">
-                      {['2', '3', '...', '5'].map((item) => (
-                        <span
-                          key={item}
-                          className={`inline-flex h-7 min-w-7 items-center justify-center rounded-[8px] px-2 text-[11px] font-semibold ${
-                            item === '3' ? 'bg-[#eef2ff] text-[#4f46ff]' : 'bg-white text-slate-400'
-                          }`}
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      Actualización en tiempo real
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1587,8 +1572,8 @@ export default function BuyerNewRequestWizardPage() {
                         </span>
                         <div>
                           <p className="text-[12px] font-semibold text-slate-900">Tiempo estimado de respuesta</p>
-                          <p className="mt-1 text-[24px] font-semibold tracking-[-0.04em] text-[#4f46ff]">3 minutos</p>
-                          <p className="text-[11px] leading-5 text-slate-500">Te notificaremos por email.</p>
+                          <p className="mt-1 text-[24px] font-semibold tracking-[-0.04em] text-[#4f46ff]">{selectedProviders.length}</p>
+                          <p className="text-[11px] leading-5 text-slate-500">proveedores seleccionados serán notificados por email.</p>
                         </div>
                       </div>
                     </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { type QuoteRecord } from '@/lib/atar-api';
@@ -422,12 +423,12 @@ export default function SupplierQuotesPage() {
                   value={search}
                 />
               </label>
-              <button
+              <Link
                 className="inline-flex h-10 items-center justify-center rounded-xl bg-[#5546ff] px-4 text-sm font-semibold text-white transition hover:bg-[#4739ea]"
-                type="button"
+                href="/dashboard/proveedor/solicitudes"
               >
                 + Nueva cotizacion
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -551,9 +552,12 @@ export default function SupplierQuotesPage() {
                                 <p className="truncate font-semibold text-[#33407a]">
                                   {truncateMiddle(quote.id, 10, 5)}
                                 </p>
-                                <button className="mt-1 text-xs font-semibold text-[#5546ff]" type="button">
+                                <Link
+                                  className="mt-1 inline-flex text-xs font-semibold text-[#5546ff]"
+                                  href={`/dashboard/proveedor/cotizaciones/${quote.id}`}
+                                >
                                   Ver detalle
-                                </button>
+                                </Link>
                               </div>
                             </div>
                           </td>
@@ -594,12 +598,12 @@ export default function SupplierQuotesPage() {
                           </td>
                           <td className="px-4 py-4 text-[#6f77a7]">{formatDate(quote.request?.dueDate ?? null)}</td>
                           <td className="px-5 py-4 text-right">
-                            <button
+                            <Link
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#8f95b8] transition hover:bg-[#f7f8fe]"
-                              type="button"
+                              href={`/dashboard/proveedor/cotizaciones/${quote.id}`}
                             >
                               <DotsIcon />
-                            </button>
+                            </Link>
                           </td>
                         </tr>
                       );
@@ -735,9 +739,17 @@ export default function SupplierQuotesPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full bg-[#fff2d8] px-2 py-1 text-[10px] font-semibold text-[#e0911c]">
-                        Vence en {daysLeft} dias
-                      </span>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="rounded-full bg-[#fff2d8] px-2 py-1 text-[10px] font-semibold text-[#e0911c]">
+                          Vence en {daysLeft} dias
+                        </span>
+                        <Link
+                          className="text-[11px] font-semibold text-[#4a3df0] hover:text-[#3d31d6]"
+                          href={`/dashboard/proveedor/cotizaciones/${quote.id}`}
+                        >
+                          Ver detalle
+                        </Link>
+                      </div>
                     </div>
                   </article>
                 );

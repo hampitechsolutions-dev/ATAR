@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { atarApi, type NotificationRecord } from '@/lib/atar-api';
-import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
+import {
+  SUPPLIER_COUNTERS_REFRESH_EVENT,
+  useSupplierDashboardData,
+} from '@/lib/dashboard-hooks';
 
 function formatRelative(value: string) {
   const diff = Date.now() - new Date(value).getTime();
@@ -42,9 +45,17 @@ export default function SupplierNotificationsPage() {
         setLoading(true);
         setError(null);
         const response = await atarApi.getNotifications({ limit: 30 }, accessToken);
+        const nextResponse =
+          response.unreadCount > 0
+            ? await atarApi.markAllNotificationsRead(accessToken)
+            : response;
+
         if (!cancelled) {
-          setNotifications(response.items);
-          setUnreadCount(response.unreadCount);
+          setNotifications(nextResponse.items);
+          setUnreadCount(nextResponse.unreadCount);
+          if (response.unreadCount > 0) {
+            window.dispatchEvent(new Event(SUPPLIER_COUNTERS_REFRESH_EVENT));
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -86,6 +97,7 @@ export default function SupplierNotificationsPage() {
       const response = await atarApi.markAllNotificationsRead(accessToken);
       setNotifications(response.items);
       setUnreadCount(response.unreadCount);
+      window.dispatchEvent(new Event(SUPPLIER_COUNTERS_REFRESH_EVENT));
     } catch (markError) {
       setError(markError instanceof Error ? markError.message : 'No se pudieron marcar las notificaciones.');
     }

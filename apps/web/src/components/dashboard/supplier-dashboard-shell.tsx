@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { type ReactNode } from 'react';
+import { useSupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
 import { type WebSession } from '@/lib/session';
 import SupplierAccountMenu from './supplier-account-menu';
 import DashboardSidebar from './dashboard-sidebar';
@@ -58,11 +59,20 @@ export default function SupplierDashboardShell({
   searchPlaceholder = 'Buscar solicitudes, clientes, productos...',
   fullBleed = false,
 }: SupplierDashboardShellProps) {
+  const counters = useSupplierWorkspaceCounters({
+    accessToken: session?.accessToken,
+  });
+
   return (
     <main className="h-screen overflow-hidden bg-[#f5f7fb] text-slate-950">
       <div className="flex h-full">
         <div className="hidden h-full w-[264px] shrink-0 lg:block">
-          <DashboardSidebar className="sticky top-0 h-screen" role="supplier" session={session} />
+          <DashboardSidebar
+            className="sticky top-0 h-screen"
+            role="supplier"
+            session={session}
+            supplierCounters={counters}
+          />
         </div>
 
         <section className="min-w-0 flex-1 overflow-hidden">
@@ -106,24 +116,28 @@ export default function SupplierDashboardShell({
                 >
                   Invitar a un miembro
                 </button>
-                <button
+                <Link
                   className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
-                  type="button"
+                  href="/dashboard/proveedor/mensajes"
                 >
                   <HeaderActionIcon kind="chat" />
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
-                    2
-                  </span>
-                </button>
-                <button
+                  {counters.unreadMessagesCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                      {counters.unreadMessagesCount}
+                    </span>
+                  ) : null}
+                </Link>
+                <Link
                   className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
-                  type="button"
+                  href="/dashboard/proveedor/notificaciones"
                 >
                   <HeaderActionIcon kind="bell" />
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
-                    3
-                  </span>
-                </button>
+                  {counters.unreadNotificationsCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                      {counters.unreadNotificationsCount}
+                    </span>
+                  ) : null}
+                </Link>
                 <SupplierAccountMenu session={session} />
               </div>
             </div>

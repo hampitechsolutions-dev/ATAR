@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { type SupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
 import { clearSession, getPrimaryCompanyName, type WebSession } from '@/lib/session';
 
 type DashboardSidebarProps = {
@@ -10,6 +11,7 @@ type DashboardSidebarProps = {
   session: WebSession | null;
   className?: string;
   onNavigate?: () => void;
+  supplierCounters?: SupplierWorkspaceCounters;
 };
 
 type SidebarIconName =
@@ -50,16 +52,16 @@ const buyerItems: ReadonlyArray<SidebarItem> = [
 
 const supplierItems: ReadonlyArray<SidebarItem> = [
   { label: 'Inicio', href: '/dashboard/proveedor', icon: 'home' },
-  { label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes', icon: 'file', badge: 8 },
-  { label: 'Cotizaciones', href: '/dashboard/proveedor/cotizaciones', icon: 'tag', badge: 5 },
-  { label: 'Pedidos', href: '/dashboard/proveedor/pedidos', icon: 'box', badge: 12 },
+  { label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes', icon: 'file' },
+  { label: 'Cotizaciones', href: '/dashboard/proveedor/cotizaciones', icon: 'tag' },
+  { label: 'Pedidos', href: '/dashboard/proveedor/pedidos', icon: 'box' },
   { label: 'Catalogo', href: '/dashboard/proveedor/catalogo', icon: 'grid' },
   { label: 'Produccion', href: '/dashboard/proveedor/produccion', icon: 'factory' },
   { label: 'Clientes', href: '/dashboard/proveedor/clientes', icon: 'users' },
   { label: 'Resenas', href: '/dashboard/proveedor/resenas', icon: 'star' },
   { label: 'Estadisticas', href: '/dashboard/proveedor/reportes', icon: 'chart' },
   { label: 'Mensajes', href: '/dashboard/proveedor/mensajes', icon: 'mail', dividerBefore: true },
-  { label: 'Notificaciones', href: '/dashboard/proveedor/notificaciones', icon: 'bell', badge: 3 },
+  { label: 'Notificaciones', href: '/dashboard/proveedor/notificaciones', icon: 'bell' },
   { label: 'Empresa', href: '/dashboard/proveedor/configuracion', icon: 'gear' },
 ];
 
@@ -311,11 +313,41 @@ export default function DashboardSidebar({
   session,
   className,
   onNavigate,
+  supplierCounters,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const items = role === 'buyer' ? buyerItems : supplierItems;
+  const items =
+    role === 'buyer'
+      ? buyerItems
+      : supplierItems.map((item) => {
+          if (!supplierCounters) {
+            return item;
+          }
+
+          if (item.href === '/dashboard/proveedor/solicitudes') {
+            return { ...item, badge: supplierCounters.openRequestsCount };
+          }
+
+          if (item.href === '/dashboard/proveedor/cotizaciones') {
+            return { ...item, badge: supplierCounters.myQuotesCount };
+          }
+
+          if (item.href === '/dashboard/proveedor/pedidos') {
+            return { ...item, badge: supplierCounters.activeOrdersCount };
+          }
+
+          if (item.href === '/dashboard/proveedor/mensajes') {
+            return { ...item, badge: supplierCounters.unreadMessagesCount };
+          }
+
+          if (item.href === '/dashboard/proveedor/notificaciones') {
+            return { ...item, badge: supplierCounters.unreadNotificationsCount };
+          }
+
+          return item;
+        });
   const companyName = session ? getPrimaryCompanyName(session.user) : 'Mi empresa';
   const initials =
     companyName

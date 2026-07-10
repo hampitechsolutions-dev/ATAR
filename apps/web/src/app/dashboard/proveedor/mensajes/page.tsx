@@ -1,20 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import ConversationPanel from '@/components/chat/conversation-panel';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
+import { atarApi, type ConversationRecord } from '@/lib/atar-api';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
-type Conversation = {
-  id: string;
-  company: string;
-  logo: string;
-  preview: string;
-  badge: string;
-  time: string;
-  unread?: number;
-  verified?: boolean;
-};
+function formatRelative(value: string | null | undefined) {
+  if (!value) {
+    return 'Sin actividad';
+  }
+
+  const diff = Date.now() - new Date(value).getTime();
+  const hours = Math.max(1, Math.round(diff / (1000 * 60 * 60)));
 
 type Message = {
   id: string;
@@ -44,137 +43,117 @@ function PaperPlaneIcon() {
   );
 }
 
-const CONVERSATIONS: Conversation[] = [
-  {
-    id: 'compradora',
-    company: 'Compradora Demo SA',
-    logo: 'COMP\nDEMO',
-    preview: 'Necesitamos avanzar con disponibilidad y fecha de entrega...',
-    badge: 'Solicitud #1042',
-    time: '10:30',
-    unread: 2,
-    verified: true,
-  },
-  {
-    id: 'textiles',
-    company: 'Textiles del Sur',
-    logo: 'TEX\nSUR',
-    preview: 'Gracias por la cotización, la estamos revisando.',
-    badge: 'Cotización #C-231',
-    time: 'Ayer',
-    unread: 1,
-    verified: true,
-  },
-  {
-    id: 'agro',
-    company: 'AgroInsumos SA',
-    logo: 'AGRO',
-    preview: '¿Pueden mejorar el plazo de entrega?',
-    badge: 'Pedido #5678',
-    time: 'Ayer',
-    verified: true,
-  },
-  {
-    id: 'envases',
-    company: 'Envases del Litoral',
-    logo: 'ENV\nLIT',
-    preview: 'Perfecto, confirmamos la compra.',
-    badge: 'Pedido #5676',
-    time: '2 días',
-    verified: true,
-  },
-  {
-    id: 'quimica',
-    company: 'Química Andina',
-    logo: 'QUIM',
-    preview: 'Adjuntamos la orden de compra firmada.',
-    badge: 'Orden #OC-88',
-    time: '3 días',
-    verified: true,
-  },
-  {
-    id: 'norte',
-    company: 'Distribuidora Norte',
-    logo: 'DIST\nNOR',
-    preview: 'Consulta por certificaciones del material.',
-    badge: 'Consulta general',
-    time: '5 días',
-    verified: true,
-  },
-];
+function getContextLabel(contextType: ConversationRecord['contextType']) {
+  if (contextType === 'QUOTE') {
+    return 'Cotizacion';
+  }
 
-const CHAT_MESSAGES: Record<string, Message[]> = {
-  compradora: [
-    {
-      id: '1',
-      author: 'client',
-      body: ['Hola, buenas.', 'Necesitamos 500 Big Bags para fertilizante.', '¿Tienen disponibilidad para entrega en Rosario?'],
-      time: '10:15',
-    },
-    {
-      id: '2',
-      author: 'me',
-      body: ['¡Hola! Sí, tenemos disponibilidad.', 'Podemos entregar 500 unidades en 5 días hábiles en Rosario.'],
-      time: '10:18',
-    },
-    {
-      id: '3',
-      author: 'client',
-      body: ['Perfecto.', '¿Nos pasan una cotización formal con las opciones de personalización?'],
-      time: '10:22',
-    },
-    {
-      id: '4',
-      author: 'me',
-      body: ['Claro, te envío la cotización con impresión de logo y medidas disponibles en breve.'],
-      time: '10:30',
-    },
-  ],
-  textiles: [
-    { id: '1', author: 'me', body: ['Te enviamos la cotización solicitada.', 'Quedamos atentos a tu devolución.'], time: 'Ayer' },
-    { id: '2', author: 'client', body: ['Gracias, la estamos revisando internamente.'], time: 'Ayer' },
-  ],
-  agro: [
-    { id: '1', author: 'client', body: ['¿Pueden mejorar el plazo de entrega?'], time: 'Ayer' },
-    { id: '2', author: 'me', body: ['Podemos adelantarlo a 4 días hábiles si confirmás esta semana.'], time: 'Ayer' },
-  ],
-  envases: [
-    { id: '1', author: 'client', body: ['Perfecto, confirmamos la compra.'], time: '2 días' },
-    { id: '2', author: 'me', body: ['Excelente, generamos la orden y te compartimos el seguimiento.'], time: '2 días' },
-  ],
-  quimica: [{ id: '1', author: 'client', body: ['Adjuntamos la orden de compra firmada.'], time: '3 días' }],
-  norte: [
-    { id: '1', author: 'client', body: ['Consulta por certificaciones del material.'], time: '5 días' },
-    { id: '2', author: 'me', body: ['Te compartimos las fichas técnicas y certificados en el chat.'], time: '5 días' },
-  ],
-};
+  if (contextType === 'REQUEST') {
+    return 'Solicitud';
+  }
+
+  return 'Producto';
+}
 
 export default function SupplierMessagesPage() {
-  const { session, loading, error } = useSupplierDashboardData();
-  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'archived'>('all');
-  const [selectedId, setSelectedId] = useState<string>(CONVERSATIONS[0].id);
+  const { session, loading: dashboardLoading, error: dashboardError } = useSupplierDashboardData();
+  const [conversations, setConversations] = useState<ConversationRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const unreadCount = CONVERSATIONS.filter((item) => (item.unread ?? 0) > 0).length;
+  useEffect(() => {
+    if (!session?.accessToken) {
+      return;
+    }
+
+    const accessToken = session.accessToken;
+    let cancelled = false;
+
+    async function loadConversations() {
+      try {
+        setLoading(true);
+        setError(null);
+        const items = await atarApi.getConversations(undefined, accessToken);
+        if (!cancelled) {
+          setConversations(items);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : 'No se pudieron cargar las conversaciones.',
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadConversations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.accessToken]);
 
   const filteredConversations = useMemo(() => {
-    if (activeTab === 'unread') {
-      return CONVERSATIONS.filter((item) => (item.unread ?? 0) > 0);
-    }
-    if (activeTab === 'archived') {
-      return CONVERSATIONS.filter((item) => !item.unread);
-    }
-    return CONVERSATIONS;
-  }, [activeTab]);
+    const query = search.trim().toLowerCase();
 
-  const selectedConversation =
-    filteredConversations.find((conversation) => conversation.id === selectedId) ?? CONVERSATIONS[0];
-  const currentMessages = CHAT_MESSAGES[selectedConversation.id] ?? [];
+    return [...conversations]
+      .filter((conversation) => {
+        if (!query) {
+          return true;
+        }
+
+        return [
+          conversation.buyerCompanyName,
+          conversation.contextTitle,
+          conversation.lastMessage?.body ?? '',
+          conversation.request?.category ?? '',
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(query);
+      })
+      .sort((left, right) => {
+        const leftTime = new Date(left.lastMessageAt ?? left.lastMessage?.createdAt ?? 0).getTime();
+        const rightTime = new Date(right.lastMessageAt ?? right.lastMessage?.createdAt ?? 0).getTime();
+        return rightTime - leftTime;
+      });
+  }, [conversations, search]);
+
+  useEffect(() => {
+    if (selectedId && filteredConversations.some((conversation) => conversation.id === selectedId)) {
+      return;
+    }
+
+    setSelectedId(filteredConversations[0]?.id ?? null);
+  }, [filteredConversations, selectedId]);
+
+  const activeConversation =
+    filteredConversations.find((conversation) => conversation.id === selectedId) ?? null;
 
   return (
-    <SupplierDashboardShell fullBleed searchPlaceholder="Buscar mensajes o clientes..." session={session}>
-      {loading ? (
-        <div className="flex h-full items-center justify-center bg-white text-sm text-slate-600">
-          Cargando mensajes...
+    <SupplierDashboardShell searchPlaceholder="Buscar mensajes o clientes..." session={session}>
+      <section className="space-y-4">
+        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
+            Mensajes
+          </h1>
+          <p className="mt-1 text-sm text-[#7e85b2]">
+            Bandeja real de conversaciones con compradores, basada en el modulo de chat y las cotizaciones.
+          </p>
+          <input
+            className="mt-5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-sky-400"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar por comprador, contexto o ultimo mensaje"
+            value={search}
+          />
         </div>
       ) : (
         <div className="flex h-full min-h-0 flex-col bg-white">
@@ -195,164 +174,93 @@ export default function SupplierMessagesPage() {
                   />
                 </div>
 
-                <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-[0_18px_40px_rgba(79,70,229,0.25)] hover:bg-indigo-500" type="button">
-                  <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <path d="M12 5v14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    <path d="M5 12h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  </svg>
-                </button>
-              </div>
+        {error ?? dashboardError ? (
+          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+            {error ?? dashboardError}
+          </div>
+        ) : null}
 
-              <div className="mt-4 flex items-center gap-6 border-b border-slate-200 pb-3 text-xs font-semibold">
-                {[
-                  { key: 'all' as const, label: 'Todas', count: CONVERSATIONS.length },
-                  { key: 'unread' as const, label: 'No leídos', count: unreadCount },
-                  { key: 'archived' as const, label: 'Archivados', count: CONVERSATIONS.length - unreadCount },
-                ].map((tab) => {
-                  const isActive = activeTab === tab.key;
-                  return (
-                    <button
-                      key={tab.key}
-                      className={`relative pb-2 transition ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
-                      onClick={() => setActiveTab(tab.key)}
-                      type="button"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        {tab.label}
-                        <span className={isActive ? 'text-indigo-600' : 'text-slate-400'}>{tab.count}</span>
-                      </span>
-                      {isActive ? <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-indigo-600" /> : null}
-                    </button>
-                  );
-                })}
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="max-h-[48vh] overflow-y-auto rounded-[24px] border border-[#e7eaf3] bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.04)] xl:max-h-none">
+            {dashboardLoading || loading ? (
+              <div className="rounded-[18px] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
+                Cargando conversaciones...
               </div>
-
-              <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">
+            ) : filteredConversations.length === 0 ? (
+              <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
+                Todavia no hay conversaciones para mostrar.
+              </div>
+            ) : (
+              <div className="space-y-2">
                 {filteredConversations.map((conversation) => {
-                  const isActive = selectedConversation.id === conversation.id;
+                  const isActive = activeConversation?.id === conversation.id;
+                  const href = `/dashboard/proveedor/mensajes/${conversation.id}`;
+
                   return (
-                    <button
+                    <div
                       key={conversation.id}
-                      className={`flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                        isActive ? 'border-indigo-200 bg-indigo-50/60 shadow-sm' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
+                      className={`rounded-[18px] border px-4 py-3 transition ${
+                        isActive
+                          ? 'border-[#cfc9ff] bg-[#f5f3ff]'
+                          : 'border-transparent bg-white hover:border-[#e7eaf3] hover:bg-[#fbfbff]'
                       }`}
-                      onClick={() => setSelectedId(conversation.id)}
-                      type="button"
                     >
-                      <CompanyLogo active={isActive} value={conversation.logo} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-950">{conversation.company}</p>
-                            <p className="mt-1 truncate text-xs text-slate-500">{conversation.preview}</p>
-                          </div>
-                          <span className="shrink-0 text-[11px] text-slate-400">{conversation.time}</span>
-                        </div>
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className="truncate rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-600">
-                            {conversation.badge}
+                      <button
+                        className="w-full text-left"
+                        onClick={() => setSelectedId(conversation.id)}
+                        type="button"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="truncate text-sm font-semibold text-[#33407a]">
+                            {conversation.buyerCompanyName}
+                          </p>
+                          <span className="text-xs text-[#9aa1c8]">
+                            {formatRelative(conversation.lastMessageAt ?? conversation.lastMessage?.createdAt)}
                           </span>
-                          {conversation.unread ? (
-                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
-                              {conversation.unread}
+                        </div>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6f77a7]">
+                            {getContextLabel(conversation.contextType)}
+                          </span>
+                          {conversation.unreadCount > 0 ? (
+                            <span className="rounded-full bg-[#ede9ff] px-2.5 py-1 text-[11px] font-semibold text-[#5b4bff]">
+                              {conversation.unreadCount} sin leer
                             </span>
                           ) : null}
                         </div>
+
+                        <p className="mt-2 truncate text-sm text-[#6a729d]">
+                          {conversation.contextTitle}
+                        </p>
+                        <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#8d95be]">
+                          {conversation.lastMessage?.body ?? 'Sin mensajes recientes.'}
+                        </p>
+                      </button>
+
+                      <div className="mt-3">
+                        <Link className="text-xs font-semibold text-[#4a3df0] hover:text-[#3d31d6]" href={href}>
+                          Abrir en pagina completa
+                        </Link>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             </section>
 
-            <section className="flex min-h-0 flex-col overflow-hidden bg-white">
-              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <CompanyLogo value={selectedConversation.logo} />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-950">{selectedConversation.company}</p>
-                      {selectedConversation.verified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          Verificado
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 text-xs text-slate-500">Última conexión: Hoy 10:45</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Link
-                    className="inline-flex h-9 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
-                    href="/dashboard/proveedor/clientes"
-                  >
-                    Ver perfil
-                  </Link>
-                  <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" type="button">
-                    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <path d="M12 5h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-                      <path d="M12 12h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-                      <path d="M12 19h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)]">
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-center">
-                    <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm">Hoy</span>
-                  </div>
-                </div>
-
-                <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto px-5 pb-4">
-                  <div className="mx-auto w-full max-w-[880px] space-y-5">
-                    {currentMessages.map((message) => {
-                      const isMe = message.author === 'me';
-                      return (
-                        <div key={message.id} className={`flex items-end gap-3 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                          {!isMe ? <CompanyLogo value={selectedConversation.logo} /> : null}
-                          <div
-                            className={`max-w-[78%] rounded-[1.35rem] px-4 py-3 text-sm ${
-                              isMe
-                                ? 'rounded-br-md bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-[0_10px_26px_rgba(79,70,229,0.22)]'
-                                : 'rounded-bl-md border border-slate-200 bg-white text-slate-700 shadow-[0_6px_18px_rgba(15,23,42,0.05)]'
-                            }`}
-                          >
-                            {message.body.map((line) => (
-                              <p key={line} className="leading-6">
-                                {line}
-                              </p>
-                            ))}
-                            <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${isMe ? 'justify-end text-indigo-100' : 'text-slate-400'}`}>
-                              {message.time}
-                              {isMe ? <span>✓✓</span> : null}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-200 bg-white px-5 py-4">
-                <div className="mx-auto flex w-full max-w-[880px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
-                  <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" type="button">
-                    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <path d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l8.49-8.49a4 4 0 115.66 5.66L9.41 17.4a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    </svg>
-                  </button>
-                  <input
-                    className="w-full bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
-                    placeholder="Escribí un mensaje..."
-                  />
-                  <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-[0_18px_40px_rgba(79,70,229,0.25)] hover:bg-indigo-500" type="button">
-                    <PaperPlaneIcon />
-                  </button>
-                </div>
+          <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)] sm:p-5">
+            {activeConversation ? (
+              <ConversationPanel
+                conversationId={activeConversation.id}
+                mode="existing"
+                session={session}
+                title={activeConversation.contextTitle}
+                description={`Conversacion activa con ${activeConversation.buyerCompanyName}.`}
+              />
+            ) : (
+              <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
+                Selecciona una conversacion para ver el detalle.
               </div>
             </section>
           </div>
