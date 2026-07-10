@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import ConversationPanel from '@/components/chat/conversation-panel';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
@@ -9,29 +8,31 @@ import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function formatRelative(value: string | null | undefined) {
   if (!value) {
-    return 'Sin actividad';
+    return '';
   }
-
   const diff = Date.now() - new Date(value).getTime();
   const hours = Math.max(1, Math.round(diff / (1000 * 60 * 60)));
-
   if (hours < 24) {
-    return `Hace ${hours} h`;
+    return `${hours} h`;
   }
-
-  return `Hace ${Math.round(hours / 24)} d`;
+  return `${Math.round(hours / 24)} d`;
 }
 
 function getContextLabel(contextType: ConversationRecord['contextType']) {
   if (contextType === 'QUOTE') {
-    return 'Cotizacion';
+    return 'Cotización';
   }
-
   if (contextType === 'REQUEST') {
     return 'Solicitud';
   }
-
   return 'Producto';
+}
+
+function getInitials(value: string | null | undefined) {
+  const cleaned = (value ?? '').replace(/\bS\.?\s*A\.?\b/gi, '').trim();
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  const raw = words.length > 1 ? words.slice(0, 2).map((word) => word[0]).join('') : cleaned.slice(0, 2);
+  return raw.toUpperCase() || 'AT';
 }
 
 export default function SupplierMessagesPage() {
@@ -40,13 +41,13 @@ export default function SupplierMessagesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session?.accessToken) {
       return;
     }
-
     const accessToken = session.accessToken;
     let cancelled = false;
 
@@ -60,11 +61,7 @@ export default function SupplierMessagesPage() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : 'No se pudieron cargar las conversaciones.',
-          );
+          setError(loadError instanceof Error ? loadError.message : 'No se pudieron cargar las conversaciones.');
         }
       } finally {
         if (!cancelled) {
@@ -74,27 +71,24 @@ export default function SupplierMessagesPage() {
     }
 
     void loadConversations();
-
     return () => {
       cancelled = true;
     };
   }, [session?.accessToken]);
 
+  const unreadTotal = conversations.filter((conversation) => conversation.unreadCount > 0).length;
+
   const filteredConversations = useMemo(() => {
     const query = search.trim().toLowerCase();
-
     return [...conversations]
       .filter((conversation) => {
+        if (activeTab === 'unread' && conversation.unreadCount === 0) {
+          return false;
+        }
         if (!query) {
           return true;
         }
-
-        return [
-          conversation.buyerCompanyName,
-          conversation.contextTitle,
-          conversation.lastMessage?.body ?? '',
-          conversation.request?.category ?? '',
-        ]
+        return [conversation.buyerCompanyName, conversation.contextTitle, conversation.lastMessage?.body ?? '']
           .join(' ')
           .toLowerCase()
           .includes(query);
@@ -104,130 +98,131 @@ export default function SupplierMessagesPage() {
         const rightTime = new Date(right.lastMessageAt ?? right.lastMessage?.createdAt ?? 0).getTime();
         return rightTime - leftTime;
       });
-  }, [conversations, search]);
+  }, [conversations, search, activeTab]);
 
   useEffect(() => {
     if (selectedId && filteredConversations.some((conversation) => conversation.id === selectedId)) {
       return;
     }
-
     setSelectedId(filteredConversations[0]?.id ?? null);
   }, [filteredConversations, selectedId]);
 
-  const activeConversation =
-    filteredConversations.find((conversation) => conversation.id === selectedId) ?? null;
+  const activeConversation = filteredConversations.find((conversation) => conversation.id === selectedId) ?? null;
 
   return (
-    <SupplierDashboardShell searchPlaceholder="Buscar mensajes o clientes..." session={session}>
-      <section className="space-y-4">
-        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
-            Mensajes
-          </h1>
-          <p className="mt-1 text-sm text-[#7e85b2]">
-            Bandeja real de conversaciones con compradores, basada en el modulo de chat y las cotizaciones.
-          </p>
-          <input
-            className="mt-5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-sky-400"
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por comprador, contexto o ultimo mensaje"
-            value={search}
-          />
-        </div>
-
+    <SupplierDashboardShell fullBleed searchPlaceholder="Buscar mensajes o clientes..." session={session}>
+      <div className="flex h-full min-h-0 flex-col bg-white">
         {error ?? dashboardError ? (
-          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          <div className="shrink-0 border-b border-rose-200 bg-rose-50 px-5 py-3 text-sm text-rose-700">
             {error ?? dashboardError}
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <div className="max-h-[48vh] overflow-y-auto rounded-[24px] border border-[#e7eaf3] bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.04)] xl:max-h-none">
-            {dashboardLoading || loading ? (
-              <div className="rounded-[18px] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
-                Cargando conversaciones...
-              </div>
-            ) : filteredConversations.length === 0 ? (
-              <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
-                Todavia no hay conversaciones para mostrar.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredConversations.map((conversation) => {
-                  const isActive = activeConversation?.id === conversation.id;
-                  const href = `/dashboard/proveedor/mensajes/${conversation.id}`;
+        <div className="grid min-h-0 flex-1 gap-0 overflow-hidden border-t border-slate-200 bg-white xl:grid-cols-[340px_minmax(0,1fr)]">
+          <section className="flex min-h-0 flex-col border-b border-slate-200 bg-white p-4 xl:border-b-0 xl:border-r">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+              <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+              <input
+                className="w-full bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Buscar conversaciones..."
+                value={search}
+              />
+            </div>
 
+            <div className="mt-4 flex items-center gap-6 border-b border-slate-200 pb-3 text-xs font-semibold">
+              {[
+                { key: 'all' as const, label: 'Todas', count: conversations.length },
+                { key: 'unread' as const, label: 'No leídos', count: unreadTotal },
+              ].map((tab) => {
+                const isActive = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    className={`relative pb-2 transition ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                    onClick={() => setActiveTab(tab.key)}
+                    type="button"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {tab.label}
+                      <span className={isActive ? 'text-indigo-600' : 'text-slate-400'}>{tab.count}</span>
+                    </span>
+                    {isActive ? <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-indigo-600" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">
+              {dashboardLoading || loading ? (
+                <div className="rounded-2xl bg-slate-50 px-4 py-8 text-sm text-slate-500">Cargando conversaciones...</div>
+              ) : filteredConversations.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+                  Todavía no hay conversaciones.
+                </div>
+              ) : (
+                filteredConversations.map((conversation) => {
+                  const isActive = activeConversation?.id === conversation.id;
                   return (
-                    <div
+                    <button
                       key={conversation.id}
-                      className={`rounded-[18px] border px-4 py-3 transition ${
-                        isActive
-                          ? 'border-[#cfc9ff] bg-[#f5f3ff]'
-                          : 'border-transparent bg-white hover:border-[#e7eaf3] hover:bg-[#fbfbff]'
+                      className={`flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                        isActive ? 'border-indigo-200 bg-indigo-50/60 shadow-sm' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
                       }`}
+                      onClick={() => setSelectedId(conversation.id)}
+                      type="button"
                     >
-                      <button
-                        className="w-full text-left"
-                        onClick={() => setSelectedId(conversation.id)}
-                        type="button"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="truncate text-sm font-semibold text-[#33407a]">
-                            {conversation.buyerCompanyName}
-                          </p>
-                          <span className="text-xs text-[#9aa1c8]">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[11px] font-bold text-slate-950">
+                        {getInitials(conversation.buyerCompanyName)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="truncate text-sm font-semibold text-slate-950">{conversation.buyerCompanyName}</p>
+                          <span className="shrink-0 text-[11px] text-slate-400">
                             {formatRelative(conversation.lastMessageAt ?? conversation.lastMessage?.createdAt)}
                           </span>
                         </div>
-
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6f77a7]">
+                        <p className="mt-1 truncate text-xs text-slate-500">
+                          {conversation.lastMessage?.body ?? 'Sin mensajes recientes.'}
+                        </p>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="truncate rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-600">
                             {getContextLabel(conversation.contextType)}
                           </span>
                           {conversation.unreadCount > 0 ? (
-                            <span className="rounded-full bg-[#ede9ff] px-2.5 py-1 text-[11px] font-semibold text-[#5b4bff]">
-                              {conversation.unreadCount} sin leer
+                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                              {conversation.unreadCount}
                             </span>
                           ) : null}
                         </div>
-
-                        <p className="mt-2 truncate text-sm text-[#6a729d]">
-                          {conversation.contextTitle}
-                        </p>
-                        <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#8d95be]">
-                          {conversation.lastMessage?.body ?? 'Sin mensajes recientes.'}
-                        </p>
-                      </button>
-
-                      <div className="mt-3">
-                        <Link className="text-xs font-semibold text-[#4a3df0] hover:text-[#3d31d6]" href={href}>
-                          Abrir en pagina completa
-                        </Link>
                       </div>
-                    </div>
+                    </button>
                   );
-                })}
-              </div>
-            )}
-          </div>
+                })
+              )}
+            </div>
+          </section>
 
-          <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)] sm:p-5">
+          <section className="flex min-h-0 flex-col overflow-hidden bg-white">
             {activeConversation ? (
               <ConversationPanel
                 conversationId={activeConversation.id}
+                description={`Conversación con ${activeConversation.buyerCompanyName}.`}
                 mode="existing"
                 session={session}
                 title={activeConversation.contextTitle}
-                description={`Conversacion activa con ${activeConversation.buyerCompanyName}.`}
               />
             ) : (
-              <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
-                Selecciona una conversacion para ver el detalle.
+              <div className="flex h-full items-center justify-center px-6 text-center text-sm text-slate-500">
+                Seleccioná una conversación para ver el detalle.
               </div>
             )}
-          </div>
+          </section>
         </div>
-      </section>
+      </div>
     </SupplierDashboardShell>
   );
 }

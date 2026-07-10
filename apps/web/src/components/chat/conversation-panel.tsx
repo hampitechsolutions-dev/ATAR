@@ -44,6 +44,20 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
+function getInitials(value: string | null | undefined) {
+  const cleaned = (value ?? '').replace(/\bS\.?\s*A\.?\b/gi, '').trim();
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  const raw = words.length > 1 ? words.slice(0, 2).map((word) => word[0]).join('') : cleaned.slice(0, 2);
+  return raw.toUpperCase() || 'AT';
+}
+
 function resolveParticipantRole(
   session: WebSession | null,
   conversation: ConversationRecord | null,
@@ -500,254 +514,155 @@ export default function ConversationPanel({
 
   if (!activeSession?.accessToken) {
     return (
-      <DashboardCard>
+      <div className="flex h-full min-h-0 flex-col items-center justify-center gap-4 bg-white px-6 text-center">
         <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
-        <p className="mt-2 text-sm leading-7 text-slate-600">{description}</p>
-        <div className="mt-5">
-          <Link className={dashboardPrimaryButtonClassName} href={loginHref}>
-            Iniciar sesion para conversar
-          </Link>
-        </div>
-      </DashboardCard>
+        <p className="max-w-sm text-sm leading-7 text-slate-600">{description}</p>
+        <Link className={dashboardPrimaryButtonClassName} href={loginHref}>
+          Iniciar sesión para conversar
+        </Link>
+      </div>
     );
   }
 
   return (
-    <DashboardCard>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
-          <p className="mt-2 text-sm leading-7 text-slate-600">{description}</p>
-        </div>
-        {conversation ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <div
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                liveConnected
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : 'bg-amber-50 text-amber-700'
-              }`}
-            >
-              {liveConnected ? 'Tiempo real activo' : 'Reconectando chat'}
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[11px] font-bold text-indigo-600">
+            {getInitials(counterpartLabel ?? title)}
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold text-slate-950">{counterpartLabel ?? title}</p>
+              {conversation ? (
+                <span className="hidden shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600 sm:inline">
+                  {getContextLabel(conversation.contextType)}
+                </span>
+              ) : null}
             </div>
-            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-              {conversation.unreadCount} sin leer
-            </div>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+              <span className={`h-1.5 w-1.5 rounded-full ${liveConnected ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+              {liveConnected ? 'En línea · tiempo real' : 'Reconectando...'}
+            </p>
           </div>
+        </div>
+        {detailHref && detailLabel ? (
+          <Link
+            className="inline-flex h-9 shrink-0 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+            href={detailHref}
+          >
+            {detailLabel}
+          </Link>
         ) : null}
       </div>
 
-      {conversation ? (
-        <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,0.7fr)]">
-          <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <DashboardInfoBadge tone={getContextTone(conversation.contextType)}>
-                {getContextLabel(conversation.contextType)}
-              </DashboardInfoBadge>
-              <DashboardInfoBadge tone={conversation.unreadCount > 0 ? 'rose' : 'emerald'}>
-                {conversation.unreadCount > 0 ? `${conversation.unreadCount} sin leer` : 'Al dia'}
-              </DashboardInfoBadge>
-            </div>
-            <h3 className="mt-3 text-lg font-semibold text-slate-950">{conversation.contextTitle}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {rolePath === 'comprador' ? 'Proveedor vinculado' : 'Comprador vinculado'}: {counterpartLabel}
-            </p>
-            {conversation.request?.category ? (
-              <p className="mt-1 text-sm text-slate-500">
-                Categoria: {conversation.request.category}
-                {conversation.request.productName ? ` · Producto: ${conversation.request.productName}` : ''}
-              </p>
-            ) : null}
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Link
-                className={dashboardSecondaryButtonClassName}
-                href={`/dashboard/${rolePath}/mensajes`}
-              >
-                Volver al inbox
-              </Link>
-              {detailHref && detailLabel ? (
-                <Link className={dashboardGhostButtonClassName} href={detailHref}>
-                  {detailLabel}
-                </Link>
-              ) : null}
-            </div>
-          </div>
+      <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)] px-4 py-4 sm:px-5">
+        <div className="mx-auto w-full max-w-[880px] space-y-4">
+          {loading ? (
+            <p className="py-8 text-center text-sm text-slate-500">Cargando conversación...</p>
+          ) : !conversation || (conversation.messages?.length ?? 0) === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-500">Todavía no hay mensajes. Escribí el primero 👇</p>
+          ) : (
+            conversation.messages?.map((item) => {
+              const isOwn = participantRole ? item.senderRole === participantRole : item.senderRole === 'BUYER';
+              const readAt =
+                participantRole === 'BUYER'
+                  ? item.supplierReadAt
+                  : participantRole === 'SUPPLIER'
+                    ? item.buyerReadAt
+                    : null;
 
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
-              <p className="text-sm text-slate-500">Mensajes visibles</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{messageCount}</p>
-            </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
-              <p className="text-sm text-slate-500">Adjuntos</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{attachmentCount}</p>
-            </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
-              <p className="text-sm text-slate-500">Ultima actividad</p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-slate-950">
-                {formatDateTime(conversation.lastMessageAt ?? conversation.messages?.[0]?.createdAt ?? new Date().toISOString())}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mt-5 rounded-[1.75rem] border border-slate-200 bg-white p-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-950">Buscar dentro de la conversacion</p>
-              <p className="mt-1 text-sm text-slate-500">
-                Filtra por contenido o rango de fechas para retomar mensajes clave.
-              </p>
-            </div>
-            {hasActiveFilters ? (
-              <button
-                className={dashboardSecondaryButtonClassName}
-                onClick={resetFilters}
-                type="button"
-              >
-                Limpiar filtros
-              </button>
-            ) : null}
-          </div>
-
-          <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
-            <input
-              className={dashboardInputClassName}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar mensajes por contenido"
-              value={search}
-            />
-            <input
-              className={dashboardInputClassName}
-              onChange={(event) => setFrom(event.target.value)}
-              type="date"
-              value={from}
-            />
-            <input
-              className={dashboardInputClassName}
-              onChange={(event) => setTo(event.target.value)}
-              type="date"
-              value={to}
-            />
-          </div>
-        </div>
-      </div>
-
-      {error ? (
-        <div className="mt-4 rounded-[1.25rem] bg-rose-100 px-4 py-3 text-sm text-rose-800">
-          {error}
-        </div>
-      ) : null}
-
-      <div className="mt-5 space-y-3">
-        {loading ? (
-          <DashboardEmptyState
-            description="Estamos sincronizando la conversacion."
-            title="Cargando chat..."
-          />
-        ) : !conversation || (conversation.messages?.length ?? 0) === 0 ? (
-          <DashboardEmptyState
-            description="Todavia no hay mensajes en esta conversacion."
-            title="Sin mensajes"
-          />
-        ) : (
-          conversation.messages?.map((item) => {
-            const isBuyerMessage = item.senderRole === 'BUYER';
-            const isOwnMessage = participantRole ? item.senderRole === participantRole : false;
-            const readAt =
-              participantRole === 'BUYER'
-                ? item.supplierReadAt
-                : participantRole === 'SUPPLIER'
-                  ? item.buyerReadAt
-                  : null;
-
-            return (
-              <article
-                key={item.id}
-                className={`rounded-[1.5rem] px-4 py-4 ${
-                  isBuyerMessage
-                    ? 'border border-indigo-200 bg-indigo-50'
-                    : 'border border-slate-200 bg-slate-50'
-                }`}
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">
-                      {item.senderCompanyName ?? item.senderRole}
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-slate-700">
-                      {item.body || 'Adjunto sin texto adicional.'}
-                    </p>
+              return (
+                <div key={item.id} className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                  {!isOwn ? (
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[10px] font-bold text-slate-600">
+                      {getInitials(item.senderCompanyName ?? counterpartLabel)}
+                    </span>
+                  ) : null}
+                  <div
+                    className={`max-w-[80%] rounded-[1.35rem] px-4 py-2.5 text-sm ${
+                      isOwn
+                        ? 'rounded-br-md bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-[0_10px_26px_rgba(79,70,229,0.22)]'
+                        : 'rounded-bl-md border border-slate-200 bg-white text-slate-700 shadow-[0_6px_18px_rgba(15,23,42,0.05)]'
+                    }`}
+                  >
+                    {item.body ? <p className="whitespace-pre-wrap leading-6">{item.body}</p> : null}
                     {item.attachmentBase64 && item.attachmentName ? (
                       <a
-                        className="mt-3 inline-flex text-sm font-semibold text-indigo-700"
+                        className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold underline ${isOwn ? 'text-indigo-100' : 'text-indigo-600'}`}
                         download={item.attachmentName}
                         href={`data:${item.attachmentMimeType ?? 'application/octet-stream'};base64,${item.attachmentBase64}`}
                       >
-                        Descargar {item.attachmentName}
+                        {item.attachmentName}
                       </a>
                     ) : null}
-                    {isOwnMessage ? (
-                      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        {readAt ? `Visto ${formatDateTime(readAt)}` : 'Enviado'}
-                      </p>
-                    ) : null}
+                    <div className={`mt-1 flex items-center justify-end gap-1 text-[11px] ${isOwn ? 'text-indigo-100' : 'text-slate-400'}`}>
+                      {formatTime(item.createdAt)}
+                      {isOwn ? <span>{readAt ? '✓✓' : '✓'}</span> : null}
+                    </div>
                   </div>
-                  <span className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                    {formatDateTime(item.createdAt)}
-                  </span>
                 </div>
-              </article>
-            );
-          })
-        )}
-      </div>
+              );
+            })
+          )}
 
-      <div className="mt-5 space-y-4">
-        {typingLabel ? (
-          <div className="rounded-[1.25rem] border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700">
-            {typingLabel}
-          </div>
-        ) : null}
-        <textarea
-          className={dashboardTextareaClassName}
-          onChange={(event) => handleMessageChange(event.target.value)}
-          placeholder="Escribe tu mensaje o consulta comercial..."
-          value={message}
-        />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-3">
-            <label className="inline-flex cursor-pointer items-center gap-3 text-sm text-slate-600">
-              <span className={dashboardSecondaryButtonClassName}>Adjuntar archivo</span>
-              <input
-                className="hidden"
-                onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-                type="file"
-              />
-              <span>{attachmentHint}</span>
-            </label>
-            {selectedFile ? (
-              <button
-                className="inline-flex w-fit items-center text-sm font-semibold text-slate-500 transition hover:text-slate-800"
-                onClick={() => setSelectedFile(null)}
-                type="button"
-              >
-                Quitar adjunto
-              </button>
-            ) : null}
-          </div>
-          <button
-            className={dashboardPrimaryButtonClassName}
-            disabled={sending || !canSend}
-            onClick={() => void handleSend()}
-            type="button"
-          >
-            {sending ? 'Enviando...' : 'Enviar mensaje'}
-          </button>
+          {typingLabel ? (
+            <div className="flex justify-start">
+              <div className="rounded-[1.35rem] rounded-bl-md border border-slate-200 bg-white px-4 py-2.5 text-xs italic text-slate-400 shadow-sm">
+                {typingLabel}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
-    </DashboardCard>
+
+      <div className="border-t border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
+        {error ? <div className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}
+        <div className="mx-auto w-full max-w-[880px]">
+          <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <label className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50">
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <path d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l8.49-8.49a4 4 0 115.66 5.66L9.41 17.4a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+              <input className="hidden" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} type="file" />
+            </label>
+            <textarea
+              className="max-h-28 min-h-[36px] w-full resize-none bg-transparent py-1.5 text-sm text-slate-950 outline-none placeholder:text-slate-400"
+              onChange={(event) => handleMessageChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  if (canSend && !sending) {
+                    void handleSend();
+                  }
+                }
+              }}
+              placeholder="Escribí un mensaje..."
+              rows={1}
+              value={message}
+            />
+            <button
+              aria-label="Enviar"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-[0_10px_26px_rgba(79,70,229,0.25)] transition hover:bg-indigo-500 disabled:opacity-40"
+              disabled={sending || !canSend}
+              onClick={() => void handleSend()}
+              type="button"
+            >
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+            </button>
+          </div>
+          {selectedFile ? (
+            <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+              <span className="truncate">{attachmentHint}</span>
+              <button className="font-semibold text-slate-400 hover:text-slate-700" onClick={() => setSelectedFile(null)} type="button">
+                Quitar
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
