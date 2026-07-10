@@ -15,11 +15,32 @@ function formatRelative(value: string | null | undefined) {
   const diff = Date.now() - new Date(value).getTime();
   const hours = Math.max(1, Math.round(diff / (1000 * 60 * 60)));
 
-  if (hours < 24) {
-    return `Hace ${hours} h`;
-  }
+type Message = {
+  id: string;
+  author: 'me' | 'client';
+  body: string[];
+  time: string;
+};
 
-  return `Hace ${Math.round(hours / 24)} d`;
+function CompanyLogo({ value, active = false }: { value: string; active?: boolean }) {
+  return (
+    <div
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-[10px] font-bold leading-none ${
+        active ? 'border-indigo-200 bg-indigo-50 text-slate-950' : 'border-slate-200 bg-white text-slate-950'
+      }`}
+    >
+      <span className="whitespace-pre-line text-center tracking-tight">{value}</span>
+    </div>
+  );
+}
+
+function PaperPlaneIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <path d="M22 2L11 13" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
 }
 
 function getContextLabel(contextType: ConversationRecord['contextType']) {
@@ -134,6 +155,24 @@ export default function SupplierMessagesPage() {
             value={search}
           />
         </div>
+      ) : (
+        <div className="flex h-full min-h-0 flex-col bg-white">
+          {error ? (
+            <div className="shrink-0 border-b border-rose-200 bg-rose-50 px-5 py-3 text-sm text-rose-700">{error}</div>
+          ) : null}
+          <div className="grid min-h-0 flex-1 gap-0 overflow-hidden border-t border-slate-200 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <section className="flex min-h-0 flex-col border-b border-slate-200 bg-white p-4 xl:border-b-0 xl:border-r">
+              <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                  <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                    <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
+                  <input
+                    className="w-full bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
+                    placeholder="Buscar conversaciones..."
+                  />
+                </div>
 
         {error ?? dashboardError ? (
           <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
@@ -208,8 +247,7 @@ export default function SupplierMessagesPage() {
                   );
                 })}
               </div>
-            )}
-          </div>
+            </section>
 
           <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)] sm:p-5">
             {activeConversation ? (
@@ -224,10 +262,10 @@ export default function SupplierMessagesPage() {
               <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
                 Selecciona una conversacion para ver el detalle.
               </div>
-            )}
+            </section>
           </div>
         </div>
-      </section>
+      )}
     </SupplierDashboardShell>
   );
 }

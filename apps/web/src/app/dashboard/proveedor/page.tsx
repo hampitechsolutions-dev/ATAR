@@ -419,7 +419,7 @@ export default function DashboardProveedorPage() {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_0.95fr_0.95fr]">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_1fr]">
                   <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-950">Solicitudes recientes</p>
