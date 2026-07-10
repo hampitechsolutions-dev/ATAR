@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import AuthGuard from '@/components/auth/auth-guard';
 import { useAuth } from '@/components/auth/auth-provider';
+import AssistantFab from '@/components/dashboard/assistant-fab';
 import BuyerBottomNav from '@/components/dashboard/buyer-bottom-nav';
 import BuyerMarketplaceHeader from '@/components/dashboard/buyer-marketplace-header';
 
@@ -44,6 +45,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
           </main>
         )}
         {showBottomNav ? <BuyerBottomNav /> : null}
+        <AssistantFab />
       </div>
     </AuthGuard>
   );
