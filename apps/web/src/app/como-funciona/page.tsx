@@ -203,87 +203,6 @@ function BenefitIcon({ name }: { name: 'shield' | 'clock' | 'star' | 'db' }) {
   );
 }
 
-function SiteFooter() {
-  return (
-    <footer className="bg-slate-950 text-slate-200">
-      <div className="mx-auto w-full max-w-7xl px-6 py-14 lg:px-10">
-        <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Image alt="ATAR" height={32} src="/logoatar.png" width={32} />
-              <p className="text-lg font-semibold text-white">ATAR</p>
-            </div>
-            <p className="max-w-sm text-sm leading-7 text-slate-400">
-              La plataforma industrial que conecta industrias con los mejores proveedores de
-              bolsas industriales.
-            </p>
-          </div>
-
-          <div className="space-y-3 text-sm">
-            <p className="font-semibold text-white">Soluciones</p>
-            <a className="block text-slate-400 hover:text-slate-200" href="/#soluciones">
-              Para compradores
-            </a>
-            <a className="block text-slate-400 hover:text-slate-200" href="/#soluciones">
-              Para proveedores
-            </a>
-            <a className="block text-slate-400 hover:text-slate-200" href="/proveedores">
-              Cotizaciones
-            </a>
-            <a className="block text-slate-400 hover:text-slate-200" href="/proveedores">
-              Gestión de proveedores
-            </a>
-          </div>
-
-          <div className="space-y-3 text-sm">
-            <p className="font-semibold text-white">Recursos</p>
-            <a className="block text-slate-400 hover:text-slate-200" href="/#recursos">
-              Centro de ayuda
-            </a>
-            <a className="block text-slate-400 hover:text-slate-200" href="/#recursos">
-              Guías
-            </a>
-            <a className="block text-slate-400 hover:text-slate-200" href="/#recursos">
-              Blog
-            </a>
-            <a className="block text-slate-400 hover:text-slate-200" href="/#recursos">
-              Preguntas frecuentes
-            </a>
-          </div>
-
-          <div className="rounded-[1.5rem] bg-white/10 p-5">
-            <p className="text-sm font-semibold text-white">¿Listo para empezar?</p>
-            <p className="mt-2 text-sm leading-7 text-slate-400">
-              Crea tu cuenta gratis y empezá a comprar de forma más eficiente.
-            </p>
-            <a
-              className="mt-5 inline-flex w-full justify-center rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
-              href="/acceso"
-            >
-              Crear cuenta gratis
-            </a>
-          </div>
-        </div>
-
-        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-8 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 ATAR. Todos los derechos reservados.</p>
-          <div className="flex flex-wrap gap-4">
-            <a className="hover:text-slate-300" href="#">
-              Términos y condiciones
-            </a>
-            <a className="hover:text-slate-300" href="#">
-              Política de privacidad
-            </a>
-            <a className="hover:text-slate-300" href="#">
-              Política de cookies
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 export default function ComoFuncionaPage() {
   const steps = [
     {
@@ -376,14 +295,16 @@ export default function ComoFuncionaPage() {
 
             <div className="relative h-[320px] w-full sm:h-[380px] lg:h-[420px]">
               <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_bottom,_rgba(59,91,255,0.20),_transparent_55%)] blur-2xl" />
-              <Image
-                alt="Cómo funciona ATAR"
-                className="object-contain object-right"
-                fill
-                priority
-                sizes="(min-width: 1024px) 52vw, 100vw"
-                src="/cf.png"
-              />
+              <video
+                className="absolute inset-0 h-full w-full rounded-[2rem] object-cover shadow-lg ring-1 ring-slate-200"
+                controls
+                playsInline
+                preload="metadata"
+                poster="/cf.png"
+              >
+                <source src="/como-funciona.mp4" type="video/mp4" />
+                Tu navegador no soporta la reproducción de video.
+              </video>
             </div>
           </div>
 
@@ -515,7 +436,6 @@ export default function ComoFuncionaPage() {
         </div>
       </section>
 
-      <SiteFooter />
     </main>
   );
 }

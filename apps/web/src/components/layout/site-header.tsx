@@ -8,22 +8,21 @@ import { getPrimaryCompanyName } from '@/lib/session';
 
 const marketingNav = [
   { label: 'Inicio', href: '/' },
-  { label: 'Cómo funciona', href: '/como-funciona' },
+  { label: 'Productos', href: '/productos' },
   { label: 'Proveedores', href: '/proveedores' },
-  { label: 'Contacto', href: '/contacto' },
+  { label: 'Cómo funciona', href: '/como-funciona' },
 ];
 
 function AtarMark() {
   return (
-    <div className="flex items-center gap-3">
-      <Image
-        alt="ATAR"
-        className="h-10 w-10"
-        height={40}
-        src="/logoatar.png"
-        width={40}
-      />
-      <p className="text-lg font-semibold tracking-tight text-slate-950">ATAR</p>
+    <div className="flex items-center gap-2.5">
+      <Image alt="ATAR" className="h-9 w-9" height={36} src="/logoatar.png" width={36} />
+      <div className="leading-tight">
+        <p className="text-lg font-bold tracking-tight text-slate-950">ATAR</p>
+        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+          Ecosistema B2B industrial
+        </p>
+      </div>
     </div>
   );
 }
@@ -41,7 +40,7 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-6 py-4 lg:px-10">
+      <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-6 px-6 py-4 lg:px-10">
         <Link href="/" className="shrink-0">
           <AtarMark />
         </Link>
@@ -99,16 +98,16 @@ export default function SiteHeader() {
           ) : (
             <>
               <Link
-                className="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:inline-flex"
+                className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:inline-flex"
                 href="/acceso"
               >
                 Iniciar sesión
               </Link>
               <Link
-                className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
                 href="/acceso"
               >
-                Crear cuenta
+                Crear cuenta gratis
               </Link>
             </>
           )}
