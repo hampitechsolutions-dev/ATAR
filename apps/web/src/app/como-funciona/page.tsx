@@ -285,8 +285,8 @@ export default function ComoFuncionaPage() {
                 Cómo funciona
               </p>
               <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                Un proceso simple. <br />
-                Resultados <span className="text-indigo-600">reales</span>.
+                Procesos simples. <br />
+                <span className="text-indigo-600">Mejores</span> resultados.
               </h1>
               <p className="max-w-xl text-lg leading-8 text-slate-600">
                 De la solicitud a la entrega, ATAR conecta tu industria con los proveedores adecuados en cada etapa.
@@ -405,33 +405,6 @@ export default function ComoFuncionaPage() {
                 <p className="mt-2 text-sm leading-7 text-slate-600">{item.description}</p>
               </article>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-950">
-        <div className="mx-auto w-full max-w-7xl px-6 py-14 lg:px-10">
-          <div className="rounded-[2rem] bg-[linear-gradient(135deg,#0b1220_0%,#1f1b4f_55%,#312e81_100%)] p-8 text-white lg:p-12">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-3">
-                <h2 className="text-3xl font-semibold">Un proceso pensado para tu industria.</h2>
-                <p className="max-w-2xl text-sm leading-7 text-slate-200">Resultados que se ven.</p>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <a
-                  className="inline-flex justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
-                  href="/acceso"
-                >
-                  Iniciar sesión
-                </a>
-                <a
-                  className="inline-flex justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
-                  href="/acceso"
-                >
-                  Crear cuenta gratis
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       </section>

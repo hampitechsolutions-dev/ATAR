@@ -286,7 +286,7 @@ export default function ProveedoresPage() {
                 Para compradores industriales
               </p>
               <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                Proveedores reales de la red <span className="text-indigo-600">ATAR</span>
+                Proveedores en la red de <span className="text-indigo-600">ATAR</span>
               </h1>
               <p className="max-w-xl text-lg leading-8 text-slate-600">
                 Este directorio se construye directamente desde la base activa de empresas proveedoras registradas.
