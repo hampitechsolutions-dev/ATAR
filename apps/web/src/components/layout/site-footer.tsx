@@ -32,7 +32,7 @@ export default function SiteFooter() {
       <section className="relative overflow-hidden bg-[linear-gradient(120deg,#070b1a_0%,#0e1633_55%,#141d4a_100%)] text-white">
         <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_80%_50%,rgba(37,99,235,0.35),transparent_60%)]" />
         <div className="pointer-events-none absolute -right-6 bottom-0 hidden h-full w-[380px] opacity-90 lg:block">
-          <Image alt="" className="object-contain object-right-bottom" fill sizes="380px" src="/logoatar.png" />
+          <Image alt="" className="object-contain object-right-bottom" fill sizes="380px" src="/logoatarblanco.png" />
         </div>
         <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-10 lg:py-20">
           <div className="max-w-xl">
@@ -70,12 +70,8 @@ export default function SiteFooter() {
                 <Image alt="ATAR" height={32} src="/logoatar.png" width={32} />
                 <div className="leading-tight">
                   <p className="text-base font-bold text-slate-950">ATAR</p>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">Ecosistema B2B industrial</p>
                 </div>
               </div>
-              <p className="mt-4 max-w-xs text-[13px] leading-6 text-slate-500">
-                Conectamos empresas, simplificamos procesos y generamos oportunidades para toda la industria.
-              </p>
               <div className="mt-5 flex gap-2">
                 {['in', 'ig', 'yt', 'x'].map((social) => (
                   <span

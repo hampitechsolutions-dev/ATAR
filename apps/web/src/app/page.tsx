@@ -89,18 +89,12 @@ const STEPS: { n: string; icon: IconName; title: string; text: string }[] = [
 ];
 
 const CATEGORIES: { label: string; image: string }[] = [
-  { label: 'Big Bags', image: '/bigbag.png' },
-  { label: 'Bolsas industriales', image: '/bolsapp.png' },
-  { label: 'Polipropileno', image: '/rollo.png' },
-  { label: 'Polietileno', image: '/bolsapp.png' },
-  { label: 'Rollos y telas', image: '/rollo.png' },
-  { label: 'Tintas', image: '/amedida.png' },
-  { label: 'Sacos', image: '/saco.png' },
-  { label: 'Fibras', image: '/saco.png' },
-  { label: 'Aditivos e insumos', image: '/amedida.png' },
-  { label: 'Maquinaria', image: '/rollo.png' },
-  { label: 'Servicios industriales', image: '/bigbag.png' },
-  { label: 'Soluciones a medida', image: '/amedida.png' },
+  { label: 'Polímeros', image: '/polimerosweb.png' },
+  { label: 'Envases y embalajes', image: '/envasesweb.png' },
+  { label: 'Telas', image: '/telasweb.png' },
+  { label: 'Hilos y cuerdas', image: '/hilosweb.png' },
+  { label: 'Tintas', image: '/tintasweb.png' },
+  { label: 'Maquinarias', image: '/maquinariaweb.png' },
 ];
 
 const WHY: { icon: IconName; title: string; text: string }[] = [
@@ -119,16 +113,16 @@ export default function Home() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Image alt="" className="object-cover object-center" fill priority sizes="100vw" src="/heroatar.png" />
+          {/* Capa de legibilidad: casi opaca en mobile, fundido lateral en desktop */}
+          <div className="absolute inset-0 bg-white/85 lg:bg-transparent lg:bg-[linear-gradient(90deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.75)_38%,rgba(255,255,255,0)_68%)]" />
         </div>
         <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-10 lg:py-28">
           <div className="max-w-xl">
-            <p className={eyebrow}>Ecosistema B2B industrial</p>
             <h1 className="mt-4 text-[34px] font-semibold leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-[46px]">
-              Conectamos empresas.
+              Conectamos industrias proveedoras con la 
               <br />
-              <span className="text-blue-600">Impulsamos negocios.</span>
+              <span className="text-blue-600">red mas grande de clientes</span>
               <br />
-              Simplificamos la industria.
             </h1>
             <p className="mt-5 max-w-md text-[15px] leading-7 text-slate-500">
               Encontrá productos, materias primas y proveedores especializados. Solicitá cotizaciones y generá nuevas
@@ -144,7 +138,7 @@ export default function Home() {
                 <ArrowIcon />
               </Link>
               <Link
-                className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white/90 px-6 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:bg-white"
                 href="/acceso"
               >
                 Quiero vender en ATAR
@@ -214,26 +208,34 @@ export default function Home() {
             </div>
             <Link
               className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              href="/proveedores"
+              href="/productos"
             >
-              Ver todas las categorías
+              Ver todos los productos
               <ArrowIcon />
             </Link>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
             {CATEGORIES.map((category) => (
               <Link
                 key={category.label}
-                className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(15,23,42,0.10)]"
-                href="/proveedores"
+                className="group relative h-[240px] overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f3f4ff_100%)] shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(15,23,42,0.12)]"
+                href="/productos"
               >
-                <div className="relative h-[110px] w-full overflow-hidden rounded-xl bg-[linear-gradient(180deg,#ffffff_0%,#f3f4ff_100%)]">
-                  <Image alt={category.label} className="object-contain p-2" fill sizes="180px" src={category.image} />
-                </div>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <p className="text-[13px] font-semibold leading-4 text-slate-950">{category.label}</p>
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition group-hover:bg-indigo-600 group-hover:text-white">
+                <Image
+                  alt={category.label}
+                  className="object-cover transition duration-300 group-hover:scale-105"
+                  fill
+                  sizes="(min-width:1280px) 16vw, (min-width:640px) 33vw, 50vw"
+                  src={category.image}
+                />
+
+                {/* Degradé para legibilidad del texto */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-slate-950/75 via-slate-950/25 to-transparent" />
+
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-4">
+                  <p className="text-sm font-semibold leading-5 text-white drop-shadow">{category.label}</p>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition group-hover:bg-indigo-600">
                     <ArrowIcon className="h-3.5 w-3.5" />
                   </span>
                 </div>

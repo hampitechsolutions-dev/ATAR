@@ -20,91 +20,91 @@ const FALLBACK_CATEGORIES: ProductCategory[] = [
     id: 'tintas',
     label: 'Tintas',
     subtitle: 'Tintas para impresión flexográfica y huecograbado en diferentes sustratos y aplicaciones.',
-    imageSrc: '/amedida.png',
+    imageSrc: '/tintas.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'polimeros',
     label: 'Polímeros',
     subtitle: 'Polipropileno, polietileno y masterbatches de alta calidad para la industria del plástico.',
-    imageSrc: '/rollo.png',
+    imageSrc: '/polimerosweb.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'maquinarias',
     label: 'Maquinarias',
     subtitle: 'Equipos y líneas para procesos de extrusión, impresión, conversión y reciclado.',
-    imageSrc: '/herodashc.png',
+    imageSrc: '/maquinariaweb.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'cuerdas-cordones',
     label: 'Cuerdas/Cordones',
     subtitle: 'Cuerdas y cordones de polipropileno para atado, sujeción y aplicaciones industriales.',
-    imageSrc: '/rollo.png',
+    imageSrc: '/cuerdas.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'bolsas',
     label: 'Bolsas',
     subtitle: 'Bolsas de polipropileno y polietileno para múltiples usos: alimentos, agroindustria, retail y más.',
-    imageSrc: '/bolsapp.png',
+    imageSrc: '/bolsaspp.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'sacos',
     label: 'Sacos',
     subtitle: 'Sacos tejidos y laminados para agroindustria, construcción, químicos y otras aplicaciones.',
-    imageSrc: '/saco.png',
+    imageSrc: '/sacos.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'big-bags',
     label: 'Big Bags',
     subtitle: 'Contenedores flexibles de gran capacidad para transporte y almacenamiento de sólidos.',
-    imageSrc: '/bigbag.png',
+    imageSrc: '/bigbags.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'cintas-cintillas',
     label: 'Cintas/Cintillas',
     subtitle: 'Cintas y cintillas de polipropileno para flejado, cierre y aseguramiento de cargas.',
-    imageSrc: '/rollo.png',
+    imageSrc: '/cintas.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'hilo-pp',
     label: 'Hilo multifilamento de PP',
     subtitle: 'Hilos de polipropileno de alta tenacidad para tejeduría, costura, agricultura y aplicaciones técnicas.',
-    imageSrc: '/rollo.png',
+    imageSrc: '/hilomulti.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'hilo-mallas',
     label: 'Hilo retorcido y Mallas para Arrolladora',
     subtitle: 'Hilos retorcidos y mallas diseñadas para arrolladoras y procesos de empaque agrícola.',
-    imageSrc: '/saco.png',
+    imageSrc: '/hiloretor.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'telas-tubulares',
     label: 'Telas Tubulares',
     subtitle: 'Telas tubulares de polipropileno para la confección de bolsas, Big Bags y sacos.',
-    imageSrc: '/rollo.png',
+    imageSrc: '/telatubular.png',
     imageClassName: 'object-cover',
   },
   {
     id: 'telas-planas',
     label: 'Telas planas',
     subtitle: 'Telas planas de polipropileno para bolsas, sacos, coberturas y múltiples usos industriales.',
-    imageSrc: '/bolsapp.png',
+    imageSrc: '/telaplana.png',
     imageClassName: 'object-cover',
   },
 ];
 
 const MOST_SEARCHED = ['Big Bags', 'Polímeros', 'Maquinarias', 'Bolsas', 'Tintas'];
 
-const HERO_IMAGES = ['/bigbag.png', '/rollo.png', '/herodashc.png', '/bolsapp.png'];
+const HERO_IMAGES = ['/bigbags.png', '/cuerdas.png', '/tintas.png', '/hilomulti.png'];
 
 /* Iconos ------------------------------------------------------------------ */
 
@@ -468,7 +468,8 @@ function mapCategory(record: RequestCatalogCategoryRecord): ProductCategory {
     id: record.id,
     label: record.label,
     subtitle: record.subtitle ?? fallback?.subtitle ?? '',
-    imageSrc: record.imageSrc ?? fallback?.imageSrc ?? '/logoatar.png',
+    // Prioriza las imágenes locales con nombre de producto sobre las del API.
+    imageSrc: fallback?.imageSrc ?? record.imageSrc ?? '/logoatar.png',
     imageClassName: record.imageClassName ?? 'object-cover',
   };
 }
