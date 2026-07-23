@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import SiteHeader from "@/components/layout/site-header";
@@ -14,10 +14,27 @@ export const metadata: Metadata = {
   title: "ATAR | Red Comercial Industrial",
   description:
     "Plataforma B2B industrial para gestionar demanda, cotizaciones, CRM comercial y operacion multiplataforma.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "ATAR",
+  appleWebApp: {
+    // iOS no lee el manifest: necesita estos meta para abrir sin barra de
+    // Safari y para mostrar el titulo correcto en la pantalla de inicio.
+    capable: true,
+    title: "ATAR",
+    statusBarStyle: "default",
+  },
   icons: {
     icon: "/logoatar.png",
-    apple: "/logoatar.png",
+    apple: "/icons/apple-touch-icon.png",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0060f0",
+  // viewportFit=cover deja que el contenido use toda la pantalla; el padding
+  // con safe-area en el body (ver mas abajo) es lo que evita que quede debajo
+  // del notch cuando corre instalada en standalone.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -27,7 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${inter.variable} h-full overflow-x-hidden antialiased`}>
-      <body className="min-h-full flex flex-col overflow-x-hidden bg-white text-slate-950">
+      <body className="min-h-full flex flex-col overflow-x-hidden bg-white text-slate-950 pt-[env(safe-area-inset-top)]">
         <AuthProvider>
           <SiteHeader />
           <div className="flex-1">{children}</div>

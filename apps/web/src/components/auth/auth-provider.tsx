@@ -105,6 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Sin promptIfNeeded: solo re-suscribe a quien ya dio permiso (el endpoint
+    // puede rotar). A quien no lo dio se le pregunta desde Notificaciones, con
+    // un gesto explicito.
     void enableWebPush(session.accessToken);
   }, [session?.accessToken]);
 

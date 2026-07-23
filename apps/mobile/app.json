@@ -44,10 +44,15 @@
       ]
     ],
     "extra": {
-      "apiUrl": "http://localhost:4000/api"
+      "apiUrl": "http://192.168.2.125:4000/api",
+      "router": {},
+      "eas": {
+        "projectId": "c161bb52-4cf0-46f3-bf3d-aa710f78d332"
+      }
     },
     "experiments": {
-      "typedRoutes": true
-    }
+      "typedRoutes": false
+    },
+    "owner": "juansedevvs-team"
   }
 }

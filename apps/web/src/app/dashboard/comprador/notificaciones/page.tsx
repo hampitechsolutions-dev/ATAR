@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import PushOptIn from '@/components/notifications/push-opt-in';
 import { atarApi, type NotificationRecord } from '@/lib/atar-api';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 
@@ -139,6 +140,8 @@ export default function BuyerNotificationsPage() {
           </button>
         </div>
       </div>
+
+      <PushOptIn />
 
       {visibleError ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
