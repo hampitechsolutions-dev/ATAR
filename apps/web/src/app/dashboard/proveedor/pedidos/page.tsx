@@ -1,9 +1,23 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { atarApi, type OrderFulfillmentStatus, type QuoteRecord } from '@/lib/atar-api';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
+
+function stageBadgeClass(column: OrderColumnKey) {
+  if (column === 'delivered') {
+    return 'bg-emerald-50 text-emerald-600';
+  }
+  if (column === 'transit') {
+    return 'bg-violet-50 text-violet-600';
+  }
+  if (column === 'production') {
+    return 'bg-sky-50 text-sky-600';
+  }
+  return 'bg-amber-50 text-amber-600';
+}
 
 type OrderColumnKey = 'pending' | 'production' | 'transit' | 'delivered';
 
@@ -262,6 +276,7 @@ export default function SupplierOrdersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [updatingFulfillmentId, setUpdatingFulfillmentId] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<'curso' | 'completados' | 'cancelados'>('curso');
 
   const orderCards = useMemo<OrderCard[]>(() => {
     return myQuotes
@@ -388,12 +403,132 @@ export default function SupplierOrdersPage() {
     },
   ];
 
+  const mobileOrders = useMemo(() => {
+    const byTab =
+      mobileTab === 'curso'
+        ? filteredOrders.filter((item) => item.column !== 'delivered')
+        : mobileTab === 'completados'
+          ? filteredOrders.filter((item) => item.column === 'delivered')
+          : [];
+    return byTab;
+  }, [filteredOrders, mobileTab]);
+
+  const mobileTabs = [
+    { key: 'curso' as const, label: 'En curso', count: orderCards.filter((item) => item.column !== 'delivered').length },
+    { key: 'completados' as const, label: 'Completados', count: orderCards.filter((item) => item.column === 'delivered').length },
+    { key: 'cancelados' as const, label: 'Cancelados', count: 0 },
+  ];
+
   return (
     <SupplierDashboardShell
       searchPlaceholder="Buscar pedidos, solicitudes, clientes..."
       session={session}
     >
-      <section className="space-y-4">
+      {/* ==================== VISTA MOBILE ==================== */}
+      <div className="lg:hidden pb-4">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950">Pedidos</h1>
+
+        {/* Tabs */}
+        <div className="mt-4 flex items-center gap-5 border-b border-slate-200">
+          {mobileTabs.map((tab) => {
+            const active = mobileTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setMobileTab(tab.key)}
+                className={`relative -mb-px flex items-center gap-1.5 pb-3 text-sm font-semibold transition ${
+                  active ? 'text-slate-950' : 'text-slate-400'
+                }`}
+              >
+                {tab.label}
+                {tab.count > 0 ? (
+                  <span
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                      active ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                ) : null}
+                {active ? <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-indigo-600" /> : null}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Buscador */}
+        <div className="mt-4">
+          <div className="relative">
+            <svg aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24">
+              <path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            </svg>
+            <input
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar pedido..."
+              value={search}
+            />
+          </div>
+        </div>
+
+        {error ? (
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        ) : null}
+        {message ? (
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {message}
+          </div>
+        ) : null}
+
+        {/* Lista */}
+        <div className="mt-4 space-y-3">
+          {loading ? (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
+              Cargando pedidos...
+            </div>
+          ) : mobileOrders.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
+              {mobileTab === 'cancelados' ? 'No hay pedidos cancelados.' : 'No hay pedidos en esta pestaña.'}
+            </div>
+          ) : (
+            mobileOrders.map((item) => (
+              <Link
+                key={item.quote.id}
+                href={`/dashboard/proveedor/pedidos/${item.quote.requestId}`}
+                className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:bg-slate-50"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[15px] font-bold text-slate-950">Pedido {item.orderNumber}</p>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${stageBadgeClass(item.column)}`}>
+                    {item.stageLabel}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500">{item.companyName}</p>
+                <p className="mt-2 text-sm font-medium text-slate-800">{item.title}</p>
+
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                  <span>Entrega: <span className="font-medium text-slate-700">{item.promisedLabel}</span></span>
+                  <span>Total: <span className="font-semibold text-slate-900">{item.amountLabel}</span></span>
+                </div>
+
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Progreso</span>
+                    <span className="font-semibold text-slate-700">{item.progress}%</span>
+                  </div>
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-indigo-600" style={{ width: `${item.progress}%` }} />
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ==================== VISTA DESKTOP ==================== */}
+      <section className="hidden space-y-4 lg:block">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
