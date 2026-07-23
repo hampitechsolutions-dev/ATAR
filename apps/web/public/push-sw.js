@@ -18,10 +18,15 @@ self.addEventListener('push', (event) => {
   const title = payload.title || 'ATAR';
   const options = {
     body: payload.body || 'Tenes una nueva notificacion.',
-    icon: '/logoatar.png',
-    badge: '/logoatar.png',
+    icon: '/icons/icon-192.png',
+    // Badge monocromo: Android lo pinta de un solo color en la barra de estado,
+    // asi que solo cuenta la silueta.
+    badge: '/icons/badge-96.png',
     data: {
-      url: payload.url || '/dashboard/comprador/notificaciones',
+      // Sin fallback a un dashboard concreto: comprador y proveedor comparten
+      // este SW, apuntar a uno mandaria al otro al lugar equivocado. El backend
+      // siempre manda url; si faltara, abrimos la raiz y el login redirige.
+      url: payload.url || '/',
     },
     tag: payload.tag || 'atar-notification',
   };

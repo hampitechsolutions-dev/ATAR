@@ -31,8 +31,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0060f0",
-  // viewportFit=cover + safe-area en el body evita que el contenido quede
-  // debajo del notch cuando corre instalada en standalone.
+  // viewportFit=cover deja que el contenido use toda la pantalla; el padding
+  // con safe-area en el body (ver mas abajo) es lo que evita que quede debajo
+  // del notch cuando corre instalada en standalone.
   viewportFit: "cover",
 };
 
@@ -43,7 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${inter.variable} h-full overflow-x-hidden antialiased`}>
-      <body className="min-h-full flex flex-col overflow-x-hidden bg-white text-slate-950">
+      <body className="min-h-full flex flex-col overflow-x-hidden bg-white text-slate-950 pt-[env(safe-area-inset-top)]">
         <AuthProvider>
           <SiteHeader />
           <div className="flex-1">{children}</div>
