@@ -1,3 +1,18 @@
+// Toma control apenas se instala una version nueva, sin esperar a que se
+// cierren las pestanas abiertas.
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+// Chrome solo ofrece "Instalar app" si el service worker declara un handler de
+// fetch. No interceptamos nada: sin respondWith, el navegador resuelve cada
+// request normalmente y no hay riesgo de servir contenido cacheado viejo.
+self.addEventListener('fetch', () => {});
+
 self.addEventListener('push', (event) => {
   const payload = event.data ? event.data.json() : {};
   const title = payload.title || 'ATAR';

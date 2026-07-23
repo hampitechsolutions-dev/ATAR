@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import SiteHeader from "@/components/layout/site-header";
@@ -14,10 +14,26 @@ export const metadata: Metadata = {
   title: "ATAR | Red Comercial Industrial",
   description:
     "Plataforma B2B industrial para gestionar demanda, cotizaciones, CRM comercial y operacion multiplataforma.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "ATAR",
+  appleWebApp: {
+    // iOS no lee el manifest: necesita estos meta para abrir sin barra de
+    // Safari y para mostrar el titulo correcto en la pantalla de inicio.
+    capable: true,
+    title: "ATAR",
+    statusBarStyle: "default",
+  },
   icons: {
     icon: "/logoatar.png",
-    apple: "/logoatar.png",
+    apple: "/icons/apple-touch-icon.png",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0060f0",
+  // viewportFit=cover + safe-area en el body evita que el contenido quede
+  // debajo del notch cuando corre instalada en standalone.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
