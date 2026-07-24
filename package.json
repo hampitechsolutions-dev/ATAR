@@ -21,6 +21,10 @@
   "engines": {
     "node": ">=20.15.0"
   },
+  "_comment_overrides": "expo-mobile esta en SDK 54 (RN 0.81.5). async-storage y el dom-webview transitivo (expo lo declara con '*') arrastran RN 0.85, que gana la resolucion hoisteada y rompe el bundle mezclando versiones. Se fuerza una unica version de RN.",
+  "overrides": {
+    "react-native": "0.81.5"
+  },
   "devDependencies": {
     "concurrently": "^9.2.1"
   }
