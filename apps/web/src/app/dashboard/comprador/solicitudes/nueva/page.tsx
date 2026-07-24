@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -16,6 +16,7 @@ import {
   getRequestCatalogFields,
   getRequestCatalogKeywords,
 } from '@/lib/request-catalog';
+import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 
 type StepKey = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -359,11 +360,11 @@ export default function BuyerNewRequestWizardPage() {
       try {
         const response = await atarApi.getRequestCategories();
         if (!cancelled) {
-          setRequestCategories(response);
+          setRequestCategories(response.length > 0 ? response : FALLBACK_REQUEST_CATEGORIES);
         }
       } catch {
         if (!cancelled) {
-          setRequestCategories([]);
+          setRequestCategories(FALLBACK_REQUEST_CATEGORIES);
         }
       }
     }
@@ -387,6 +388,15 @@ export default function BuyerNewRequestWizardPage() {
   useEffect(() => {
     setStep(initialStep);
   }, [initialStep]);
+
+  // Al cambiar de paso, subir al tope del contenido (evita quedar al medio).
+  const stepScrollRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    stepScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [step]);
 
   useEffect(() => {
     saveDraft(draft);
@@ -513,6 +523,32 @@ export default function BuyerNewRequestWizardPage() {
     () => `https://www.google.com/maps?q=${encodeURIComponent(deliveryMapQuery)}&z=15&output=embed`,
     [deliveryMapQuery],
   );
+  // Filtro de productos del paso 1 (viene del home: ?only=Label1,Label2).
+  const onlyLabels = (searchParams?.get('only') ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const normalizeLabel = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .trim();
+  const onlyNormalized = onlyLabels.map(normalizeLabel);
+  const matchedCategories =
+    onlyNormalized.length > 0
+      ? requestCategories.filter((item) => {
+          const label = normalizeLabel(item.label);
+          return onlyNormalized.some(
+            (token) => label === token || label.includes(token) || token.includes(label),
+          );
+        })
+      : requestCategories;
+  // Si el filtro no coincide con ninguna categoría real, mostramos todas
+  // (evita que el paso 1 quede vacío por una etiqueta desalineada).
+  const filterActive = onlyLabels.length > 0 && matchedCategories.length > 0;
+  const visibleCategories = filterActive ? matchedCategories : requestCategories;
+
   const canContinue = step === 1 ? Boolean(selectedCategory) : true;
   const sidebarSteps = [
     {
@@ -805,7 +841,7 @@ export default function BuyerNewRequestWizardPage() {
       ) : null}
 
       <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="min-h-0 overflow-y-auto overscroll-contain px-1 py-2 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <section ref={stepScrollRef} className="min-h-0 overflow-y-auto overscroll-contain px-1 py-2 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {step === 1 ? (
             <div className="flex h-full flex-col">
               <div className="shrink-0 space-y-1">
@@ -813,67 +849,69 @@ export default function BuyerNewRequestWizardPage() {
                 <p className="text-[13px] leading-5 text-slate-500">
                   Seleccioná la categoría que mejor describa lo que necesitás.
                 </p>
+                {filterActive ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/dashboard/comprador/solicitudes/nueva?step=1')}
+                    className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#4f46ff]"
+                  >
+                    Ver todas las categorías
+                  </button>
+                ) : null}
               </div>
 
-              <div className="mt-5 grid flex-1 auto-rows-fr gap-3 grid-cols-2 sm:gap-4 xl:grid-cols-4">
-                {requestCategories.length === 0 ? (
+              <div className="mt-5 grid gap-3 grid-cols-2 sm:gap-4 xl:grid-cols-4">
+                {visibleCategories.length === 0 ? (
                   <div className="col-span-full rounded-[20px] border border-dashed border-slate-300 bg-white px-5 py-8 text-sm text-slate-500">
-                    No hay categorías activas cargadas en el catálogo.
+                    {requestCategories.length === 0
+                      ? 'No hay categorías activas cargadas en el catálogo.'
+                      : 'No hay productos para este filtro. Mostrá todas las categorías.'}
                   </div>
                 ) : (
-                  requestCategories.map((option) => {
+                  visibleCategories.map((option) => {
                     const active = draft.category === option.label;
                     return (
                       <button
                         key={option.id}
-                        className={`group relative flex h-full min-h-[150px] flex-col overflow-hidden rounded-[20px] border text-left transition duration-300 sm:min-h-[210px] ${
-                          active
-                            ? 'border-[#4f46ff] shadow-[0_22px_46px_rgba(79,70,255,0.18)] ring-1 ring-[#4f46ff]'
-                            : 'border-slate-200 shadow-[0_10px_26px_rgba(15,23,42,0.05)] hover:-translate-y-1 hover:border-[#c9cdff] hover:shadow-[0_26px_48px_rgba(15,23,42,0.12)]'
+                        className={`group relative flex h-[150px] flex-col justify-end overflow-hidden rounded-[20px] bg-slate-100 text-left shadow-sm transition sm:h-[200px] ${
+                          active ? 'ring-2 ring-[#4f46ff] ring-offset-2' : ''
                         }`}
-                        onClick={() => setDraft((current) => ({ ...current, category: option.label }))}
+                        onClick={() => {
+                          const next = { ...draft, category: option.label };
+                          setDraft(next);
+                          saveDraft(next);
+                          setError(null);
+                          setStep(2);
+                        }}
                         type="button"
                       >
+                        {option.imageSrc ? (
+                          <Image
+                            alt={option.label}
+                            className="object-cover transition duration-300 group-hover:scale-105"
+                            fill
+                            sizes="(min-width: 1280px) 300px, (min-width: 768px) 50vw, 45vw"
+                            src={option.imageSrc}
+                          />
+                        ) : null}
+
+                        {/* Gradiente base para legibilidad */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/25 to-transparent" />
+                        {/* Oscurecido extra en hover */}
+                        <div className="absolute inset-0 bg-slate-950/0 transition-colors duration-300 group-hover:bg-slate-950/35" />
+
                         {active ? (
                           <span className="absolute right-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#4f46ff] text-white shadow-[0_10px_24px_rgba(79,70,255,0.30)]">
                             <Icon name="check" />
                           </span>
                         ) : null}
 
-                        <div className="relative flex-1 overflow-hidden bg-[radial-gradient(circle_at_50%_16%,rgba(79,70,255,0.12),transparent_60%),linear-gradient(180deg,#ffffff_0%,#f2f3ff_100%)]">
-                          {option.imageSrc ? (
-                            <div
-                              className={`absolute inset-0 transition duration-500 ease-out ${
-                                active ? 'scale-[1.06]' : 'group-hover:scale-[1.05]'
-                              } ${option.imageClassName ?? ''}`}
-                            >
-                              <Image
-                                alt={option.label}
-                                className="object-contain drop-shadow-[0_16px_26px_rgba(15,23,42,0.10)]"
-                                fill
-                                sizes="(min-width: 1280px) 300px, (min-width: 768px) 50vw, 100vw"
-                                src={option.imageSrc}
-                              />
-                            </div>
-                          ) : null}
-                        </div>
-
-                        <div
-                          className={`flex items-center justify-between gap-3 border-t px-4 py-3.5 transition duration-300 ${
-                            active ? 'border-[#e2e0ff] bg-[#f8f9ff]' : 'border-slate-100 bg-white'
-                          }`}
-                        >
+                        <div className="relative z-10 flex items-end justify-between gap-2 p-3">
                           <div className="min-w-0">
-                            <p className="truncate text-[15px] font-semibold tracking-[-0.03em] text-slate-950">{option.label}</p>
-                            <p className="mt-0.5 truncate text-[11px] leading-4 text-slate-500">{option.subtitle}</p>
+                            <p className="truncate text-[15px] font-semibold tracking-[-0.03em] text-white drop-shadow-sm">{option.label}</p>
+                            <p className="mt-0.5 truncate text-[11px] leading-4 text-white/85 drop-shadow-sm">{option.subtitle}</p>
                           </div>
-                          <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition duration-300 ${
-                              active
-                                ? 'bg-[#4f46ff] text-white'
-                                : 'bg-[#eef2ff] text-[#4f46ff] group-hover:bg-[#4f46ff] group-hover:text-white group-hover:translate-x-0.5'
-                            }`}
-                          >
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition group-hover:bg-[#4f46ff]">
                             <Icon name="arrow" />
                           </span>
                         </div>

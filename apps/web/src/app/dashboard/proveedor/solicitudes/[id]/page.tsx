@@ -133,14 +133,14 @@ export default function SupplierRequestDetailPage() {
     }
   }
 
-  const detailRows = request
+  const detailRows: { label: string; value: string; wide?: boolean }[] = request
     ? [
         { label: 'Producto', value: request.productName || request.title },
         {
           label: 'Cantidad',
           value: typeof request.quantityRequested === 'number' ? `${request.quantityRequested} unidades` : 'A definir',
         },
-        { label: 'Especificaciones', value: request.description || 'Sin especificaciones' },
+        { label: 'Especificaciones', value: request.description || 'Sin especificaciones', wide: true },
         { label: 'Material', value: request.category || 'No informado' },
         { label: 'Entrega estimada', value: formatDate(request.dueDate) },
         { label: 'Ubicación de entrega', value: getBuyerLocation(request) },
@@ -230,22 +230,46 @@ export default function SupplierRequestDetailPage() {
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">Detalles de la solicitud</p>
               <dl className="mt-3 divide-y divide-slate-100">
-                {detailRows.map((row) => (
-                  <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
-                    <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
-                    <dd className="text-right text-sm font-medium text-slate-900">{row.value}</dd>
-                  </div>
-                ))}
+                {detailRows.map((row) =>
+                  row.wide ? (
+                    <div key={row.label} className="py-2.5">
+                      <dt className="text-xs text-slate-500">{row.label}</dt>
+                      <dd className="mt-1 whitespace-pre-wrap text-sm font-medium leading-6 text-slate-900">
+                        {row.value}
+                      </dd>
+                    </div>
+                  ) : (
+                    <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
+                      <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
+                      <dd className="text-right text-sm font-medium text-slate-900">{row.value}</dd>
+                    </div>
+                  ),
+                )}
               </dl>
             </div>
 
-            {/* Formulario de cotización */}
+            {/* Formulario de cotización (bottom sheet flotante) */}
             {showQuoteForm ? (
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-sm font-bold text-slate-950">
-                  {existingQuote ? 'Editar cotización' : 'Nueva cotización'}
-                </p>
-                <div className="mt-4 space-y-4">
+              <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
+                <div className="absolute inset-0 bg-slate-950/50" onClick={() => setShowQuoteForm(false)} />
+                <div className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-t-3xl bg-white shadow-[0_-20px_60px_rgba(2,6,23,0.28)]">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                    <p className="text-base font-bold text-slate-950">
+                      {existingQuote ? 'Editar cotización' : 'Nueva cotización'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuoteForm(false)}
+                      aria-label="Cerrar"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500"
+                    >
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4">
+                    <div className="space-y-4">
                   <Field label="Precio unitario">
                     <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400">
                       <span className="flex items-center px-3 text-sm text-slate-400">$</span>
@@ -314,7 +338,9 @@ export default function SupplierRequestDetailPage() {
                   className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-indigo-600 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
                 >
                   {submitting ? 'Enviando...' : existingQuote ? 'Actualizar cotización' : 'Enviar cotización'}
-                </button>
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : null}
           </>
@@ -343,10 +369,10 @@ export default function SupplierRequestDetailPage() {
             )}
             <button
               type="button"
-              onClick={() => setShowQuoteForm((open) => !open)}
+              onClick={() => setShowQuoteForm(true)}
               className="flex h-12 flex-[1.4] items-center justify-center rounded-xl bg-indigo-600 text-sm font-semibold text-white transition hover:bg-indigo-500"
             >
-              {showQuoteForm ? 'Ocultar formulario' : existingQuote ? 'Editar cotización' : 'Enviar cotización'}
+              {existingQuote ? 'Editar cotización' : 'Enviar cotización'}
             </button>
           </div>
         </div>

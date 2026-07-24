@@ -134,7 +134,8 @@ export default function BuyerBottomNav({ notificationCount = 1 }: { notification
   const tabs: { label: string; href: string; icon: IconName; badge?: number }[] = [
     { label: 'Inicio', href: '/dashboard/comprador', icon: 'home' },
     { label: 'Panel', href: '/dashboard/comprador/panel', icon: 'panel' },
-    { label: 'Alertas', href: '/dashboard/comprador/notificaciones', icon: 'bell', badge: notificationCount },
+    { label: 'Mensajes', href: '/dashboard/comprador/mensajes', icon: 'chat' },
+    { label: 'Notificaciones', href: '/dashboard/comprador/notificaciones', icon: 'bell', badge: notificationCount },
   ];
 
   function handleLogout() {
@@ -166,7 +167,7 @@ export default function BuyerBottomNav({ notificationCount = 1 }: { notification
                     {tab.badge}
                   </span>
                 ) : null}
-                <span className={`text-[10px] font-semibold ${active ? 'text-[#4f46ff]' : 'text-slate-500'}`}>
+                <span className={`text-center text-[9px] font-semibold leading-tight ${active ? 'text-[#4f46ff]' : 'text-slate-500'}`}>
                   {tab.label}
                 </span>
               </Link>
