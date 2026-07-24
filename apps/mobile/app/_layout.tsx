@@ -14,7 +14,7 @@ export default function RootLayout() {
       <MobilePushProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="splash" />
-          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(auth)/login" />
           <Stack.Screen name="(tabs)" />
         </Stack>
       </MobilePushProvider>
