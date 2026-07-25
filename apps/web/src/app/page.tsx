@@ -112,9 +112,9 @@ export default function Home() {
       {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image alt="" className="object-cover object-center" fill priority sizes="100vw" src="/heroatar.png" />
-          {/* Capa de legibilidad: casi opaca en mobile, fundido lateral en desktop */}
-          <div className="absolute inset-0 bg-white/85 lg:bg-transparent lg:bg-[linear-gradient(90deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.75)_38%,rgba(255,255,255,0)_68%)]" />
+          <Image alt="" className="object-cover object-center" fill priority sizes="100vw" src="/hero-industria.png" />
+          {/* Capa de legibilidad: degradé suave para que se vea la imagen de fondo */}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.88)_0%,rgba(255,255,255,0.55)_42%,rgba(255,255,255,0.12)_100%)] lg:bg-[linear-gradient(90deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.72)_38%,rgba(255,255,255,0)_68%)]" />
         </div>
         <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-10 lg:py-28">
           <div className="max-w-xl">
@@ -197,8 +197,12 @@ export default function Home() {
       </section>
 
       {/* CATEGORÍAS */}
-      <section className="border-t border-slate-200 bg-white">
-        <div className="mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-10">
+      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.08),_transparent_46%),linear-gradient(180deg,#f7f8ff_0%,#eceffe_100%)]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(79,70,229,0.12)_1px,transparent_1px)] opacity-40 [background-size:22px_22px]"
+        />
+        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-10">
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className={eyebrow}>Explorá por categorías</p>
@@ -368,7 +372,7 @@ export default function Home() {
       </section>
 
       {/* POR QUÉ ELEGIR ATAR */}
-      <section id="recursos" className="border-t border-slate-200 bg-white">
+      <section id="recursos" className="border-t border-slate-200 bg-[linear-gradient(180deg,#f6f7fb_0%,#eef1f8_100%)]">
         <div className="mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-10">
           <p className={`text-center ${eyebrow}`}>Por qué elegir ATAR</p>
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

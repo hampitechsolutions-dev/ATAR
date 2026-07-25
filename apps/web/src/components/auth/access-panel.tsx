@@ -454,58 +454,39 @@ export default function AccessPanel() {
       </div>
 
       {isTransitioning ? (
-        <div className="fixed inset-0 z-[120] overflow-hidden bg-[#040612]">
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-90"
-            style={{ backgroundImage: "url('/acceso.png')" }}
-          />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(86,74,255,0.28)_0%,rgba(12,17,41,0.7)_32%,rgba(2,6,23,0.92)_68%,rgba(1,3,10,0.98)_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(1,3,10,0.72)_0%,rgba(3,6,20,0.3)_38%,rgba(3,6,20,0.74)_100%)]" />
-          <div className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-[42%] rounded-full bg-[#5b4bff]/20 blur-[100px]" />
+        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-[#0a0e1f]">
+          {/* Fondo: gradiente limpio + glow sutil */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,rgba(91,75,255,0.20),transparent_62%),linear-gradient(180deg,#0b1020_0%,#070a16_100%)]" />
+          <div className="pointer-events-none absolute left-1/2 top-[36%] h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5b4bff]/25 blur-[130px]" />
 
-          <div className="relative flex h-full items-center justify-center px-6">
-            <div className="w-full max-w-[540px] text-center text-white">
-              <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[30px] bg-[#5b4bff]/10 shadow-[0_0_90px_rgba(91,75,255,0.42)] backdrop-blur-sm">
-                <div className="animate-pulse">
-                  <Image
-                    alt="ATAR"
-                    className="drop-shadow-[0_0_24px_rgba(91,75,255,0.9)]"
-                    height={70}
-                    priority
-                    src="/logoatar.png"
-                    width={70}
-                  />
-                </div>
-              </div>
-
-              <h2 className="mt-8 text-[28px] font-medium tracking-tight text-white md:text-[30px]">
-                Ingresando a <span className="font-semibold text-[#5b4bff]">ATAR</span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-[300px] text-sm leading-6 text-slate-300">
-                Preparando tu espacio de trabajo
-                <br />
-                y cargando tus accesos.
-              </p>
-
-              <div className="mx-auto mt-10 w-full max-w-[320px]">
-                <div className="relative h-[4px] overflow-visible rounded-full bg-white/8 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-                  <div
-                    className="relative h-full rounded-full bg-gradient-to-r from-[#4338ff] via-[#5b4bff] to-[#8c82ff] transition-[width] duration-200"
-                    style={{ width: `${transitionProgress}%` }}
-                  >
-                    <div className="absolute right-0 top-1/2 h-3 w-20 -translate-y-1/2 rounded-full bg-[#7a6dff] blur-md" />
-                    <div className="absolute right-0 top-1/2 h-1.5 w-10 -translate-y-1/2 rounded-full bg-white/90 blur-[2px]" />
-                  </div>
-                  <div
-                    className="absolute left-0 top-1/2 h-[14px] -translate-y-1/2 rounded-full bg-[#5b4bff]/25 blur-xl transition-[width] duration-200"
-                    style={{ width: `${transitionProgress}%` }}
-                  />
-                </div>
-                <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.45em] text-[#6d7bd1]">
-                  Cargando {transitionProgress}%
-                </p>
-              </div>
+          <div className="relative flex w-full max-w-[400px] flex-col items-center px-8 text-center text-white">
+            {/* Logo con anillo giratorio */}
+            <div className="relative flex h-24 w-24 items-center justify-center">
+              <span className="absolute inset-0 animate-spin rounded-full border-2 border-white/10 border-t-[#8c82ff] [animation-duration:0.9s]" />
+              <span className="absolute inset-[7px] rounded-full bg-white/[0.04] backdrop-blur-sm" />
+              <Image
+                alt="ATAR"
+                className="relative drop-shadow-[0_0_18px_rgba(91,75,255,0.75)]"
+                height={46}
+                priority
+                src="/logoatar.png"
+                width={46}
+              />
             </div>
+
+            <h2 className="mt-8 text-2xl font-semibold tracking-tight">
+              Ingresando a <span className="text-[#8c82ff]">ATAR</span>
+            </h2>
+            <p className="mt-2 text-sm text-slate-400">Preparando tu espacio de trabajo…</p>
+
+            {/* Barra de progreso limpia */}
+            <div className="mt-8 h-1 w-full max-w-[220px] overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#5b4bff] to-[#8c82ff] transition-[width] duration-200 ease-out"
+                style={{ width: `${transitionProgress}%` }}
+              />
+            </div>
+            <p className="mt-3 text-[11px] font-medium tracking-[0.2em] text-slate-500">{transitionProgress}%</p>
           </div>
         </div>
       ) : null}

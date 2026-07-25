@@ -786,7 +786,7 @@ export default function BuyerNewRequestWizardPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-88px)] flex-col gap-4 overflow-hidden">
+    <div className="flex h-[calc(100dvh-24px)] flex-col gap-4 overflow-hidden lg:h-[calc(100vh-88px)]">
       <div className="flex h-11 shrink-0 items-center gap-3 sm:hidden">
         <button
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100"
@@ -1727,9 +1727,29 @@ export default function BuyerNewRequestWizardPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-2.5 border-t border-slate-100 pt-3">
+            <div className="flex flex-col gap-2.5 border-t border-slate-100 pt-4">
+              {step === 1 ? null : step < 5 ? (
+                <button
+                  className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                  disabled={submitting || !canContinue}
+                  onClick={goNext}
+                  type="button"
+                >
+                  Continuar →
+                </button>
+              ) : step === 5 ? (
+                <button
+                  className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                  disabled={submitting}
+                  onClick={handleSubmit}
+                  type="button"
+                >
+                  {submitting ? 'Enviando...' : 'Enviar solicitud →'}
+                </button>
+              ) : null}
+
               <button
-                className="inline-flex h-9 items-center justify-center rounded-[14px] border border-slate-200 bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white text-[15px] font-semibold text-slate-700 transition hover:bg-slate-50"
                 onClick={() => {
                   if (step === 1) {
                     router.push('/dashboard/comprador');
@@ -1741,52 +1761,34 @@ export default function BuyerNewRequestWizardPage() {
               >
                 ← Volver
               </button>
-
-              {step < 5 ? (
-                <button
-                  className="inline-flex h-9 items-center justify-center rounded-[14px] bg-[#4f46ff] px-4 text-[13px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-                  disabled={submitting || !canContinue}
-                  onClick={goNext}
-                  type="button"
-                >
-                  Continuar →
-                </button>
-              ) : (
-                <button
-                  className="inline-flex h-9 items-center justify-center rounded-[14px] bg-[#4f46ff] px-4 text-[13px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-                  disabled={submitting}
-                  onClick={handleSubmit}
-                  type="button"
-                >
-                  {submitting ? 'Enviando...' : 'Enviar solicitud →'}
-                </button>
-              )}
             </div>
           </div>
         </aside>
       </div>
 
-      <div className="shrink-0 lg:hidden">
-        {step < 5 ? (
-          <button
-            className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-            disabled={submitting || !canContinue}
-            onClick={goNext}
-            type="button"
-          >
-            Continuar
-          </button>
-        ) : (
-          <button
-            className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-            disabled={submitting}
-            onClick={handleSubmit}
-            type="button"
-          >
-            {submitting ? 'Enviando...' : 'Enviar solicitud'}
-          </button>
-        )}
-      </div>
+      {step !== 1 ? (
+        <div className="shrink-0 lg:hidden">
+          {step < 5 ? (
+            <button
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+              disabled={submitting || !canContinue}
+              onClick={goNext}
+              type="button"
+            >
+              Continuar
+            </button>
+          ) : (
+            <button
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+              disabled={submitting}
+              onClick={handleSubmit}
+              type="button"
+            >
+              {submitting ? 'Enviando...' : 'Enviar solicitud'}
+            </button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

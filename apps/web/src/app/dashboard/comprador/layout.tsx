@@ -24,9 +24,9 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
   return (
     <AuthGuard allowedRole="BUYER">
       <div
-        className={`bg-[#f5f7fb] text-slate-950 ${
-          isBuyerMessages ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'
-        }`}
+        className={`text-slate-950 ${
+          isBuyerWizard ? 'bg-[linear-gradient(180deg,#eaeeff_0%,#e2e7ff_100%)]' : 'bg-[#f5f7fb]'
+        } ${isBuyerMessages ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'}`}
       >
         <BuyerMarketplaceHeader session={session} />
         {isFullBleed ? (
@@ -45,7 +45,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
           </main>
         )}
         {showBottomNav ? <BuyerBottomNav /> : null}
-        <AssistantFab />
+        {!isBuyerWizard ? <AssistantFab /> : null}
       </div>
     </AuthGuard>
   );
