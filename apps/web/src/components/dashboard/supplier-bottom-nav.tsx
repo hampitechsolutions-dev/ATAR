@@ -160,7 +160,7 @@ export default function SupplierBottomNav() {
     <>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2">
-          {tabs.map((tab) => {
+          {tabs.slice(0, 2).map((tab) => {
             const active = isActive(tab.href);
             return (
               <Link key={tab.href} href={tab.href} className="flex flex-1 flex-col items-center gap-1 py-1">
@@ -173,11 +173,41 @@ export default function SupplierBottomNav() {
               </Link>
             );
           })}
+
+          {/* Mensajes */}
+          {(() => {
+            const active = isActive('/dashboard/proveedor/mensajes');
+            return (
+              <Link href="/dashboard/proveedor/mensajes" className="flex flex-1 flex-col items-center gap-1 py-1">
+                <span className={active ? 'text-indigo-600' : 'text-slate-400'}>
+                  <Icon name="mail" className="h-6 w-6" />
+                </span>
+                <span className={`text-[10px] font-semibold ${active ? 'text-indigo-600' : 'text-slate-500'}`}>
+                  Mensajes
+                </span>
+              </Link>
+            );
+          })()}
+
+          {tabs.slice(2).map((tab) => {
+            const active = isActive(tab.href);
+            return (
+              <Link key={tab.href} href={tab.href} className="flex flex-1 flex-col items-center gap-1 py-1">
+                <span className={active ? 'text-indigo-600' : 'text-slate-400'}>
+                  <Icon name={tab.icon} className="h-6 w-6" />
+                </span>
+                <span className={`text-[10px] font-semibold ${active ? 'text-indigo-600' : 'text-slate-500'}`}>
+                  {tab.label}
+                </span>
+              </Link>
+            );
+          })}
+
           <button type="button" onClick={() => setOpen(true)} className="flex flex-1 flex-col items-center gap-1 py-1">
             <span className="text-slate-400">
               <Icon name="menu" className="h-6 w-6" />
             </span>
-            <span className="text-[10px] font-semibold text-slate-500">Menú</span>
+            <span className="text-[10px] font-semibold text-slate-500">Más</span>
           </button>
         </div>
       </nav>

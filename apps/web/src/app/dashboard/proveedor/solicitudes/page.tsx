@@ -49,6 +49,21 @@ function formatRelative(value: string) {
   return `Hace ${Math.round(hours / 24)} d`;
 }
 
+function formatRelativeShort(value: string) {
+  const minutes = Math.max(1, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
+
+  if (minutes < 60) {
+    return `Hace ${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `Hace ${hours} h`;
+  }
+
+  return `Hace ${Math.floor(hours / 24)} d`;
+}
+
 function getBuyerLocation(request: RequestRecord) {
   const city = request.buyerCompany?.city?.trim();
   const country = request.buyerCompany?.country?.trim();
@@ -69,6 +84,7 @@ export default function SupplierRequestsPage() {
   const { session, openRequests, myQuotes, loading, error, refresh } = useSupplierDashboardData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'quoted' | 'private'>('all');
+  const [mobileTab, setMobileTab] = useState<'nuevas' | 'evaluacion' | 'historial'>('nuevas');
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const [draft, setDraft] = useState<QuoteDraft>(() => createDraft());
   const [submitting, setSubmitting] = useState(false);
@@ -191,12 +207,203 @@ export default function SupplierRequestsPage() {
     };
   }, [filteredRequests, quoteByRequestId]);
 
+  // ----- Datos para la vista mobile (tabs Nuevas / En evaluación / Historial) -----
+  const historyQuotes = useMemo(
+    () =>
+      [...myQuotes]
+        .filter((quote) => quote.status === 'AWARDED' || quote.status === 'REJECTED')
+        .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()),
+    [myQuotes],
+  );
+
+  const mobileTabCounts = useMemo(() => {
+    const nuevas = openRequests.filter((request) => !quoteByRequestId.has(request.id)).length;
+    const evaluacion = openRequests.filter((request) => {
+      const quote = quoteByRequestId.get(request.id);
+      return quote && quote.status === 'SUBMITTED';
+    }).length;
+
+    return { nuevas, evaluacion, historial: historyQuotes.length };
+  }, [openRequests, quoteByRequestId, historyQuotes]);
+
+  const mobileItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    const matches = (request: RequestRecord) =>
+      !query ||
+      [request.title, request.category, request.description, request.buyerCompany?.name ?? '']
+        .join(' ')
+        .toLowerCase()
+        .includes(query);
+
+    type MobileItem = { request: RequestRecord; quote: QuoteRecord | null; badge: string; badgeClass: string };
+    let items: MobileItem[] = [];
+
+    if (mobileTab === 'nuevas') {
+      items = openRequests
+        .filter((request) => !quoteByRequestId.has(request.id))
+        .map((request) => ({ request, quote: null, badge: 'Nueva', badgeClass: 'bg-indigo-50 text-indigo-600' }));
+    } else if (mobileTab === 'evaluacion') {
+      items = openRequests
+        .filter((request) => {
+          const quote = quoteByRequestId.get(request.id);
+          return quote && quote.status === 'SUBMITTED';
+        })
+        .map((request) => ({
+          request,
+          quote: quoteByRequestId.get(request.id) ?? null,
+          badge: 'En evaluación',
+          badgeClass: 'bg-amber-50 text-amber-600',
+        }));
+    } else {
+      items = historyQuotes
+        .filter((quote) => quote.request)
+        .map((quote) => ({
+          request: quote.request as unknown as RequestRecord,
+          quote,
+          badge: quote.status === 'AWARDED' ? 'Ganada' : 'No seleccionada',
+          badgeClass: quote.status === 'AWARDED' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600',
+        }));
+    }
+
+    return items
+      .filter((item) => matches(item.request))
+      .sort(
+        (left, right) =>
+          new Date(right.request.updatedAt ?? right.request.createdAt).getTime() -
+          new Date(left.request.updatedAt ?? left.request.createdAt).getTime(),
+      );
+  }, [mobileTab, openRequests, quoteByRequestId, historyQuotes, search]);
+
+  const mobileTabs = [
+    { key: 'nuevas' as const, label: 'Nuevas', count: mobileTabCounts.nuevas },
+    { key: 'evaluacion' as const, label: 'En evaluación', count: mobileTabCounts.evaluacion },
+    { key: 'historial' as const, label: 'Historial', count: mobileTabCounts.historial },
+  ];
+
   return (
     <SupplierDashboardShell
       searchPlaceholder="Buscar solicitudes por comprador, categoria o descripcion"
       session={session}
     >
-      <section className="space-y-6">
+      {/* ==================== VISTA MOBILE ==================== */}
+      <div className="lg:hidden">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950">Solicitudes</h1>
+
+        {/* Tabs */}
+        <div className="mt-4 flex items-center gap-5 border-b border-slate-200">
+          {mobileTabs.map((tab) => {
+            const active = mobileTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setMobileTab(tab.key)}
+                className={`relative -mb-px flex items-center gap-1.5 pb-3 text-sm font-semibold transition ${
+                  active ? 'text-slate-950' : 'text-slate-400'
+                }`}
+              >
+                {tab.label}
+                {tab.count > 0 ? (
+                  <span
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                      active ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                ) : null}
+                {active ? <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-indigo-600" /> : null}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Buscador + filtros */}
+        <div className="mt-4 flex items-center gap-2">
+          <div className="relative flex-1">
+            <svg aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24">
+              <path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            </svg>
+            <input
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar solicitud..."
+              value={search}
+            />
+          </div>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600"
+          >
+            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            </svg>
+            Filtros
+          </button>
+        </div>
+
+        {/* Lista */}
+        <div className="mt-4 space-y-3 pb-4">
+          {loading ? (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
+              Cargando solicitudes...
+            </div>
+          ) : mobileItems.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
+              No hay solicitudes en esta pestaña.
+            </div>
+          ) : (
+            mobileItems.map(({ request, badge, badgeClass }) => (
+              <Link
+                key={request.id}
+                href={`/dashboard/proveedor/solicitudes/${request.id}`}
+                className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:bg-slate-50"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                    <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M14 2v6h6M9 13h6M9 17h4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    </svg>
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="truncate text-[15px] font-semibold text-slate-950">{request.title}</p>
+                      <span className="shrink-0 text-[11px] text-slate-400">
+                        {formatRelativeShort(request.updatedAt ?? request.createdAt)}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 truncate text-xs text-slate-500">
+                      {typeof request.quantityRequested === 'number' ? `${request.quantityRequested} unidades · ` : ''}
+                      {getBuyerLocation(request)}
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      Presupuesto:{' '}
+                      <span className="font-semibold text-slate-700">
+                        {formatCurrency(request.estimatedTotalCost ?? request.referenceUnitPrice)}
+                      </span>
+                    </p>
+
+                    <div className="mt-2.5 flex items-center gap-2">
+                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${badgeClass}`}>{badge}</span>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                        Entrega: {request.dueDate ? formatDate(request.dueDate) : 'a coordinar'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ==================== VISTA DESKTOP ==================== */}
+      <section className="hidden space-y-6 lg:block">
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>

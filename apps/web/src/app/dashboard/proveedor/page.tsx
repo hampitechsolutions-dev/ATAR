@@ -254,6 +254,24 @@ export default function DashboardProveedorPage() {
       .filter((value): value is string => Boolean(value))
       .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())[0] ?? null;
 
+    // Contadores del mes en curso (datos reales por createdAt).
+    const nowDate = new Date();
+    const currentMonthKey = nowDate.getFullYear() * 12 + nowDate.getMonth();
+    const inCurrentMonth = (value?: string | null) => {
+      if (!value) {
+        return false;
+      }
+      const date = new Date(value);
+      return date.getFullYear() * 12 + date.getMonth() === currentMonthKey;
+    };
+
+    const requestsThisMonth = sortedRequests.filter((request) => inCurrentMonth(request.createdAt)).length;
+    const quotesThisMonth = sortedQuotes.filter((quote) => inCurrentMonth(quote.createdAt)).length;
+    const ordersThisMonth = activeOrders.filter((quote) => inCurrentMonth(quote.request?.order?.createdAt)).length;
+    const salesThisMonth = awardedQuotes
+      .filter((quote) => inCurrentMonth(quote.createdAt))
+      .reduce((acc, quote) => acc + (quote.amount ?? 0), 0);
+
     return {
       awardedQuotes,
       submittedQuotes,
@@ -265,8 +283,13 @@ export default function DashboardProveedorPage() {
       recentRequests: sortedRequests.slice(0, 4),
       recentActivity,
       topClients,
+      clientsCount: clientMap.size,
       totalSales,
       nextPromisedDate,
+      requestsThisMonth,
+      quotesThisMonth,
+      ordersThisMonth,
+      salesThisMonth,
     };
   }, [myQuotes, openRequests]);
 
@@ -292,6 +315,56 @@ export default function DashboardProveedorPage() {
       : []),
   ];
 
+  // Nivel derivado de la actividad real (no hay tier en el API).
+  const tier =
+    acceptanceRate >= 75 || dashboardData.awardedQuotes.length >= 10
+      ? 'Platino'
+      : acceptanceRate >= 50 || dashboardData.awardedQuotes.length >= 5
+        ? 'Oro'
+        : acceptanceRate >= 25
+          ? 'Plata'
+          : 'Inicial';
+
+  const monthLabel = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(new Date());
+
+  const levelMetrics = [
+    { value: `${acceptanceRate}%`, label: 'Aceptación' },
+    { value: myQuotes.length, label: 'Cotizac.' },
+    { value: dashboardData.activeOrders.length, label: 'Pedidos' },
+    { value: dashboardData.clientsCount, label: 'Clientes' },
+  ];
+
+  const summaryCards = [
+    {
+      label: 'Solicitudes recibidas',
+      value: openRequests.length,
+      delta: dashboardData.requestsThisMonth > 0 ? `+${dashboardData.requestsThisMonth} este mes` : null,
+      icon: 'requests' as const,
+      tone: 'bg-indigo-50 text-indigo-600',
+    },
+    {
+      label: 'Cotizaciones enviadas',
+      value: myQuotes.length,
+      delta: dashboardData.quotesThisMonth > 0 ? `+${dashboardData.quotesThisMonth} este mes` : null,
+      icon: 'quotes' as const,
+      tone: 'bg-emerald-50 text-emerald-600',
+    },
+    {
+      label: 'Pedidos en curso',
+      value: dashboardData.activeOrders.length,
+      delta: dashboardData.ordersThisMonth > 0 ? `+${dashboardData.ordersThisMonth} este mes` : null,
+      icon: 'money' as const,
+      tone: 'bg-amber-50 text-amber-600',
+    },
+    {
+      label: 'Ventas',
+      value: formatCurrency(dashboardData.totalSales),
+      delta: dashboardData.salesThisMonth > 0 ? `+${formatCurrency(dashboardData.salesThisMonth)} este mes` : null,
+      icon: 'sales' as const,
+      tone: 'bg-sky-50 text-sky-600',
+    },
+  ];
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-950">
@@ -303,8 +376,135 @@ export default function DashboardProveedorPage() {
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-[#f5f7fb] text-slate-950">
-      <div className="flex h-full">
+    <main className="bg-[#f5f7fb] text-slate-950 lg:h-screen lg:overflow-hidden">
+      {/* ==================== VISTA MOBILE ==================== */}
+      <div className="lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
+          <Link href="/dashboard/proveedor" className="flex items-center gap-2">
+            <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
+            <span className="text-base font-bold tracking-tight text-slate-950">ATAR</span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700"
+              href="/dashboard/proveedor/notificaciones"
+            >
+              <HeaderActionIcon kind="bell" />
+              {counters.unreadNotificationsCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-semibold text-white">
+                  {counters.unreadNotificationsCount}
+                </span>
+              ) : null}
+            </Link>
+            <SupplierAccountMenu session={session} />
+          </div>
+        </header>
+
+        {error ? (
+          <div className="mx-4 mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="px-4 pb-28 pt-5">
+          <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-slate-950">
+            Hola, {companyName} 👋
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">Panel de vendedor</p>
+
+          {/* Nivel */}
+          <section className="mt-5 overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#4f46e5_0%,#6d5cf5_52%,#7c3aed_100%)] p-5 text-white shadow-lg shadow-indigo-600/25">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                <svg aria-hidden="true" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 7.1-1.01L12 2z" />
+                </svg>
+                Nivel {tier}
+              </span>
+              <Link
+                className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/95"
+                href="/dashboard/proveedor/reportes"
+              >
+                Ver beneficios
+                <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+              </Link>
+            </div>
+            <div className="mt-5 grid grid-cols-4 gap-2">
+              {levelMetrics.map((metric) => (
+                <div key={metric.label} className="text-center">
+                  <p className="text-xl font-bold tracking-tight">{metric.value}</p>
+                  <p className="mt-0.5 text-[11px] text-white/70">{metric.label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Resumen del mes */}
+          <div className="mt-6 flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-950">Resumen del mes</h2>
+            <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold capitalize text-slate-600">
+              {monthLabel}
+              <svg aria-hidden="true" className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+            </span>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {summaryCards.map((card) => (
+              <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.tone}`}>
+                  <ProviderStatIcon kind={card.icon} />
+                </span>
+                <p className="mt-3 text-lg font-bold tracking-tight text-slate-950">{card.value}</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">{card.label}</p>
+                {card.delta ? (
+                  <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                    <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
+                      <path d="M6 15l6-6 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                    </svg>
+                    {card.delta}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+
+          {/* Actividad reciente */}
+          <div className="mt-6 flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-950">Actividad reciente</h2>
+            <Link className="text-xs font-semibold text-indigo-600" href="/dashboard/proveedor/reportes">
+              Ver todas
+            </Link>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {dashboardData.recentActivity.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                Todavía no hay actividad para mostrar.
+              </div>
+            ) : (
+              dashboardData.recentActivity.slice(0, 4).map((item) => (
+                <article key={item.id} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm ${item.tone}`}>
+                    {item.glyph === 'check' ? '✓' : item.glyph === 'quote' ? '✦' : '★'}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-5 text-slate-950">{item.title}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-500">{item.detail}</p>
+                  </div>
+                  <span className="shrink-0 text-[11px] text-slate-400">{item.time}</span>
+                </article>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ==================== VISTA DESKTOP ==================== */}
+      <div className="hidden h-full lg:flex">
         <div className="hidden h-full w-[264px] shrink-0 lg:block">
           <DashboardSidebar
             className="sticky top-0 h-screen"

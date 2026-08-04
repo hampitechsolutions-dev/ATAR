@@ -151,7 +151,7 @@ export default function BuyerMarketplaceHeader({
   }, []);
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="hidden border-b border-slate-200 bg-white lg:block">
       <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-5 px-4 py-2.5">
         <div className="flex items-center gap-3">
           <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
