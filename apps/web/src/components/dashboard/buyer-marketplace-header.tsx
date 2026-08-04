@@ -54,9 +54,12 @@ function Icon({
 export default function BuyerMarketplaceHeader({
   session,
   notificationCount = 1,
+  wide = false,
 }: {
   session: WebSession | null;
   notificationCount?: number;
+  // Las vistas full-bleed (detalle de cotizacion) alinean el header con el contenido.
+  wide?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -152,7 +155,11 @@ export default function BuyerMarketplaceHeader({
 
   return (
     <header className="hidden border-b border-slate-200 bg-white lg:block">
-      <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-5 px-4 py-2.5">
+      <div
+        className={`mx-auto flex items-center justify-between gap-5 px-4 py-2.5 ${
+          wide ? 'max-w-none xl:px-6' : 'max-w-[1320px]'
+        }`}
+      >
         <div className="flex items-center gap-3">
           <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
           <div className="leading-tight">
