@@ -83,6 +83,7 @@ enum NotificationType {
   ORDER_UPDATED
   FULFILLMENT_UPDATED
   NEW_MESSAGE
+  REQUEST_RECEIVED
 }
 
 enum NotificationEmailStatus {
