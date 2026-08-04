@@ -13,14 +13,14 @@ import {
   type RequestRecord,
 } from '@/lib/atar-api';
 
-function formatCurrency(value: number | null) {
+function formatCurrency(value: number | null, currency = 'ARS') {
   if (typeof value !== 'number') {
     return 'A consultar';
   }
 
   return new Intl.NumberFormat('es-AR', {
     style: 'currency',
-    currency: 'ARS',
+    currency,
     maximumFractionDigits: 0,
   }).format(value);
 }
@@ -373,8 +373,10 @@ export default function BuyerRequestDetailPage() {
       return;
     }
 
+    const supplierName = selectedQuote.supplierCompany?.name ?? 'este proveedor';
+    const amountLabel = formatCurrency(selectedQuote.amount, selectedQuote.currency);
     const confirmed = window.confirm(
-      `Vas a adjudicar la solicitud a ${selectedQuote.supplierCompany?.name ?? 'este proveedor'}. Esta accion cerrara el pedido.`,
+      `Vas a asignarle la compra a ${supplierName} por ${amountLabel}.\n\nLas demas cotizaciones quedaran rechazadas y la solicitud se cerrara para nuevas propuestas.`,
     );
 
     if (!confirmed) {
@@ -387,7 +389,7 @@ export default function BuyerRequestDetailPage() {
       setMessage(null);
       await atarApi.awardQuote(request.id, { quoteId }, session.accessToken);
       await syncRequestState(session.accessToken);
-      setMessage('Cotizacion adjudicada correctamente. El pedido quedo cerrado para nuevas propuestas.');
+      setMessage(`Le asignaste la compra a ${supplierName}. Ya recibio la notificacion.`);
     } catch (awardError) {
       setError(awardError instanceof Error ? awardError.message : 'No se pudo adjudicar la cotizacion.');
     } finally {
@@ -478,12 +480,30 @@ export default function BuyerRequestDetailPage() {
     });
   }, [quotes, request?.awardedQuoteId]);
 
-  const bestPrice = quotes.find((quote) => typeof quote.amount === 'number') ?? null;
+  // Cotizaciones vigentes: las rechazadas quedan fuera de la comparacion.
+  const comparableQuotes = useMemo(
+    () => quotes.filter((quote) => quote.status !== 'REJECTED'),
+    [quotes],
+  );
+  const bestPrice = useMemo(() => {
+    return (
+      comparableQuotes
+        .filter((quote) => typeof quote.amount === 'number')
+        .sort((a, b) => (a.amount ?? 0) - (b.amount ?? 0))[0] ?? null
+    );
+  }, [comparableQuotes]);
   const fastest = useMemo(() => {
-    return quotes
-      .filter((quote) => typeof quote.leadTimeDays === 'number')
-      .sort((a, b) => (a.leadTimeDays ?? 9999) - (b.leadTimeDays ?? 9999))[0] ?? null;
-  }, [quotes]);
+    return (
+      comparableQuotes
+        .filter((quote) => typeof quote.leadTimeDays === 'number')
+        .sort((a, b) => (a.leadTimeDays ?? 9999) - (b.leadTimeDays ?? 9999))[0] ?? null
+    );
+  }, [comparableQuotes]);
+  const awardedQuote = useMemo(
+    () => quotes.find((quote) => quote.id === request?.awardedQuoteId) ?? null,
+    [quotes, request?.awardedQuoteId],
+  );
+  const canAward = Boolean(request) && !request?.awardedQuoteId && request?.status !== 'CANCELLED';
   const parsedDescription = useMemo(() => parseRequestDescription(request?.description ?? ''), [request?.description]);
   const attachmentItems = useMemo(
     () => parsedDescription.filter((item) => item.label.toLowerCase().includes('adjuntar') || item.label.toLowerCase().includes('archivo')),
@@ -631,6 +651,178 @@ export default function BuyerRequestDetailPage() {
                       <p className="mt-3 text-[15px] font-semibold leading-6 text-slate-950">{item.value || '-'}</p>
                     </article>
                   ))}
+                </div>
+              </section>
+
+              {/* ==================== COTIZACIONES RECIBIDAS ==================== */}
+              <section className="border-t border-slate-100 pt-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                    <DetailIcon type="scale" />
+                  </span>
+                  <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">
+                    Cotizaciones recibidas
+                  </h2>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    {sortedQuotes.length}
+                  </span>
+                </div>
+
+                {awardedQuote ? (
+                  <div className="mt-4 flex items-start gap-3 rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                      <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+                      </svg>
+                    </span>
+                    <p className="text-[13px] leading-6 text-emerald-800">
+                      La compra ya fue asignada a{' '}
+                      <span className="font-semibold">{awardedQuote.supplierCompany?.name ?? 'un proveedor'}</span> por{' '}
+                      <span className="font-semibold">{formatCurrency(awardedQuote.amount, awardedQuote.currency)}</span>.
+                    </p>
+                  </div>
+                ) : sortedQuotes.length ? (
+                  <p className="mt-3 text-[13px] leading-6 text-slate-500">
+                    Compará las propuestas y asignale la compra al proveedor que elijas. Al confirmar, el resto de las
+                    cotizaciones quedan rechazadas y la solicitud se cierra.
+                  </p>
+                ) : null}
+
+                <div className="mt-4 space-y-3">
+                  {sortedQuotes.length ? (
+                    sortedQuotes.map((quote) => {
+                      const isAwarded = quote.id === request?.awardedQuoteId;
+                      const isRejected = quote.status === 'REJECTED';
+                      const isAwardable = canAward && quote.status === 'SUBMITTED';
+                      const awarding = awardingQuoteId === quote.id;
+                      const supplierName = quote.supplierCompany?.name ?? 'Proveedor';
+                      const supplierCity = [quote.supplierCompany?.city, quote.supplierCompany?.country]
+                        .filter(Boolean)
+                        .join(', ');
+
+                      return (
+                        <article
+                          key={quote.id}
+                          className={`rounded-[18px] border p-4 transition ${
+                            isAwarded
+                              ? 'border-emerald-300 bg-emerald-50/60'
+                              : isRejected
+                                ? 'border-slate-200 bg-slate-50/70'
+                                : 'border-slate-200 bg-white'
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="flex min-w-0 gap-3">
+                              <span
+                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-sm font-bold ${
+                                  isAwarded ? 'bg-emerald-100 text-emerald-700' : 'bg-[#eef2ff] text-[#4f46ff]'
+                                }`}
+                              >
+                                {supplierName.slice(0, 2).toUpperCase()}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-[15px] font-semibold text-slate-950">{supplierName}</p>
+                                <p className="mt-0.5 truncate text-[12px] text-slate-500">
+                                  {supplierCity || 'Ubicación no informada'}
+                                </p>
+                                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                  {isAwarded ? (
+                                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                                      Compra asignada
+                                    </span>
+                                  ) : isRejected ? (
+                                    <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                                      No seleccionada
+                                    </span>
+                                  ) : quote.status === 'SUBMITTED' ? (
+                                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-700">
+                                      En evaluación
+                                    </span>
+                                  ) : (
+                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
+                                      Borrador
+                                    </span>
+                                  )}
+                                  {!isRejected && bestPrice?.id === quote.id ? (
+                                    <span className="rounded-full bg-[#eef2ff] px-2.5 py-1 text-[10px] font-semibold text-[#4f46ff]">
+                                      Mejor precio
+                                    </span>
+                                  ) : null}
+                                  {!isRejected && fastest?.id === quote.id ? (
+                                    <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-semibold text-teal-700">
+                                      Entrega más rápida
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="text-[20px] font-semibold tracking-[-0.02em] text-slate-950">
+                                {formatCurrency(quote.amount, quote.currency)}
+                              </p>
+                              <p className="mt-0.5 text-[11px] text-slate-400">
+                                Enviada el {formatDate(quote.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="rounded-[14px] bg-slate-50 px-3 py-2.5">
+                              <p className="text-[11px] font-semibold text-slate-400">Plazo de entrega</p>
+                              <p className="mt-1 text-[13px] font-semibold text-slate-900">
+                                {typeof quote.leadTimeDays === 'number' ? `${quote.leadTimeDays} días` : 'A convenir'}
+                              </p>
+                            </div>
+                            <div className="rounded-[14px] bg-slate-50 px-3 py-2.5">
+                              <p className="text-[11px] font-semibold text-slate-400">Condiciones de pago</p>
+                              <p className="mt-1 text-[13px] font-semibold text-slate-900">
+                                {quote.paymentTerms || 'A convenir'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {quote.technicalComment ? (
+                            <p className="mt-3 whitespace-pre-wrap rounded-[14px] bg-slate-50 px-3 py-2.5 text-[12px] leading-6 text-slate-600">
+                              {quote.technicalComment}
+                            </p>
+                          ) : null}
+
+                          <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                            <Link
+                              className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                              href={`/dashboard/comprador/cotizaciones/${quote.id}`}
+                            >
+                              Ver cotización
+                            </Link>
+                            {isAwardable ? (
+                              <button
+                                className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] bg-[#1847ff] px-4 text-[13px] font-semibold text-white shadow-[0_12px_26px_rgba(24,71,255,0.22)] transition hover:bg-[#0f3ff5] disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={Boolean(awardingQuoteId)}
+                                onClick={() => void handleAward(quote.id)}
+                                type="button"
+                              >
+                                {awarding ? (
+                                  'Asignando...'
+                                ) : (
+                                  <>
+                                    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                    </svg>
+                                    Asignar compra
+                                  </>
+                                )}
+                              </button>
+                            ) : null}
+                          </div>
+                        </article>
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                      Todavía no recibiste cotizaciones para esta solicitud.
+                    </div>
+                  )}
                 </div>
               </section>
 
