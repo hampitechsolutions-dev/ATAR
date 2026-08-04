@@ -194,16 +194,13 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#070b17_0%,rgba(7,11,23,0.92)_28%,rgba(7,11,23,0.55)_55%,rgba(7,11,23,0.12)_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(7,11,23,0.7)_0%,transparent_35%)]" />
 
-        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-24 lg:px-12">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70 backdrop-blur">
-              El ecosistema digital de la industria
-            </span>
-            <h1 className="mt-7 text-[2.7rem] font-semibold leading-[1.03] tracking-[-0.03em] sm:text-6xl lg:text-[4.1rem]">
+        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-12 lg:py-20">
+          <div className="max-w-3xl">
+            <h1 className="text-[2.7rem] font-semibold leading-[1.03] tracking-[-0.03em] sm:text-6xl lg:text-[4.1rem]">
               Conectamos industrias proveedoras con la{' '}
               <span className="text-[#4f7bff]">red más grande de clientes.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-8 text-white/70">
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-white/70">
               Encontrá productos, materias primas y proveedores especializados. Solicitá cotizaciones y generá nuevas
               oportunidades desde un solo lugar.
             </p>
@@ -224,7 +221,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-14 flex flex-wrap gap-x-12 gap-y-5">
+            <div className="mt-12 flex flex-wrap gap-x-12 gap-y-5">
               {HERO_STATS.map((item) => (
                 <div key={item.v} className="flex items-center gap-2.5">
                   <Icon name={item.icon} className="h-5 w-5 text-[#4f7bff]" />
