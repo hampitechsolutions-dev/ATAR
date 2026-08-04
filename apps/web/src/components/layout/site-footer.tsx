@@ -21,8 +21,8 @@ const FOOTER_COLUMNS: { title: string; links: string[] }[] = [
 export default function SiteFooter() {
   const pathname = usePathname();
 
-  // Igual que el header: no se muestra dentro del dashboard ni en el acceso.
-  if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/acceso')) {
+  // No se muestra en dashboard/acceso; la home ('/') usa su propio footer.
+  if (pathname === '/' || pathname?.startsWith('/dashboard') || pathname?.startsWith('/acceso')) {
     return null;
   }
 
