@@ -33,13 +33,55 @@ function setRegisteredEndpoint(endpoint: string | null) {
   window.localStorage.setItem(REGISTERED_ENDPOINT_KEY, endpoint);
 }
 
-export async function enableWebPush(accessToken: string) {
-  if (
-    typeof window === 'undefined' ||
-    !('serviceWorker' in navigator) ||
-    !('PushManager' in window) ||
-    typeof Notification === 'undefined'
-  ) {
+export function isWebPushSupported() {
+  return (
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window &&
+    typeof Notification !== 'undefined'
+  );
+}
+
+export type WebPushPermission = 'unsupported' | 'default' | 'granted' | 'denied';
+
+export function getWebPushPermission(): WebPushPermission {
+  if (!isWebPushSupported()) {
+    return 'unsupported';
+  }
+
+  return Notification.permission as WebPushPermission;
+}
+
+/**
+ * En iOS el push solo existe si la app fue agregada a la pantalla de inicio.
+ * En el navegador normal `PushManager` ni siquiera esta definido, asi que
+ * conviene explicarle al usuario que primero tiene que instalarla.
+ */
+export function isIosWithoutInstall() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+  return isIos && !isStandalone;
+}
+
+/**
+ * `promptIfNeeded` decide si se puede abrir el dialogo nativo de permisos.
+ * Por defecto NO: los navegadores penalizan (y Safari ignora) los pedidos que
+ * no vienen de un gesto del usuario, y un "no" queda bloqueado para siempre.
+ * El arranque de sesion lo llama en false para re-suscribir en silencio a quien
+ * ya acepto; el boton de la UI lo llama en true.
+ */
+export async function enableWebPush(
+  accessToken: string,
+  { promptIfNeeded = false }: { promptIfNeeded?: boolean } = {},
+) {
+  if (!isWebPushSupported()) {
     return;
   }
 
@@ -49,6 +91,10 @@ export async function enableWebPush(accessToken: string) {
   }
 
   if (Notification.permission === 'denied') {
+    return;
+  }
+
+  if (Notification.permission !== 'granted' && !promptIfNeeded) {
     return;
   }
 

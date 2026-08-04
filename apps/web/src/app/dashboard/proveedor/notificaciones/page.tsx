@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
+import PushOptIn from '@/components/notifications/push-opt-in';
 import { atarApi, type NotificationRecord } from '@/lib/atar-api';
 import {
   SUPPLIER_COUNTERS_REFRESH_EVENT,
@@ -137,6 +138,8 @@ export default function SupplierNotificationsPage() {
             </div>
           </div>
         </div>
+
+        <PushOptIn />
 
         {error ?? dashboardError ? (
           <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
