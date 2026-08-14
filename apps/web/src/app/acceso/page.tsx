@@ -36,8 +36,11 @@ export default function AccesoPage() {
           </div>
         </section>
 
-        <section className="flex h-full items-center justify-center bg-slate-50 px-6 py-6 lg:px-12">
-          <AccessPanel />
+        {/* items-start + my-auto: centrado cuando entra, scrolleable cuando no. */}
+        <section className="flex h-full items-start justify-center overflow-y-auto bg-slate-50 px-6 py-6 lg:px-10">
+          <div className="my-auto w-full">
+            <AccessPanel />
+          </div>
         </section>
       </div>
     </main>

@@ -17,6 +17,8 @@ type RecipientInput = {
   companyId: string;
   roles?: MembershipRole[];
   excludeUserId?: string;
+  /** Destinatarios concretos dentro de la empresa (por ejemplo, el vendedor asignado). */
+  userIds?: string[];
 };
 
 type RecipientRecord = {
@@ -29,6 +31,7 @@ type CreateNotificationInput = {
   companyId: string;
   roles?: MembershipRole[];
   excludeUserId?: string;
+  userIds?: string[];
   type: NotificationType;
   title: string;
   detail?: string | null;
@@ -185,6 +188,7 @@ export class NotificationsService {
       companyId: input.companyId,
       roles: input.roles,
       excludeUserId: input.excludeUserId,
+      userIds: input.userIds,
     });
 
     if (recipients.length === 0) {
@@ -255,6 +259,7 @@ export class NotificationsService {
       where: {
         companyId: input.companyId,
         ...(input.roles?.length ? { role: { in: input.roles } } : {}),
+        ...(input.userIds?.length ? { userId: { in: input.userIds } } : {}),
         ...(input.excludeUserId ? { userId: { not: input.excludeUserId } } : {}),
       },
       select: {

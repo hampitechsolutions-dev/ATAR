@@ -12,8 +12,8 @@ import {
 } from '@/components/dashboard/dashboard-ui';
 import { atarApi, type QuoteRecord } from '@/lib/atar-api';
 import {
+  canAccessDashboard,
   clearSession,
-  getPrimaryMembershipRole,
   loadSession,
   saveSession,
   type WebSession,
@@ -49,7 +49,7 @@ export default function SupplierQuoteDetailPage() {
         return;
       }
 
-      if (getPrimaryMembershipRole(storedSession.user) !== 'SUPPLIER') {
+      if (!canAccessDashboard(storedSession.user, 'SUPPLIER')) {
         router.replace('/dashboard/comprador');
         return;
       }

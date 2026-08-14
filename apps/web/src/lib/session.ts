@@ -70,9 +70,58 @@ export function isHybridUser(user: AuthUser): boolean {
   return user.memberships.some((membership) => membership.company.type === 'HYBRID');
 }
 
+// Roles que trabajan del lado vendedor. El vendedor (SELLER) opera dentro de
+// una empresa proveedora: entra al mismo dashboard, con permisos acotados.
+const SUPPLIER_SIDE_ROLES: MembershipRole[] = ['SUPPLIER', 'SELLER'];
+const BUYER_SIDE_ROLES: MembershipRole[] = ['BUYER'];
+
+export function isSupplierSideUser(user: AuthUser): boolean {
+  return user.memberships.some(
+    (membership) =>
+      SUPPLIER_SIDE_ROLES.includes(membership.role) ||
+      membership.company.type === 'SUPPLIER' ||
+      membership.company.type === 'HYBRID',
+  );
+}
+
+export function isBuyerSideUser(user: AuthUser): boolean {
+  return user.memberships.some(
+    (membership) =>
+      BUYER_SIDE_ROLES.includes(membership.role) ||
+      membership.company.type === 'BUYER' ||
+      membership.company.type === 'HYBRID',
+  );
+}
+
+/**
+ * Un usuario puede entrar a un dashboard si tiene alguna membresia de ese lado
+ * del marketplace, no solo si su rol principal coincide exactamente.
+ */
+export function canAccessDashboard(user: AuthUser, side: MembershipRole): boolean {
+  if (user.memberships.some((membership) => membership.role === 'ADMIN')) {
+    return true;
+  }
+
+  if (side === 'SUPPLIER' || side === 'SELLER') {
+    return isSupplierSideUser(user);
+  }
+
+  if (side === 'BUYER') {
+    return isBuyerSideUser(user);
+  }
+
+  return true;
+}
+
 export function getDefaultDashboardPath(user: AuthUser): string {
   const role = getPrimaryMembershipRole(user);
-  if (role === 'SUPPLIER') {
+  if (role === 'SUPPLIER' || role === 'SELLER') {
+    return '/dashboard/proveedor';
+  }
+
+  // Sin rol claro, decide el tipo de empresa (un vendedor sin membresia BUYER
+  // nunca deberia caer en el dashboard de compras).
+  if (role !== 'BUYER' && isSupplierSideUser(user) && !isBuyerSideUser(user)) {
     return '/dashboard/proveedor';
   }
 

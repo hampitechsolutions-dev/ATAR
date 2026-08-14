@@ -1,5 +1,16 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { CompanyType, MembershipRole, Prisma, RequestStatus } from '@prisma/client';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  CompanyType,
+  MembershipRole,
+  Prisma,
+  RequestStatus,
+  UserStatus,
+} from '@prisma/client';
 import type { AuthUser } from '../auth/auth-user.interface';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -11,6 +22,14 @@ type CreateUserInput = {
   companyName: string;
   companyType: CompanyType;
   role: MembershipRole;
+};
+
+type CreateSellerInput = {
+  email: string;
+  passwordHash: string;
+  firstName: string;
+  lastName: string;
+  companyId: string;
 };
 
 @Injectable()
@@ -208,6 +227,71 @@ export class UsersService {
         },
       },
     });
+  }
+
+  /**
+   * Alta de un vendedor dentro de una empresa que ya existe.
+   *
+   * Queda como INVITED hasta que el administrador de la empresa lo habilita:
+   * mientras tanto no ve nada de la empresa, porque un vendedor solo accede a
+   * las solicitudes que le asignaron.
+   */
+  async createSellerForCompany(input: CreateSellerInput) {
+    const company = await this.prisma.company.findUnique({
+      where: { id: input.companyId },
+      select: { id: true, type: true, name: true },
+    });
+
+    if (!company) {
+      throw new NotFoundException('No encontramos la empresa seleccionada.');
+    }
+
+    if (company.type === CompanyType.BUYER) {
+      throw new BadRequestException(
+        'Esa empresa esta registrada como compradora y no tiene equipo de ventas.',
+      );
+    }
+
+    return this.prisma.user.create({
+      data: {
+        email: input.email,
+        passwordHash: input.passwordHash,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        status: UserStatus.INVITED,
+        memberships: {
+          create: {
+            role: MembershipRole.SELLER,
+            isPrimary: true,
+            companyId: company.id,
+          },
+        },
+      },
+      include: {
+        memberships: {
+          include: {
+            company: true,
+          },
+        },
+      },
+    });
+  }
+
+  /** Empresas proveedoras disponibles para que un vendedor se sume al equipo. */
+  async listSupplierDirectory(search?: string) {
+    const companies = await this.prisma.company.findMany({
+      where: {
+        type: { in: [CompanyType.SUPPLIER, CompanyType.HYBRID] },
+        ...(search?.trim()
+          ? { name: { contains: search.trim(), mode: 'insensitive' as const } }
+          : {}),
+      },
+      select: { id: true, name: true, city: true, country: true, type: true },
+      orderBy: { name: 'asc' },
+      take: 30,
+    });
+
+    return companies;
   }
 
   async createWithCompany(input: CreateUserInput) {

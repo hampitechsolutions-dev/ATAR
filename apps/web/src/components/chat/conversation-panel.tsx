@@ -73,9 +73,11 @@ function resolveParticipantRole(
     return 'BUYER';
   }
 
+  // Un vendedor (SELLER) participa en nombre de su empresa proveedora.
   const supplierMatch = session.user.memberships.some(
     (membership) =>
-      membership.role === 'SUPPLIER' && membership.company.id === conversation.supplierCompanyId,
+      (membership.role === 'SUPPLIER' || membership.role === 'SELLER') &&
+      membership.company.id === conversation.supplierCompanyId,
   );
   if (supplierMatch) {
     return 'SUPPLIER';
@@ -96,7 +98,9 @@ function getRolePath(
     return 'comprador';
   }
 
-  const hasSupplierRole = session?.user.memberships.some((membership) => membership.role === 'SUPPLIER');
+  const hasSupplierRole = session?.user.memberships.some(
+    (membership) => membership.role === 'SUPPLIER' || membership.role === 'SELLER',
+  );
   return hasSupplierRole ? 'proveedor' : 'comprador';
 }
 

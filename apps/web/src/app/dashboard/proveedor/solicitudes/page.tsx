@@ -1,10 +1,27 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { useWorkspace } from '@/components/auth/workspace-provider';
+import AssignSellerDialog from '@/components/dashboard/assign-seller-dialog';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
-import { ApiError, atarApi, type CreateQuotePayload, type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
-import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
+import {
+  ApiError,
+  atarApi,
+  type CreateQuotePayload,
+  type QuoteRecord,
+  type RequestAssignmentRecord,
+} from '@/lib/atar-api';
+import { useSupplierInbox } from '@/lib/dashboard-hooks';
+import {
+  INBOX_FILTERS,
+  OPPORTUNITY_PIPELINE,
+  OPPORTUNITY_STATUS_LABEL,
+  OPPORTUNITY_STATUS_TONE,
+  matchesInboxFilter,
+  type InboxFilterKey,
+} from '@/lib/opportunity-status';
 
 type QuoteDraft = {
   amount: string;
@@ -14,9 +31,6 @@ type QuoteDraft = {
   technicalComment: string;
 };
 
-type StatusFilter = 'all' | 'visible' | 'pending' | 'private';
-
-const HIDDEN_STORAGE_KEY = 'atar:supplier:hidden-requests';
 const PAGE_SIZE = 6;
 
 const CURRENCIES = [
@@ -120,7 +134,7 @@ function formatDueCountdown(value: string | null) {
   return `Cierra en ${days} dias`;
 }
 
-function getBuyerLocation(request: RequestRecord) {
+function getBuyerLocation(request: RequestAssignmentRecord['request']) {
   const city = request.buyerCompany?.city?.trim();
   const country = request.buyerCompany?.country?.trim();
   return city && country ? `${city}, ${country}` : city || country || 'Ubicacion no informada';
@@ -154,8 +168,6 @@ type IconName =
   | 'doc'
   | 'file'
   | 'send'
-  | 'eye-off'
-  | 'dots'
   | 'chevron-left'
   | 'chevron-right'
   | 'arrow-left'
@@ -164,7 +176,8 @@ type IconName =
   | 'bulb'
   | 'activity'
   | 'chat'
-  | 'close';
+  | 'close'
+  | 'lock';
 
 function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: string }) {
   const common = {
@@ -265,21 +278,6 @@ function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: str
           <path d="M21 3l-6.5 18-4-8-8-4L21 3z" {...common} />
         </>
       ) : null}
-      {name === 'eye-off' ? (
-        <>
-          <path d="M3 3l18 18" {...common} />
-          <path d="M10.6 5.2A9 9 0 0112 5c5 0 9 4.5 9 7a11 11 0 01-2.6 3.5" {...common} />
-          <path d="M6.3 6.9C3.9 8.4 3 10.7 3 12c0 2.5 4 7 9 7 1.5 0 2.9-.4 4.1-1" {...common} />
-          <path d="M9.9 9.9a3 3 0 004.2 4.2" {...common} />
-        </>
-      ) : null}
-      {name === 'dots' ? (
-        <>
-          <circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-          <circle cx="18" cy="12" r="1.5" fill="currentColor" stroke="none" />
-        </>
-      ) : null}
       {name === 'chevron-left' ? <path d="M15 18l-6-6 6-6" {...common} /> : null}
       {name === 'chevron-right' ? <path d="M9 6l6 6-6 6" {...common} /> : null}
       {name === 'arrow-left' ? <path d="M19 12H5M11 18l-6-6 6-6" {...common} /> : null}
@@ -308,6 +306,12 @@ function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: str
         <path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z" {...common} />
       ) : null}
       {name === 'close' ? <path d="M18 6L6 18M6 6l12 12" {...common} /> : null}
+      {name === 'lock' ? (
+        <>
+          <rect height="10" rx="2" width="14" x="5" y="11" {...common} />
+          <path d="M8 11V8a4 4 0 118 0v3" {...common} />
+        </>
+      ) : null}
     </svg>
   );
 }
@@ -411,68 +415,29 @@ function getFileStyle(fileName: string) {
 /* ============================ PAGINA ============================ */
 
 export default function SupplierRequestsPage() {
-  const { session, openRequests, myQuotes, loading, error, refresh } = useSupplierDashboardData();
+  const router = useRouter();
+  const { isManager } = useWorkspace();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [filter, setFilter] = useState<InboxFilterKey>('all');
   const [page, setPage] = useState(1);
-  const [mobileTab, setMobileTab] = useState<'nuevas' | 'evaluacion' | 'historial'>('nuevas');
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const [detailClosed, setDetailClosed] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
-  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
-  const [lastHiddenId, setLastHiddenId] = useState<string | null>(null);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
   const [draft, setDraft] = useState<QuoteDraft>(() => createDraft());
   const [customTerms, setCustomTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(HIDDEN_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as unknown;
-        if (Array.isArray(parsed)) {
-          setHiddenIds(parsed.filter((item): item is string => typeof item === 'string'));
-        }
-      }
-    } catch {
-      window.localStorage.removeItem(HIDDEN_STORAGE_KEY);
-    }
-  }, []);
-
-  function persistHidden(next: string[]) {
-    setHiddenIds(next);
-    try {
-      window.localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // El almacenamiento local puede no estar disponible; el filtro sigue valiendo en memoria.
-    }
-  }
-
-  function hideRequest(requestId: string) {
-    persistHidden(Array.from(new Set([...hiddenIds, requestId])));
-    setLastHiddenId(requestId);
-    setMenuOpen(false);
-  }
-
-  function restoreLastHidden() {
-    if (!lastHiddenId) {
-      return;
-    }
-
-    persistHidden(hiddenIds.filter((item) => item !== lastHiddenId));
-    setActiveRequestId(lastHiddenId);
-    setDetailClosed(false);
-    setLastHiddenId(null);
-  }
+  const { session, assignments, team, loading, error, refresh } = useSupplierInbox();
 
   function openQuoteModal() {
     setSubmitError(null);
     setMessage(null);
-    setMenuOpen(false);
     setQuoteModalOpen(true);
   }
 
@@ -480,7 +445,6 @@ export default function SupplierRequestsPage() {
     setQuoteModalOpen(false);
   }
 
-  // Cerrar el modal con Escape.
   useEffect(() => {
     if (!quoteModalOpen) {
       return;
@@ -496,107 +460,101 @@ export default function SupplierRequestsPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [quoteModalOpen]);
 
-  const quoteByRequestId = useMemo(() => {
-    return new Map(myQuotes.map((quote) => [quote.requestId, quote] as const));
-  }, [myQuotes]);
-
   const categories = useMemo(() => {
-    return Array.from(new Set(openRequests.map((request) => request.category).filter(Boolean))).sort((left, right) =>
-      left.localeCompare(right, 'es'),
-    );
-  }, [openRequests]);
+    return Array.from(
+      new Set(assignments.map((assignment) => assignment.request.category).filter(Boolean)),
+    ).sort((left, right) => left.localeCompare(right, 'es'));
+  }, [assignments]);
 
-  // Solicitudes filtradas por busqueda y categoria (sin aplicar la pestana de estado).
-  const baseRequests = useMemo(() => {
+  // Filtrado por busqueda y categoria (sin aplicar la pestana de pipeline).
+  const baseAssignments = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return openRequests
-      .filter((request) => !hiddenIds.includes(request.id))
-      .filter((request) => categoryFilter === 'all' || request.category === categoryFilter)
-      .filter((request) => {
+    return assignments
+      .filter(
+        (assignment) =>
+          categoryFilter === 'all' || assignment.request.category === categoryFilter,
+      )
+      .filter((assignment) => {
         if (!query) {
           return true;
         }
 
         return [
-          request.title,
-          request.category,
-          request.description,
-          request.buyerCompany?.name ?? '',
-          request.preferredSupplierName ?? '',
+          assignment.request.title,
+          assignment.request.category,
+          assignment.request.description,
+          assignment.request.buyerCompany?.name ?? '',
+          assignment.seller?.name ?? '',
         ]
           .join(' ')
           .toLowerCase()
           .includes(query);
-      })
-      .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
-  }, [openRequests, hiddenIds, categoryFilter, search]);
+      });
+  }, [assignments, categoryFilter, search]);
 
-  const tabCounts = useMemo(
-    () => ({
-      all: baseRequests.length,
-      visible: baseRequests.filter((request) => !request.privateRequest).length,
-      pending: baseRequests.filter((request) => !quoteByRequestId.has(request.id)).length,
-      private: baseRequests.filter((request) => request.privateRequest).length,
-    }),
-    [baseRequests, quoteByRequestId],
+  const filterCounts = useMemo(() => {
+    const counts = {} as Record<InboxFilterKey, number>;
+    for (const item of INBOX_FILTERS) {
+      counts[item.key] = baseAssignments.filter((assignment) =>
+        matchesInboxFilter(item.key, assignment),
+      ).length;
+    }
+
+    return counts;
+  }, [baseAssignments]);
+
+  const filteredAssignments = useMemo(
+    () => baseAssignments.filter((assignment) => matchesInboxFilter(filter, assignment)),
+    [baseAssignments, filter],
   );
 
-  const filteredRequests = useMemo(() => {
-    return baseRequests.filter((request) => {
-      if (statusFilter === 'visible') {
-        return !request.privateRequest;
-      }
-      if (statusFilter === 'pending') {
-        return !quoteByRequestId.has(request.id);
-      }
-      if (statusFilter === 'private') {
-        return request.privateRequest;
-      }
-      return true;
-    });
-  }, [baseRequests, statusFilter, quoteByRequestId]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pagedRequests = useMemo(
-    () => filteredRequests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filteredRequests, currentPage],
+  const pagedAssignments = useMemo(
+    () => filteredAssignments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredAssignments, currentPage],
   );
 
   useEffect(() => {
     setPage(1);
-  }, [search, categoryFilter, statusFilter]);
+  }, [search, categoryFilter, filter]);
 
   useEffect(() => {
     if (detailClosed) {
       return;
     }
 
-    if (activeRequestId && filteredRequests.some((request) => request.id === activeRequestId)) {
+    if (
+      activeRequestId &&
+      filteredAssignments.some((assignment) => assignment.requestId === activeRequestId)
+    ) {
       return;
     }
 
-    setActiveRequestId(filteredRequests[0]?.id ?? null);
-  }, [activeRequestId, detailClosed, filteredRequests]);
+    setActiveRequestId(filteredAssignments[0]?.requestId ?? null);
+  }, [activeRequestId, detailClosed, filteredAssignments]);
 
-  const activeRequest = detailClosed
+  const activeAssignment = detailClosed
     ? null
-    : filteredRequests.find((request) => request.id === activeRequestId) ?? null;
-  const activeQuote = activeRequest ? quoteByRequestId.get(activeRequest.id) ?? null : null;
+    : filteredAssignments.find((assignment) => assignment.requestId === activeRequestId) ?? null;
+  const activeRequest = activeAssignment?.request ?? null;
+  const activeQuote = activeAssignment?.quote ?? null;
 
   useEffect(() => {
-    if (!activeRequestId) {
+    if (!activeAssignment) {
       return;
     }
 
-    const quote = quoteByRequestId.get(activeRequestId) ?? null;
-    setDraft(createDraft(quote));
-    setCustomTerms(Boolean(quote?.paymentTerms) && !PAYMENT_TERMS.includes(quote?.paymentTerms ?? ''));
+    setDraft(createDraft(activeAssignment.quote));
+    setCustomTerms(
+      Boolean(activeAssignment.quote?.paymentTerms) &&
+        !PAYMENT_TERMS.includes(activeAssignment.quote?.paymentTerms ?? ''),
+    );
     setSubmitError(null);
-    setMenuOpen(false);
     setQuoteModalOpen(false);
-  }, [activeRequestId, quoteByRequestId]);
+    setAssignDialogOpen(false);
+  }, [activeAssignment]);
 
   const parsedDescription = useMemo(
     () => parseDescription(activeRequest?.description ?? ''),
@@ -614,8 +572,56 @@ export default function SupplierRequestsPage() {
       .filter(Boolean);
   }, [activeRequest?.preferredSupplierName]);
 
+  async function handleAssign(sellerUserId: string | null) {
+    if (!session?.accessToken || !activeAssignment) {
+      return;
+    }
+
+    try {
+      setAssigning(true);
+      setSubmitError(null);
+      await atarApi.assignRequest(activeAssignment.requestId, { sellerUserId }, session.accessToken);
+      await refresh();
+      setMessage(
+        sellerUserId
+          ? 'Solicitud asignada. El vendedor recibio la notificacion.'
+          : 'La solicitud volvio a la bandeja sin asignar.',
+      );
+      setAssignDialogOpen(false);
+    } catch (assignError) {
+      setSubmitError(
+        assignError instanceof Error ? assignError.message : 'No se pudo asignar la solicitud.',
+      );
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  /** Chat con el comprador desde la solicitud, antes de cotizar. */
+  async function handleOpenChat(requestId: string) {
+    if (!session?.accessToken) {
+      return;
+    }
+
+    try {
+      setOpeningChat(true);
+      setSubmitError(null);
+      const conversation = await atarApi.getOrCreateRequestConversation(
+        requestId,
+        session.accessToken,
+      );
+      router.push(`/dashboard/proveedor/mensajes/${conversation.id}`);
+    } catch (chatError) {
+      setSubmitError(
+        chatError instanceof Error ? chatError.message : 'No se pudo abrir el chat con el comprador.',
+      );
+    } finally {
+      setOpeningChat(false);
+    }
+  }
+
   async function handleSubmitQuote() {
-    if (!session?.accessToken || !activeRequest) {
+    if (!session?.accessToken || !activeAssignment) {
       return;
     }
 
@@ -640,7 +646,7 @@ export default function SupplierRequestsPage() {
         throw new ApiError('El plazo debe ser numerico.', 400);
       }
 
-      await atarApi.createQuote(activeRequest.id, payload, session.accessToken);
+      await atarApi.createQuote(activeAssignment.requestId, payload, session.accessToken);
       await refresh();
       setMessage(activeQuote ? 'Cotización actualizada.' : 'Cotización enviada.');
       setQuoteModalOpen(false);
@@ -655,87 +661,6 @@ export default function SupplierRequestsPage() {
     }
   }
 
-  // ----- Datos para la vista mobile (tabs Nuevas / En evaluación / Historial) -----
-  const historyQuotes = useMemo(
-    () =>
-      [...myQuotes]
-        .filter((quote) => quote.status === 'AWARDED' || quote.status === 'REJECTED')
-        .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()),
-    [myQuotes],
-  );
-
-  const mobileTabCounts = useMemo(() => {
-    const nuevas = openRequests.filter((request) => !quoteByRequestId.has(request.id)).length;
-    const evaluacion = openRequests.filter((request) => {
-      const quote = quoteByRequestId.get(request.id);
-      return quote && quote.status === 'SUBMITTED';
-    }).length;
-
-    return { nuevas, evaluacion, historial: historyQuotes.length };
-  }, [openRequests, quoteByRequestId, historyQuotes]);
-
-  const mobileItems = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    const matches = (request: RequestRecord) =>
-      !query ||
-      [request.title, request.category, request.description, request.buyerCompany?.name ?? '']
-        .join(' ')
-        .toLowerCase()
-        .includes(query);
-
-    type MobileItem = { request: RequestRecord; quote: QuoteRecord | null; badge: string; badgeClass: string };
-    let items: MobileItem[] = [];
-
-    if (mobileTab === 'nuevas') {
-      items = openRequests
-        .filter((request) => !quoteByRequestId.has(request.id))
-        .map((request) => ({ request, quote: null, badge: 'Nueva', badgeClass: 'bg-indigo-50 text-indigo-600' }));
-    } else if (mobileTab === 'evaluacion') {
-      items = openRequests
-        .filter((request) => {
-          const quote = quoteByRequestId.get(request.id);
-          return quote && quote.status === 'SUBMITTED';
-        })
-        .map((request) => ({
-          request,
-          quote: quoteByRequestId.get(request.id) ?? null,
-          badge: 'En evaluación',
-          badgeClass: 'bg-amber-50 text-amber-600',
-        }));
-    } else {
-      items = historyQuotes
-        .filter((quote) => quote.request)
-        .map((quote) => ({
-          request: quote.request as unknown as RequestRecord,
-          quote,
-          badge: quote.status === 'AWARDED' ? 'Ganada' : 'No seleccionada',
-          badgeClass: quote.status === 'AWARDED' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600',
-        }));
-    }
-
-    return items
-      .filter((item) => matches(item.request))
-      .sort(
-        (left, right) =>
-          new Date(right.request.updatedAt ?? right.request.createdAt).getTime() -
-          new Date(left.request.updatedAt ?? left.request.createdAt).getTime(),
-      );
-  }, [mobileTab, openRequests, quoteByRequestId, historyQuotes, search]);
-
-  const mobileTabs = [
-    { key: 'nuevas' as const, label: 'Nuevas', count: mobileTabCounts.nuevas },
-    { key: 'evaluacion' as const, label: 'En evaluación', count: mobileTabCounts.evaluacion },
-    { key: 'historial' as const, label: 'Historial', count: mobileTabCounts.historial },
-  ];
-
-  const desktopTabs = [
-    { key: 'all' as const, label: 'Todas', count: tabCounts.all },
-    { key: 'visible' as const, label: 'Visibles', count: tabCounts.visible },
-    { key: 'pending' as const, label: 'Pendientes', count: tabCounts.pending },
-    { key: 'private' as const, label: 'Privadas', count: tabCounts.private },
-  ];
-
   const fichaRows: DescriptionRow[] = activeRequest
     ? [
         { label: 'Producto solicitado', value: activeRequest.productName || activeRequest.title },
@@ -745,134 +670,144 @@ export default function SupplierRequestsPage() {
         ...(typeof activeRequest.quantityRequested === 'number'
           ? [{ label: 'Cantidad estimada', value: `${activeRequest.quantityRequested} unidades` }]
           : []),
-        ...(typeof activeRequest.estimatedTotalCost === 'number' ||
-        typeof activeRequest.referenceUnitPrice === 'number'
-          ? [
-              {
-                label: 'Presupuesto estimado',
-                value: formatCurrency(activeRequest.estimatedTotalCost ?? activeRequest.referenceUnitPrice),
-              },
-            ]
-          : []),
       ]
     : [];
 
   return (
     <SupplierDashboardShell
-      searchPlaceholder="Buscar solicitudes por comprador, categoria o descripcion"
+      searchPlaceholder="Buscar solicitudes por comprador, categoria o vendedor"
       session={session}
     >
       {/* ==================== VISTA MOBILE ==================== */}
       <div className="lg:hidden">
         <h1 className="text-2xl font-bold tracking-tight text-slate-950">Solicitudes</h1>
+        <p className="mt-1 text-xs text-slate-500">
+          {isManager ? 'Bandeja comercial de la empresa.' : 'Las oportunidades asignadas a vos.'}
+        </p>
 
-        {/* Tabs */}
-        <div className="mt-4 flex items-center gap-5 border-b border-slate-200">
-          {mobileTabs.map((tab) => {
-            const active = mobileTab === tab.key;
+        {/* Filtros del pipeline */}
+        <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          {INBOX_FILTERS.map((item) => {
+            const active = filter === item.key;
             return (
               <button
-                key={tab.key}
-                type="button"
-                onClick={() => setMobileTab(tab.key)}
-                className={`relative -mb-px flex items-center gap-1.5 pb-3 text-sm font-semibold transition ${
-                  active ? 'text-slate-950' : 'text-slate-400'
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  active ? 'bg-slate-950 text-white' : 'bg-white text-slate-500 ring-1 ring-slate-200'
                 }`}
+                key={item.key}
+                onClick={() => setFilter(item.key)}
+                type="button"
               >
-                {tab.label}
-                {tab.count > 0 ? (
-                  <span
-                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
-                      active ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                ) : null}
-                {active ? <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-indigo-600" /> : null}
+                {item.label}
+                <span className={active ? 'text-white/70' : 'text-slate-400'}>
+                  {filterCounts[item.key] ?? 0}
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* Buscador + filtros */}
-        <div className="mt-4 flex items-center gap-2">
-          <div className="relative flex-1">
-            <svg aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24">
-              <path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-            <input
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar solicitud..."
-              value={search}
-            />
-          </div>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600"
-          >
-            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-              <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-            Filtros
-          </button>
+        <div className="relative mt-3">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <Icon name="search" />
+          </span>
+          <input
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar solicitud..."
+            value={search}
+          />
         </div>
 
-        {/* Lista */}
         <div className="mt-4 space-y-3 pb-4">
           {loading ? (
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
               Cargando solicitudes...
             </div>
-          ) : mobileItems.length === 0 ? (
+          ) : filteredAssignments.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
-              No hay solicitudes en esta pestaña.
+              No hay solicitudes en este filtro.
             </div>
           ) : (
-            mobileItems.map(({ request, badge, badgeClass }) => (
-              <Link
-                key={request.id}
-                href={`/dashboard/proveedor/solicitudes/${request.id}`}
-                className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:bg-slate-50"
+            filteredAssignments.map((assignment) => (
+              <div
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                key={assignment.id}
               >
-                <div className="flex items-start gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                    <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M14 2v6h6M9 13h6M9 17h4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    </svg>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    {assignment.request.category}
+                  </p>
+                  <span className="shrink-0 text-[11px] text-slate-400">
+                    {formatRelativeShort(assignment.request.updatedAt ?? assignment.request.createdAt)}
                   </span>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="truncate text-[15px] font-semibold text-slate-950">{request.title}</p>
-                      <span className="shrink-0 text-[11px] text-slate-400">
-                        {formatRelativeShort(request.updatedAt ?? request.createdAt)}
-                      </span>
-                    </div>
-
-                    <p className="mt-1 truncate text-xs text-slate-500">
-                      {typeof request.quantityRequested === 'number' ? `${request.quantityRequested} unidades · ` : ''}
-                      {getBuyerLocation(request)}
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-500">
-                      Presupuesto:{' '}
-                      <span className="font-semibold text-slate-700">
-                        {formatCurrency(request.estimatedTotalCost ?? request.referenceUnitPrice)}
-                      </span>
-                    </p>
-
-                    <div className="mt-2.5 flex items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${badgeClass}`}>{badge}</span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
-                        Entrega: {request.dueDate ? formatDate(request.dueDate) : 'a coordinar'}
-                      </span>
-                    </div>
-                  </div>
                 </div>
-              </Link>
+
+                <Link
+                  className="mt-1 block text-[15px] font-semibold text-slate-950"
+                  href={`/dashboard/proveedor/solicitudes/${assignment.requestId}`}
+                >
+                  {assignment.request.title}
+                </Link>
+
+                <p className="mt-1 truncate text-xs text-slate-500">
+                  {assignment.request.buyerCompany?.name ?? 'Comprador'} ·{' '}
+                  {getBuyerLocation(assignment.request)}
+                  {typeof assignment.request.quantityRequested === 'number'
+                    ? ` · ${assignment.request.quantityRequested} u.`
+                    : ''}
+                </p>
+
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      OPPORTUNITY_STATUS_TONE[assignment.status]
+                    }`}
+                  >
+                    {OPPORTUNITY_STATUS_LABEL[assignment.status]}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                    {assignment.seller ? assignment.seller.name : 'Sin vendedor'}
+                  </span>
+                  {assignment.request.privateRequest ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-600">
+                      <Icon className="h-3 w-3" name="lock" />
+                      Privada
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 flex gap-2">
+                  <button
+                    className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 transition active:bg-slate-50"
+                    disabled={openingChat}
+                    onClick={() => void handleOpenChat(assignment.requestId)}
+                    type="button"
+                  >
+                    <Icon className="h-3.5 w-3.5" name="chat" />
+                    Consultar
+                  </button>
+                  {isManager ? (
+                    <button
+                      className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 transition active:bg-slate-50"
+                      onClick={() => {
+                        setActiveRequestId(assignment.requestId);
+                        setDetailClosed(false);
+                        setAssignDialogOpen(true);
+                      }}
+                      type="button"
+                    >
+                      {assignment.seller ? 'Reasignar' : 'Asignar'}
+                    </button>
+                  ) : null}
+                  <Link
+                    className="inline-flex h-9 flex-1 items-center justify-center rounded-xl bg-slate-950 text-xs font-semibold text-white"
+                    href={`/dashboard/proveedor/solicitudes/${assignment.requestId}`}
+                  >
+                    Cotizar
+                  </Link>
+                </div>
+              </div>
             ))
           )}
         </div>
@@ -881,12 +816,16 @@ export default function SupplierRequestsPage() {
       {/* ==================== VISTA DESKTOP ==================== */}
       <section className="hidden lg:block">
         <div className="grid items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-          {/* ---------- Columna 1: listado ---------- */}
+          {/* ---------- Columna 1: bandeja ---------- */}
           <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs text-slate-500">Pipeline de oportunidades</p>
-            <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-950">Solicitudes de compradores</h1>
+            <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-950">
+              Solicitudes de compradores
+            </h1>
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              Gestioná solicitudes reales de empresas que están buscando productos.
+              {isManager
+                ? 'Asigná cada solicitud a un vendedor y seguí el estado comercial.'
+                : 'Estas son las oportunidades que te asignaron.'}
             </p>
 
             <div className="relative mt-4">
@@ -896,7 +835,7 @@ export default function SupplierRequestsPage() {
               <input
                 className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-xs outline-none transition placeholder:text-slate-400 focus:border-indigo-400"
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar por comprador, producto o descripción..."
+                placeholder="Comprador, producto o vendedor..."
                 value={search}
               />
             </div>
@@ -914,21 +853,24 @@ export default function SupplierRequestsPage() {
               ))}
             </select>
 
-            <div className="mt-4 flex items-stretch gap-1 border-b border-slate-200">
-              {desktopTabs.map((tab) => {
-                const active = statusFilter === tab.key;
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {INBOX_FILTERS.map((item) => {
+                const active = filter === item.key;
                 return (
                   <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setStatusFilter(tab.key)}
-                    className={`relative -mb-px flex-1 pb-2 text-center transition ${
-                      active ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                      active
+                        ? 'bg-slate-950 text-white'
+                        : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                     }`}
+                    key={item.key}
+                    onClick={() => setFilter(item.key)}
+                    type="button"
                   >
-                    <span className="block text-[11px] font-semibold">{tab.label}</span>
-                    <span className="mt-0.5 block text-[11px] font-bold">{tab.count}</span>
-                    {active ? <span className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-indigo-600" /> : null}
+                    {item.label}
+                    <span className={active ? 'text-white/60' : 'text-slate-400'}>
+                      {filterCounts[item.key] ?? 0}
+                    </span>
                   </button>
                 );
               })}
@@ -939,62 +881,77 @@ export default function SupplierRequestsPage() {
                 <div className="rounded-xl bg-slate-50 px-4 py-8 text-center text-xs text-slate-500">
                   Cargando solicitudes...
                 </div>
-              ) : pagedRequests.length === 0 ? (
+              ) : pagedAssignments.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-xs text-slate-500">
                   No hay solicitudes para este filtro.
                 </div>
               ) : (
-                pagedRequests.map((request) => {
-                  const quote = quoteByRequestId.get(request.id);
-                  const selected = !detailClosed && request.id === activeRequestId;
+                pagedAssignments.map((assignment) => {
+                  const selected = !detailClosed && assignment.requestId === activeRequestId;
 
                   return (
                     <button
-                      key={request.id}
                       className={`w-full rounded-xl border px-3.5 py-3 text-left transition ${
                         selected
                           ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
                           : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                       }`}
+                      key={assignment.id}
                       onClick={() => {
-                        setActiveRequestId(request.id);
+                        setActiveRequestId(assignment.requestId);
                         setDetailClosed(false);
                       }}
                       type="button"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p
-                          className={`truncate text-[10px] font-semibold uppercase tracking-[0.14em] ${
-                            selected ? 'text-slate-400' : 'text-slate-400'
-                          }`}
-                        >
-                          {request.category}
+                        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          {assignment.request.category}
                         </p>
                         <span
                           className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                            selected
-                              ? 'bg-white/15 text-white'
-                              : request.privateRequest
-                                ? 'bg-indigo-50 text-indigo-600'
-                                : quote
-                                  ? 'bg-emerald-50 text-emerald-600'
-                                  : 'bg-amber-50 text-amber-600'
+                            selected ? 'bg-white/15 text-white' : OPPORTUNITY_STATUS_TONE[assignment.status]
                           }`}
                         >
-                          {request.privateRequest ? 'Privada' : quote ? 'Cotizada' : 'Pendiente'}
+                          {OPPORTUNITY_STATUS_LABEL[assignment.status]}
                         </span>
                       </div>
 
-                      <p className={`mt-1.5 line-clamp-2 text-[13px] font-semibold ${selected ? 'text-white' : 'text-slate-950'}`}>
-                        {request.title}
+                      <p
+                        className={`mt-1.5 line-clamp-2 text-[13px] font-semibold ${
+                          selected ? 'text-white' : 'text-slate-950'
+                        }`}
+                      >
+                        {assignment.request.title}
                       </p>
 
                       <p className={`mt-1 truncate text-[11px] ${selected ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {request.buyerCompany?.name ?? 'Comprador'} · {request.buyerCompany?.country ?? 'AR'}
+                        {assignment.request.buyerCompany?.name ?? 'Comprador'} ·{' '}
+                        {assignment.request.buyerCompany?.country ?? 'AR'}
+                        {typeof assignment.request.quantityRequested === 'number'
+                          ? ` · ${assignment.request.quantityRequested} u.`
+                          : ''}
                       </p>
 
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] ${
+                            selected ? 'text-slate-400' : 'text-slate-500'
+                          }`}
+                        >
+                          <Icon className="h-3 w-3" name="user" />
+                          {assignment.seller ? assignment.seller.name : 'Sin vendedor'}
+                        </span>
+                        {assignment.request.privateRequest ? (
+                          <span className={`inline-flex items-center gap-1 text-[10px] ${selected ? 'text-slate-400' : 'text-indigo-500'}`}>
+                            <Icon className="h-3 w-3" name="lock" />
+                            Privada
+                          </span>
+                        ) : null}
+                      </div>
+
                       <p className={`mt-1.5 text-[10px] ${selected ? 'text-slate-500' : 'text-slate-400'}`}>
-                        Actualizada {formatRelative(request.updatedAt).toLowerCase()} · {formatDueCountdown(request.dueDate)}
+                        Actualizada {formatRelative(assignment.request.updatedAt).toLowerCase()} ·{' '}
+                        {formatDueCountdown(assignment.request.dueDate)}
                       </p>
                     </button>
                   );
@@ -1002,7 +959,7 @@ export default function SupplierRequestsPage() {
               )}
             </div>
 
-            {filteredRequests.length > 0 ? (
+            {filteredAssignments.length > 0 ? (
               <div className="mt-5 flex items-center justify-center gap-2">
                 <button
                   aria-label="Página anterior"
@@ -1015,12 +972,12 @@ export default function SupplierRequestsPage() {
                 </button>
                 {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
                   <button
-                    key={pageNumber}
                     className={`h-8 w-8 rounded-lg text-xs font-semibold transition ${
                       pageNumber === currentPage
                         ? 'border border-slate-950 bg-white text-slate-950'
                         : 'border border-transparent text-slate-400 hover:bg-slate-50'
                     }`}
+                    key={pageNumber}
                     onClick={() => setPage(pageNumber)}
                     type="button"
                   >
@@ -1040,10 +997,26 @@ export default function SupplierRequestsPage() {
             ) : null}
           </aside>
 
-          {/* ---------- Columnas 2 y 3: detalle + panel lateral ---------- */}
+          {/* ---------- Detalle + panel lateral ---------- */}
           <div className="min-w-0">
+            {/* Vendedor que se registro y todavia no fue aprobado por la empresa. */}
+            {session?.user.status === 'INVITED' ? (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Tu acceso está pendiente de aprobación. Cuando el administrador de la empresa te
+                habilite vas a empezar a recibir solicitudes asignadas.
+              </div>
+            ) : null}
+
             {error ? (
-              <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+              <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {error}
+              </div>
+            ) : null}
+
+            {submitError ? (
+              <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {submitError}
+              </div>
             ) : null}
 
             {message ? (
@@ -1052,20 +1025,7 @@ export default function SupplierRequestsPage() {
               </div>
             ) : null}
 
-            {lastHiddenId ? (
-              <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-                <span>Ocultaste una solicitud de tu listado.</span>
-                <button
-                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-500"
-                  onClick={restoreLastHidden}
-                  type="button"
-                >
-                  Deshacer
-                </button>
-              </div>
-            ) : null}
-
-            {!activeRequest ? (
+            {!activeAssignment || !activeRequest ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-sm text-slate-500 shadow-sm">
                 Seleccioná una solicitud del listado para ver el detalle y responderla.
               </div>
@@ -1087,62 +1047,26 @@ export default function SupplierRequestsPage() {
                         Volver al listado
                       </button>
 
-                      <div className="relative flex items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <button
-                          aria-label="Más acciones"
-                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50"
-                          onClick={() => setMenuOpen((current) => !current)}
+                          className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                          disabled={openingChat}
+                          onClick={() => void handleOpenChat(activeAssignment.requestId)}
                           type="button"
                         >
-                          <Icon name="dots" />
+                          <Icon name="chat" />
+                          {openingChat ? 'Abriendo...' : 'Consultar comprador'}
                         </button>
 
-                        <button
-                          className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-                          onClick={() => hideRequest(activeRequest.id)}
-                          type="button"
-                        >
-                          <Icon name="eye-off" />
-                          Ocultar solicitud
-                        </button>
-
-                        {menuOpen ? (
-                          <>
-                            <button
-                              aria-label="Cerrar menú"
-                              className="fixed inset-0 z-10 cursor-default"
-                              onClick={() => setMenuOpen(false)}
-                              type="button"
-                            />
-                            <div className="absolute right-0 top-11 z-20 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
-                              <Link
-                                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-                                href="/dashboard/proveedor/mensajes"
-                                onClick={() => setMenuOpen(false)}
-                              >
-                                <Icon name="chat" />
-                                Contactar al comprador
-                              </Link>
-                              {activeQuote ? (
-                                <Link
-                                  className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-                                  href={`/dashboard/proveedor/cotizaciones/${activeQuote.id}`}
-                                  onClick={() => setMenuOpen(false)}
-                                >
-                                  <Icon name="doc" />
-                                  Ver mi cotización
-                                </Link>
-                              ) : null}
-                              <Link
-                                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-                                href={`/dashboard/proveedor/solicitudes/${activeRequest.id}`}
-                                onClick={() => setMenuOpen(false)}
-                              >
-                                <Icon name="file" />
-                                Abrir en pantalla completa
-                              </Link>
-                            </div>
-                          </>
+                        {isManager ? (
+                          <button
+                            className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                            onClick={() => setAssignDialogOpen(true)}
+                            type="button"
+                          >
+                            <Icon name="users" />
+                            {activeAssignment.seller ? 'Reasignar' : 'Asignar vendedor'}
+                          </button>
                         ) : null}
                       </div>
                     </div>
@@ -1153,7 +1077,16 @@ export default function SupplierRequestsPage() {
                       </span>
                       <span
                         className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
-                          activeRequest.privateRequest ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-600'
+                          OPPORTUNITY_STATUS_TONE[activeAssignment.status]
+                        }`}
+                      >
+                        {OPPORTUNITY_STATUS_LABEL[activeAssignment.status]}
+                      </span>
+                      <span
+                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
+                          activeRequest.privateRequest
+                            ? 'bg-slate-100 text-slate-500'
+                            : 'bg-emerald-50 text-emerald-600'
                         }`}
                       >
                         {activeRequest.privateRequest ? 'Solicitud privada' : 'Solicitud abierta'}
@@ -1161,7 +1094,9 @@ export default function SupplierRequestsPage() {
                     </div>
 
                     <div className="mt-3 flex items-start justify-between gap-4">
-                      <h2 className="text-2xl font-bold tracking-tight text-slate-950">{activeRequest.title}</h2>
+                      <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+                        {activeRequest.title}
+                      </h2>
                       <button
                         className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
                         onClick={openQuoteModal}
@@ -1185,10 +1120,10 @@ export default function SupplierRequestsPage() {
                     <dl className="mt-4 overflow-hidden rounded-xl border border-slate-200">
                       {fichaRows.map((row, index) => (
                         <div
-                          key={`${row.label}-${index}`}
                           className={`flex items-start gap-4 px-4 py-2.5 text-xs ${
                             index % 2 === 0 ? 'bg-slate-50/70' : 'bg-white'
                           }`}
+                          key={`${row.label}-${index}`}
                         >
                           <dt className="w-40 shrink-0 text-slate-500">{row.label}</dt>
                           <dd className="min-w-0 flex-1 font-medium text-slate-900">{row.value}</dd>
@@ -1213,15 +1148,19 @@ export default function SupplierRequestsPage() {
                             const style = getFileStyle(fileName);
                             return (
                               <div
-                                key={fileName}
                                 className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+                                key={fileName}
                               >
-                                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${style.badge}`}>
+                                <span
+                                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${style.badge}`}
+                                >
                                   <Icon className="h-4 w-4" name="file" />
                                 </span>
                                 <div className="min-w-0">
                                   <p className="truncate text-xs font-semibold text-slate-900">{fileName}</p>
-                                  <p className="text-[10px] text-slate-400">{style.label} · informado por el comprador</p>
+                                  <p className="text-[10px] text-slate-400">
+                                    {style.label} · informado por el comprador
+                                  </p>
                                 </div>
                               </div>
                             );
@@ -1231,7 +1170,7 @@ export default function SupplierRequestsPage() {
                     ) : null}
                   </div>
 
-                  {/* Acceso rápido a la cotización (el formulario vive en el modal) */}
+                  {/* Acciones del vendedor */}
                   <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-4 shadow-sm">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-950">
@@ -1240,52 +1179,114 @@ export default function SupplierRequestsPage() {
                       <p className="mt-0.5 text-xs text-slate-500">
                         {activeQuote
                           ? `Monto enviado: ${formatCurrency(activeQuote.amount, activeQuote.currency)}. Podés actualizarla cuando quieras.`
-                          : 'Cargá monto, plazo y condiciones de pago en un solo paso.'}
+                          : 'Consultá al comprador o cargá la cotización en un solo paso.'}
                       </p>
                     </div>
-                    <button
-                      className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800"
-                      onClick={openQuoteModal}
-                      type="button"
-                    >
-                      {activeQuote ? 'Editar cotización' : 'Cotizar'}
-                      <Icon name="send" />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                        disabled={openingChat}
+                        onClick={() => void handleOpenChat(activeAssignment.requestId)}
+                        type="button"
+                      >
+                        <Icon name="chat" />
+                        Consultar
+                      </button>
+                      <button
+                        className="inline-flex h-11 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        onClick={openQuoteModal}
+                        type="button"
+                      >
+                        {activeQuote ? 'Editar cotización' : 'Cotizar'}
+                        <Icon name="send" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* ----- Panel lateral ----- */}
                 <div className="space-y-4">
+                  {/* Pipeline comercial */}
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-slate-400">
                         <Icon className="h-3.5 w-3.5" name="activity" />
                       </span>
-                      <p className="text-xs font-bold text-slate-950">Estado de la solicitud</p>
+                      <p className="text-xs font-bold text-slate-950">Estado comercial</p>
                     </div>
 
-                    <span
-                      className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        activeQuote ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                      }`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${activeQuote ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                      {activeQuote ? 'Cotizada' : 'Pendiente'}
-                    </span>
+                    <ol className="mt-3 space-y-2">
+                      {OPPORTUNITY_PIPELINE.map((step) => {
+                        const currentIndex = OPPORTUNITY_PIPELINE.indexOf(activeAssignment.status);
+                        const stepIndex = OPPORTUNITY_PIPELINE.indexOf(step);
+                        const isLost = activeAssignment.status === 'LOST';
+                        const done = !isLost && currentIndex >= 0 && stepIndex <= currentIndex;
+                        const current = activeAssignment.status === step;
 
-                    <p className="mt-3 text-[11px] leading-5 text-slate-500">
-                      {activeQuote
-                        ? `Enviaste una cotización por ${formatCurrency(activeQuote.amount, activeQuote.currency)}.`
-                        : 'Aún no enviaste una cotización.'}
-                    </p>
+                        return (
+                          <li className="flex items-center gap-2" key={step}>
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                current ? 'bg-indigo-600' : done ? 'bg-indigo-300' : 'bg-slate-200'
+                              }`}
+                            />
+                            <span
+                              className={`text-[11px] ${
+                                current
+                                  ? 'font-semibold text-slate-950'
+                                  : done
+                                    ? 'text-slate-500'
+                                    : 'text-slate-400'
+                              }`}
+                            >
+                              {OPPORTUNITY_STATUS_LABEL[step]}
+                            </span>
+                          </li>
+                        );
+                      })}
+                      {activeAssignment.status === 'LOST' ? (
+                        <li className="flex items-center gap-2">
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                          <span className="text-[11px] font-semibold text-rose-600">Perdida</span>
+                        </li>
+                      ) : null}
+                    </ol>
+                  </div>
 
-                    {activeQuote ? (
-                      <Link
-                        className="mt-3 inline-flex text-[11px] font-semibold text-indigo-600 hover:text-indigo-500"
-                        href={`/dashboard/proveedor/cotizaciones/${activeQuote.id}`}
+                  {/* Vendedor asignado */}
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-xs font-bold text-slate-950">Vendedor asignado</p>
+
+                    {activeAssignment.seller ? (
+                      <div className="mt-3 flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-[11px] font-bold text-indigo-600">
+                          {activeAssignment.seller.name.slice(0, 2).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-[12px] font-semibold text-slate-950">
+                            {activeAssignment.seller.name}
+                          </p>
+                          <p className="truncate text-[10px] text-slate-500">
+                            {activeAssignment.assignedAt
+                              ? `Desde ${formatDate(activeAssignment.assignedAt)}`
+                              : 'Asignación reciente'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                        Todavía no tiene vendedor asignado.
+                      </p>
+                    )}
+
+                    {isManager ? (
+                      <button
+                        className="mt-3 inline-flex h-8 w-full items-center justify-center rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                        onClick={() => setAssignDialogOpen(true)}
+                        type="button"
                       >
-                        Ver cotización
-                      </Link>
+                        {activeAssignment.seller ? 'Reasignar' : 'Asignar vendedor'}
+                      </button>
                     ) : null}
                   </div>
 
@@ -1297,9 +1298,13 @@ export default function SupplierRequestsPage() {
                           ? `${invitedSuppliers.length || 1} proveedor(es) invitados`
                           : 'Abierta a proveedores'}
                       </SummaryRow>
-                      <SummaryRow label="Tu cotización">{activeQuote ? 'Enviada' : 'Sin enviar'}</SummaryRow>
+                      <SummaryRow label="Tu cotización">
+                        {activeQuote ? 'Enviada' : 'Sin enviar'}
+                      </SummaryRow>
                       <SummaryRow label="Fecha límite">{formatDate(activeRequest.dueDate)}</SummaryRow>
-                      <SummaryRow label="Última actividad">{formatRelative(activeRequest.updatedAt)}</SummaryRow>
+                      <SummaryRow label="Última actividad">
+                        {formatRelative(activeRequest.updatedAt)}
+                      </SummaryRow>
                       <SummaryRow label="Creada">{formatDateTime(activeRequest.createdAt)}</SummaryRow>
                     </dl>
                   </div>
@@ -1320,26 +1325,6 @@ export default function SupplierRequestsPage() {
                     </div>
                   ) : null}
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-start gap-2">
-                      <span className="mt-0.5 text-slate-400">
-                        <Icon className="h-3.5 w-3.5" name="help" />
-                      </span>
-                      <div>
-                        <p className="text-xs font-bold text-slate-950">¿Necesitás ayuda?</p>
-                        <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                          Nuestro equipo está para acompañarte.
-                        </p>
-                      </div>
-                    </div>
-                    <Link
-                      className="mt-3 inline-flex h-8 w-full items-center justify-center rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
-                      href="/contacto"
-                    >
-                      Contactar soporte
-                    </Link>
-                  </div>
-
                   <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
                     <div className="flex items-start gap-2">
                       <span className="mt-0.5 text-indigo-600">
@@ -1348,7 +1333,8 @@ export default function SupplierRequestsPage() {
                       <div>
                         <p className="text-xs font-bold text-indigo-900">Consejo</p>
                         <p className="mt-1 text-[11px] leading-5 text-indigo-800">
-                          Respondé con una cotización completa para aumentar tus chances de ser seleccionado.
+                          Consultá al comprador antes de cotizar: las propuestas con dudas resueltas
+                          se ganan más seguido.
                         </p>
                       </div>
                     </div>
@@ -1360,7 +1346,7 @@ export default function SupplierRequestsPage() {
         </div>
 
         {/* ---------- Modal flotante de cotización ---------- */}
-        {quoteModalOpen && activeRequest ? (
+        {quoteModalOpen && activeAssignment && activeRequest ? (
           <div
             aria-labelledby="quote-modal-title"
             aria-modal="true"
@@ -1489,7 +1475,9 @@ export default function SupplierRequestsPage() {
                 </div>
 
                 <label className="mt-4 block">
-                  <span className="mb-1.5 block text-[11px] font-medium text-slate-600">Comentario técnico (opcional)</span>
+                  <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+                    Comentario técnico (opcional)
+                  </span>
                   <textarea
                     className="min-h-[110px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none transition placeholder:text-slate-400 focus:border-indigo-400"
                     onChange={(event) => setDraft((current) => ({ ...current, technicalComment: event.target.value }))}
@@ -1521,6 +1509,17 @@ export default function SupplierRequestsPage() {
           </div>
         ) : null}
       </section>
+
+      {/* Asignación de vendedor (desktop y mobile) */}
+      {assignDialogOpen && activeAssignment ? (
+        <AssignSellerDialog
+          assignment={activeAssignment}
+          onAssign={(sellerUserId) => void handleAssign(sellerUserId)}
+          onClose={() => setAssignDialogOpen(false)}
+          submitting={assigning}
+          team={team}
+        />
+      ) : null}
     </SupplierDashboardShell>
   );
 }

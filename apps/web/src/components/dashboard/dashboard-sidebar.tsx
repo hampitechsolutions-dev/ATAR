@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useWorkspace } from '@/components/auth/workspace-provider';
 import { type SupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
 import { clearSession, getPrimaryCompanyName, type WebSession } from '@/lib/session';
 
@@ -57,6 +58,7 @@ const supplierItems: ReadonlyArray<SidebarItem> = [
   { label: 'Pedidos', href: '/dashboard/proveedor/pedidos', icon: 'box' },
   { label: 'Catalogo', href: '/dashboard/proveedor/catalogo', icon: 'grid' },
   { label: 'Produccion', href: '/dashboard/proveedor/produccion', icon: 'factory' },
+  { label: 'Equipo', href: '/dashboard/proveedor/equipo', icon: 'users' },
   { label: 'Clientes', href: '/dashboard/proveedor/clientes', icon: 'users' },
   { label: 'Resenas', href: '/dashboard/proveedor/resenas', icon: 'star' },
   { label: 'Estadisticas', href: '/dashboard/proveedor/reportes', icon: 'chart' },
@@ -317,11 +319,16 @@ export default function DashboardSidebar({
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { isManager } = useWorkspace();
 
   const items =
     role === 'buyer'
       ? buyerItems
-      : supplierItems.map((item) => {
+      : supplierItems
+          // El equipo comercial es administracion de la empresa: un vendedor no
+          // ve el desempeno del resto.
+          .filter((item) => item.href !== '/dashboard/proveedor/equipo' || isManager)
+          .map((item) => {
           if (!supplierCounters) {
             return item;
           }

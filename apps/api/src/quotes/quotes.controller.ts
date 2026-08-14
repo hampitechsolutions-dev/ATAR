@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '../auth/auth-user.interface';
+import { ActiveCompanyId } from '../auth/decorators/active-company.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateQuoteDto } from './dto/create-quote.dto';
@@ -11,8 +12,8 @@ export class QuotesController {
   constructor(private readonly quotesService: QuotesService) {}
 
   @Get('buyer/mine')
-  findBuyerMine(@CurrentUser() user: AuthUser) {
-    return this.quotesService.findBuyerMine(user);
+  findBuyerMine(@CurrentUser() user: AuthUser, @ActiveCompanyId() activeCompanyId?: string) {
+    return this.quotesService.findBuyerMine(user, activeCompanyId);
   }
 
   @Post('request/:requestId')
@@ -20,17 +21,22 @@ export class QuotesController {
     @CurrentUser() user: AuthUser,
     @Param('requestId') requestId: string,
     @Body() dto: CreateQuoteDto,
+    @ActiveCompanyId() activeCompanyId?: string,
   ) {
-    return this.quotesService.create(user, requestId, dto);
+    return this.quotesService.create(user, requestId, dto, activeCompanyId);
   }
 
   @Get('mine')
-  findMine(@CurrentUser() user: AuthUser) {
-    return this.quotesService.findMine(user);
+  findMine(@CurrentUser() user: AuthUser, @ActiveCompanyId() activeCompanyId?: string) {
+    return this.quotesService.findMine(user, activeCompanyId);
   }
 
   @Get(':id')
-  findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.quotesService.findOne(user, id);
+  findOne(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @ActiveCompanyId() activeCompanyId?: string,
+  ) {
+    return this.quotesService.findOne(user, id, activeCompanyId);
   }
 }

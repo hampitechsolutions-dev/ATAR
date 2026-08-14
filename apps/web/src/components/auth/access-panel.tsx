@@ -4,15 +4,100 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
-import { ApiError, atarApi, type RegisterPayload } from '@/lib/atar-api';
+import {
+  ApiError,
+  atarApi,
+  type RegisterPayload,
+  type SupplierDirectoryCompany,
+} from '@/lib/atar-api';
 import { getDefaultDashboardPath, loadSession } from '@/lib/session';
 
-const roleOptions = [
-  { value: 'BUYER', label: 'Comprador' },
-  { value: 'SUPPLIER', label: 'Proveedor' },
+/**
+ * Los tres perfiles de ATAR.
+ * - Cliente: compra. Publica solicitudes y recibe cotizaciones.
+ * - Empresa: vende. Es la cuenta de la proveedora y administra su equipo.
+ * - Vendedor: trabaja dentro de una o varias empresas proveedoras.
+ */
+const PROFILE_OPTIONS = [
+  {
+    value: 'BUYER',
+    label: 'Cliente',
+    tagline: 'Compro insumos',
+    summary: 'Publicás lo que necesitás y recibís cotizaciones de varios proveedores.',
+    can: [
+      'Crear solicitudes de cotización',
+      'Comparar propuestas y elegir proveedor',
+      'Chatear con cada proveedor',
+      'Seguir tus pedidos hasta la entrega',
+    ],
+  },
+  {
+    value: 'SUPPLIER',
+    label: 'Empresa',
+    tagline: 'Vendo y administro mi equipo',
+    summary: 'Es la cuenta de tu empresa proveedora. Sos el administrador.',
+    can: [
+      'Ver todas las solicitudes que recibe la empresa',
+      'Asignar y reasignar solicitudes a tus vendedores',
+      'Ver métricas y el desempeño del equipo',
+      'Acceder al historial comercial de todos los clientes',
+    ],
+  },
+  {
+    value: 'SELLER',
+    label: 'Vendedor',
+    tagline: 'Trabajo para una empresa',
+    summary: 'Te sumás al equipo de una empresa que ya está en ATAR.',
+    can: [
+      'Ver solo las solicitudes que te asignan',
+      'Responder, cotizar y negociar con el comprador',
+      'Representar a varias empresas con una sola cuenta',
+      'Seguir tus propias métricas y clientes',
+    ],
+    cannot: ['No ves las oportunidades de otros vendedores ni las métricas globales'],
+  },
 ] as const;
 
+type ProfileValue = (typeof PROFILE_OPTIONS)[number]['value'];
+
 type Mode = 'login' | 'register';
+
+function ProfileIcon({ value }: { value: ProfileValue }) {
+  const common = {
+    stroke: 'currentColor',
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    strokeWidth: 2,
+  };
+
+  if (value === 'BUYER') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M6 6h15l-1.5 9h-12z" {...common} />
+        <path d="M6 6L5 3H3" {...common} />
+        <circle cx="9" cy="20" fill="currentColor" r="1.4" />
+        <circle cx="18" cy="20" fill="currentColor" r="1.4" />
+      </svg>
+    );
+  }
+
+  if (value === 'SUPPLIER') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M3 21h18M5 21V8l7-4 7 4v13" {...common} />
+        <path d="M9 21v-5h6v5" {...common} />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <circle cx="9" cy="8" r="3.5" {...common} />
+      <path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5" {...common} />
+      <path d="M16 5.5a3.5 3.5 0 010 6.5M18 20c0-2.4-.9-4.2-2.4-5.3" {...common} />
+    </svg>
+  );
+}
 
 export default function AccessPanel() {
   const router = useRouter();
@@ -30,9 +115,15 @@ export default function AccessPanel() {
     companyName: '',
     email: '',
     password: '',
-    role: 'BUYER' as RegisterPayload['role'],
+    role: 'BUYER' as ProfileValue,
     hybrid: false,
+    companyId: '',
   });
+  const [companySearch, setCompanySearch] = useState('');
+  const [companies, setCompanies] = useState<SupplierDirectoryCompany[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+
+  const isSeller = form.role === 'SELLER';
 
   const companyType = useMemo<RegisterPayload['companyType']>(() => {
     if (form.hybrid) {
@@ -40,6 +131,39 @@ export default function AccessPanel() {
     }
     return form.role === 'SUPPLIER' ? 'SUPPLIER' : 'BUYER';
   }, [form.hybrid, form.role]);
+
+  const selectedProfile = PROFILE_OPTIONS.find((option) => option.value === form.role) ?? PROFILE_OPTIONS[0];
+
+  // Empresas disponibles para el vendedor. Se busca con debounce simple.
+  useEffect(() => {
+    if (mode !== 'register' || !isSeller) {
+      return;
+    }
+
+    let cancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setLoadingCompanies(true);
+        const result = await atarApi.getSupplierDirectory(companySearch);
+        if (!cancelled) {
+          setCompanies(result);
+        }
+      } catch {
+        if (!cancelled) {
+          setCompanies([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCompanies(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [companySearch, isSeller, mode]);
 
   useEffect(() => {
     // Solo redirigimos si hay una sesión realmente guardada. Si un dashboard
@@ -94,6 +218,11 @@ export default function AccessPanel() {
     try {
       const email = form.email.trim().toLowerCase();
       const password = form.password.trim();
+
+      if (mode === 'register' && isSeller && !form.companyId) {
+        throw new Error('Elegí la empresa para la que vas a vender.');
+      }
+
       const response =
         mode === 'login'
           ? await atarApi.login({ email, password })
@@ -102,9 +231,10 @@ export default function AccessPanel() {
               password,
               firstName: form.firstName,
               lastName: form.lastName,
-              companyName: form.companyName,
               role: form.role,
-              companyType,
+              ...(isSeller
+                ? { companyId: form.companyId }
+                : { companyName: form.companyName, companyType }),
             });
       const destination = getDefaultDashboardPath(response.user);
 
@@ -129,9 +259,12 @@ export default function AccessPanel() {
 
   return (
     <>
-      <div className="w-full max-w-[420px]">
+      {/* El alta usa mas ancho para que el formulario completo entre sin scroll. */}
+      <div
+        className={`mx-auto w-full ${mode === 'register' ? 'max-w-[760px]' : 'max-w-[420px]'}`}
+      >
         <div className="flex flex-col items-center text-center">
-          <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-950">
             {mode === 'login' ? 'Bienvenido nuevamente' : 'Creá tu cuenta'}
           </h1>
           <p className="mt-1 text-xs text-slate-500">
@@ -141,94 +274,77 @@ export default function AccessPanel() {
           </p>
         </div>
 
-        <div className="mt-4">
-          <p className="text-xs font-semibold text-slate-700">¿Cómo querés ingresar?</p>
-          <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {roleOptions.map((option) => {
-                const isActive = form.role === option.value;
-                const subtitle = option.value === 'BUYER' ? 'Busco proveedores' : 'Quiero vender';
+        {/* El perfil solo se elige al crear la cuenta: al ingresar ya viene dado
+            por las membresias del usuario. */}
+        <div className={`mt-4 ${mode === 'register' ? '' : 'hidden'}`}>
+          <p className="text-xs font-semibold text-slate-700">¿Qué perfil necesitás?</p>
 
-                return (
-                  <button
-                    key={option.value}
-                    className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                      isActive
-                        ? 'border-indigo-500 bg-indigo-50 shadow-[0_12px_30px_rgba(79,70,229,0.10)]'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            {PROFILE_OPTIONS.map((option) => {
+              const isActive = form.role === option.value;
+
+              return (
+                <button
+                  className={`rounded-2xl border px-3 py-2.5 text-left transition ${
+                    isActive
+                      ? 'border-indigo-500 bg-indigo-50 shadow-[0_12px_30px_rgba(79,70,229,0.10)]'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                  key={option.value}
+                  onClick={() => updateField('role', option.value)}
+                  type="button"
+                >
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+                      isActive ? 'bg-indigo-600/10 text-indigo-600' : 'bg-slate-100 text-slate-600'
                     }`}
-                    onClick={() => updateField('role', option.value)}
-                    type="button"
                   >
-                    <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                        isActive
-                          ? 'bg-indigo-600/10 text-indigo-600'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {option.value === 'BUYER' ? (
-                        <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <path
-                            d="M3 21V7a2 2 0 012-2h14a2 2 0 012 2v14"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                          />
-                          <path
-                            d="M9 21V9h6v12"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                          />
-                        </svg>
-                      ) : (
-                        <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <path
-                            d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                          />
-                          <path
-                            d="M3.3 7.3L12 12l8.7-4.7"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                          />
-                          <path
-                            d="M12 22V12"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                          />
-                        </svg>
-                      )}
-                    </div>
+                    <ProfileIcon value={option.value} />
+                  </span>
+                  <span
+                    className={`mt-2 block text-sm font-semibold ${
+                      isActive ? 'text-indigo-700' : 'text-slate-950'
+                    }`}
+                  >
+                    {option.label}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
+                    {option.tagline}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-                    <div>
-                      <p
-                        className={`text-sm font-semibold ${
-                          isActive ? 'text-indigo-700' : 'text-slate-950'
-                        }`}
-                      >
-                        {option.label}
-                      </p>
-                      <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{subtitle}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Diferencias entre perfiles */}
+          <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+            <p className="text-[12px] font-semibold text-slate-950">
+              {selectedProfile.label}: {selectedProfile.summary}
+            </p>
+            <ul className="mt-2 grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
+              {selectedProfile.can.map((item) => (
+                <li className="flex items-start gap-2 text-[11px] leading-4 text-slate-600" key={item}>
+                  <svg aria-hidden="true" className="mt-0.5 h-3 w-3 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                    <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+              {'cannot' in selectedProfile
+                ? selectedProfile.cannot.map((item) => (
+                    <li className="flex items-start gap-2 text-[11px] leading-4 text-slate-400" key={item}>
+                      <svg aria-hidden="true" className="mt-0.5 h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
+                      </svg>
+                      {item}
+                    </li>
+                  ))
+                : null}
+            </ul>
           </div>
         </div>
 
-        <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+        <form className="mt-3 space-y-3" onSubmit={handleSubmit}>
           {mode === 'register' ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-2 text-xs font-semibold text-slate-700">
@@ -251,20 +367,89 @@ export default function AccessPanel() {
                   value={form.lastName}
                 />
               </label>
-              <label className="space-y-2 text-xs font-semibold text-slate-700 sm:col-span-2">
-                <span>Empresa</span>
-                <input
-                  className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
-                  onChange={(event) => updateField('companyName', event.target.value)}
-                  placeholder="Mi empresa industrial"
-                  required
-                  value={form.companyName}
-                />
-              </label>
+              {isSeller ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="text-xs font-semibold text-slate-700">
+                    ¿Para qué empresa vas a vender?
+                  </p>
+                  <input
+                    className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
+                    onChange={(event) => setCompanySearch(event.target.value)}
+                    placeholder="Buscá tu empresa por nombre"
+                    value={companySearch}
+                  />
 
+                  <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5">
+                    {loadingCompanies ? (
+                      <p className="px-3 py-4 text-center text-[11px] text-slate-500">Buscando...</p>
+                    ) : companies.length === 0 ? (
+                      <p className="px-3 py-4 text-center text-[11px] leading-4 text-slate-500">
+                        No encontramos empresas con ese nombre. Tu empresa tiene que estar registrada
+                        en ATAR antes de que te sumes al equipo.
+                      </p>
+                    ) : (
+                      companies.map((company) => {
+                        const isSelected = form.companyId === company.id;
+
+                        return (
+                          <button
+                            className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
+                              isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                            }`}
+                            key={company.id}
+                            onClick={() => updateField('companyId', company.id)}
+                            type="button"
+                          >
+                            <span
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${
+                                isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              {company.name.slice(0, 2).toUpperCase()}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-semibold text-slate-950">
+                                {company.name}
+                              </span>
+                              <span className="block truncate text-[10px] text-slate-500">
+                                {[company.city, company.country].filter(Boolean).join(', ')}
+                              </span>
+                            </span>
+                            {isSelected ? (
+                              <svg aria-hidden="true" className="h-4 w-4 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                                <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                              </svg>
+                            ) : null}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <p className="rounded-xl bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-800">
+                    El administrador de la empresa tiene que aprobarte antes de que puedas recibir
+                    solicitudes asignadas.
+                  </p>
+                </div>
+              ) : (
+                <label className="space-y-2 text-xs font-semibold text-slate-700 sm:col-span-2">
+                  <span>{form.role === 'SUPPLIER' ? 'Nombre de tu empresa' : 'Empresa'}</span>
+                  <input
+                    className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
+                    onChange={(event) => updateField('companyName', event.target.value)}
+                    placeholder="Mi empresa industrial"
+                    required
+                    value={form.companyName}
+                  />
+                </label>
+              )}
+
+              {/* El vendedor no crea empresa, asi que no elige tipo. */}
               <button
                 aria-pressed={form.hybrid}
-                className={`flex items-start gap-3 rounded-2xl border px-3 py-3 text-left transition sm:col-span-2 ${
+                className={`flex items-start gap-3 rounded-2xl border px-3 py-2.5 text-left transition sm:col-span-2 ${
+                  isSeller ? 'hidden' : ''
+                } ${
                   form.hybrid ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-white hover:bg-slate-50'
                 }`}
                 onClick={() => updateField('hybrid', !form.hybrid)}
@@ -289,6 +474,7 @@ export default function AccessPanel() {
             </div>
           ) : null}
 
+          <div className={mode === 'register' ? 'grid gap-3 sm:grid-cols-2' : 'space-y-3'}>
           <label className="space-y-2 text-xs font-semibold text-slate-700">
             <span>Email</span>
             <div className="relative">
@@ -376,6 +562,7 @@ export default function AccessPanel() {
               </button>
             </div>
           </label>
+          </div>
 
           {mode === 'login' ? (
             <div className="flex justify-end">
@@ -396,6 +583,8 @@ export default function AccessPanel() {
             </p>
           ) : null}
 
+          {/* En el alta las dos acciones van en una fila para ganar alto. */}
+          <div className={mode === 'register' ? 'grid gap-3 sm:grid-cols-2' : 'space-y-3'}>
           <button
             className="flex h-10 w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isSubmitting}
@@ -404,8 +593,8 @@ export default function AccessPanel() {
             {isSubmitting
               ? 'Procesando...'
               : mode === 'login'
-                ? `Ingresar como ${form.role === 'SUPPLIER' ? 'proveedor' : 'comprador'}`
-                : 'Crear cuenta'}
+                ? 'Ingresar'
+                : `Crear cuenta de ${selectedProfile.label.toLowerCase()}`}
             <span aria-hidden="true">→</span>
           </button>
 
@@ -428,7 +617,7 @@ export default function AccessPanel() {
             </div>
           ) : null}
 
-          <div className="relative py-1.5">
+          <div className={`relative py-1.5 ${mode === 'register' ? 'hidden' : ''}`}>
             <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-slate-200" />
             <div className="relative mx-auto flex h-4 w-4 items-center justify-center rounded-full border border-slate-200 bg-white">
               <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
@@ -443,6 +632,7 @@ export default function AccessPanel() {
             {mode === 'login' ? 'Crear cuenta' : 'Ya tengo cuenta'}
             <span aria-hidden="true">→</span>
           </button>
+          </div>
         </form>
 
         <p className="mt-3 text-center text-[11px] text-slate-500">

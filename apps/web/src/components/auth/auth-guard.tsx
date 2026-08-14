@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
 import type { MembershipRole } from '@/lib/atar-api';
+import { canAccessDashboard, getDefaultDashboardPath } from '@/lib/session';
 
 export default function AuthGuard({
   children,
@@ -14,12 +15,13 @@ export default function AuthGuard({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isHydrated, isAuthenticated, role, isHybrid, getDefaultPath } = useAuth();
+  const { isHydrated, isAuthenticated, user, getDefaultPath } = useAuth();
 
-  // Los usuarios HYBRID pueden operar como comprador y proveedor, así que no se
-  // bloquean por rol en ninguno de los dos dashboards.
-  const roleDenied = Boolean(allowedRole && role && role !== allowedRole && !isHybrid);
-  const redirectPath = role === 'SUPPLIER' ? '/dashboard/proveedor' : role === 'BUYER' ? '/dashboard/comprador' : '/acceso';
+  // El acceso se decide por lado del marketplace, no por rol exacto: los
+  // usuarios HYBRID operan de los dos lados y los vendedores (SELLER) entran
+  // al dashboard de proveedor de su empresa.
+  const roleDenied = Boolean(allowedRole && user && !canAccessDashboard(user, allowedRole));
+  const redirectPath = user ? getDefaultDashboardPath(user) : '/acceso';
 
   useEffect(() => {
     if (!isHydrated) {

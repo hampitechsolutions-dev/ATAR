@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '../auth/auth-user.interface';
+import { ActiveCompanyId } from '../auth/decorators/active-company.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ConversationsService } from './conversations.service';
@@ -17,16 +18,18 @@ export class ConversationsController {
   list(
     @CurrentUser() user: AuthUser,
     @Query() query: ListConversationsQueryDto,
+    @ActiveCompanyId() activeCompanyId?: string,
   ) {
-    return this.conversationsService.list(user, query);
+    return this.conversationsService.list(user, query, activeCompanyId);
   }
 
   @Post('product')
   getOrCreateByProduct(
     @CurrentUser() user: AuthUser,
     @Body() dto: CreateProductConversationDto,
+    @ActiveCompanyId() activeCompanyId?: string,
   ) {
-    return this.conversationsService.getOrCreateByProduct(user, dto);
+    return this.conversationsService.getOrCreateByProduct(user, dto, activeCompanyId);
   }
 
   @Post('quote/:quoteId')
@@ -35,6 +38,15 @@ export class ConversationsController {
     @Param('quoteId') quoteId: string,
   ) {
     return this.conversationsService.getOrCreateByQuote(user, quoteId);
+  }
+
+  @Post('request/:requestId')
+  getOrCreateByRequest(
+    @CurrentUser() user: AuthUser,
+    @Param('requestId') requestId: string,
+    @ActiveCompanyId() activeCompanyId?: string,
+  ) {
+    return this.conversationsService.getOrCreateByRequest(user, requestId, activeCompanyId);
   }
 
   @Get(':id')
