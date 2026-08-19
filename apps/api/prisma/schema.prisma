@@ -73,6 +73,20 @@ enum ConversationContextType {
   QUOTE
 }
 
+// Estado comercial de una solicitud dentro de una empresa proveedora.
+// Es independiente del estado de la solicitud (que pertenece al comprador):
+// una misma solicitud puede estar GANADA para un proveedor y PERDIDA para otro.
+enum OpportunityStatus {
+  NEW
+  UNASSIGNED
+  ASSIGNED
+  IN_RESPONSE
+  QUOTED
+  NEGOTIATING
+  WON
+  LOST
+}
+
 enum NotificationType {
   QUOTE_SUBMITTED
   QUOTE_UPDATED
@@ -83,7 +97,9 @@ enum NotificationType {
   ORDER_UPDATED
   FULFILLMENT_UPDATED
   NEW_MESSAGE
-  REQUEST_RECEIVED
+  REQUEST_ASSIGNED
+  REQUEST_REASSIGNED
+  REQUEST_UPDATED
 }
 
 enum NotificationEmailStatus {
@@ -122,6 +138,8 @@ model User {
   memberships  Membership[]
   notifications Notification[]
   pushEndpoints PushEndpoint[]
+  assignedRequests  RequestAssignment[] @relation("SellerAssignments")
+  assignmentsMade   RequestAssignment[] @relation("AssignedByUser")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }
@@ -137,6 +155,7 @@ model Company {
   supplierProfile SupplierProfile?
   requests        Request[]       @relation("BuyerRequests")
   quotes          Quote[]         @relation("SupplierQuotes")
+  requestAssignments RequestAssignment[] @relation("SupplierAssignments")
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -228,11 +247,37 @@ model Request {
   events         RequestEvent[]
   order          PurchaseOrder?
   quotes         Quote[]       @relation("RequestQuotes")
+  assignments    RequestAssignment[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   @@index([buyerCompanyId])
   @@index([status])
+}
+
+// Bandeja comercial de una empresa proveedora sobre una solicitud concreta.
+// Guarda a quien esta asignada (vendedor) y en que etapa del pipeline esta.
+model RequestAssignment {
+  id                String            @id @default(cuid())
+  requestId         String
+  supplierCompanyId String
+  sellerUserId      String?
+  status            OpportunityStatus @default(NEW)
+  assignedAt        DateTime?
+  assignedByUserId  String?
+  notes             String?
+  lastSellerViewAt  DateTime?
+  request           Request           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  supplierCompany   Company           @relation("SupplierAssignments", fields: [supplierCompanyId], references: [id], onDelete: Cascade)
+  seller            User?             @relation("SellerAssignments", fields: [sellerUserId], references: [id], onDelete: SetNull)
+  assignedBy        User?             @relation("AssignedByUser", fields: [assignedByUserId], references: [id], onDelete: SetNull)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([requestId, supplierCompanyId])
+  @@index([supplierCompanyId, status])
+  @@index([sellerUserId, status])
+  @@index([requestId])
 }
 
 model Quote {

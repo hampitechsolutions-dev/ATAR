@@ -10,6 +10,17 @@ export type RequestStatus =
   | 'CANCELLED';
 export type QuoteStatus = 'DRAFT' | 'SUBMITTED' | 'AWARDED' | 'REJECTED' | 'WITHDRAWN';
 
+/** Pipeline comercial de una solicitud dentro de una empresa proveedora. */
+export type OpportunityStatus =
+  | 'NEW'
+  | 'UNASSIGNED'
+  | 'ASSIGNED'
+  | 'IN_RESPONSE'
+  | 'QUOTED'
+  | 'NEGOTIATING'
+  | 'WON'
+  | 'LOST';
+
 export type UserMembership = {
   id: string;
   role: MembershipRole;
@@ -132,14 +143,159 @@ export type QuoteRecord = {
   updatedAt: string;
 };
 
+/** Empresa en la que trabaja el usuario, con su rol dentro de ella. */
+export type WorkspaceRecord = {
+  companyId: string;
+  company: {
+    id: string;
+    name: string;
+    type: CompanyType;
+    country: string;
+    city: string | null;
+  };
+  roles: MembershipRole[];
+  isPrimary: boolean;
+  isSeller: boolean;
+  isManager: boolean;
+  canSell: boolean;
+  canBuy: boolean;
+};
+
+export type AssignmentSeller = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+/** Oportunidad: la solicitud vista desde la bandeja de la proveedora. */
+export type RequestAssignmentRecord = {
+  id: string;
+  requestId: string;
+  supplierCompanyId: string;
+  status: OpportunityStatus;
+  notes: string | null;
+  assignedAt: string | null;
+  lastSellerViewAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  seller: AssignmentSeller | null;
+  request: RequestRecord;
+  quote: QuoteRecord | null;
+};
+
+export type TeamMemberRecord = {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  roles: MembershipRole[];
+  isManager: boolean;
+  assigned: number;
+  pending: number;
+  quoted: number;
+  won: number;
+  conversionRate: number;
+  quotedAmount: number;
+  wonAmount: number;
+};
+
+export type SupplierMetricsRecord = {
+  companyId: string;
+  scope: 'company' | 'seller';
+  received: number;
+  unassigned: number;
+  assigned: number;
+  inResponse: number;
+  quoted: number;
+  negotiating: number;
+  won: number;
+  lost: number;
+  quotesSent: number;
+  quotesAwarded: number;
+  quotedAmount: number;
+  soldAmount: number;
+};
+
+export type CustomerRecord = {
+  companyId: string;
+  name: string;
+  location: string;
+  quotesCount: number;
+  ordersCount: number;
+  requestsCount: number;
+  quotedAmount: number;
+  purchasedAmount: number;
+  purchasedUnits: number;
+  lastPurchaseAt: string | null;
+  lastQuoteAt: string | null;
+  lastProduct: string | null;
+  lastQuotedProduct: string | null;
+  sellers: { id: string; name: string }[];
+  daysSinceLastPurchase: number | null;
+  daysSinceLastQuote: number | null;
+};
+
+export type CustomerDetailRecord = {
+  company: {
+    id: string;
+    name: string;
+    country: string;
+    city: string | null;
+    type: CompanyType;
+  };
+  quotes: Array<{
+    id: string;
+    amount: number | null;
+    currency: string;
+    status: QuoteStatus;
+    createdAt: string;
+    requestId: string;
+    requestTitle: string;
+    category: string;
+    quantity: number | null;
+    order: PurchaseOrderRecord | null;
+    seller: { id: string; name: string } | null;
+  }>;
+};
+
+/** Señal comercial: recompra, seguimiento o postventa. */
+export type CommercialOpportunityRecord = {
+  type: 'REPURCHASE' | 'FOLLOW_UP' | 'AFTER_SALES';
+  companyId: string;
+  companyName: string;
+  product: string | null;
+  days: number | null;
+  units: number;
+  amount: number;
+  seller: { id: string; name: string } | null;
+};
+
+export type InboxQuery = {
+  status?: OpportunityStatus;
+  sellerUserId?: string;
+  search?: string;
+  privateOnly?: boolean;
+};
+
 export type RegisterPayload = {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-  companyName: string;
-  companyType: CompanyType;
-  role: Extract<MembershipRole, 'BUYER' | 'SUPPLIER'>;
+  /** Solo para cliente y empresa: el vendedor se suma a una empresa existente. */
+  companyName?: string;
+  companyType?: CompanyType;
+  /** Solo para vendedor: empresa a la que pide sumarse. */
+  companyId?: string;
+  role: Extract<MembershipRole, 'BUYER' | 'SUPPLIER' | 'SELLER'>;
+};
+
+export type SupplierDirectoryCompany = {
+  id: string;
+  name: string;
+  city: string | null;
+  country: string;
+  type: CompanyType;
 };
 
 export type LoginPayload = {
@@ -376,6 +532,42 @@ export type MarketplaceStatsRecord = {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
+export const ACTIVE_COMPANY_STORAGE_KEY = 'atar.activeCompanyId';
+
+/**
+ * Empresa con la que el usuario esta trabajando. Un vendedor puede representar
+ * a varias proveedoras: el valor viaja en cada request como `x-company-id`
+ * para que la API devuelva solo el contexto de esa empresa.
+ */
+let activeCompanyId: string | null = null;
+
+export function setActiveCompanyId(companyId: string | null) {
+  activeCompanyId = companyId;
+
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (companyId) {
+    window.localStorage.setItem(ACTIVE_COMPANY_STORAGE_KEY, companyId);
+  } else {
+    window.localStorage.removeItem(ACTIVE_COMPANY_STORAGE_KEY);
+  }
+}
+
+export function getActiveCompanyId(): string | null {
+  if (activeCompanyId) {
+    return activeCompanyId;
+  }
+
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  activeCompanyId = window.localStorage.getItem(ACTIVE_COMPANY_STORAGE_KEY);
+  return activeCompanyId;
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -411,6 +603,7 @@ async function request<T>(path: string, init?: RequestInit, token?: string): Pro
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(getActiveCompanyId() ? { 'X-Company-Id': getActiveCompanyId() as string } : {}),
         ...(init?.headers ?? {}),
       },
       cache: 'no-store',
@@ -511,6 +704,71 @@ export const atarApi = {
   },
   getOpenRequests(token: string) {
     return request<RequestRecord[]>('/requests/open', undefined, token);
+  },
+
+  /* ---------- Capa comercial del proveedor ---------- */
+
+  getWorkspaces(token: string) {
+    return request<WorkspaceRecord[]>('/companies/workspaces', undefined, token);
+  },
+  getSupplierInbox(query: InboxQuery | undefined, token: string) {
+    const search = buildQuery({
+      status: query?.status,
+      sellerUserId: query?.sellerUserId,
+      search: query?.search?.trim() || undefined,
+      privateOnly: query?.privateOnly ? 'true' : undefined,
+    });
+
+    return request<RequestAssignmentRecord[]>(`/requests/inbox${search}`, undefined, token);
+  },
+  getRequestAssignment(requestId: string, token: string) {
+    return request<RequestAssignmentRecord>(`/requests/${requestId}/assignment`, undefined, token);
+  },
+  assignRequest(
+    requestId: string,
+    payload: { sellerUserId: string | null; notes?: string },
+    token: string,
+  ) {
+    return request<RequestAssignmentRecord>(`/requests/${requestId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  getSupplierTeam(token: string) {
+    return request<TeamMemberRecord[]>('/companies/team', undefined, token);
+  },
+  /** Publico: lo usa el registro de vendedores para elegir su empresa. */
+  getSupplierDirectory(search: string | undefined) {
+    return request<SupplierDirectoryCompany[]>(
+      `/public/companies/suppliers${buildQuery({ search: search?.trim() || undefined })}`,
+    );
+  },
+  approveTeamMember(userId: string, token: string) {
+    return request<{ userId: string; status: string }>(`/companies/team/${userId}/approve`, {
+      method: 'POST',
+    }, token);
+  },
+  removeTeamMember(userId: string, token: string) {
+    return request<{ userId: string; removed: boolean }>(`/companies/team/${userId}`, {
+      method: 'DELETE',
+    }, token);
+  },
+  getSupplierMetrics(token: string) {
+    return request<SupplierMetricsRecord>('/companies/metrics', undefined, token);
+  },
+  getSupplierCustomers(token: string) {
+    return request<CustomerRecord[]>('/companies/customers', undefined, token);
+  },
+  getSupplierCustomerDetail(buyerCompanyId: string, token: string) {
+    return request<CustomerDetailRecord>(`/companies/customers/${buyerCompanyId}`, undefined, token);
+  },
+  getCommercialOpportunities(token: string) {
+    return request<CommercialOpportunityRecord[]>('/companies/opportunities', undefined, token);
+  },
+  getOrCreateRequestConversation(requestId: string, token: string) {
+    return request<ConversationRecord>(`/conversations/request/${requestId}`, {
+      method: 'POST',
+    }, token);
   },
   getSupplierQuotes(token: string) {
     return request<QuoteRecord[]>('/quotes/mine', undefined, token);

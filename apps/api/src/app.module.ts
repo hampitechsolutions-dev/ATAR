@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { CompaniesModule } from './companies/companies.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     AuthModule,
     CatalogModule,
+    CompaniesModule,
     ConversationsModule,
     NotificationsModule,
     RequestsModule,

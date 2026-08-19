@@ -66,6 +66,7 @@ export default function SupplierRequestDetailPage() {
 
   const { session, openRequests, myQuotes, loading, error, refresh } = useSupplierDashboardData();
   const [showQuoteForm, setShowQuoteForm] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
   const [draft, setDraft] = useState<QuoteDraft>(() => createDraft());
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -88,6 +89,29 @@ export default function SupplierRequestDetailPage() {
   useEffect(() => {
     setDraft(createDraft(existingQuote));
   }, [existingQuote]);
+
+  /** Abre (o crea) el chat de la solicitud para consultar antes de cotizar. */
+  async function handleOpenChat() {
+    if (!session?.accessToken || !request) {
+      return;
+    }
+
+    try {
+      setOpeningChat(true);
+      setSubmitError(null);
+      const conversation = await atarApi.getOrCreateRequestConversation(
+        request.id,
+        session.accessToken,
+      );
+      router.push(`/dashboard/proveedor/mensajes/${conversation.id}`);
+    } catch (chatError) {
+      setSubmitError(
+        chatError instanceof Error ? chatError.message : 'No se pudo abrir el chat con el comprador.',
+      );
+    } finally {
+      setOpeningChat(false);
+    }
+  }
 
   async function handleSubmitQuote() {
     if (!session?.accessToken || !request) {
@@ -351,22 +375,18 @@ export default function SupplierRequestDetailPage() {
       {request ? (
         <div className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:static lg:mt-6 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
           <div className="mx-auto flex w-full max-w-2xl gap-3">
-            {existingQuote ? (
-              <Link
-                href={`/dashboard/proveedor/cotizaciones/${existingQuote.id}`}
-                className="flex h-12 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700"
-              >
-                Ver cotización
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="flex h-12 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700"
-              >
-                No estoy interesado
-              </button>
-            )}
+            {/* Chat con el comprador antes de cotizar. */}
+            <button
+              type="button"
+              disabled={openingChat}
+              onClick={() => void handleOpenChat()}
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 disabled:opacity-60"
+            >
+              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+              {openingChat ? 'Abriendo...' : 'Consultar'}
+            </button>
             <button
               type="button"
               onClick={() => setShowQuoteForm(true)}

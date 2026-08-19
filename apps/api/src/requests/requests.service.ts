@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  CompanyType,
   MembershipRole,
   NotificationType,
   OrderFulfillmentStatus,
@@ -14,8 +13,10 @@ import {
   RequestStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
+import { resolveCompanyId, resolveOptionalCompanyId } from '../common/workspace.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AssignmentsService } from './assignments.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { FulfillmentAction } from './dto/update-fulfillment.dto';
 import { ProgressRequestAction } from './dto/progress-request.dto';
@@ -26,10 +27,11 @@ export class RequestsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly assignmentsService: AssignmentsService,
   ) {}
 
-  async create(user: AuthUser, dto: CreateRequestDto) {
-    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+  async create(user: AuthUser, dto: CreateRequestDto, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
     const status = dto.status ?? RequestStatus.PUBLISHED;
     const buyerCompanyName = await this.getCompanyNameById(buyerCompanyId);
 
@@ -99,8 +101,8 @@ export class RequestsService {
     return created;
   }
 
-  async findMine(user: AuthUser) {
-    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+  async findMine(user: AuthUser, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
 
     return this.prisma.request.findMany({
       where: {
@@ -126,8 +128,8 @@ export class RequestsService {
     });
   }
 
-  async findOpen(user: AuthUser) {
-    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER);
+  async findOpen(user: AuthUser, activeCompanyId?: string) {
+    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER, activeCompanyId);
     const supplierCompanyName = await this.getCompanyNameById(supplierCompanyId);
 
     return this.prisma.request.findMany({
@@ -161,8 +163,8 @@ export class RequestsService {
     });
   }
 
-  async award(user: AuthUser, id: string, quoteId: string) {
-    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+  async award(user: AuthUser, id: string, quoteId: string, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
     const buyerCompanyName = await this.getCompanyNameById(buyerCompanyId);
 
     const request = await this.prisma.request.findUnique({
@@ -264,6 +266,10 @@ export class RequestsService {
       },
     });
 
+    // El pipeline comercial de cada proveedora se cierra con el resultado:
+    // ganada para la adjudicada, perdida para el resto.
+    await this.assignmentsService.syncStatusesAfterAward(id, selectedQuote.supplierCompanyId);
+
     if (selectedQuote.supplierCompanyId) {
       await this.notificationsService.createForCompany({
         companyId: selectedQuote.supplierCompanyId,
@@ -302,8 +308,8 @@ export class RequestsService {
     return updatedRequest;
   }
 
-  async progress(user: AuthUser, id: string, action: ProgressRequestAction) {
-    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+  async progress(user: AuthUser, id: string, action: ProgressRequestAction, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
     const buyerCompanyName = await this.getCompanyNameById(buyerCompanyId);
 
     const request = await this.prisma.request.findUnique({
@@ -422,8 +428,8 @@ export class RequestsService {
     return updatedRequest;
   }
 
-  async upsertOrder(user: AuthUser, id: string, dto: UpsertOrderDto) {
-    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+  async upsertOrder(user: AuthUser, id: string, dto: UpsertOrderDto, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
     const buyerCompanyName = await this.getCompanyNameById(buyerCompanyId);
 
     const request = await this.prisma.request.findUnique({
@@ -532,8 +538,8 @@ export class RequestsService {
     return updatedRequest;
   }
 
-  async updateFulfillment(user: AuthUser, id: string, action: FulfillmentAction) {
-    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER);
+  async updateFulfillment(user: AuthUser, id: string, action: FulfillmentAction, activeCompanyId?: string) {
+    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER, activeCompanyId);
     const supplierCompanyName = await this.getCompanyNameById(supplierCompanyId);
 
     const request = await this.prisma.request.findUnique({
@@ -627,7 +633,7 @@ export class RequestsService {
     return updatedRequest;
   }
 
-  async findOne(user: AuthUser, id: string) {
+  async findOne(user: AuthUser, id: string, activeCompanyId?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id },
       include: {
@@ -655,11 +661,11 @@ export class RequestsService {
       throw new NotFoundException('Pedido no encontrado.');
     }
 
-    if (this.isAdmin(user) || request.buyerCompanyId === this.getOptionalCompanyId(user, MembershipRole.BUYER)) {
+    if (this.isAdmin(user) || request.buyerCompanyId === this.getOptionalCompanyId(user, MembershipRole.BUYER, activeCompanyId)) {
       return request;
     }
 
-    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER);
+    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER, activeCompanyId);
     if (!supplierCompanyId) {
       throw new ForbiddenException('No tenes acceso a este pedido.');
     }
@@ -677,8 +683,8 @@ export class RequestsService {
     };
   }
 
-  async findQuotes(user: AuthUser, id: string) {
-    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+  async findQuotes(user: AuthUser, id: string, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
 
     const request = await this.prisma.request.findUnique({
       where: { id },
@@ -709,24 +715,12 @@ export class RequestsService {
     });
   }
 
-  private getCompanyIdForRole(user: AuthUser, role: MembershipRole) {
-    const membership = user.memberships.find((item) => item.role === role);
-    if (membership) {
-      return membership.companyId;
-    }
-
-    // Una empresa HYBRID compra y vende, así que su membresía sirve para
-    // cualquier rol aunque tenga otro rol asignado.
-    const hybridMembership = user.memberships.find((item) => item.companyType === CompanyType.HYBRID);
-    if (hybridMembership) {
-      return hybridMembership.companyId;
-    }
-
-    throw new ForbiddenException(`La operacion requiere rol ${role}.`);
+  private getCompanyIdForRole(user: AuthUser, role: MembershipRole, activeCompanyId?: string) {
+    return resolveCompanyId(user, role, activeCompanyId);
   }
 
-  private getOptionalCompanyId(user: AuthUser, role: MembershipRole) {
-    return user.memberships.find((item) => item.role === role)?.companyId;
+  private getOptionalCompanyId(user: AuthUser, role: MembershipRole, activeCompanyId?: string) {
+    return resolveOptionalCompanyId(user, role, activeCompanyId);
   }
 
   private async getCompanyNameById(companyId: string) {

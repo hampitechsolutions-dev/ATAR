@@ -3,6 +3,7 @@ const {
   PrismaClient,
   CompanyType,
   MembershipRole,
+  OpportunityStatus,
   OrderFulfillmentStatus,
   QuoteStatus,
   RequestCatalogFieldType,
@@ -673,6 +674,55 @@ async function ensureOrderedDemoScenario(buyerCompanyId, supplierCompanyId) {
   }
 }
 
+/**
+ * Vendedores del equipo comercial. Un vendedor puede representar a varias
+ * empresas: se le crea una membresia SELLER por cada una.
+ */
+async function ensureSellers(sellers) {
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const created = [];
+
+  for (const seller of sellers) {
+    const user = await prisma.user.upsert({
+      where: { email: seller.email },
+      create: {
+        email: seller.email,
+        passwordHash,
+        firstName: seller.firstName,
+        lastName: seller.lastName,
+        status: UserStatus.ACTIVE,
+      },
+      update: {
+        passwordHash,
+        firstName: seller.firstName,
+        lastName: seller.lastName,
+        status: UserStatus.ACTIVE,
+      },
+    });
+
+    for (const [index, companyId] of seller.companyIds.entries()) {
+      const existing = await prisma.membership.findFirst({
+        where: { userId: user.id, companyId, role: MembershipRole.SELLER },
+      });
+
+      if (!existing) {
+        await prisma.membership.create({
+          data: {
+            userId: user.id,
+            companyId,
+            role: MembershipRole.SELLER,
+            isPrimary: index === 0,
+          },
+        });
+      }
+    }
+
+    created.push({ userId: user.id, email: seller.email });
+  }
+
+  return created;
+}
+
 async function main() {
   await ensureRequestCatalog();
 
@@ -701,14 +751,71 @@ async function main() {
     },
   });
 
+  // Segunda proveedora para probar el vendedor multiempresa.
+  const secondSupplier = await ensureUserWithCompany({
+    email: 'proveedor.envapack@atar.test',
+    firstName: 'Lucia',
+    lastName: 'Envapack',
+    companyName: 'Envapack SA',
+    companyType: CompanyType.SUPPLIER,
+    role: MembershipRole.SUPPLIER,
+    city: 'Rosario',
+    supplierProfile: {
+      genericCode: 'ENV-002',
+      leadTimeDays: 12,
+      minimumOrder: 80000,
+    },
+  });
+
+  // Equipo comercial de la proveedora demo. Juan representa a las dos empresas.
+  const sellers = await ensureSellers([
+    {
+      email: 'juan.perez@atar.test',
+      firstName: 'Juan',
+      lastName: 'Perez',
+      companyIds: [supplier.companyId, secondSupplier.companyId],
+    },
+    {
+      email: 'maria.lopez@atar.test',
+      firstName: 'Maria',
+      lastName: 'Lopez',
+      companyIds: [supplier.companyId],
+    },
+    {
+      email: 'carlos.gomez@atar.test',
+      firstName: 'Carlos',
+      lastName: 'Gomez',
+      companyIds: [supplier.companyId],
+    },
+  ]);
+
   const requestRecord = await ensureDemoRequest(buyer.companyId);
   await ensureDemoQuote(requestRecord.id, supplier.companyId);
   await ensureDemoTimeline(requestRecord, 'Compradora Demo SA', 'Proveedor Metal Demo SRL');
   await ensureOrderedDemoScenario(buyer.companyId, supplier.companyId);
 
+  // La solicitud demo entra a la bandeja de la proveedora asignada a Juan.
+  await prisma.requestAssignment.upsert({
+    where: {
+      requestId_supplierCompanyId: {
+        requestId: requestRecord.id,
+        supplierCompanyId: supplier.companyId,
+      },
+    },
+    create: {
+      requestId: requestRecord.id,
+      supplierCompanyId: supplier.companyId,
+      sellerUserId: sellers[0]?.userId ?? null,
+      status: sellers[0] ? OpportunityStatus.QUOTED : OpportunityStatus.UNASSIGNED,
+      assignedAt: sellers[0] ? new Date() : null,
+    },
+    update: {},
+  });
+
   console.log('Seed completado.');
   console.log(`Comprador demo: comprador.demo@atar.test / ${DEMO_PASSWORD}`);
   console.log(`Proveedor demo: proveedor.demo@atar.test / ${DEMO_PASSWORD}`);
+  console.log(`Vendedor demo (2 empresas): juan.perez@atar.test / ${DEMO_PASSWORD}`);
 }
 
 main()

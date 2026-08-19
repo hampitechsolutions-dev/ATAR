@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { type ReactNode } from 'react';
 import { useSupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
 import { type WebSession } from '@/lib/session';
+import CompanySwitcher from './company-switcher';
 import SupplierAccountMenu from './supplier-account-menu';
 import DashboardSidebar from './dashboard-sidebar';
 import SupplierBottomNav from './supplier-bottom-nav';
@@ -109,6 +110,7 @@ export default function SupplierDashboardShell({
               </div>
 
               <div className="flex items-center gap-2">
+                <CompanySwitcher className="hidden lg:block" />
                 <WorkspaceSwitcher className="hidden sm:inline-flex" />
                 <button
                   className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex"

@@ -11,6 +11,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import type { AuthUser } from '../auth/auth-user.interface';
+import { listWorkspaceCompanyIds, resolveCompanyId } from '../common/workspace.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConversationsGateway } from './conversations.gateway';
@@ -49,9 +50,9 @@ export class ConversationsService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async list(user: AuthUser, query: ListConversationsQueryDto) {
+  async list(user: AuthUser, query: ListConversationsQueryDto, activeCompanyId?: string) {
     const conversations = await this.prisma.conversation.findMany({
-      where: this.buildConversationWhere(user, query),
+      where: this.buildConversationWhere(user, query, activeCompanyId),
       include: {
         messages: {
           orderBy: {
@@ -157,8 +158,71 @@ export class ConversationsService {
     return this.findOne(user, conversation.id, {});
   }
 
-  async getOrCreateByProduct(user: AuthUser, dto: CreateProductConversationDto) {
-    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+  /**
+   * Chat abierto desde una solicitud, antes de que exista una cotizacion.
+   * El proveedor puede consultarle al comprador y, cuando despues cotiza, la
+   * conversacion sigue asociada a la misma solicitud.
+   */
+  async getOrCreateByRequest(user: AuthUser, requestId: string, activeCompanyId?: string) {
+    const request = await this.prisma.request.findUnique({
+      where: { id: requestId },
+      select: {
+        id: true,
+        title: true,
+        productName: true,
+        buyerCompanyId: true,
+        privateRequest: true,
+        preferredSupplierName: true,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Solicitud no encontrada.');
+    }
+
+    const buyerCompanyIds = listWorkspaceCompanyIds(user, 'buyer');
+    const isBuyerSide = buyerCompanyIds.includes(request.buyerCompanyId);
+    const supplierCompanyId = isBuyerSide
+      ? undefined
+      : this.getCompanyIdForRole(user, MembershipRole.SUPPLIER, activeCompanyId);
+
+    if (isBuyerSide) {
+      // El comprador no puede abrir un chat de solicitud sin destinatario:
+      // la conversacion siempre nace del lado del proveedor.
+      throw new BadRequestException(
+        'El chat de una solicitud lo inicia el proveedor. Abri la conversacion desde la cotizacion.',
+      );
+    }
+
+    if (!supplierCompanyId) {
+      throw new ForbiddenException('La operacion requiere una empresa proveedora.');
+    }
+
+    const existing = await this.prisma.conversation.findFirst({
+      where: {
+        requestId,
+        supplierCompanyId,
+        contextType: ConversationContextType.REQUEST,
+      },
+    });
+
+    const conversation =
+      existing ??
+      (await this.prisma.conversation.create({
+        data: {
+          contextType: ConversationContextType.REQUEST,
+          contextTitle: request.productName ?? request.title,
+          requestId,
+          buyerCompanyId: request.buyerCompanyId,
+          supplierCompanyId,
+        },
+      }));
+
+    return this.findOne(user, conversation.id, {});
+  }
+
+  async getOrCreateByProduct(user: AuthUser, dto: CreateProductConversationDto, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
     const supplier = await this.findCompanyByName(dto.supplierCompanyName);
 
     const existing = await this.prisma.conversation.findFirst({
@@ -349,16 +413,30 @@ export class ConversationsService {
     };
   }
 
-  private buildConversationWhere(user: AuthUser, query: ListConversationsQueryDto): Prisma.ConversationWhereInput {
-    const buyerCompanyId = this.getOptionalCompanyId(user, MembershipRole.BUYER);
-    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER);
+  private buildConversationWhere(
+    user: AuthUser,
+    query: ListConversationsQueryDto,
+    activeCompanyId?: string,
+  ): Prisma.ConversationWhereInput {
+    // Si el usuario esta trabajando con una empresa concreta, la bandeja se
+    // limita a esa empresa; si no, ve las conversaciones de todas las suyas.
+    const buyerCompanyIds = this.filterByActiveCompany(
+      listWorkspaceCompanyIds(user, 'buyer'),
+      activeCompanyId,
+    );
+    const supplierCompanyIds = this.filterByActiveCompany(
+      listWorkspaceCompanyIds(user, 'supplier'),
+      activeCompanyId,
+    );
 
     const accessWhere = this.isAdmin(user)
       ? {}
       : {
           OR: [
-            buyerCompanyId ? { buyerCompanyId } : undefined,
-            supplierCompanyId ? { supplierCompanyId } : undefined,
+            buyerCompanyIds.length ? { buyerCompanyId: { in: buyerCompanyIds } } : undefined,
+            supplierCompanyIds.length
+              ? { supplierCompanyId: { in: supplierCompanyIds } }
+              : undefined,
           ].filter(Boolean) as Prisma.ConversationWhereInput[],
         };
 
@@ -523,19 +601,18 @@ export class ConversationsService {
     });
   }
 
+  // Un usuario puede pertenecer a varias empresas: el acceso se evalua contra
+  // todas sus membresias, no solo contra la primera.
+  private filterByActiveCompany(companyIds: string[], activeCompanyId?: string) {
+    if (!activeCompanyId) {
+      return companyIds;
+    }
+
+    return companyIds.includes(activeCompanyId) ? [activeCompanyId] : companyIds;
+  }
+
   private assertConversationAccess(user: AuthUser, conversation: ConversationWithRelations) {
-    if (this.isAdmin(user)) {
-      return;
-    }
-
-    const buyerCompanyId = this.getOptionalCompanyId(user, MembershipRole.BUYER);
-    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER);
-
-    if (buyerCompanyId && buyerCompanyId === conversation.buyerCompanyId) {
-      return;
-    }
-
-    if (supplierCompanyId && supplierCompanyId === conversation.supplierCompanyId) {
+    if (this.getParticipantRoleForConversation(user, conversation) || this.isAdmin(user)) {
       return;
     }
 
@@ -547,13 +624,11 @@ export class ConversationsService {
       return;
     }
 
-    const currentBuyerCompanyId = this.getOptionalCompanyId(user, MembershipRole.BUYER);
-    if (currentBuyerCompanyId && currentBuyerCompanyId === buyerCompanyId) {
+    if (listWorkspaceCompanyIds(user, 'buyer').includes(buyerCompanyId)) {
       return;
     }
 
-    const currentSupplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER);
-    if (currentSupplierCompanyId && currentSupplierCompanyId === supplierCompanyId) {
+    if (listWorkspaceCompanyIds(user, 'supplier').includes(supplierCompanyId)) {
       return;
     }
 
@@ -561,20 +636,18 @@ export class ConversationsService {
   }
 
   private async resolveParticipant(user: AuthUser, conversation: ConversationWithRelations) {
-    this.assertConversationAccess(user, conversation);
+    const role = this.getParticipantRoleForConversation(user, conversation);
 
-    const buyerCompanyId = this.getOptionalCompanyId(user, MembershipRole.BUYER);
-    if (buyerCompanyId && buyerCompanyId === conversation.buyerCompanyId) {
+    if (role === MembershipRole.BUYER) {
       return {
-        role: MembershipRole.BUYER,
+        role,
         companyName: await this.getCompanyNameById(conversation.buyerCompanyId),
       };
     }
 
-    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER);
-    if (supplierCompanyId && supplierCompanyId === conversation.supplierCompanyId) {
+    if (role === MembershipRole.SUPPLIER) {
       return {
-        role: MembershipRole.SUPPLIER,
+        role,
         companyName: await this.getCompanyNameById(conversation.supplierCompanyId),
       };
     }
@@ -583,30 +656,19 @@ export class ConversationsService {
   }
 
   private getParticipantRoleForConversation(user: AuthUser, conversation: ConversationWithRelations) {
-    const buyerCompanyId = this.getOptionalCompanyId(user, MembershipRole.BUYER);
-    if (buyerCompanyId && buyerCompanyId === conversation.buyerCompanyId) {
+    if (listWorkspaceCompanyIds(user, 'buyer').includes(conversation.buyerCompanyId)) {
       return MembershipRole.BUYER;
     }
 
-    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER);
-    if (supplierCompanyId && supplierCompanyId === conversation.supplierCompanyId) {
+    if (listWorkspaceCompanyIds(user, 'supplier').includes(conversation.supplierCompanyId)) {
       return MembershipRole.SUPPLIER;
     }
 
     return null;
   }
 
-  private getCompanyIdForRole(user: AuthUser, role: MembershipRole) {
-    const membership = user.memberships.find((item) => item.role === role);
-    if (!membership) {
-      throw new ForbiddenException(`La operacion requiere rol ${role}.`);
-    }
-
-    return membership.companyId;
-  }
-
-  private getOptionalCompanyId(user: AuthUser, role: MembershipRole) {
-    return user.memberships.find((item) => item.role === role)?.companyId;
+  private getCompanyIdForRole(user: AuthUser, role: MembershipRole, activeCompanyId?: string) {
+    return resolveCompanyId(user, role, activeCompanyId);
   }
 
   private async getCompanyNameById(companyId: string) {

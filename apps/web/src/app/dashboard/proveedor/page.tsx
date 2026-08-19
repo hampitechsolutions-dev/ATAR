@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo } from 'react';
+import CommercialPanel from '@/components/dashboard/commercial-panel';
+import CompanySwitcher from '@/components/dashboard/company-switcher';
 import SupplierAccountMenu from '@/components/dashboard/supplier-account-menu';
 import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
 import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
@@ -533,6 +535,7 @@ export default function DashboardProveedorPage() {
               </div>
 
               <div className="flex items-center gap-2">
+                <CompanySwitcher className="hidden lg:block" />
                 <WorkspaceSwitcher className="hidden sm:inline-flex" />
                 <button className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
                   Invitar a un miembro
@@ -618,6 +621,8 @@ export default function DashboardProveedorPage() {
                     </article>
                   ))}
                 </div>
+
+                <CommercialPanel />
 
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_1fr]">
                   <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

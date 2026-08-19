@@ -1,4 +1,9 @@
-﻿import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+﻿import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { CompanyType, MembershipRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -20,6 +25,24 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    // El vendedor no crea empresa: se suma al equipo de una que ya existe.
+    if (dto.role === MembershipRole.SELLER) {
+      if (!dto.companyId) {
+        throw new BadRequestException('Elegi la empresa para la que vas a vender.');
+      }
+
+      const seller = await this.usersService.createSellerForCompany({
+        email: dto.email,
+        passwordHash,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        companyId: dto.companyId,
+      });
+
+      return this.buildAuthResponse(seller);
+    }
+
     const user = await this.usersService.createWithCompany({
       email: dto.email,
       passwordHash,

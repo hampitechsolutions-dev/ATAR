@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  CompanyType,
   MembershipRole,
   NotificationType,
   QuoteStatus,
@@ -13,8 +12,10 @@ import {
   RequestStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
+import { resolveCompanyId, resolveOptionalCompanyId } from '../common/workspace.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AssignmentsService } from '../requests/assignments.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 
 @Injectable()
@@ -22,10 +23,11 @@ export class QuotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly assignmentsService: AssignmentsService,
   ) {}
 
-  async create(user: AuthUser, requestId: string, dto: CreateQuoteDto) {
-    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER);
+  async create(user: AuthUser, requestId: string, dto: CreateQuoteDto, activeCompanyId?: string) {
+    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER, activeCompanyId);
     const supplierCompanyName = await this.getCompanyNameById(supplierCompanyId);
 
     const request = await this.prisma.request.findUnique({
@@ -107,6 +109,13 @@ export class QuotesService {
         },
       });
 
+      await this.assignmentsService.syncStatusFromQuote(
+        supplierCompanyId,
+        requestId,
+        QuoteStatus.SUBMITTED,
+        user.userId,
+      );
+
       return updatedQuote;
     }
 
@@ -161,11 +170,18 @@ export class QuotesService {
       },
     });
 
+    await this.assignmentsService.syncStatusFromQuote(
+      supplierCompanyId,
+      requestId,
+      QuoteStatus.SUBMITTED,
+      user.userId,
+    );
+
     return createdQuote;
   }
 
-  async findMine(user: AuthUser) {
-    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER);
+  async findMine(user: AuthUser, activeCompanyId?: string) {
+    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER, activeCompanyId);
 
     return this.prisma.quote.findMany({
       where: {
@@ -186,8 +202,8 @@ export class QuotesService {
     });
   }
 
-  async findBuyerMine(user: AuthUser) {
-    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER);
+  async findBuyerMine(user: AuthUser, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
 
     return this.prisma.quote.findMany({
       where: {
@@ -210,7 +226,7 @@ export class QuotesService {
     });
   }
 
-  async findOne(user: AuthUser, id: string) {
+  async findOne(user: AuthUser, id: string, activeCompanyId?: string) {
     const quote = await this.prisma.quote.findUnique({
       where: { id },
       include: {
@@ -232,12 +248,12 @@ export class QuotesService {
       return quote;
     }
 
-    const buyerCompanyId = this.getOptionalCompanyId(user, MembershipRole.BUYER);
+    const buyerCompanyId = this.getOptionalCompanyId(user, MembershipRole.BUYER, activeCompanyId);
     if (buyerCompanyId && quote.request.buyerCompanyId === buyerCompanyId) {
       return quote;
     }
 
-    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER);
+    const supplierCompanyId = this.getOptionalCompanyId(user, MembershipRole.SUPPLIER, activeCompanyId);
     if (supplierCompanyId && quote.supplierCompanyId === supplierCompanyId) {
       return quote;
     }
@@ -245,19 +261,8 @@ export class QuotesService {
     throw new ForbiddenException('No tenes acceso a esta cotizacion.');
   }
 
-  private getCompanyIdForRole(user: AuthUser, role: MembershipRole) {
-    const membership = user.memberships.find((item) => item.role === role);
-    if (membership) {
-      return membership.companyId;
-    }
-
-    // Una empresa HYBRID compra y vende: su membresía sirve para cualquier rol.
-    const hybridMembership = user.memberships.find((item) => item.companyType === CompanyType.HYBRID);
-    if (hybridMembership) {
-      return hybridMembership.companyId;
-    }
-
-    throw new ForbiddenException(`La operacion requiere rol ${role}.`);
+  private getCompanyIdForRole(user: AuthUser, role: MembershipRole, activeCompanyId?: string) {
+    return resolveCompanyId(user, role, activeCompanyId);
   }
 
   private async getCompanyNameById(companyId: string) {
@@ -271,8 +276,8 @@ export class QuotesService {
     return company?.name ?? null;
   }
 
-  private getOptionalCompanyId(user: AuthUser, role: MembershipRole) {
-    return user.memberships.find((item) => item.role === role)?.companyId;
+  private getOptionalCompanyId(user: AuthUser, role: MembershipRole, activeCompanyId?: string) {
+    return resolveOptionalCompanyId(user, role, activeCompanyId);
   }
 
   private matchesPreferredSupplier(
