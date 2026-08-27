@@ -94,6 +94,10 @@ function getRequestStatusStyles(status: RequestRecord['status']) {
     return 'bg-rose-100 text-rose-700';
   }
 
+  if (status === 'COMPLETED') {
+    return 'bg-emerald-100 text-emerald-700';
+  }
+
   return 'bg-indigo-100 text-indigo-700';
 }
 
@@ -108,6 +112,10 @@ function getRequestStatusLabel(status: RequestRecord['status']) {
 
   if (status === 'ORDER_ISSUED') {
     return 'Orden emitida';
+  }
+
+  if (status === 'COMPLETED') {
+    return 'Completada';
   }
 
   return status;
@@ -152,6 +160,14 @@ function getFulfillmentTone(status: OrderFulfillmentStatus) {
 
   return 'bg-violet-100 text-violet-800';
 }
+
+const FULFILLMENT_STEPS: OrderFulfillmentStatus[] = [
+  'ISSUED',
+  'CONFIRMED',
+  'IN_PRODUCTION',
+  'DISPATCHED',
+  'DELIVERED',
+];
 
 function parseRequestDescription(description: string) {
   return description
@@ -287,7 +303,9 @@ export default function BuyerRequestDetailPage() {
   const [quotes, setQuotes] = useState<QuoteRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [awardingQuoteId, setAwardingQuoteId] = useState<string | null>(null);
-  const [progressingAction, setProgressingAction] = useState<'START_NEGOTIATION' | 'ISSUE_ORDER' | null>(null);
+  const [progressingAction, setProgressingAction] = useState<
+    'START_NEGOTIATION' | 'ISSUE_ORDER' | 'CONFIRM_RECEIPT' | null
+  >(null);
   const [savingOrder, setSavingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -295,7 +313,6 @@ export default function BuyerRequestDetailPage() {
     orderNumber: '',
     promisedDate: '',
     notes: '',
-    fulfillmentStatus: 'ISSUED' as OrderFulfillmentStatus,
   });
 
   const requestId = typeof params.id === 'string' ? params.id : '';
@@ -359,7 +376,6 @@ export default function BuyerRequestDetailPage() {
       orderNumber: request?.order?.orderNumber ?? '',
       promisedDate: toDateInputValue(request?.order?.promisedDate),
       notes: request?.order?.notes ?? '',
-      fulfillmentStatus: request?.order?.fulfillmentStatus ?? 'ISSUED',
     });
   }, [request?.order]);
 
@@ -397,7 +413,7 @@ export default function BuyerRequestDetailPage() {
     }
   }
 
-  async function handleProgress(action: 'START_NEGOTIATION' | 'ISSUE_ORDER') {
+  async function handleProgress(action: 'START_NEGOTIATION' | 'ISSUE_ORDER' | 'CONFIRM_RECEIPT') {
     if (!session?.accessToken || !request) {
       return;
     }
@@ -406,7 +422,15 @@ export default function BuyerRequestDetailPage() {
       START_NEGOTIATION:
         'Vas a iniciar la negociacion con el proveedor adjudicado. El pedido quedara en seguimiento comercial.',
       ISSUE_ORDER:
-        'Vas a marcar la orden como emitida. Esta accion indica cierre comercial del pedido.',
+        'Vas a emitir la orden de compra al proveedor adjudicado. Recien ahi el proveedor puede empezar a preparar el pedido.',
+      CONFIRM_RECEIPT:
+        'Vas a confirmar que recibiste el pedido. Esto cierra la operacion como completada.',
+    } as const;
+
+    const successMessages = {
+      START_NEGOTIATION: 'La solicitud paso a negociacion correctamente.',
+      ISSUE_ORDER: 'Orden emitida. El proveedor ya puede avanzar con el cumplimiento.',
+      CONFIRM_RECEIPT: 'Confirmaste la recepcion. La operacion quedo completada.',
     } as const;
 
     const confirmed = window.confirm(confirmations[action]);
@@ -420,11 +444,7 @@ export default function BuyerRequestDetailPage() {
       setMessage(null);
       await atarApi.progressRequest(request.id, { action }, session.accessToken);
       await syncRequestState(session.accessToken);
-      setMessage(
-        action === 'START_NEGOTIATION'
-          ? 'La solicitud paso a negociacion correctamente.'
-          : 'La orden se marco como emitida correctamente.',
-      );
+      setMessage(successMessages[action]);
     } catch (progressError) {
       setError(
         progressError instanceof Error
@@ -453,7 +473,6 @@ export default function BuyerRequestDetailPage() {
           orderNumber: orderForm.orderNumber || undefined,
           promisedDate: orderForm.promisedDate || undefined,
           notes: orderForm.notes || undefined,
-          fulfillmentStatus: orderForm.fulfillmentStatus,
         },
         session.accessToken,
       );
@@ -504,6 +523,7 @@ export default function BuyerRequestDetailPage() {
     [quotes, request?.awardedQuoteId],
   );
   const canAward = Boolean(request) && !request?.awardedQuoteId && request?.status !== 'CANCELLED';
+  const fulfillmentIndex = request?.order ? FULFILLMENT_STEPS.indexOf(request.order.fulfillmentStatus) : -1;
   const parsedDescription = useMemo(() => parseRequestDescription(request?.description ?? ''), [request?.description]);
   const attachmentItems = useMemo(
     () => parsedDescription.filter((item) => item.label.toLowerCase().includes('adjuntar') || item.label.toLowerCase().includes('archivo')),
@@ -825,6 +845,153 @@ export default function BuyerRequestDetailPage() {
                   )}
                 </div>
               </section>
+
+              {awardedQuote ? (
+                <section className="border-t border-slate-200 pt-6">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                      <DetailIcon type="file" />
+                    </span>
+                    <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Orden y cumplimiento</h2>
+                  </div>
+
+                  {request?.status === 'AWARDED' || request?.status === 'NEGOTIATING' ? (
+                    <div className="mt-4 rounded-[18px] border border-slate-200 bg-white p-4">
+                      <p className="text-[13px] leading-6 text-slate-600">
+                        Ya adjudicaste la compra a{' '}
+                        <span className="font-semibold text-slate-900">{awardedQuote.supplierCompany?.name ?? 'el proveedor'}</span>. Emití la orden de compra para que el proveedor pueda empezar a preparar el pedido y puedas seguir su cumplimiento.
+                      </p>
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        {request?.status === 'AWARDED' ? (
+                          <button
+                            className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={Boolean(progressingAction)}
+                            onClick={() => void handleProgress('START_NEGOTIATION')}
+                            type="button"
+                          >
+                            {progressingAction === 'START_NEGOTIATION' ? 'Iniciando...' : 'Iniciar negociación'}
+                          </button>
+                        ) : null}
+                        <button
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] bg-[#1847ff] px-4 text-[13px] font-semibold text-white shadow-[0_12px_26px_rgba(24,71,255,0.22)] transition hover:bg-[#0f3ff5] disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={Boolean(progressingAction)}
+                          onClick={() => void handleProgress('ISSUE_ORDER')}
+                          type="button"
+                        >
+                          {progressingAction === 'ISSUE_ORDER' ? 'Emitiendo...' : 'Emitir orden de compra'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {request?.status === 'ORDER_ISSUED' && request?.order ? (
+                    <div className="mt-4 space-y-4">
+                      <div className="rounded-[18px] border border-slate-200 bg-white p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Orden {request.order.orderNumber}</p>
+                            <p className="mt-1 text-[13px] text-slate-600">Seguimiento del cumplimiento a cargo del proveedor.</p>
+                          </div>
+                          <span className={`inline-flex rounded-full px-3 py-1 text-[12px] font-semibold ${getFulfillmentTone(request.order.fulfillmentStatus)}`}>
+                            {getFulfillmentLabel(request.order.fulfillmentStatus)}
+                          </span>
+                        </div>
+                        <div className="mt-4 flex items-end gap-1.5">
+                          {FULFILLMENT_STEPS.map((step, index) => {
+                            const done = index <= fulfillmentIndex;
+                            return (
+                              <div key={step} className="flex flex-1 flex-col items-center gap-1.5">
+                                <span className={`h-1.5 w-full rounded-full ${done ? 'bg-[#4f46ff]' : 'bg-slate-200'}`} />
+                                <span className={`text-center text-[10px] font-semibold leading-tight ${done ? 'text-[#4f46ff]' : 'text-slate-400'}`}>
+                                  {getFulfillmentLabel(step)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {request.order.fulfillmentStatus === 'DELIVERED' ? (
+                        <div className="rounded-[18px] border border-emerald-200 bg-emerald-50 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <p className="text-[13px] leading-6 text-emerald-800">
+                              El proveedor marcó el pedido como <span className="font-semibold">entregado</span>. Confirmá la recepción para cerrar la operación.
+                            </p>
+                            <button
+                              className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] bg-emerald-600 px-4 text-[13px] font-semibold text-white shadow-[0_12px_26px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={Boolean(progressingAction)}
+                              onClick={() => void handleProgress('CONFIRM_RECEIPT')}
+                              type="button"
+                            >
+                              {progressingAction === 'CONFIRM_RECEIPT' ? 'Confirmando...' : 'Confirmar recepción'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <form className="rounded-[18px] border border-slate-200 bg-white p-4" onSubmit={handleSaveOrder}>
+                        <p className="text-[14px] font-semibold text-slate-900">Datos de la orden</p>
+                        <p className="mt-1 text-[12px] text-slate-500">Información operativa para tu registro y el del proveedor.</p>
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <label className="block">
+                            <span className="text-[11px] font-semibold text-slate-500">Número de orden</span>
+                            <input
+                              className="mt-1 w-full rounded-[12px] border border-slate-200 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                              onChange={(event) => setOrderForm((form) => ({ ...form, orderNumber: event.target.value }))}
+                              value={orderForm.orderNumber}
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="text-[11px] font-semibold text-slate-500">Fecha prometida</span>
+                            <input
+                              className="mt-1 w-full rounded-[12px] border border-slate-200 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                              onChange={(event) => setOrderForm((form) => ({ ...form, promisedDate: event.target.value }))}
+                              type="date"
+                              value={orderForm.promisedDate}
+                            />
+                          </label>
+                        </div>
+                        <label className="mt-3 block">
+                          <span className="text-[11px] font-semibold text-slate-500">Notas</span>
+                          <textarea
+                            className="mt-1 w-full rounded-[12px] border border-slate-200 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                            onChange={(event) => setOrderForm((form) => ({ ...form, notes: event.target.value }))}
+                            rows={2}
+                            value={orderForm.notes}
+                          />
+                        </label>
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={savingOrder}
+                            type="submit"
+                          >
+                            {savingOrder ? 'Guardando...' : 'Guardar datos de la orden'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  ) : null}
+
+                  {request?.status === 'COMPLETED' ? (
+                    <div className="mt-4 rounded-[18px] border border-emerald-200 bg-emerald-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                          <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+                          </svg>
+                        </span>
+                        <div>
+                          <p className="text-[14px] font-semibold text-emerald-900">Operación completada</p>
+                          <p className="mt-1 text-[13px] leading-6 text-emerald-800">
+                            Confirmaste la recepción del pedido{request?.order?.orderNumber ? ` (${request.order.orderNumber})` : ''}. El ciclo de esta solicitud está cerrado.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </section>
+              ) : null}
 
               <section className="border-t border-slate-200 pt-6">
                 <div className="flex items-center gap-2">
