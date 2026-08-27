@@ -173,10 +173,40 @@ function buildSupplierProfileData(overrides = {}) {
     minimumOrder: overrides.minimumOrder ?? 100000,
     logisticsSummary: overrides.logisticsSummary ?? 'Entrega coordinada en AMBA y transporte nacional.',
     financingSummary: overrides.financingSummary ?? '30 dias fecha factura para cuentas aprobadas.',
+    // Ficha publica ampliada: es lo que ve el comprador antes de cotizar.
+    isVerified: overrides.isVerified ?? false,
+    about: overrides.about ?? null,
+    foundedYear: overrides.foundedYear ?? null,
+    employeeRange: overrides.employeeRange ?? null,
+    certifications: overrides.certifications ?? [],
+    mainProducts: overrides.mainProducts ?? [],
+    capabilities: overrides.capabilities ?? [],
+    categories: overrides.categories ?? [],
   };
 }
 
+/**
+ * Rehace el catalogo de categorias a partir de REQUEST_CATALOG.
+ *
+ * Es DESTRUCTIVO: borra las categorias que no esten en la lista y pisa las que
+ * si estan (foto, subtitulo, keywords y todos sus campos). Por eso no corre
+ * sola: hay que pedirla con `SEED_RESET_CATALOG=1`. Si el catalogo se edita
+ * desde la app, correrla sin querer se lleva puesto ese trabajo.
+ */
 async function ensureRequestCatalog() {
+  if (process.env.SEED_RESET_CATALOG !== '1') {
+    const existing = await prisma.requestCatalogCategory.count();
+    console.log(
+      `Catalogo intacto (${existing} categorias). Para rehacerlo: SEED_RESET_CATALOG=1 node prisma/seed.js`,
+    );
+    return;
+  }
+
+  console.warn(
+    'REQUEST_CATALOG del seed es una copia parcial (8 de 15 categorias). ' +
+      'Para el catalogo completo: node prisma/sync-catalog-from-fallback.js',
+  );
+
   const activeLabels = REQUEST_CATALOG.map((category) => category.label);
 
   await prisma.requestCatalogCategory.deleteMany({
@@ -748,6 +778,18 @@ async function main() {
       genericCode: 'MET-001',
       leadTimeDays: 7,
       minimumOrder: 100000,
+      isVerified: true,
+      about:
+        'Metalurgica con foco en chapa galvanizada y perfileria liviana. Trabajamos a medida para obra y para linea de produccion, con control dimensional en cada lote.',
+      foundedYear: 1998,
+      employeeRange: '51 - 200',
+      certifications: ['ISO 9001:2015'],
+      // Deben coincidir con labels del catalogo: la ficha usa esa foto.
+      mainProducts: ['A medida', 'Maquinarias'],
+      capabilities: ['Corte laser', 'Plegado CNC', 'Galvanizado', 'Soldadura MIG'],
+      // Labels del catalogo: de ahi sale la foto de cada producto.
+      categories: ['A medida', 'Maquinarias', 'Rollos y Telas'],
+      logisticsSummary: 'Entrega en Cordoba capital en 24 - 48 hs. Envios al interior coordinados.',
     },
   });
 
@@ -764,6 +806,31 @@ async function main() {
       genericCode: 'ENV-002',
       leadTimeDays: 12,
       minimumOrder: 80000,
+      isVerified: true,
+      about:
+        'Mas de 15 anos desarrollando soluciones de packaging flexible para la industria. Contamos con tecnologia de ultima generacion y un equipo tecnico especializado para garantizar calidad y cumplimiento en cada entrega.',
+      foundedYear: 2008,
+      employeeRange: '51 - 200',
+      certifications: ['ISO 9001:2015'],
+      // Deben coincidir con labels del catalogo: la ficha usa esa foto.
+      mainProducts: ['Polietileno', 'Bolsas PP', 'Big Bags', 'Polipropileno'],
+      capabilities: [
+        'Extrusion de film',
+        'Impresion flexografica',
+        'Laminacion',
+        'Corte y sellado',
+        'Productos a medida',
+      ],
+      // Labels del catalogo: de ahi sale la foto de cada producto.
+      categories: [
+        'Big Bags',
+        'Bolsas PP',
+        'Polipropileno',
+        'Polietileno',
+        'Sacos',
+        'Rollos y Telas',
+      ],
+      logisticsSummary: 'Entrega en AMBA en 24 - 48 hs. Envios al interior coordinados y tercerizados.',
     },
   });
 

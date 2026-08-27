@@ -16,6 +16,11 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
   const isBuyerWizard = pathname?.startsWith('/dashboard/comprador/solicitudes/nueva');
   const isBuyerRequestDetail =
     pathname?.startsWith('/dashboard/comprador/solicitudes/') && !pathname?.startsWith('/dashboard/comprador/solicitudes/nueva');
+  // La ficha del proveedor trae el chat en un rail lateral: necesita el ancho
+  // completo, igual que el detalle de solicitud.
+  const isBuyerSupplierDetail =
+    Boolean(pathname?.startsWith('/dashboard/comprador/proveedores/')) &&
+    pathname !== '/dashboard/comprador/proveedores';
   // El detalle de cotizacion trae su propia barra lateral y usa todo el ancho.
   const isBuyerQuoteDetail = Boolean(pathname?.startsWith('/dashboard/comprador/cotizaciones/'));
   const isFullBleed = isBuyerHome || isBuyerPanel;
@@ -27,7 +32,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
     <AuthGuard allowedRole="BUYER">
       <div
         className={`text-slate-950 ${
-          isBuyerWizard ? 'bg-[linear-gradient(180deg,#eaeeff_0%,#e2e7ff_100%)]' : 'bg-[#f5f7fb]'
+          isBuyerWizard ? 'bg-[linear-gradient(180deg,#f7f9ff_0%,#eef2fe_100%)]' : 'bg-[#f5f7fb]'
         } ${isBuyerMessages ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'}`}
       >
         <BuyerMarketplaceHeader session={session} wide={isBuyerQuoteDetail} />
@@ -40,7 +45,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
             className={
               isBuyerQuoteDetail
                 ? 'w-full px-3 py-3 pb-24 lg:px-4 lg:pb-4 xl:px-6'
-                : isBuyerWizard || isBuyerRequestDetail
+                : isBuyerWizard || isBuyerRequestDetail || isBuyerSupplierDetail
                   ? 'mx-auto max-w-[1760px] px-3 py-3 lg:px-4 xl:px-6'
                   : 'mx-auto max-w-[1320px] px-4 pt-4 pb-24 lg:pb-4'
             }

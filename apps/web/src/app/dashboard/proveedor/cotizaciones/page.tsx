@@ -51,14 +51,6 @@ function truncateText(value: string, maxLength: number) {
   return `${value.slice(0, maxLength - 1)}...`;
 }
 
-function truncateMiddle(value: string, startLength = 8, endLength = 4) {
-  if (value.length <= startLength + endLength + 3) {
-    return value;
-  }
-
-  return `${value.slice(0, startLength)}...${value.slice(-endLength)}`;
-}
-
 function getStatusMeta(status: QuoteRecord['status']) {
   if (status === 'AWARDED') {
     return {
@@ -156,16 +148,6 @@ function MailIcon() {
     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
       <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
       <path d="M3 8l9 6 9-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
-
-function DotsIcon() {
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M12 5h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-      <path d="M12 12h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-      <path d="M12 19h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
     </svg>
   );
 }
@@ -405,13 +387,13 @@ export default function SupplierQuotesPage() {
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#e7eaf3] bg-white px-4 text-sm font-semibold text-[#6d739d] transition hover:bg-[#f8f9fe]"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-4 text-sm font-semibold text-[#6d739d] transition hover:bg-[#f8f9fe]"
                 type="button"
               >
                 <FilterIcon />
                 Filtros
               </button>
-              <label className="flex h-10 min-w-[240px] items-center gap-2 rounded-xl border border-[#e7eaf3] bg-white px-3 text-sm text-[#7f86ad]">
+              <label className="flex h-10 min-w-[240px] items-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-3 text-sm text-[#7f86ad]">
                 <SearchIcon />
                 <input
                   className="w-full bg-transparent outline-none placeholder:text-[#a4aac9]"
@@ -433,7 +415,7 @@ export default function SupplierQuotesPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
-            <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
               <div className="flex items-start gap-3">
                 <QuoteMetricIcon kind="all" />
                 <div>
@@ -443,7 +425,7 @@ export default function SupplierQuotesPage() {
                 </div>
               </div>
             </article>
-            <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
               <div className="flex items-start gap-3">
                 <QuoteMetricIcon kind="draft" />
                 <div>
@@ -452,7 +434,7 @@ export default function SupplierQuotesPage() {
                 </div>
               </div>
             </article>
-            <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
               <div className="flex items-start gap-3">
                 <QuoteMetricIcon kind="submitted" />
                 <div>
@@ -462,7 +444,7 @@ export default function SupplierQuotesPage() {
                 </div>
               </div>
             </article>
-            <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
               <div className="flex items-start gap-3">
                 <QuoteMetricIcon kind="awarded" />
                 <div>
@@ -472,7 +454,7 @@ export default function SupplierQuotesPage() {
                 </div>
               </div>
             </article>
-            <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
               <div className="flex items-start gap-3">
                 <QuoteMetricIcon kind="rejected" />
                 <div>
@@ -489,8 +471,8 @@ export default function SupplierQuotesPage() {
             </div>
           ) : null}
 
-          <div className="overflow-hidden rounded-[24px] border border-[#e7eaf3] bg-white shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-            <div className="flex flex-wrap gap-5 border-b border-[#edf0fb] px-5 pt-4">
+          <div className="overflow-hidden rounded-[24px] border border-[#c3d0e8] bg-white shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-wrap gap-5 border-b border-[#dde5f2] px-5 pt-4">
               {tabs.map((tab) => {
                 const isActive = tab.key === activeTab;
                 return (
@@ -523,20 +505,19 @@ export default function SupplierQuotesPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] table-fixed">
+                <table className="w-full min-w-[680px] table-fixed">
                   <thead>
-                    <tr className="border-b border-[#edf0fb] text-left text-[11px] uppercase tracking-[0.16em] text-[#9aa1c8]">
-                      <th className="w-[20%] px-5 py-4 font-semibold">ID Cotizacion</th>
-                      <th className="w-[20%] px-4 py-4 font-semibold">Solicitud</th>
+                    <tr className="border-b border-[#dde5f2] text-left text-[11px] uppercase tracking-[0.16em] text-[#9aa1c8]">
+                      <th className="w-[22%] px-5 py-4 font-semibold">Solicitud</th>
                       <th className="w-[18%] px-4 py-4 font-semibold">Cliente</th>
-                      <th className="w-[16%] px-4 py-4 font-semibold">Producto</th>
+                      <th className="w-[15%] px-4 py-4 font-semibold">Producto</th>
                       <th className="w-[12%] px-4 py-4 font-semibold">Monto</th>
-                      <th className="w-[10%] px-4 py-4 font-semibold">Estado</th>
-                      <th className="w-[12%] px-4 py-4 font-semibold">Vence</th>
-                      <th className="px-5 py-4 font-semibold" />
+                      <th className="w-[11%] px-4 py-4 font-semibold">Estado</th>
+                      <th className="w-[9%] px-4 py-4 font-semibold">Vence</th>
+                      <th className="w-[13%] px-5 py-4 font-semibold" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#f0f2fa]">
+                  <tbody className="divide-y divide-[#dde5f2]">
                     {visibleQuotes.map((quote) => {
                       const statusMeta = getStatusMeta(isExpired(quote) ? 'WITHDRAWN' : quote.status);
                       const clientName = quote.request?.buyerCompany?.name ?? 'Cliente no informado';
@@ -544,29 +525,8 @@ export default function SupplierQuotesPage() {
                       return (
                         <tr key={quote.id} className="text-sm text-[#2c3567]">
                           <td className="px-5 py-4">
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f6f7ff] text-[#6a58ff]">
-                                <LockIcon />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate font-semibold text-[#33407a]">
-                                  {truncateMiddle(quote.id, 10, 5)}
-                                </p>
-                                <Link
-                                  className="mt-1 inline-flex text-xs font-semibold text-[#5546ff]"
-                                  href={`/dashboard/proveedor/cotizaciones/${quote.id}`}
-                                >
-                                  Ver detalle
-                                </Link>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <p className="truncate font-semibold text-[#33407a]">
-                              {truncateMiddle(quote.request?.id ?? '-', 8, 4)}
-                            </p>
-                            <p className="mt-1 line-clamp-2 text-xs text-[#8d95be]">
-                              {truncateText(quote.request?.title ?? 'Sin solicitud', 38)}
+                            <p className="line-clamp-2 font-semibold text-[#33407a]">
+                              {truncateText(quote.request?.title ?? 'Sin solicitud', 44)}
                             </p>
                           </td>
                           <td className="px-4 py-4">
@@ -599,10 +559,10 @@ export default function SupplierQuotesPage() {
                           <td className="px-4 py-4 text-[#6f77a7]">{formatDate(quote.request?.dueDate ?? null)}</td>
                           <td className="px-5 py-4 text-right">
                             <Link
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#8f95b8] transition hover:bg-[#f7f8fe]"
+                              className="whitespace-nowrap text-xs font-semibold text-[#5546ff] transition hover:text-[#3d31d6]"
                               href={`/dashboard/proveedor/cotizaciones/${quote.id}`}
                             >
-                              <DotsIcon />
+                              Ver detalle
                             </Link>
                           </td>
                         </tr>
@@ -613,7 +573,7 @@ export default function SupplierQuotesPage() {
               </div>
             )}
 
-            <div className="flex flex-col gap-3 border-t border-[#edf0fb] px-5 py-4 text-sm text-[#8d95be] md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 border-t border-[#dde5f2] px-5 py-4 text-sm text-[#8d95be] md:flex-row md:items-center md:justify-between">
               <p>
                 Mostrando {filteredQuotes.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} a{' '}
                 {Math.min(page * PAGE_SIZE, filteredQuotes.length)} de {filteredQuotes.length}{' '}
@@ -621,7 +581,7 @@ export default function SupplierQuotesPage() {
               </p>
               <div className="flex items-center gap-2">
                 <button
-                  className="inline-flex h-9 items-center rounded-xl border border-[#e7eaf3] px-3 text-sm font-medium text-[#9aa1c8] disabled:opacity-50"
+                  className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-medium text-[#9aa1c8] disabled:opacity-50"
                   disabled={page === 1}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                   type="button"
@@ -632,7 +592,7 @@ export default function SupplierQuotesPage() {
                   {page}
                 </span>
                 <button
-                  className="inline-flex h-9 items-center rounded-xl border border-[#e7eaf3] px-3 text-sm font-medium text-[#6b73a6] disabled:opacity-50"
+                  className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-medium text-[#6b73a6] disabled:opacity-50"
                   disabled={page === totalPages}
                   onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                   type="button"
@@ -645,7 +605,7 @@ export default function SupplierQuotesPage() {
         </div>
 
         <aside className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-[#27305f]">Rendimiento</h2>
               <span className="rounded-full bg-[#f6f7ff] px-3 py-1 text-[11px] font-semibold text-[#7c84af]">
@@ -692,7 +652,7 @@ export default function SupplierQuotesPage() {
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <h2 className="text-sm font-semibold text-[#27305f]">Tiempo de respuesta</h2>
             <div className="mt-4 flex items-end justify-between">
               <div>
@@ -705,7 +665,7 @@ export default function SupplierQuotesPage() {
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <h2 className="text-sm font-semibold text-[#27305f]">Proximas a vencer</h2>
             <div className="mt-4 space-y-3">
               {upcomingQuotes.map((quote) => {
@@ -723,7 +683,7 @@ export default function SupplierQuotesPage() {
                 return (
                   <article
                     key={quote.id}
-                    className="rounded-[18px] border border-[#edf0fb] bg-[#fbfbff] px-4 py-3"
+                    className="rounded-[18px] border border-[#dde5f2] bg-[#fbfbff] px-4 py-3"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
@@ -732,10 +692,10 @@ export default function SupplierQuotesPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-xs font-semibold text-[#33407a]">
-                            {truncateMiddle(quote.id, 8, 4)}
+                            {truncateText(clientName, 16)}
                           </p>
                           <p className="mt-1 truncate text-xs text-[#7e85b2]">
-                            {truncateText(clientName, 16)}
+                            {truncateText(quote.request?.title ?? 'Sin solicitud', 20)}
                           </p>
                         </div>
                       </div>
@@ -756,7 +716,7 @@ export default function SupplierQuotesPage() {
               })}
             </div>
             <button
-              className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#e3e7f8] bg-white text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff]"
+              className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff]"
               type="button"
             >
               Ver todas ({myQuotes.length})

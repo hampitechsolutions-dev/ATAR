@@ -541,14 +541,14 @@ export default function SupplierOrdersPage() {
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#e7eaf3] bg-white px-4 text-sm font-semibold text-[#6d739d] transition hover:bg-[#f8f9fe]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-4 text-sm font-semibold text-[#6d739d] transition hover:bg-[#f8f9fe]"
               type="button"
             >
               <FilterIcon />
               Filtros
             </button>
 
-            <label className="flex h-10 min-w-[250px] items-center gap-2 rounded-xl border border-[#e7eaf3] bg-white px-3 text-sm text-[#7f86ad]">
+            <label className="flex h-10 min-w-[250px] items-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-3 text-sm text-[#7f86ad]">
               <SearchIcon />
               <input
                 className="w-full bg-transparent outline-none placeholder:text-[#a4aac9]"
@@ -579,7 +579,7 @@ export default function SupplierOrdersPage() {
         ) : null}
 
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="active" />
               <div>
@@ -589,7 +589,7 @@ export default function SupplierOrdersPage() {
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="production" />
               <div>
@@ -599,7 +599,7 @@ export default function SupplierOrdersPage() {
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="transit" />
               <div>
@@ -609,7 +609,7 @@ export default function SupplierOrdersPage() {
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="delivered" />
               <div>
@@ -621,11 +621,11 @@ export default function SupplierOrdersPage() {
         </div>
 
         {loading ? (
-          <div className="rounded-[24px] border border-[#e7eaf3] bg-white px-6 py-10 text-sm text-[#7e85b2]">
+          <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10 text-sm text-[#7e85b2]">
             Cargando pedidos...
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="rounded-[24px] border border-[#e7eaf3] bg-white px-6 py-10 text-sm text-[#7e85b2]">
+          <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10 text-sm text-[#7e85b2]">
             No hay pedidos que coincidan con tu busqueda.
           </div>
         ) : (
@@ -633,7 +633,7 @@ export default function SupplierOrdersPage() {
             {columns.map((column) => (
               <section
                 key={column.key}
-                className={`rounded-[24px] border border-[#eceff8] p-4 ${column.bg}`}
+                className={`rounded-[24px] border border-[#dde5f2] p-4 ${column.bg}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -650,7 +650,7 @@ export default function SupplierOrdersPage() {
 
                 <div className="mt-4 space-y-3">
                   {groupedOrders[column.key].length === 0 ? (
-                    <div className="rounded-[18px] border border-dashed border-[#dfe4f3] bg-white/70 px-4 py-8 text-center text-sm text-[#97a0c6]">
+                    <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-white/70 px-4 py-8 text-center text-sm text-[#97a0c6]">
                       Sin pedidos en esta etapa.
                     </div>
                   ) : (
@@ -732,7 +732,7 @@ export default function SupplierOrdersPage() {
 
                               {column.key !== 'delivered' ? (
                                 <button
-                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#dfe4f5] bg-white text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff] disabled:opacity-60"
+                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff] disabled:opacity-60"
                                   disabled={
                                     !nextAction || updatingFulfillmentId === item.quote.requestId
                                   }
@@ -770,7 +770,7 @@ export default function SupplierOrdersPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-4 rounded-[24px] border border-[#eceff8] bg-white px-5 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 rounded-[24px] border border-[#dde5f2] bg-white px-5 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f1ff] text-[#6f57ff]">
               <OrderColumnIcon kind="pending" />

@@ -79,7 +79,7 @@ export default function SupplierProductionPage() {
   return (
     <SupplierDashboardShell searchPlaceholder="Buscar ordenes, clientes o estado..." session={session}>
       <section className="space-y-4">
-        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
           <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
             Produccion
           </h1>
@@ -95,19 +95,19 @@ export default function SupplierProductionPage() {
         ) : null}
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Pendientes</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.pending}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">En proceso</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.active}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Entregadas</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.delivered}
@@ -117,18 +117,18 @@ export default function SupplierProductionPage() {
 
         <div className="grid gap-3">
           {loading ? (
-            <div className="rounded-[18px] border border-[#edf0fb] bg-white px-4 py-8 text-sm text-[#8d95be]">
+            <div className="rounded-[18px] border border-[#dde5f2] bg-white px-4 py-8 text-sm text-[#8d95be]">
               Cargando produccion...
             </div>
           ) : productionRows.length === 0 ? (
-            <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-white px-4 py-8 text-sm text-[#8d95be]">
+            <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-white px-4 py-8 text-sm text-[#8d95be]">
               Aun no hay ordenes en seguimiento productivo.
             </div>
           ) : (
             productionRows.map((row) => (
               <article
                 key={row.id}
-                className="rounded-[20px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]"
+                className="rounded-[20px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]"
               >
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr_0.8fr] xl:items-center">
                   <div>

@@ -604,7 +604,7 @@ export default function BuyerRequestDetailPage() {
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_360px] 2xl:grid-cols-[minmax(0,1.7fr)_380px]">
           <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)] sm:p-6">
-            <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#4f46ff]">Solicitud publicada</p>
                 <h1 className="mt-3 text-[26px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[32px] lg:text-[40px] lg:tracking-[-0.05em]">{request?.title ?? 'Solicitud no encontrada'}</h1>
@@ -655,7 +655,7 @@ export default function BuyerRequestDetailPage() {
               </section>
 
               {/* ==================== COTIZACIONES RECIBIDAS ==================== */}
-              <section className="border-t border-slate-100 pt-6">
+              <section className="border-t border-slate-200 pt-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                     <DetailIcon type="scale" />
@@ -826,7 +826,7 @@ export default function BuyerRequestDetailPage() {
                 </div>
               </section>
 
-              <section className="border-t border-slate-100 pt-6">
+              <section className="border-t border-slate-200 pt-6">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                     <DetailIcon type="pin" />
@@ -852,7 +852,7 @@ export default function BuyerRequestDetailPage() {
                 </div>
               </section>
 
-              <section className="border-t border-slate-100 pt-6">
+              <section className="border-t border-slate-200 pt-6">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                     <DetailIcon type="file" />

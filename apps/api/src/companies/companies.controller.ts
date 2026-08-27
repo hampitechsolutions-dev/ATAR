@@ -1,9 +1,10 @@
-import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '../auth/auth-user.interface';
 import { ActiveCompanyId } from '../auth/decorators/active-company.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CompaniesService } from './companies.service';
+import { UpdateSupplierProfileDto } from './dto/update-supplier-profile.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('companies')
@@ -16,6 +17,21 @@ export class CompaniesController {
     return this.companiesService.listWorkspaces(user);
   }
 
+  /** Ficha publica de la empresa activa (la que ven los compradores). */
+  @Get('profile')
+  supplierProfile(@CurrentUser() user: AuthUser, @ActiveCompanyId() activeCompanyId?: string) {
+    return this.companiesService.supplierProfile(user, activeCompanyId);
+  }
+
+  @Put('profile')
+  updateSupplierProfile(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateSupplierProfileDto,
+    @ActiveCompanyId() activeCompanyId?: string,
+  ) {
+    return this.companiesService.updateSupplierProfile(user, dto, activeCompanyId);
+  }
+
   @Get('team')
   team(@CurrentUser() user: AuthUser, @ActiveCompanyId() activeCompanyId?: string) {
     return this.companiesService.team(user, activeCompanyId);
@@ -24,6 +40,12 @@ export class CompaniesController {
   @Get('metrics')
   metrics(@CurrentUser() user: AuthUser, @ActiveCompanyId() activeCompanyId?: string) {
     return this.companiesService.metrics(user, activeCompanyId);
+  }
+
+  /** Total general + desglose por empresa (filtro de stats multiempresa). */
+  @Get('metrics/overview')
+  metricsOverview(@CurrentUser() user: AuthUser) {
+    return this.companiesService.metricsOverview(user);
   }
 
   @Post('team/:userId/approve')

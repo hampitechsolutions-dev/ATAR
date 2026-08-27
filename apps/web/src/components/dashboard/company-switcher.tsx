@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '@/components/auth/workspace-provider';
+import CompanyLogo from './company-logo';
 
 /**
  * Selector "Trabajando como".
@@ -54,9 +55,14 @@ export default function CompanySwitcher({ className = '' }: { className?: string
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-[10px] font-bold text-indigo-600">
-          {activeWorkspace.company.name.slice(0, 2).toUpperCase()}
-        </span>
+        <CompanyLogo
+          className="h-6 w-6"
+          logoUrl={activeWorkspace.company.logoUrl}
+          name={activeWorkspace.company.name}
+          rounded="rounded-lg"
+          textClassName="text-[10px]"
+          tone="bg-indigo-50 text-indigo-600"
+        />
         <span className="min-w-0 leading-tight">
           <span className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
             Trabajando como
@@ -102,13 +108,13 @@ export default function CompanySwitcher({ className = '' }: { className?: string
                 role="option"
                 type="button"
               >
-                <span
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold ${
-                    isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  {workspace.company.name.slice(0, 2).toUpperCase()}
-                </span>
+                <CompanyLogo
+                  className="h-8 w-8"
+                  logoUrl={workspace.company.logoUrl}
+                  name={workspace.company.name}
+                  rounded="rounded-lg"
+                  tone={isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}
+                />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xs font-semibold text-slate-950">
                     {workspace.company.name}

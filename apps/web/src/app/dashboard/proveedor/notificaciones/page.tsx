@@ -107,7 +107,7 @@ export default function SupplierNotificationsPage() {
   return (
     <SupplierDashboardShell searchPlaceholder="Buscar alertas o novedades..." session={session}>
       <section className="space-y-4">
-        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-[#1f2373]">
@@ -128,7 +128,7 @@ export default function SupplierNotificationsPage() {
                 {summary.awards} adjudicadas
               </div>
               <button
-                className="rounded-full border border-[#dbe2f7] bg-white px-4 py-2 text-sm font-semibold text-[#33407a] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-[#c3d0e8] bg-white px-4 py-2 text-sm font-semibold text-[#33407a] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={unreadCount === 0}
                 onClick={() => void markAllAsRead()}
                 type="button"
@@ -147,13 +147,13 @@ export default function SupplierNotificationsPage() {
           </div>
         ) : null}
 
-        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
           {dashboardLoading || loading ? (
             <div className="rounded-[18px] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
               Cargando notificaciones...
             </div>
           ) : notifications.length === 0 ? (
-            <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
+            <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
               No hay novedades recientes para mostrar.
             </div>
           ) : (
@@ -163,7 +163,7 @@ export default function SupplierNotificationsPage() {
                   key={notification.id}
                   className={`flex items-start gap-4 rounded-[20px] border px-4 py-4 ${
                     notification.readAt
-                      ? 'border-[#edf0fb] bg-[#fbfbff]'
+                      ? 'border-[#dde5f2] bg-[#fbfbff]'
                       : 'border-[#dcd7ff] bg-[#f5f3ff]'
                   }`}
                 >

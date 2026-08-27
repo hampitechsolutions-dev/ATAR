@@ -9,6 +9,7 @@ import { ConversationsModule } from './conversations/conversations.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QuotesModule } from './quotes/quotes.module';
+import { RepresentationModule } from './representation/representation.module';
 import { RequestsModule } from './requests/requests.module';
 import { UsersModule } from './users/users.module';
 
@@ -25,6 +26,7 @@ import { UsersModule } from './users/users.module';
     CompaniesModule,
     ConversationsModule,
     NotificationsModule,
+    RepresentationModule,
     RequestsModule,
     QuotesModule,
   ],

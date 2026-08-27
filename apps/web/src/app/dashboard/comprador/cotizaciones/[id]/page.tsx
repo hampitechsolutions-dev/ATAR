@@ -506,7 +506,7 @@ export default function BuyerQuoteDetailPage() {
                   </div>
                 ) : null}
 
-                <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-4">
+                <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
                   {quote.status === 'AWARDED' ? (
                     <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-[13px] font-semibold text-emerald-700">
                       <Icon className="h-4 w-4" name="check" />

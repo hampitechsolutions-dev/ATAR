@@ -142,7 +142,7 @@ export default function SupplierReviewsPage() {
 
       {/* ==================== VISTA DESKTOP ==================== */}
       <section className="hidden space-y-4 lg:block">
-        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
           <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
             Historial comercial
           </h1>
@@ -158,19 +158,19 @@ export default function SupplierReviewsPage() {
         ) : null}
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Cotizaciones adjudicadas</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.total}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Con orden emitida</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.withOrder}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Monto adjudicado</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : formatCurrency(metrics.totalAmount)}
@@ -180,18 +180,18 @@ export default function SupplierReviewsPage() {
 
         <div className="grid gap-3">
           {loading ? (
-            <div className="rounded-[18px] border border-[#edf0fb] bg-white px-4 py-8 text-sm text-[#8d95be]">
+            <div className="rounded-[18px] border border-[#dde5f2] bg-white px-4 py-8 text-sm text-[#8d95be]">
               Cargando historial comercial...
             </div>
           ) : awardedQuotes.length === 0 ? (
-            <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-white px-4 py-8 text-sm text-[#8d95be]">
+            <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-white px-4 py-8 text-sm text-[#8d95be]">
               Todavía no hay operaciones adjudicadas para mostrar.
             </div>
           ) : (
             awardedQuotes.map((quote) => (
               <article
                 key={quote.id}
-                className="rounded-[20px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]"
+                className="rounded-[20px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>

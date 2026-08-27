@@ -152,6 +152,7 @@ export type WorkspaceRecord = {
     type: CompanyType;
     country: string;
     city: string | null;
+    logoUrl: string | null;
   };
   roles: MembershipRole[];
   isPrimary: boolean;
@@ -214,6 +215,79 @@ export type SupplierMetricsRecord = {
   quotesAwarded: number;
   quotedAmount: number;
   soldAmount: number;
+};
+
+export type RepresentationDirection = 'SELLER_TO_COMPANY' | 'COMPANY_TO_SELLER';
+
+export type RepresentationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+
+/** Pedido para que un vendedor represente a una empresa proveedora. */
+export type RepresentationRequestRecord = {
+  id: string;
+  companyId: string;
+  sellerUserId: string;
+  direction: RepresentationDirection;
+  status: RepresentationStatus;
+  message: string | null;
+  createdAt: string;
+  respondedAt: string | null;
+  company: {
+    id: string;
+    name: string;
+    type: CompanyType;
+    country: string;
+    city: string | null;
+  };
+  seller: { id: string; firstName: string; lastName: string; email: string };
+  createdBy: { id: string; firstName: string; lastName: string; email: string };
+};
+
+/**
+ * `incoming` es lo que hay que responder, `outgoing` lo que se mando y espera
+ * respuesta. Cual es cual depende de quien mira: el vendedor recibe
+ * invitaciones y la empresa recibe pedidos.
+ */
+export type RepresentationInboxRecord = {
+  incoming: RepresentationRequestRecord[];
+  outgoing: RepresentationRequestRecord[];
+  history: RepresentationRequestRecord[];
+};
+
+export type RepresentationCompanyOption = {
+  id: string;
+  name: string;
+  type: CompanyType;
+  country: string;
+  city: string | null;
+};
+
+export type RepresentationSellerOption = {
+  id: string;
+  name: string;
+  email: string;
+  companies: string[];
+};
+
+/** Metricas de una empresa dentro del consolidado multiempresa. */
+export type SupplierMetricsByCompanyRecord = SupplierMetricsRecord & {
+  company: {
+    id: string;
+    name: string;
+    type: CompanyType | null;
+    country: string;
+    city: string | null;
+  };
+};
+
+/**
+ * Stats de todas las proveedoras que representa el vendedor: total general
+ * mas el desglose por empresa para poder filtrar.
+ */
+export type SupplierMetricsOverviewRecord = {
+  companiesCount: number;
+  scope: 'company' | 'seller' | 'mixed';
+  total: Omit<SupplierMetricsRecord, 'companyId' | 'scope'>;
+  companies: SupplierMetricsByCompanyRecord[];
 };
 
 export type CustomerRecord = {
@@ -358,7 +432,14 @@ export type NotificationType =
   | 'ORDER_ISSUED'
   | 'ORDER_UPDATED'
   | 'FULFILLMENT_UPDATED'
-  | 'NEW_MESSAGE';
+  | 'NEW_MESSAGE'
+  | 'REQUEST_ASSIGNED'
+  | 'REQUEST_REASSIGNED'
+  | 'REQUEST_UPDATED'
+  | 'REPRESENTATION_REQUESTED'
+  | 'REPRESENTATION_ACCEPTED'
+  | 'REPRESENTATION_REJECTED'
+  | 'REPRESENTATION_CANCELLED';
 export type NotificationEmailStatus = 'PENDING' | 'SENT' | 'SKIPPED' | 'FAILED';
 export type PushChannel = 'WEB' | 'MOBILE_EXPO';
 
@@ -385,8 +466,10 @@ export type ConversationRecord = {
   quoteId?: string | null;
   buyerCompanyId: string;
   buyerCompanyName: string;
+  buyerCompanyLogoUrl: string | null;
   supplierCompanyId: string;
   supplierCompanyName: string;
+  supplierCompanyLogoUrl: string | null;
   lastMessageAt?: string | null;
   unreadCount: number;
   request?: {
@@ -484,7 +567,63 @@ export type SupplierDirectoryRecord = {
   leadTimeDays: number | null;
   minimumOrder: number | null;
   tags: string[];
+  /* Ficha ampliada. Todo opcional: la pantalla oculta lo que no este cargado.
+     No hay telefono ni mail: el contacto va por el chat interno. */
+  isVerified: boolean;
+  logoUrl: string | null;
+  about: string | null;
+  foundedYear: number | null;
+  employeeRange: string | null;
+  certifications: string[];
+  mainProducts: string[];
+  capabilities: string[];
+  categories: string[];
+  logisticsSummary: string | null;
+  financingSummary: string | null;
 };
+
+/** Ficha propia de la empresa, tal como la edita su gerente. */
+export type SupplierProfileRecord = {
+  id: string;
+  /** Mismo slug que usa el directorio: arma el link "Ver mi ficha". */
+  slug: string;
+  name: string;
+  city: string | null;
+  country: string;
+  type: CompanyType;
+  logoUrl: string | null;
+  supplierProfile: {
+    genericCode: string | null;
+    leadTimeDays: number | null;
+    minimumOrder: number | null;
+    about: string | null;
+    foundedYear: number | null;
+    employeeRange: string | null;
+    logisticsSummary: string | null;
+    financingSummary: string | null;
+    isVerified: boolean;
+    certifications: string[];
+    mainProducts: string[];
+    capabilities: string[];
+    categories: string[];
+  } | null;
+};
+
+export type UpdateSupplierProfileInput = Partial<{
+  genericCode: string;
+  leadTimeDays: number;
+  minimumOrder: number;
+  about: string;
+  foundedYear: number;
+  employeeRange: string;
+  logisticsSummary: string;
+  financingSummary: string;
+  logoUrl: string;
+  certifications: string[];
+  mainProducts: string[];
+  capabilities: string[];
+  categories: string[];
+}>;
 
 export type RequestCatalogFieldType =
   | 'choices'
@@ -733,8 +872,16 @@ export const atarApi = {
       body: JSON.stringify(payload),
     }, token);
   },
-  getSupplierTeam(token: string) {
-    return request<TeamMemberRecord[]>('/companies/team', undefined, token);
+  /**
+   * Equipo de la empresa activa. `companyId` permite pedir el equipo de otra
+   * de las empresas del usuario sin cambiar el workspace (filtro de stats).
+   */
+  getSupplierTeam(token: string, companyId?: string) {
+    return request<TeamMemberRecord[]>(
+      '/companies/team',
+      companyId ? { headers: { 'X-Company-Id': companyId } } : undefined,
+      token,
+    );
   },
   /** Publico: lo usa el registro de vendedores para elegir su empresa. */
   getSupplierDirectory(search: string | undefined) {
@@ -752,8 +899,71 @@ export const atarApi = {
       method: 'DELETE',
     }, token);
   },
+  /** Ficha publica de la empresa activa, para editarla. */
+  getOwnSupplierProfile(token: string) {
+    return request<SupplierProfileRecord>('/companies/profile', undefined, token);
+  },
+  updateOwnSupplierProfile(payload: UpdateSupplierProfileInput, token: string) {
+    return request<unknown>('/companies/profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }, token);
+  },
   getSupplierMetrics(token: string) {
     return request<SupplierMetricsRecord>('/companies/metrics', undefined, token);
+  },
+  /* ---------- Representacion: vendedor <-> empresa ---------- */
+
+  /** Perfil del vendedor: invitaciones recibidas y pedidos que mando. */
+  getSellerRepresentation(token: string) {
+    return request<RepresentationInboxRecord>('/representation/seller', undefined, token);
+  },
+  /** Equipo de la empresa activa: pedidos recibidos e invitaciones enviadas. */
+  getCompanyRepresentation(token: string) {
+    return request<RepresentationInboxRecord>('/representation/company', undefined, token);
+  },
+  getRepresentableCompanies(search: string | undefined, token: string) {
+    return request<RepresentationCompanyOption[]>(
+      `/representation/companies${buildQuery({ search: search?.trim() || undefined })}`,
+      undefined,
+      token,
+    );
+  },
+  searchSellersToInvite(search: string, token: string) {
+    return request<RepresentationSellerOption[]>(
+      `/representation/sellers${buildQuery({ search: search.trim() })}`,
+      undefined,
+      token,
+    );
+  },
+  requestRepresentation(payload: { companyId: string; message?: string }, token: string) {
+    return request<RepresentationRequestRecord>('/representation/requests', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  inviteSeller(
+    payload: { sellerUserId?: string; email?: string; message?: string },
+    token: string,
+  ) {
+    return request<RepresentationRequestRecord>('/representation/invitations', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+  respondRepresentation(
+    requestId: string,
+    action: 'accept' | 'reject' | 'cancel',
+    token: string,
+  ) {
+    return request<RepresentationRequestRecord>(`/representation/requests/${requestId}/${action}`, {
+      method: 'POST',
+    }, token);
+  },
+
+  /** Consolidado de todas las empresas del vendedor (stats generales). */
+  getSupplierMetricsOverview(token: string) {
+    return request<SupplierMetricsOverviewRecord>('/companies/metrics/overview', undefined, token);
   },
   getSupplierCustomers(token: string) {
     return request<CustomerRecord[]>('/companies/customers', undefined, token);

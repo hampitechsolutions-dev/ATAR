@@ -87,6 +87,21 @@ enum OpportunityStatus {
   LOST
 }
 
+// Quien inicio el vinculo entre un vendedor y una empresa proveedora.
+// El vendedor puede ofrecerse a representar una empresa, y la empresa puede
+// invitar a un vendedor a su equipo. El flujo de respuesta es el mismo.
+enum RepresentationDirection {
+  SELLER_TO_COMPANY
+  COMPANY_TO_SELLER
+}
+
+enum RepresentationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
 enum NotificationType {
   QUOTE_SUBMITTED
   QUOTE_UPDATED
@@ -100,6 +115,10 @@ enum NotificationType {
   REQUEST_ASSIGNED
   REQUEST_REASSIGNED
   REQUEST_UPDATED
+  REPRESENTATION_REQUESTED
+  REPRESENTATION_ACCEPTED
+  REPRESENTATION_REJECTED
+  REPRESENTATION_CANCELLED
 }
 
 enum NotificationEmailStatus {
@@ -140,6 +159,9 @@ model User {
   pushEndpoints PushEndpoint[]
   assignedRequests  RequestAssignment[] @relation("SellerAssignments")
   assignmentsMade   RequestAssignment[] @relation("AssignedByUser")
+  representationRequests  RepresentationRequest[] @relation("SellerRepresentation")
+  representationRequestsSent RepresentationRequest[] @relation("RepresentationCreatedBy")
+  representationRequestsAnswered RepresentationRequest[] @relation("RepresentationRespondedBy")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }
@@ -148,6 +170,9 @@ model Company {
   id              String          @id @default(cuid())
   name            String
   taxId           String?
+  /** Logo de la empresa. Vive aca y no en SupplierProfile porque tambien lo
+      usan las compradoras (chat, selector de empresa, listados). */
+  logoUrl         String?
   type            CompanyType
   country         String          @default("AR")
   city            String?
@@ -156,6 +181,7 @@ model Company {
   requests        Request[]       @relation("BuyerRequests")
   quotes          Quote[]         @relation("SupplierQuotes")
   requestAssignments RequestAssignment[] @relation("SupplierAssignments")
+  representationRequests RepresentationRequest[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -175,6 +201,40 @@ model Membership {
   @@index([userId])
 }
 
+// Pedido para que un vendedor represente a una empresa proveedora.
+//
+// Sirve para los dos sentidos: el vendedor se ofrece (SELLER_TO_COMPANY) o la
+// empresa lo invita (COMPANY_TO_SELLER). Cuando se acepta se crea la
+// Membership con rol SELLER; hasta entonces el vendedor no ve nada de la
+// empresa. Solo puede haber un pedido PENDING por (empresa, vendedor).
+model RepresentationRequest {
+  id                String                  @id @default(cuid())
+  companyId         String
+  sellerUserId      String
+  direction         RepresentationDirection
+  status            RepresentationStatus    @default(PENDING)
+  message           String?
+  createdByUserId   String
+  respondedByUserId String?
+  respondedAt       DateTime?
+  company           Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  seller            User                    @relation("SellerRepresentation", fields: [sellerUserId], references: [id], onDelete: Cascade)
+  createdBy         User                    @relation("RepresentationCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  respondedBy       User?                   @relation("RepresentationRespondedBy", fields: [respondedByUserId], references: [id], onDelete: SetNull)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  // Un solo vinculo vivo por par: si el pedido se rechaza y mas adelante se
+  // vuelve a intentar, se reusa la misma fila en vez de acumular duplicados.
+  @@unique([companyId, sellerUserId])
+  @@index([companyId, status])
+  @@index([sellerUserId, status])
+}
+
+// Ficha publica de una empresa proveedora: lo que ve un comprador antes de
+// pedirle una cotizacion. No guarda telefono ni mail a proposito: el contacto
+// pasa por el chat interno de la plataforma, que deja registro de la
+// conversacion asociada a la solicitud.
 model SupplierProfile {
   id               String   @id @default(cuid())
   companyId        String   @unique
@@ -183,6 +243,16 @@ model SupplierProfile {
   minimumOrder     Float?
   logisticsSummary String?
   financingSummary String?
+  /** Validado por el equipo de ATAR: habilita el sello en la ficha. */
+  isVerified       Boolean  @default(false)
+  about            String?
+  foundedYear      Int?
+  /** Rango, no numero exacto: "51 - 200". */
+  employeeRange    String?
+  certifications   String[]
+  mainProducts     String[]
+  capabilities     String[]
+  categories       String[]
   company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

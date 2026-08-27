@@ -548,6 +548,13 @@ export default function BuyerNewRequestWizardPage() {
   // (evita que el paso 1 quede vacío por una etiqueta desalineada).
   const filterActive = onlyLabels.length > 0 && matchedCategories.length > 0;
   const visibleCategories = filterActive ? matchedCategories : requestCategories;
+  /**
+   * Con muchas categorias la grilla reparte el alto del viewport para que
+   * entren todas. Con pocas eso las estiraria hasta deformarlas, asi que
+   * conservan su alto propio. El corte son 8: hasta ahi nunca desbordan, ni
+   * siquiera en la grilla mas angosta (4 columnas = 2 filas).
+   */
+  const fitToViewport = visibleCategories.length > 8;
 
   const canContinue = step === 1 ? Boolean(selectedCategory) : true;
   const sidebarSteps = [
@@ -819,12 +826,12 @@ export default function BuyerNewRequestWizardPage() {
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                       : isActive
                         ? 'border-[#4f46ff] bg-[#eef2ff] text-[#4f46ff]'
-                        : 'border-slate-200 bg-white text-slate-400'
+                        : 'border-slate-300 bg-white text-slate-600'
                   }`}
                 >
                   {isDone ? <Icon name="check" /> : item.key}
                 </div>
-                <span className={`truncate text-[13px] font-medium ${isActive ? 'text-slate-950' : isDone ? 'text-slate-700' : 'text-slate-400'}`}>
+                <span className={`truncate text-[13px] font-medium ${isActive ? 'text-slate-950' : isDone ? 'text-slate-700' : 'text-slate-600'}`}>
                   {item.label}
                 </span>
                 {index < steps.length - 1 ? <span className="hidden h-px flex-1 rounded-full bg-slate-200 xl:block" /> : null}
@@ -860,7 +867,11 @@ export default function BuyerNewRequestWizardPage() {
                 ) : null}
               </div>
 
-              <div className="mt-5 grid gap-3 grid-cols-2 sm:gap-4 xl:grid-cols-4">
+              <div
+                className={`mt-5 grid content-start gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 ${
+                  fitToViewport ? 'lg:min-h-0 lg:flex-1 lg:auto-rows-fr' : ''
+                }`}
+              >
                 {visibleCategories.length === 0 ? (
                   <div className="col-span-full rounded-[20px] border border-dashed border-slate-300 bg-white px-5 py-8 text-sm text-slate-500">
                     {requestCategories.length === 0
@@ -874,6 +885,9 @@ export default function BuyerNewRequestWizardPage() {
                       <button
                         key={option.id}
                         className={`group relative flex h-[150px] flex-col justify-end overflow-hidden rounded-[20px] bg-slate-100 text-left shadow-sm transition sm:h-[200px] ${
+                          // El tope evita que con pocas filas queden desproporcionadas.
+                          fitToViewport ? 'lg:h-full lg:min-h-[132px] lg:max-h-[280px]' : ''
+                        } ${
                           active ? 'ring-2 ring-[#4f46ff] ring-offset-2' : ''
                         }`}
                         onClick={() => {
@@ -1434,19 +1448,19 @@ export default function BuyerNewRequestWizardPage() {
                 </div>
 
                 <div className="mt-4 rounded-[22px] border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-                  <div className="border-b border-slate-100 px-5 py-4">
+                  <div className="border-b border-slate-200 px-5 py-4">
                     <p className="text-[13px] font-semibold text-slate-950">Todos los proveedores</p>
                   </div>
 
                   <div className="overflow-hidden">
-                    <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_100px_48px] gap-3 border-b border-slate-100 px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_100px_48px] gap-3 border-b border-slate-200 px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                       <span>Proveedor</span>
                       <span>Ubicación</span>
                       <span>Categoría</span>
                       <span />
                     </div>
 
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-slate-200">
                       {filteredProviders.map((provider) => {
                         const selected = draft.selectedProviders.includes(provider.id);
                         return (
@@ -1472,7 +1486,7 @@ export default function BuyerNewRequestWizardPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
+                  <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
                     <p className="text-[11px] text-slate-500">Mostrando {filteredProviders.length} de {providers.length} proveedores</p>
                     <span className="text-[11px] font-semibold text-slate-400">
                       Actualización en tiempo real
@@ -1508,7 +1522,7 @@ export default function BuyerNewRequestWizardPage() {
                     </div>
                   </div>
 
-                  <div className="mt-5 divide-y divide-slate-100 rounded-[18px] border border-slate-100 bg-white">
+                  <div className="mt-5 divide-y divide-slate-200 rounded-[18px] border border-slate-200 bg-white">
                     {[
                       {
                         key: 'producto',
@@ -1678,17 +1692,19 @@ export default function BuyerNewRequestWizardPage() {
           ) : null}
         </section>
 
-        <aside className="hidden h-full min-h-0 self-stretch border-l border-slate-200 pl-5 lg:sticky lg:top-0 lg:block xl:pl-8">
-          <div className="flex h-full min-h-full flex-col justify-between">
+        <aside className="hidden h-full min-h-0 self-stretch lg:sticky lg:top-0 lg:block">
+          <div className="flex h-full min-h-full flex-col justify-between rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
             <div>
               <p className="text-[16px] font-semibold tracking-[-0.03em] text-slate-950">Tu solicitud</p>
-              <p className="mt-0.5 text-[11px] leading-4 text-slate-400">Revisá la información antes de continuar.</p>
+              <p className="mt-0.5 text-[11px] leading-4 text-slate-600">Revisá la información antes de continuar.</p>
               <div className="mt-3.5 space-y-1">
                 {sidebarSteps.map((item) => (
                   <div
                     key={item.key}
                     className={`rounded-[16px] px-3 py-3 transition ${
-                      item.status === 'current' ? 'bg-[#f4f3ff]' : 'bg-transparent'
+                      item.status === 'current'
+                        ? 'bg-[#eef2ff] ring-1 ring-[#c7cbff]'
+                        : 'bg-transparent'
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
@@ -1698,14 +1714,14 @@ export default function BuyerNewRequestWizardPage() {
                             ? 'bg-emerald-500 text-white'
                             : item.status === 'current'
                               ? 'bg-[#4f46ff] text-white'
-                              : 'bg-slate-100 text-slate-400'
+                              : 'bg-slate-100 text-slate-600'
                         }`}
                       >
                         {item.status === 'done' ? '✓' : item.key}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className={`text-[13px] font-semibold ${item.status === 'pending' ? 'text-slate-500' : 'text-slate-950'}`}>{item.title}</p>
+                          <p className={`text-[13px] font-semibold ${item.status === 'pending' ? 'text-slate-700' : 'text-slate-950'}`}>{item.title}</p>
                           {item.status === 'done' ? (
                             <button
                               className="text-[10px] font-semibold text-[#4f46ff] hover:text-[#4338ca]"
@@ -1716,9 +1732,9 @@ export default function BuyerNewRequestWizardPage() {
                             </button>
                           ) : null}
                         </div>
-                        <p className={`mt-0.5 truncate text-[10px] ${item.status === 'pending' ? 'text-slate-400' : 'text-slate-600'}`}>{item.line1}</p>
+                        <p className={`mt-0.5 truncate text-[11px] ${item.status === 'pending' ? 'text-slate-500' : 'text-slate-700'}`}>{item.line1}</p>
                         {item.line2 ? (
-                          <p className={`truncate text-[10px] ${item.status === 'pending' ? 'text-slate-400' : 'text-slate-400'}`}>{item.line2}</p>
+                          <p className={`truncate text-[11px] ${item.status === 'pending' ? 'text-slate-500' : 'text-slate-600'}`}>{item.line2}</p>
                         ) : null}
                       </div>
                     </div>
@@ -1727,7 +1743,7 @@ export default function BuyerNewRequestWizardPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2.5 border-t border-slate-100 pt-4">
+            <div className="flex flex-col gap-2.5 border-t border-slate-200 pt-4">
               {step === 1 ? null : step < 5 ? (
                 <button
                   className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#4f46ff] text-[15px] font-semibold text-white shadow-[0_18px_36px_rgba(79,70,255,0.24)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"

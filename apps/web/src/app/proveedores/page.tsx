@@ -125,28 +125,6 @@ function RefreshIcon({ className = 'h-4 w-4' }: { className?: string }) {
 
 /* Stats ------------------------------------------------------------------- */
 
-function StatCell({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  value: string | number;
-  label: string;
-}) {
-  return (
-    <div className="flex items-center gap-4 px-5 py-5 lg:px-6">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-        {icon}
-      </span>
-      <div>
-        <p className="text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
-        <p className="mt-0.5 text-xs text-slate-500">{label}</p>
-      </div>
-    </div>
-  );
-}
-
 /* Paginación -------------------------------------------------------------- */
 
 function getPageNumbers(current: number, total: number): (number | 'gap')[] {
@@ -277,70 +255,73 @@ export default function ProveedoresPage() {
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(59,91,255,0.12),_transparent_45%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
-        <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
-          <div className="grid gap-10 lg:grid-cols-[0.48fr_0.52fr] lg:items-center">
-            <div className="space-y-7">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
-                Para compradores industriales
-              </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                Proveedores en la red de <span className="text-indigo-600">ATAR</span>
-              </h1>
-              <p className="max-w-xl text-lg leading-8 text-slate-600">
-                Este directorio se construye directamente desde la base activa de empresas proveedoras registradas.
-              </p>
+      {/* ==================== HERO ==================== */}
+      <section className="relative isolate flex min-h-[560px] items-center overflow-hidden bg-[#070b17] text-white lg:min-h-[640px]">
+        <Image alt="" className="object-cover object-center" fill priority sizes="100vw" src="/hero-industria.png" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#070b17_0%,rgba(7,11,23,0.92)_28%,rgba(7,11,23,0.55)_55%,rgba(7,11,23,0.12)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(7,11,23,0.7)_0%,transparent_35%)]" />
 
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
-                  href="/acceso"
-                >
-                  <SearchIcon className="h-4 w-4" />
-                  Solicitar cotización
-                  <ArrowIcon />
-                </Link>
-                <Link
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  href="/como-funciona"
-                >
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white">
-                    <svg aria-hidden="true" className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </span>
-                  Ver cómo funciona
-                </Link>
-              </div>
+        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-12 lg:py-20">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#4f7bff]">
+              Para compradores industriales
+            </p>
+            <h1 className="mt-5 text-[2.7rem] font-semibold leading-[1.03] tracking-[-0.03em] sm:text-6xl lg:text-[4.1rem]">
+              Proveedores en la <span className="text-[#4f7bff]">red de ATAR.</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-white/70">
+              Este directorio se construye directamente desde la base activa de empresas proveedoras
+              registradas.
+            </p>
+
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2f6bff] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(47,107,255,0.4)] transition hover:bg-[#255bef]"
+                href="/acceso"
+              >
+                Solicitar cotización
+                <ArrowIcon />
+              </Link>
+              <Link
+                className="inline-flex items-center justify-center rounded-full border border-white/25 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                href="/como-funciona"
+              >
+                Ver cómo funciona
+              </Link>
             </div>
 
-            <div className="relative h-[320px] w-full sm:h-[380px] lg:h-[420px]">
-              <Image
-                alt="Proveedores ATAR"
-                className="object-contain object-right"
-                fill
-                priority
-                sizes="(min-width: 1024px) 52vw, 100vw"
-                src="/proveedores.png"
-              />
+            {/* Los numeros del directorio, en la misma fila que usa la home. */}
+            <div className="mt-12 flex flex-wrap gap-x-12 gap-y-5">
+              {[
+                { icon: <BuildingIcon className="h-5 w-5" />, v: totalSuppliers, l: 'proveedores activos' },
+                { icon: <UsersIcon className="h-5 w-5" />, v: industrialCount, l: 'industriales' },
+                { icon: <ClockIcon className="h-5 w-5" />, v: `${verifiedPct}%`, l: 'verificadas' },
+                { icon: <ActivityIcon className="h-5 w-5" />, v: withCodeCount, l: 'con código genérico' },
+              ].map((item) => (
+                <div key={item.l} className="flex items-center gap-2.5">
+                  <span className="text-[#4f7bff]">{item.icon}</span>
+                  <p className="text-sm text-white/75">
+                    <span className="font-semibold text-white">{item.v}</span> {item.l}
+                  </p>
+                </div>
+              ))}
             </div>
-          </div>
-
-          {/* STATS */}
-          <div className="mt-12 grid grid-cols-1 divide-y divide-slate-200 rounded-[1.5rem] border border-slate-200 bg-white shadow-sm sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
-            <StatCell icon={<BuildingIcon />} value={totalSuppliers} label="Proveedores activos" />
-            <StatCell icon={<UsersIcon />} value={industrialCount} label="Proveedores industriales" />
-            <StatCell icon={<ClockIcon />} value={`${verifiedPct}%`} label="Empresas verificadas" />
-            <StatCell icon={<ActivityIcon />} value={withCodeCount} label="Con código genérico" />
           </div>
         </div>
       </section>
 
-      {/* DIRECTORIO */}
-      <section className="border-t border-slate-200 bg-slate-50">
-        <div className="mx-auto w-full max-w-7xl px-6 py-14 lg:px-10">
+      {/* ==================== DIRECTORIO ==================== */}
+      <section className="bg-[#f7f8fb]">
+        <div className="mx-auto w-full max-w-[1440px] px-6 py-24 lg:px-12 lg:py-28">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#2f6bff]">
+            El directorio
+          </p>
+          <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-slate-950 sm:text-[2.6rem]">
+            Buscá por rubro, producto o ubicación.
+          </h2>
+
           {/* Buscador + filtros */}
+          <div className="mt-12">
           <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <div className="relative flex-1">
@@ -497,6 +478,7 @@ export default function ProveedoresPage() {
               </div>
             </>
           )}
+          </div>
         </div>
       </section>
     </main>
@@ -557,7 +539,7 @@ function ProviderCard({ supplier }: { supplier: ProviderDirectoryItem }) {
         </div>
       ) : null}
 
-      <div className="mt-auto flex items-end justify-between border-t border-slate-100 pt-4">
+      <div className="mt-auto flex items-end justify-between border-t border-slate-200 pt-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Lead time</p>
           <p className="mt-0.5 text-sm font-semibold text-slate-950">

@@ -1361,7 +1361,7 @@ export default function SupplierRequestsPage() {
             />
 
             <div className="relative z-10 flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_70px_rgba(2,6,23,0.35)]">
-              <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
+              <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4">
                 <div className="flex min-w-0 items-start gap-2">
                   <span className="mt-0.5 text-slate-500">
                     <Icon name="send" />
@@ -1487,7 +1487,7 @@ export default function SupplierRequestsPage() {
                 </label>
               </div>
 
-              <footer className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+              <footer className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
                 <button
                   className="inline-flex h-11 items-center rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
                   onClick={closeQuoteModal}

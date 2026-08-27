@@ -537,11 +537,12 @@ export class ConversationsService {
           select: {
             id: true,
             name: true,
+            logoUrl: true,
           },
         })
       : [];
 
-    const companyMap = new Map(companies.map((company) => [company.id, company.name]));
+    const companyMap = new Map(companies.map((company) => [company.id, company]));
 
     return conversations.map((conversation) => {
       const participantRole = this.getParticipantRoleForConversation(user, conversation);
@@ -565,9 +566,13 @@ export class ConversationsService {
         requestId: conversation.requestId,
         quoteId: conversation.quoteId,
         buyerCompanyId: conversation.buyerCompanyId,
-        buyerCompanyName: companyMap.get(conversation.buyerCompanyId) ?? 'Comprador',
+        buyerCompanyName: companyMap.get(conversation.buyerCompanyId)?.name ?? 'Comprador',
+        // El chat muestra el logo de la contraparte en el encabezado y en cada
+        // burbuja recibida.
+        buyerCompanyLogoUrl: companyMap.get(conversation.buyerCompanyId)?.logoUrl ?? null,
         supplierCompanyId: conversation.supplierCompanyId,
-        supplierCompanyName: companyMap.get(conversation.supplierCompanyId) ?? 'Proveedor',
+        supplierCompanyName: companyMap.get(conversation.supplierCompanyId)?.name ?? 'Proveedor',
+        supplierCompanyLogoUrl: companyMap.get(conversation.supplierCompanyId)?.logoUrl ?? null,
         lastMessageAt: conversation.lastMessageAt,
         unreadCount,
         request: conversation.request,

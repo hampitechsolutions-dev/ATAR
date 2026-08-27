@@ -51,7 +51,7 @@ export default function AssignSellerDialog({
       />
 
       <div className="relative z-10 flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-[0_24px_70px_rgba(2,6,23,0.35)] sm:rounded-2xl">
-        <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-slate-950">
               {isReassignment ? 'Reasignar solicitud' : 'Asignar vendedor'}
@@ -125,7 +125,7 @@ export default function AssignSellerDialog({
           )}
         </div>
 
-        <footer className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4">
+        <footer className="flex items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
           {isReassignment ? (
             <button
               className="text-[12px] font-semibold text-slate-500 transition hover:text-rose-600 disabled:opacity-50"

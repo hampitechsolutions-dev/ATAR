@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
+import SupplierPublicProfileForm from '@/components/dashboard/supplier-public-profile-form';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 import {
   loadSupplierSettings,
@@ -81,6 +82,8 @@ export default function SupplierSettingsPage() {
       {/* ==================== VISTA MOBILE ==================== */}
       <div className="lg:hidden pb-4">
         <h1 className="text-2xl font-bold tracking-tight text-slate-950">Mi empresa</h1>
+
+        <SupplierPublicProfileForm accessToken={session?.accessToken} className="mt-4" />
 
         {message ? (
           <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -204,6 +207,8 @@ export default function SupplierSettingsPage() {
 
       {/* ==================== VISTA DESKTOP ==================== */}
       <section className="hidden space-y-6 lg:block">
+          <SupplierPublicProfileForm accessToken={session?.accessToken} />
+
           <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">Preferencias del proveedor</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">

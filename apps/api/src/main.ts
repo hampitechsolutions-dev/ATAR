@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 
 function getCorsOrigin() {
@@ -23,6 +24,12 @@ function getCorsOrigin() {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Express limita el body a 100kb por defecto. La app manda archivos en
+  // base64 (adjuntos del chat, logo de la ficha), que se pasan de ese tope.
+  app.use(json({ limit: '12mb' }));
+  app.use(urlencoded({ extended: true, limit: '12mb' }));
+
   app.enableCors({
     origin: getCorsOrigin(),
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],

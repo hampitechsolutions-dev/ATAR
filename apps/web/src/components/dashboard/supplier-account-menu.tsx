@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { clearSession, getPrimaryCompanyName, type WebSession } from '@/lib/session';
+import { useWorkspace } from '@/components/auth/workspace-provider';
+import CompanyLogo from './company-logo';
+import {
+  clearSession,
+  getPrimaryCompanyName,
+  getUserFullName,
+  isSellerAccount,
+  type WebSession,
+} from '@/lib/session';
 
 type SupplierAccountMenuProps = {
   session: WebSession | null;
@@ -14,17 +22,23 @@ export default function SupplierAccountMenu({ session }: SupplierAccountMenuProp
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const companyName = session ? getPrimaryCompanyName(session.user) : 'Mi empresa';
+  // La cuenta es la persona; la empresa es el contexto en el que trabaja.
+  const { activeWorkspace, workspaces, hasMultipleWorkspaces, selectWorkspace } = useWorkspace();
+  const sellerName = session ? getUserFullName(session.user) : 'Mi cuenta';
+  // Representar empresas es cosa del vendedor, no de la cuenta de la empresa.
+  const showMyCompanies = session ? isSellerAccount(session.user) : false;
+  const companyName =
+    activeWorkspace?.company.name ?? (session ? getPrimaryCompanyName(session.user) : 'Mi empresa');
   const accountInitials = useMemo(() => {
     return (
-      companyName
+      sellerName
         .split(' ')
         .filter(Boolean)
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
-        .join('') || 'ME'
+        .join('') || 'MC'
     );
-  }, [companyName]);
+  }, [sellerName]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -70,8 +84,8 @@ export default function SupplierAccountMenu({ session }: SupplierAccountMenuProp
           {accountInitials}
         </div>
         <div className="hidden sm:block">
-          <p className="text-xs font-semibold text-slate-950">{companyName}</p>
-          <p className="text-[11px] text-slate-500">Proveedor verificado</p>
+          <p className="max-w-[150px] truncate text-xs font-semibold text-slate-950">{sellerName}</p>
+          <p className="max-w-[150px] truncate text-[11px] text-slate-500">{companyName}</p>
         </div>
         <svg
           aria-hidden="true"
@@ -96,12 +110,75 @@ export default function SupplierAccountMenu({ session }: SupplierAccountMenuProp
               {accountInitials}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-950">{companyName}</p>
-              <p className="mt-0.5 text-[11px] text-slate-500">Proveedor verificado</p>
+              <p className="truncate text-sm font-semibold text-slate-950">{sellerName}</p>
+              <p className="mt-0.5 truncate text-[11px] text-slate-500">{companyName}</p>
             </div>
           </div>
 
+          {/* El selector de empresa tambien vive aca: en mobile el header no
+              tiene lugar para el switcher y este menu esta en todas las vistas. */}
+          {hasMultipleWorkspaces ? (
+            <div className="mt-2 border-t border-slate-200 pt-2">
+              <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Representas a
+              </p>
+              {workspaces.map((workspace) => {
+                const isActive = workspace.companyId === activeWorkspace?.companyId;
+
+                return (
+                  <button
+                    aria-pressed={isActive}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
+                      isActive ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                    }`}
+                    key={workspace.companyId}
+                    onClick={() => {
+                      setIsOpen(false);
+                      if (!isActive) {
+                        selectWorkspace(workspace.companyId);
+                      }
+                    }}
+                    type="button"
+                  >
+                    <CompanyLogo
+                      className="h-7 w-7"
+                      logoUrl={workspace.company.logoUrl}
+                      name={workspace.company.name}
+                      rounded="rounded-lg"
+                      textClassName="text-[10px]"
+                      tone={isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-semibold text-slate-950">
+                        {workspace.company.name}
+                      </span>
+                      <span className="block text-[10px] text-slate-500">
+                        {workspace.isManager ? 'Administrador' : 'Vendedor'}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
           <div className="mt-2 space-y-1">
+            {showMyCompanies ? (
+            <Link
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              href="/dashboard/proveedor/empresas"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                <circle cx="9" cy="7" r="4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                <path d="M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+              Mis empresas
+            </Link>
+            ) : null}
+
             <Link
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               href="/dashboard/proveedor/configuracion"

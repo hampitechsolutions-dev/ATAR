@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { useWorkspace } from '@/components/auth/workspace-provider';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
+import TeamInvitationsPanel from '@/components/dashboard/team-invitations-panel';
 import { atarApi, type TeamMemberRecord } from '@/lib/atar-api';
 import { loadSession, type WebSession } from '@/lib/session';
 
@@ -124,6 +125,18 @@ export default function SupplierTeamPage() {
           </p>
         </div>
 
+        {/* Pedidos de vendedores e invitaciones: va antes de la tabla porque
+            es lo que el gerente tiene pendiente de responder. */}
+        {isManager ? (
+          <TeamInvitationsPanel
+            accessToken={session?.accessToken}
+            companyName={activeWorkspace?.company.name ?? 'tu empresa'}
+            onTeamChanged={() =>
+              session?.accessToken ? refresh(session.accessToken) : Promise.resolve()
+            }
+          />
+        ) : null}
+
         {!isManager ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
             Esta sección es solo para administradores de la empresa.
@@ -138,7 +151,7 @@ export default function SupplierTeamPage() {
           </div>
         ) : team.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-slate-500">
-            Todavía no hay vendedores cargados en la empresa.
+            Todavía no hay vendedores en el equipo. Invitá a uno desde el panel de arriba.
           </div>
         ) : (
           <>
@@ -229,7 +242,7 @@ export default function SupplierTeamPage() {
                     <th className="px-5 py-3 text-right font-semibold">Volumen vendido</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-200">
                   {team.map((member) => (
                     <tr className="transition hover:bg-slate-50/60" key={member.id}>
                       <td className="px-5 py-3">

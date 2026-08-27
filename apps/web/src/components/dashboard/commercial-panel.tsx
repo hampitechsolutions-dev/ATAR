@@ -1,10 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useWorkspace } from '@/components/auth/workspace-provider';
-import { atarApi, type SupplierMetricsRecord, type TeamMemberRecord } from '@/lib/atar-api';
+import {
+  atarApi,
+  type SupplierMetricsOverviewRecord,
+  type TeamMemberRecord,
+} from '@/lib/atar-api';
+
+/** Valor del filtro que consolida todas las empresas del vendedor. */
+const ALL_COMPANIES = 'all';
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -14,14 +21,28 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+function formatCompactCurrency(value: number) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 /**
  * Bloque comercial del panel del proveedor: metricas del pipeline y equipo.
- * El gerente ve la empresa completa; el vendedor ve solo su cartera.
+ *
+ * Un vendedor puede representar a varias proveedoras. Por eso las metricas
+ * llegan consolidadas (`/companies/metrics/overview`): arranca en el total
+ * general de todas sus empresas y puede filtrar por una sola. El gerente ve la
+ * empresa completa; el vendedor ve solo su cartera.
  */
-export default function CommercialPanel() {
+export default function CommercialPanel({ className = '' }: { className?: string }) {
   const { session } = useAuth();
-  const { isManager } = useWorkspace();
-  const [metrics, setMetrics] = useState<SupplierMetricsRecord | null>(null);
+  const { workspaces } = useWorkspace();
+  const [overview, setOverview] = useState<SupplierMetricsOverviewRecord | null>(null);
+  const [companyFilter, setCompanyFilter] = useState<string>(ALL_COMPANIES);
   const [team, setTeam] = useState<TeamMemberRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,24 +56,13 @@ export default function CommercialPanel() {
 
       try {
         setLoading(true);
-        const metricsResult = await atarApi.getSupplierMetrics(session.accessToken);
+        const result = await atarApi.getSupplierMetricsOverview(session.accessToken);
         if (!cancelled) {
-          setMetrics(metricsResult);
-        }
-
-        try {
-          const teamResult = await atarApi.getSupplierTeam(session.accessToken);
-          if (!cancelled) {
-            setTeam(teamResult);
-          }
-        } catch {
-          if (!cancelled) {
-            setTeam([]);
-          }
+          setOverview(result);
         }
       } catch {
         if (!cancelled) {
-          setMetrics(null);
+          setOverview(null);
         }
       } finally {
         if (!cancelled) {
@@ -68,9 +78,60 @@ export default function CommercialPanel() {
     };
   }, [session?.accessToken]);
 
-  if (loading || !metrics) {
+  const hasMultipleCompanies = (overview?.companiesCount ?? 0) > 1;
+
+  // Con una sola empresa el filtro no aplica: se muestra esa directamente.
+  const activeFilter = hasMultipleCompanies
+    ? companyFilter
+    : overview?.companies[0]?.companyId ?? ALL_COMPANIES;
+
+  const selectedCompany = useMemo(
+    () => overview?.companies.find((item) => item.companyId === activeFilter) ?? null,
+    [activeFilter, overview],
+  );
+
+  // El equipo pertenece a una empresa concreta: no tiene sentido consolidarlo.
+  const teamCompanyId = selectedCompany?.companyId ?? null;
+  const canSeeTeam = Boolean(
+    teamCompanyId &&
+      (workspaces.find((workspace) => workspace.companyId === teamCompanyId)?.isManager ?? true),
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTeam() {
+      if (!session?.accessToken || !teamCompanyId || !canSeeTeam) {
+        setTeam([]);
+        return;
+      }
+
+      try {
+        // Un vendedor recibe 403 en /companies/team y sigue sin la tabla.
+        const result = await atarApi.getSupplierTeam(session.accessToken, teamCompanyId);
+        if (!cancelled) {
+          setTeam(result);
+        }
+      } catch {
+        if (!cancelled) {
+          setTeam([]);
+        }
+      }
+    }
+
+    void loadTeam();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canSeeTeam, session?.accessToken, teamCompanyId]);
+
+  if (loading || !overview || overview.companiesCount === 0) {
     return null;
   }
+
+  const metrics = selectedCompany ?? overview.total;
+  const scope = selectedCompany?.scope ?? overview.scope;
 
   const cards = [
     { label: 'Solicitudes recibidas', value: metrics.received, tone: 'text-slate-950' },
@@ -81,27 +142,52 @@ export default function CommercialPanel() {
     { label: 'Oportunidades ganadas', value: metrics.won, tone: 'text-emerald-600' },
   ];
 
+  const title = selectedCompany
+    ? selectedCompany.company.name
+    : `Todas tus empresas (${overview.companiesCount})`;
+
+  const subtitle = selectedCompany
+    ? scope === 'company'
+      ? 'Estado del pipeline de toda la empresa.'
+      : 'Solo las oportunidades que tenés asignadas en esta empresa.'
+    : scope === 'seller'
+      ? 'Total consolidado de tu cartera en todas las empresas que representás.'
+      : 'Total consolidado de todas las empresas que representás.';
+
   return (
-    <section className="space-y-4">
+    <section className={`space-y-4 ${className}`}>
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-950">
-              {metrics.scope === 'company' ? 'Panel comercial' : 'Mi actividad comercial'}
-            </p>
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              {metrics.scope === 'company'
-                ? 'Estado del pipeline de toda la empresa.'
-                : 'Solo las oportunidades que tenés asignadas.'}
-            </p>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-950">{title}</p>
+            <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
           </div>
           <Link
-            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500"
+            className="shrink-0 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500"
             href="/dashboard/proveedor/solicitudes"
           >
             Ver bandeja
           </Link>
         </div>
+
+        {/* Filtro por empresa: el consolidado primero, despues una por una. */}
+        {hasMultipleCompanies ? (
+          <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
+            <FilterChip
+              active={activeFilter === ALL_COMPANIES}
+              label="Todas las empresas"
+              onClick={() => setCompanyFilter(ALL_COMPANIES)}
+            />
+            {overview.companies.map((item) => (
+              <FilterChip
+                active={activeFilter === item.companyId}
+                key={item.companyId}
+                label={item.company.name}
+                onClick={() => setCompanyFilter(item.companyId)}
+              />
+            ))}
+          </div>
+        ) : null}
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {cards.map((card) => (
@@ -126,14 +212,80 @@ export default function CommercialPanel() {
             </p>
           </div>
         </div>
+
+        {/* Desglose: solo aporta cuando se esta mirando el consolidado. */}
+        {hasMultipleCompanies && !selectedCompany ? (
+          <div className="mt-4 border-t border-slate-200 pt-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+              Desglose por empresa
+            </p>
+
+            <div className="mt-2 hidden overflow-x-auto sm:block">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-400">
+                    <th className="pb-2 font-semibold">Empresa</th>
+                    <th className="pb-2 text-right font-semibold">Recibidas</th>
+                    <th className="pb-2 text-right font-semibold">Cotizadas</th>
+                    <th className="pb-2 text-right font-semibold">Ganadas</th>
+                    <th className="pb-2 text-right font-semibold">Vendido</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {overview.companies.map((item) => (
+                    <tr key={item.companyId}>
+                      <td className="py-2.5">
+                        <button
+                          className="font-semibold text-slate-950 hover:text-indigo-600"
+                          onClick={() => setCompanyFilter(item.companyId)}
+                          type="button"
+                        >
+                          {item.company.name}
+                        </button>
+                        {item.scope === 'seller' ? (
+                          <span className="ml-2 text-[10px] text-slate-400">Mi cartera</span>
+                        ) : null}
+                      </td>
+                      <td className="py-2.5 text-right text-slate-600">{item.received}</td>
+                      <td className="py-2.5 text-right text-slate-600">{item.quotesSent}</td>
+                      <td className="py-2.5 text-right text-slate-600">{item.won}</td>
+                      <td className="py-2.5 text-right font-semibold text-emerald-600">
+                        {formatCompactCurrency(item.soldAmount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-2 space-y-2 sm:hidden">
+              {overview.companies.map((item) => (
+                <button
+                  className="block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-left"
+                  key={item.companyId}
+                  onClick={() => setCompanyFilter(item.companyId)}
+                  type="button"
+                >
+                  <p className="text-[13px] font-semibold text-slate-950">{item.company.name}</p>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {item.received} recibidas · {item.quotesSent} cotizadas · {item.won} ganadas ·{' '}
+                    {formatCompactCurrency(item.soldAmount)} vendido
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      {isManager && team.length > 0 ? (
+      {selectedCompany && canSeeTeam && team.length > 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-slate-950">Equipo comercial</p>
+            <p className="min-w-0 truncate text-sm font-semibold text-slate-950">
+              Equipo comercial · {selectedCompany.company.name}
+            </p>
             <Link
-              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500"
+              className="shrink-0 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500"
               href="/dashboard/proveedor/equipo"
             >
               Ver equipo
@@ -152,7 +304,7 @@ export default function CommercialPanel() {
                   <th className="pb-2 text-right font-semibold">Conversión</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {team.map((member) => (
                   <tr key={member.id}>
                     <td className="py-2.5">
@@ -206,5 +358,30 @@ export default function CommercialPanel() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function FilterChip({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-pressed={active}
+      className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+        active
+          ? 'border-indigo-600 bg-indigo-600 text-white'
+          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+      }`}
+      onClick={onClick}
+      type="button"
+    >
+      {label}
+    </button>
   );
 }
