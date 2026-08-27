@@ -27,16 +27,24 @@ type RecipientRecord = {
   firstName: string;
 };
 
-type CreateNotificationInput = {
+type NotificationContent = {
   companyId: string;
-  roles?: MembershipRole[];
-  excludeUserId?: string;
-  userIds?: string[];
   type: NotificationType;
   title: string;
   detail?: string | null;
   href?: string | null;
   metadata?: Prisma.InputJsonValue;
+};
+
+type CreateNotificationInput = NotificationContent & {
+  roles?: MembershipRole[];
+  excludeUserId?: string;
+  userIds?: string[];
+};
+
+/** Destinatarios explicitos, aunque no pertenezcan a la empresa. */
+type CreateNotificationForUsersInput = NotificationContent & {
+  userIds: string[];
 };
 
 type WebPushPayload = {
@@ -191,6 +199,29 @@ export class NotificationsService {
       userIds: input.userIds,
     });
 
+    return this.dispatch(recipients, input);
+  }
+
+  /**
+   * Notifica a usuarios concretos sin pasar por sus membresias.
+   *
+   * Lo necesitan las invitaciones a representar una empresa: el vendedor
+   * todavia no es miembro, asi que `resolveRecipients` no lo encontraria.
+   */
+  async createForUsers(input: CreateNotificationForUsersInput) {
+    if (input.userIds.length === 0) {
+      return [];
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: input.userIds } },
+      select: { id: true, email: true, firstName: true },
+    });
+
+    return this.dispatch(users, input);
+  }
+
+  private async dispatch(recipients: RecipientRecord[], input: NotificationContent) {
     if (recipients.length === 0) {
       return [];
     }

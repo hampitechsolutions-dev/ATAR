@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import CompanyLogo from '@/components/dashboard/company-logo';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
@@ -252,11 +253,16 @@ export default function DashboardCompradorPanelPage() {
 
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {featuredProviders.map((provider) => (
-              <article key={provider.id} className="rounded-[18px] border border-[#edf0f7] bg-white p-4">
+              <article key={provider.id} className="rounded-[18px] border border-[#dde5f2] bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[18px] font-semibold tracking-[-0.03em] text-[#24305f]">{provider.name}</p>
-                    <p className="mt-1 text-xs text-slate-500">{provider.city}</p>
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <CompanyLogo className="h-10 w-10" logoUrl={provider.logoUrl} name={provider.name} />
+                    <div className="min-w-0">
+                      <p className="truncate text-[18px] font-semibold tracking-[-0.03em] text-[#24305f]">
+                        {provider.name}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">{provider.city}</p>
+                    </div>
                   </div>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
                     {provider.category}
@@ -276,7 +282,7 @@ export default function DashboardCompradorPanelPage() {
                 </div>
 
                 <div className="mt-4 flex justify-end">
-                  <Link className="text-xs font-semibold text-[#4f46ff]" href={`/productos/${provider.slug}`}>
+                  <Link className="text-xs font-semibold text-[#4f46ff]" href={`/dashboard/comprador/proveedores/${provider.slug}`}>
                     Ver ficha
                   </Link>
                 </div>

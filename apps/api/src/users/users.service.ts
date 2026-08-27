@@ -12,6 +12,7 @@ import {
   UserStatus,
 } from '@prisma/client';
 import type { AuthUser } from '../auth/auth-user.interface';
+import { slugifyCompanyName } from '../common/slug.util';
 import { PrismaService } from '../prisma/prisma.service';
 
 type CreateUserInput = {
@@ -73,6 +74,7 @@ export class UsersService {
         city: true,
         country: true,
         type: true,
+        logoUrl: true,
         updatedAt: true,
         supplierProfile: {
           select: {
@@ -81,6 +83,14 @@ export class UsersService {
             minimumOrder: true,
             logisticsSummary: true,
             financingSummary: true,
+            isVerified: true,
+            about: true,
+            foundedYear: true,
+            employeeRange: true,
+            certifications: true,
+            mainProducts: true,
+            capabilities: true,
+            categories: true,
           },
         },
       },
@@ -104,7 +114,7 @@ export class UsersService {
       .sort((left, right) => left.name.localeCompare(right.name, 'es'))
       .map((company) => ({
         id: company.id,
-        slug: this.slugify(company.name),
+        slug: slugifyCompanyName(company.name),
         name: company.name,
         city: company.city,
         country: company.country,
@@ -116,6 +126,19 @@ export class UsersService {
         genericCode: company.supplierProfile?.genericCode ?? null,
         leadTimeDays: company.supplierProfile?.leadTimeDays ?? null,
         minimumOrder: company.supplierProfile?.minimumOrder ?? null,
+        // Ficha ampliada. Todo opcional: la pantalla oculta lo que no este
+        // cargado en vez de mostrar un placeholder.
+        isVerified: company.supplierProfile?.isVerified ?? false,
+        logoUrl: company.logoUrl,
+        about: company.supplierProfile?.about ?? null,
+        foundedYear: company.supplierProfile?.foundedYear ?? null,
+        employeeRange: company.supplierProfile?.employeeRange ?? null,
+        certifications: company.supplierProfile?.certifications ?? [],
+        mainProducts: company.supplierProfile?.mainProducts ?? [],
+        capabilities: company.supplierProfile?.capabilities ?? [],
+        categories: company.supplierProfile?.categories ?? [],
+        logisticsSummary: company.supplierProfile?.logisticsSummary ?? null,
+        financingSummary: company.supplierProfile?.financingSummary ?? null,
         tags: [
           company.supplierProfile?.genericCode ?? null,
           typeof company.supplierProfile?.leadTimeDays === 'number'
@@ -334,15 +357,6 @@ export class UsersService {
 
   private normalizeSupplierKey(value: string) {
     return value.trim().toLowerCase().replace(/\s+/g, ' ');
-  }
-
-  private slugify(value: string) {
-    return value
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
   }
 
   private scoreSupplier(

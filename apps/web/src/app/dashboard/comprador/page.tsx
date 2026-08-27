@@ -45,7 +45,7 @@ const NUEVA_HREF = '/dashboard/comprador/solicitudes/nueva';
 // `labels` = etiquetas reales del catálogo de solicitudes que agrupa cada botón.
 // El botón lleva al paso 1 del wizard mostrando solo esos productos.
 const CATEGORIES: { title: string; img: string; labels: string[] }[] = [
-  { title: 'Polímeros', img: '/polimerosweb.png', labels: ['Polipropileno', 'Polietileno'] },
+  { title: 'Polímeros', img: '/polimero.png', labels: ['Polipropileno', 'Polietileno'] },
   { title: 'Envases y embalajes', img: '/envasesweb.png', labels: ['Big Bags', 'Bolsas PP', 'Sacos'] },
   { title: 'Telas', img: '/telasweb.png', labels: ['Rollos y Telas', 'Telas Tubulares', 'Telas planas'] },
   {
@@ -177,7 +177,7 @@ function DIcon({ name, className = 'h-5 w-5' }: { name: DIconName; className?: s
 }
 
 const DESKTOP_CATEGORIES: { title: string; img: string; icon: DIconName; labels: string[] }[] = [
-  { title: 'Polímeros', img: '/polimerosweb.png', icon: 'cube', labels: ['Polipropileno', 'Polietileno'] },
+  { title: 'Polímeros', img: '/polimero.png', icon: 'cube', labels: ['Polipropileno', 'Polietileno'] },
   { title: 'Envases y embalajes', img: '/envasesweb.png', icon: 'box', labels: ['Big Bags', 'Sacos'] },
   { title: 'Telas y mallas', img: '/telasweb.png', icon: 'grid', labels: ['Rollos y Telas', 'Telas Tubulares', 'Telas planas'] },
   {
@@ -347,7 +347,7 @@ export default function DashboardCompradorPage() {
               <Link
                 key={request.id}
                 href={`/dashboard/comprador/solicitudes/${request.id}`}
-                className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition active:bg-slate-50"
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:bg-slate-50"
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">

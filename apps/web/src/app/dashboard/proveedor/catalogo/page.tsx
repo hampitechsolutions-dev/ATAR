@@ -101,6 +101,24 @@ export default function SupplierCatalogPage() {
       <div className="lg:hidden pb-4">
         <h1 className="text-2xl font-bold tracking-tight text-slate-950">Productos y capacidades</h1>
 
+        {/* Esta pantalla es analitica: sale de las cotizaciones y solicitudes,
+            no de lo que la empresa declara. Lo declarado vive en la ficha. */}
+        <Link
+          className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 transition hover:bg-indigo-100"
+          href="/dashboard/proveedor/configuracion"
+        >
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold text-indigo-900">
+              Cargá tu catálogo y tu ficha pública
+            </span>
+            <span className="mt-0.5 block text-[11px] leading-4 text-indigo-800">
+              Lo de abajo se arma solo con tu actividad. Para elegir qué ofrecés y qué ven los
+              compradores, completá tu ficha.
+            </span>
+          </span>
+          <span className="shrink-0 text-[13px] font-semibold text-indigo-700">→</span>
+        </Link>
+
         {/* Tabs */}
         <div className="mt-4 flex items-center gap-5 border-b border-slate-200">
           {mobileTabs.map((tab) => {
@@ -232,13 +250,32 @@ export default function SupplierCatalogPage() {
 
       {/* ==================== VISTA DESKTOP ==================== */}
       <section className="hidden space-y-4 lg:block">
-        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
           <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
             Catalogo
           </h1>
           <p className="mt-1 text-sm text-[#7e85b2]">
             Organiza tu oferta por categoria y detecta donde hoy tenes mayor demanda.
           </p>
+
+        {/* Esta pantalla es analitica: sale de las cotizaciones y solicitudes,
+            no de lo que la empresa declara. Lo declarado vive en la ficha. */}
+        <Link
+          className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 transition hover:bg-indigo-100"
+          href="/dashboard/proveedor/configuracion"
+        >
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold text-indigo-900">
+              Cargá tu catálogo y tu ficha pública
+            </span>
+            <span className="mt-0.5 block text-[11px] leading-4 text-indigo-800">
+              Lo de abajo se arma solo con tu actividad. Para elegir qué ofrecés y qué ven los
+              compradores, completá tu ficha.
+            </span>
+          </span>
+          <span className="shrink-0 text-[13px] font-semibold text-indigo-700">→</span>
+        </Link>
+
         </div>
 
         {error ? (
@@ -248,25 +285,25 @@ export default function SupplierCatalogPage() {
         ) : null}
 
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Categorias activas</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.categories}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Cotizaciones asociadas</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.activeQuotes}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Oportunidades abiertas</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.openOpportunities}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#e7eaf3] bg-white p-5">
+          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
             <p className="text-xs font-semibold text-[#8b92bc]">Ingreso estimado</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : formatCurrency(metrics.estimatedRevenue)}
@@ -274,7 +311,7 @@ export default function SupplierCatalogPage() {
           </article>
         </div>
 
-        <div className="rounded-[24px] border border-[#e7eaf3] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold text-[#27305f]">Categorias del catalogo</h2>
@@ -283,7 +320,7 @@ export default function SupplierCatalogPage() {
               </p>
             </div>
             <button
-              className="inline-flex h-9 items-center rounded-xl border border-[#e7eaf3] px-3 text-sm font-semibold text-[#5546ff]"
+              className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-semibold text-[#5546ff]"
               type="button"
             >
               Nuevo item
@@ -292,18 +329,18 @@ export default function SupplierCatalogPage() {
 
           <div className="mt-4 grid gap-3">
             {loading ? (
-              <div className="rounded-[18px] border border-[#edf0fb] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
+              <div className="rounded-[18px] border border-[#dde5f2] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
                 Cargando catalogo...
               </div>
             ) : catalogRows.length === 0 ? (
-              <div className="rounded-[18px] border border-dashed border-[#d8ddee] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
+              <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
                 Aun no hay categorias activas para mostrar.
               </div>
             ) : (
               catalogRows.map((row) => (
                 <article
                   key={row.category}
-                  className="grid grid-cols-1 gap-4 rounded-[18px] border border-[#edf0fb] bg-[#fbfbff] p-4 md:grid-cols-[1.2fr_repeat(4,0.6fr)] md:items-center"
+                  className="grid grid-cols-1 gap-4 rounded-[18px] border border-[#dde5f2] bg-[#fbfbff] p-4 md:grid-cols-[1.2fr_repeat(4,0.6fr)] md:items-center"
                 >
                   <div>
                     <p className="text-sm font-semibold text-[#33407a]">{row.category}</p>
@@ -335,7 +372,7 @@ export default function SupplierCatalogPage() {
                   </div>
                   <div className="md:text-right">
                     <button
-                      className="inline-flex h-9 items-center justify-center rounded-xl border border-[#dde2f5] px-4 text-sm font-semibold text-[#5546ff]"
+                      className="inline-flex h-9 items-center justify-center rounded-xl border border-[#c3d0e8] px-4 text-sm font-semibold text-[#5546ff]"
                       type="button"
                     >
                       Ver detalle

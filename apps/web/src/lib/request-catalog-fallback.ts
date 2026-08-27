@@ -104,8 +104,8 @@ const CATALOG: CategoryInput[] = [
   {
     label: 'Polipropileno',
     subtitle: 'Tejidos, rafia y laminados',
-    imageSrc: '/polimerosweb.png',
-    imageClassName: 'scale-[1.05]',
+    imageSrc: '/polimero.png',
+    imageClassName: 'scale-[1.25]',
     searchKeywords: ['polipropileno', 'plasticos', 'rafia', 'polimeros'],
     fields: [
       { key: 'tipo', label: 'Tipo', type: 'choices', options: ['Homopolimero', 'Copolimero', 'Rafia', 'Fibra'], required: true },
@@ -121,8 +121,8 @@ const CATALOG: CategoryInput[] = [
   {
     label: 'Polietileno',
     subtitle: 'Films, mangas y bobinas',
-    imageSrc: '/polimerosweb.png',
-    imageClassName: 'scale-[1.05]',
+    imageSrc: '/polietileno.png',
+    imageClassName: 'scale-[1.25]',
     searchKeywords: ['plasticos', 'filmes', 'envases', 'polimeros'],
     fields: [
       { key: 'tipo', label: 'Tipo', type: 'choices', options: ['PEAD', 'PEBD', 'PEBDL', 'Reciclado'], required: true },

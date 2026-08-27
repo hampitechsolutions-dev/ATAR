@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  Prisma,
   MembershipRole,
   OpportunityStatus,
   OrderFulfillmentStatus,
@@ -7,8 +8,15 @@ import {
   UserStatus,
 } from '@prisma/client';
 import type { AuthUser } from '../auth/auth-user.interface';
-import { assertManager, resolveSupplierWorkspace } from '../common/workspace.util';
+import {
+  assertManager,
+  listWorkspaceCompanyIds,
+  resolveSupplierWorkspace,
+  type Workspace,
+} from '../common/workspace.util';
+import { slugifyCompanyName } from '../common/slug.util';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateSupplierProfileDto } from './dto/update-supplier-profile.dto';
 
 const TEAM_ROLES = [MembershipRole.SELLER, MembershipRole.SUPPLIER, MembershipRole.ADMIN];
 
@@ -34,7 +42,7 @@ export class CompaniesService {
       where: { userId: user.userId },
       include: {
         company: {
-          select: { id: true, name: true, type: true, country: true, city: true },
+          select: { id: true, name: true, type: true, country: true, city: true, logoUrl: true },
         },
       },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
@@ -80,6 +88,97 @@ export class CompaniesService {
         canSell: isSeller || item.roles.includes(MembershipRole.SUPPLIER) || item.company.type !== 'BUYER',
         canBuy: item.roles.includes(MembershipRole.BUYER) || item.company.type !== 'SUPPLIER',
       };
+    });
+  }
+
+  /** Ficha publica de la empresa activa, para editarla desde Configuracion. */
+  async supplierProfile(user: AuthUser, activeCompanyId?: string) {
+    const workspace = assertManager(resolveSupplierWorkspace(user, activeCompanyId));
+
+    const company = await this.prisma.company.findUnique({
+      where: { id: workspace.companyId },
+      select: {
+        id: true,
+        name: true,
+        city: true,
+        country: true,
+        type: true,
+        logoUrl: true,
+        supplierProfile: true,
+      },
+    });
+
+    if (!company) {
+      throw new NotFoundException('No encontramos tu empresa.');
+    }
+
+    // El slug arma el link "Ver mi ficha": tiene que ser el mismo que usa el
+    // directorio publico.
+    return { ...company, slug: slugifyCompanyName(company.name) };
+  }
+
+  /**
+   * Guarda la ficha que ven los compradores.
+   *
+   * Se hace upsert porque una empresa creada como BUYER que despues empieza a
+   * vender puede no tener perfil todavia. Los strings vacios se guardan como
+   * null para que la ficha oculte la seccion en vez de dejar un titulo huerfano.
+   */
+  async updateSupplierProfile(
+    user: AuthUser,
+    dto: UpdateSupplierProfileDto,
+    activeCompanyId?: string,
+  ) {
+    const workspace = assertManager(resolveSupplierWorkspace(user, activeCompanyId));
+
+    const text = (value?: string) => (value?.trim() ? value.trim() : null);
+    const list = (value?: string[]) => value?.map((item) => item.trim()).filter(Boolean) ?? [];
+
+    /**
+     * Solo se tocan los campos que vinieron en el body.
+     *
+     * Todos son opcionales, asi que un PUT parcial (por ejemplo solo el logo)
+     * tiene que dejar el resto como estaba. Armar el objeto completo con
+     * `?? null` borraba en silencio todo lo que no viajaba en esa llamada.
+     */
+    const data: Prisma.SupplierProfileUncheckedUpdateInput = {};
+    const setIf = <K extends keyof UpdateSupplierProfileDto>(
+      key: K,
+      map: (value: NonNullable<UpdateSupplierProfileDto[K]>) => unknown,
+    ) => {
+      if (dto[key] !== undefined) {
+        (data as Record<string, unknown>)[key] = map(
+          dto[key] as NonNullable<UpdateSupplierProfileDto[K]>,
+        );
+      }
+    };
+
+    setIf('genericCode', text);
+    setIf('about', text);
+    setIf('employeeRange', text);
+    setIf('logisticsSummary', text);
+    setIf('financingSummary', text);
+
+    setIf('leadTimeDays', (value) => value);
+    setIf('minimumOrder', (value) => value);
+    setIf('foundedYear', (value) => value);
+    setIf('certifications', list);
+    setIf('mainProducts', list);
+    setIf('capabilities', list);
+    setIf('categories', list);
+
+    // El logo es de la empresa, no del perfil de proveedor.
+    if (dto.logoUrl !== undefined) {
+      await this.prisma.company.update({
+        where: { id: workspace.companyId },
+        data: { logoUrl: text(dto.logoUrl) },
+      });
+    }
+
+    return this.prisma.supplierProfile.upsert({
+      where: { companyId: workspace.companyId },
+      create: { companyId: workspace.companyId, ...data } as Prisma.SupplierProfileUncheckedCreateInput,
+      update: data,
     });
   }
 
@@ -225,7 +324,75 @@ export class CompaniesService {
 
   /** Metricas del panel. El vendedor ve solo su cartera. */
   async metrics(user: AuthUser, activeCompanyId?: string) {
-    const workspace = resolveSupplierWorkspace(user, activeCompanyId);
+    return this.metricsForWorkspace(user, resolveSupplierWorkspace(user, activeCompanyId));
+  }
+
+  /**
+   * Metricas consolidadas de todas las proveedoras que representa el usuario.
+   *
+   * Un vendedor puede trabajar para varias empresas a la vez: aca recibe el
+   * total general mas el desglose por empresa, para poder filtrar sin tener
+   * que cambiar de workspace.
+   */
+  async metricsOverview(user: AuthUser) {
+    const companyIds = listWorkspaceCompanyIds(user, 'supplier');
+
+    const companies = await this.prisma.company.findMany({
+      where: { id: { in: companyIds } },
+      select: { id: true, name: true, type: true, country: true, city: true },
+    });
+    const companyById = new Map(companies.map((company) => [company.id, company]));
+
+    const items = await Promise.all(
+      companyIds.map(async (companyId) => {
+        // `strict` para que una empresa ajena falle en vez de caer en otra.
+        const workspace = resolveSupplierWorkspace(user, companyId, { strict: true });
+        const metrics = await this.metricsForWorkspace(user, workspace);
+
+        return {
+          ...metrics,
+          company: companyById.get(companyId) ?? {
+            id: companyId,
+            name: 'Empresa',
+            type: null,
+            country: '',
+            city: null,
+          },
+        };
+      }),
+    );
+
+    const sum = (pick: (item: (typeof items)[number]) => number) =>
+      items.reduce((total, item) => total + pick(item), 0);
+
+    return {
+      companiesCount: items.length,
+      // 'mixed': es gerente en unas empresas y vendedor en otras, asi que el
+      // total suma la empresa entera en unas y solo su cartera en las demas.
+      scope: items.every((item) => item.scope === 'company')
+        ? ('company' as const)
+        : items.every((item) => item.scope === 'seller')
+          ? ('seller' as const)
+          : ('mixed' as const),
+      total: {
+        received: sum((item) => item.received),
+        unassigned: sum((item) => item.unassigned),
+        assigned: sum((item) => item.assigned),
+        inResponse: sum((item) => item.inResponse),
+        quoted: sum((item) => item.quoted),
+        negotiating: sum((item) => item.negotiating),
+        won: sum((item) => item.won),
+        lost: sum((item) => item.lost),
+        quotesSent: sum((item) => item.quotesSent),
+        quotesAwarded: sum((item) => item.quotesAwarded),
+        quotedAmount: sum((item) => item.quotedAmount),
+        soldAmount: sum((item) => item.soldAmount),
+      },
+      companies: items.sort((left, right) => right.soldAmount - left.soldAmount),
+    };
+  }
+
+  private async metricsForWorkspace(user: AuthUser, workspace: Workspace) {
     const scope = workspace.isManager ? {} : { sellerUserId: user.userId };
 
     const assignments = await this.prisma.requestAssignment.findMany({

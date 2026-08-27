@@ -3,6 +3,37 @@
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
+
+  /* Borde de los campos que se rellenan (inputs, textareas, selects).
+     Va mas marcado que el de una tarjeta: son objetivos donde se hace clic y
+     tienen que leerse como tales. */
+  --field-border: #a8bcdf;
+  /* Anillo de foco, en el azul de marca. */
+  --focus-ring: #4f46e5;
+}
+
+/**
+ * Contraste de los bordes.
+ *
+ * La UI escribe `border-slate-200` en ~425 lugares y `divide-slate-100` en las
+ * tablas. En vez de tocar cada clase, se corren los dos tonos de la paleta a
+ * una version mas oscura y con tinte azul, alineada con el indigo de marca.
+ * Cualquier `border-slate-200` nuevo hereda el mismo contraste solo.
+ *
+ * slate-200: #e2e8f0 (1.24:1 sobre blanco) -> #c3d0e8 (1.53:1)
+ * slate-100: #f1f5f9 (1.09:1)              -> #dde5f2 (1.25:1)
+ */
+@theme {
+  /* Solo se mueven los tonos que se usan como BORDE.
+     slate-50 y slate-100 quedan como estan a proposito: se usan como relleno
+     (celdas, avatares, y el fondo de las cards de producto, cuyas imagenes son
+     PNG con transparencia). Oscurecerlos ensuciaba esas superficies. Los
+     separadores que usaban slate-100 se pasaron a slate-200 por clase. */
+  --color-slate-200: #c3d0e8;
+  /* slate-300 marca bordes punteados y botones secundarios: tiene que seguir
+     siendo el escalon mas fuerte que slate-200, si no se invierte la escala.
+     Coincide con `--field-border`: es el mismo peso de "esto es accionable". */
+  --color-slate-300: #a8bcdf;
 }
 
 @theme inline {
@@ -30,4 +61,37 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/**
+ * Los campos rellenables llevan mas contraste que una tarjeta.
+ *
+ * Se apunta a `input.border` en vez de solo `input` para ganarle en
+ * especificidad a la clase `border-slate-200` que traen escrita; las clases de
+ * estado (`focus:border-*`) siguen mandando porque empatan en especificidad y
+ * van despues en el orden de las utilidades.
+ */
+input.border,
+textarea.border,
+select.border {
+  border-color: var(--field-border);
+}
+
+/**
+ * Foco visible en todo lo interactivo.
+ *
+ * Casi todos los campos se escriben con `outline-none`, asi que al navegar con
+ * teclado no se veia donde estaba parado el cursor. `:focus-visible` suma un
+ * punto de especificidad sobre esa utilidad, y solo aparece con teclado: el
+ * clic con mouse no dibuja el anillo.
+ */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: inherit;
 }

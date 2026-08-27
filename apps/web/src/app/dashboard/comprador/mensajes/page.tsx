@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import CompanyLogo from '@/components/dashboard/company-logo';
 import ConversationPanel from '@/components/chat/conversation-panel';
 import { atarApi, type ConversationRecord } from '@/lib/atar-api';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
@@ -173,9 +174,13 @@ export default function BuyerMessagesPage() {
                     onClick={() => setSelectedId(conversation.id)}
                     type="button"
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[11px] font-bold text-slate-950">
-                      {getInitials(conversation.supplierCompanyName)}
-                    </span>
+                    <CompanyLogo
+                      className="h-11 w-11"
+                      logoUrl={conversation.supplierCompanyLogoUrl}
+                      name={conversation.supplierCompanyName}
+                      rounded="rounded-2xl"
+                      tone="border border-slate-200 bg-white text-slate-950"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <p className="truncate text-sm font-semibold text-slate-950">{conversation.supplierCompanyName}</p>

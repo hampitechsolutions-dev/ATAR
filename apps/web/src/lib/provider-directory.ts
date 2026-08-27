@@ -11,6 +11,7 @@ export type ProviderDirectoryItem = {
   companyType: CompanyType;
   leadTimeDays: number | null;
   minimumOrder: number | null;
+  logoUrl: string | null;
 };
 
 export function getSupplierCategoryLabel(companyType: CompanyType) {
@@ -36,6 +37,7 @@ export function mapSupplierToProviderDirectoryItem(
     id: supplier.id,
     slug: supplier.slug,
     name: supplier.name,
+    logoUrl: supplier.logoUrl,
     city: getSupplierLocation(supplier.city, supplier.country),
     category: getSupplierCategoryLabel(supplier.companyType),
     description: supplier.description ?? '',

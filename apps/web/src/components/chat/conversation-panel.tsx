@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import CompanyLogo from '@/components/dashboard/company-logo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   atarApi,
@@ -416,6 +417,16 @@ export default function ConversationPanel({
       : conversation.buyerCompanyName;
   }, [conversation, rolePath]);
 
+  const counterpartLogo = useMemo(() => {
+    if (!conversation) {
+      return null;
+    }
+
+    return rolePath === 'comprador'
+      ? conversation.supplierCompanyLogoUrl
+      : conversation.buyerCompanyLogoUrl;
+  }, [conversation, rolePath]);
+
   const messageCount = conversation?.messages?.length ?? 0;
   const attachmentCount =
     conversation?.messages?.filter((item) => item.attachmentBase64 && item.attachmentName).length ?? 0;
@@ -532,9 +543,13 @@ export default function ConversationPanel({
     <div className="flex h-full min-h-0 flex-col bg-white">
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[11px] font-bold text-indigo-600">
-            {getInitials(counterpartLabel ?? title)}
-          </span>
+          <CompanyLogo
+            className="h-11 w-11"
+            logoUrl={counterpartLogo}
+            name={counterpartLabel ?? title}
+            rounded="rounded-2xl"
+            tone="border border-slate-200 bg-white text-indigo-600"
+          />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <p className="truncate text-sm font-semibold text-slate-950">{counterpartLabel ?? title}</p>
@@ -579,9 +594,13 @@ export default function ConversationPanel({
               return (
                 <div key={item.id} className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                   {!isOwn ? (
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[10px] font-bold text-slate-600">
-                      {getInitials(item.senderCompanyName ?? counterpartLabel)}
-                    </span>
+                    <CompanyLogo
+                      className="h-8 w-8"
+                      logoUrl={counterpartLogo}
+                      name={item.senderCompanyName ?? counterpartLabel ?? title}
+                      textClassName="text-[10px]"
+                      tone="border border-slate-200 bg-white text-slate-600"
+                    />
                   ) : null}
                   <div
                     className={`max-w-[80%] rounded-[1.35rem] px-4 py-2.5 text-sm ${

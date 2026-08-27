@@ -27,7 +27,7 @@ const FALLBACK_CATEGORIES: ProductCategory[] = [
     id: 'polimeros',
     label: 'Polímeros',
     subtitle: 'Polipropileno, polietileno y masterbatches de alta calidad para la industria del plástico.',
-    imageSrc: '/polimerosweb.png',
+    imageSrc: '/polimero.png',
     imageClassName: 'object-cover',
   },
   {
@@ -187,7 +187,11 @@ const BENEFITS: { icon: BenefitIconName; title: string; text: string }[] = [
 /* Página ------------------------------------------------------------------ */
 
 export default function ProductosPage() {
-  const [categories, setCategories] = useState<ProductCategory[]>(FALLBACK_CATEGORIES);
+  // El fallback arranca vacio a proposito: si se usa como estado inicial, la
+  // pantalla pinta el catalogo hardcodeado y despues lo reemplaza por el de la
+  // base, y se ve el parpadeo. Solo se usa si la API falla o viene vacia.
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [supplierCount, setSupplierCount] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -202,14 +206,22 @@ export default function ProductosPage() {
           atarApi.getMarketplaceStats(),
         ]);
 
-        if (!cancelled && catalog.status === 'fulfilled' && catalog.value.length > 0) {
-          setCategories(catalog.value.map(mapCategory));
+        if (!cancelled) {
+          const fetched =
+            catalog.status === 'fulfilled' && catalog.value.length > 0
+              ? catalog.value.map(mapCategory)
+              : FALLBACK_CATEGORIES;
+          setCategories(fetched);
+          setCatalogLoaded(true);
         }
         if (!cancelled && stats.status === 'fulfilled') {
           setSupplierCount(stats.value.suppliersCount);
         }
       } catch {
-        // Se conserva el catálogo de respaldo.
+        if (!cancelled) {
+          setCategories(FALLBACK_CATEGORIES);
+          setCatalogLoaded(true);
+        }
       }
     }
 
@@ -239,37 +251,43 @@ export default function ProductosPage() {
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(59,91,255,0.10),_transparent_45%),linear-gradient(180deg,#ffffff_0%,#f5f7ff_100%)]">
-        <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
-          <div className="grid gap-10 lg:grid-cols-[0.5fr_0.5fr] lg:items-center">
-            <div className="space-y-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
+      {/* ==================== HERO ==================== */}
+      <section className="relative isolate overflow-hidden bg-[#070b17] text-white">
+        <Image alt="" className="object-cover object-center" fill priority sizes="100vw" src="/hero-industria.png" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#070b17_0%,rgba(7,11,23,0.94)_38%,rgba(7,11,23,0.78)_70%,rgba(7,11,23,0.6)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(7,11,23,0.75)_0%,transparent_35%)]" />
+
+        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-12 lg:py-20">
+          <div className="grid items-center gap-12 lg:grid-cols-[0.52fr_0.48fr] lg:gap-16">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#4f7bff]">
                 Productos y soluciones
               </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                Todo lo que tu empresa necesita, <span className="text-indigo-600">en un solo lugar</span>
+              <h1 className="mt-5 text-[2.4rem] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-[3.5rem]">
+                Todo lo que tu empresa necesita,{' '}
+                <span className="text-[#4f7bff]">en un solo lugar.</span>
               </h1>
-              <p className="max-w-xl text-lg leading-8 text-slate-600">
-                Explorá nuestras categorías y conectá con proveedores especializados en cada solución industrial.
+              <p className="mt-6 max-w-xl text-lg leading-8 text-white/70">
+                Explorá nuestras categorías y conectá con proveedores especializados en cada solución
+                industrial.
               </p>
 
-              <div className="relative max-w-xl">
-                <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <div className="relative mt-8 max-w-xl">
+                <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
                 <input
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm shadow-sm outline-none transition focus:border-indigo-400"
+                  className="w-full rounded-full border border-white/20 bg-white/10 py-3.5 pl-12 pr-4 text-sm text-white outline-none backdrop-blur-sm transition placeholder:text-white/45 focus:border-[#4f7bff] focus:bg-white/15"
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Buscar productos, aplicaciones o industrias..."
                   value={search}
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+              <div className="mt-5 flex flex-wrap items-center gap-2 text-sm text-white/50">
                 <span className="font-medium">Más buscados:</span>
                 {MOST_SEARCHED.map((term) => (
                   <button
                     key={term}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600"
+                    className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-medium text-white/70 transition hover:border-white/45 hover:text-white"
                     onClick={() => setSearch(term)}
                     type="button"
                   >
@@ -282,48 +300,65 @@ export default function ProductosPage() {
             {/* Collage */}
             <div className="relative">
               <div className="grid grid-cols-2 grid-rows-2 gap-3">
-                <div className="relative row-span-2 h-full min-h-[300px] overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
+                <div className="relative row-span-2 h-full min-h-[300px] overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
                   <Image alt="" className="object-cover" fill sizes="(min-width:1024px) 26vw, 50vw" src={HERO_IMAGES[0]} />
                 </div>
-                <div className="relative h-36 overflow-hidden rounded-2xl bg-slate-100 shadow-sm sm:h-40">
+                <div className="relative h-36 overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10 sm:h-40">
                   <Image alt="" className="object-cover" fill sizes="(min-width:1024px) 26vw, 50vw" src={HERO_IMAGES[1]} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="relative overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
+                  <div className="relative overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
                     <Image alt="" className="object-cover" fill sizes="13vw" src={HERO_IMAGES[2]} />
                   </div>
-                  <div className="relative overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
+                  <div className="relative overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
                     <Image alt="" className="object-cover" fill sizes="13vw" src={HERO_IMAGES[3]} />
                   </div>
                 </div>
               </div>
 
-              <div className="absolute -bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-slate-100 bg-white px-5 py-3 shadow-lg">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <div className="absolute -bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-white/15 bg-[#0a0f1e] px-5 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2f6bff]/15 text-[#4f7bff]">
                   <UsersIcon />
                 </span>
                 <div>
-                  <p className="text-base font-semibold text-slate-950">{supplierBadge}</p>
-                  <p className="text-xs text-slate-500">Proveedores activos</p>
+                  <p className="text-base font-semibold text-white">{supplierBadge}</p>
+                  <p className="text-xs text-white/50">Proveedores activos</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* STATS */}
-          <div className="mt-16 grid grid-cols-1 divide-y divide-slate-200 rounded-[1.5rem] border border-slate-200 bg-white shadow-sm sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
-            <StatCell icon={<CubeIcon />} value={`${categories.length}+`} label="Categorías de productos" />
-            <StatCell icon={<UsersIcon />} value={supplierLabel} label="Proveedores especializados" />
-            <StatCell icon={<ShieldIcon />} value="Verificados" label="Calidad y confianza" />
-            <StatCell icon={<TrendingIcon />} value="Actualizado" label="Nuevos productos cada semana" />
+          {/* Los numeros, en la misma fila que usa la home. */}
+          <div className="mt-20 flex flex-wrap gap-x-12 gap-y-5 lg:mt-16">
+            {[
+              { icon: <CubeIcon className="h-5 w-5" />, v: `${categories.length}+`, l: 'categorías de productos' },
+              { icon: <UsersIcon className="h-5 w-5" />, v: supplierLabel, l: 'proveedores especializados' },
+              { icon: <ShieldIcon className="h-5 w-5" />, v: 'Verificados', l: 'calidad y confianza' },
+              { icon: <TrendingIcon className="h-5 w-5" />, v: 'Actualizado', l: 'nuevos productos cada semana' },
+            ].map((item) => (
+              <div key={item.l} className="flex items-center gap-2.5">
+                <span className="text-[#4f7bff]">{item.icon}</span>
+                <p className="text-sm text-white/75">
+                  <span className="font-semibold text-white">{item.v}</span> {item.l}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CATEGORÍAS */}
+      {/* ==================== CATEGORÍAS ==================== */}
       <section className="bg-white">
-        <div className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10 lg:py-14">
+        <div className="mx-auto w-full max-w-[1440px] px-6 py-24 lg:px-12 lg:py-28">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#2f6bff]">
+            El catálogo
+          </p>
+          <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-slate-950 sm:text-[2.6rem]">
+            Elegí la categoría y pedí tu cotización.
+          </h2>
+
           {/* Tabs de filtro */}
+          <div className="mt-10">
           <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <FilterTab active={activeCategory === 'all'} onClick={() => setActiveCategory('all')}>
               Todas las categorías
@@ -340,7 +375,18 @@ export default function ProductosPage() {
           </div>
 
           {/* Grid de categorías */}
-          {filteredCategories.length === 0 ? (
+          {!catalogLoaded ? (
+            // Esqueleto mientras llega el catalogo: sin esto la pantalla dice
+            // "no hay categorias" durante un instante.
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  className="h-[230px] animate-pulse rounded-2xl bg-slate-100 sm:h-[260px]"
+                  key={index}
+                />
+              ))}
+            </div>
+          ) : filteredCategories.length === 0 ? (
             <div className="mt-8 rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-14 text-center text-sm text-slate-500">
               No hay categorías que coincidan con la búsqueda.
             </div>
@@ -351,39 +397,38 @@ export default function ProductosPage() {
               ))}
             </div>
           )}
+          </div>
         </div>
       </section>
 
-      {/* ¿POR QUÉ USAR ATAR? */}
-      <section className="bg-white pb-14">
-        <div className="mx-auto w-full max-w-7xl px-6 lg:px-10">
-          <div className="rounded-[1.75rem] bg-[linear-gradient(180deg,#f5f6ff_0%,#eef1ff_100%)] p-8 lg:p-12">
-            <div className="grid gap-8 lg:grid-cols-[0.32fr_0.68fr] lg:items-center">
-              <div className="relative mx-auto h-44 w-full max-w-xs">
-                <Image alt="" className="object-contain" fill sizes="320px" src="/proveedores.png" />
-              </div>
+      {/* ==================== ¿POR QUÉ USAR ATAR? ==================== */}
+      <section className="bg-[linear-gradient(180deg,#f5f6ff_0%,#eef1ff_100%)]">
+        <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
+          <div className="grid gap-8 lg:grid-cols-[0.32fr_0.68fr] lg:items-center">
+            <div className="relative mx-auto h-44 w-full max-w-xs">
+              <Image alt="" className="object-contain" fill sizes="320px" src="/proveedores.png" />
+            </div>
 
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
-                  ¿Por qué usar ATAR?
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
-                  Más opciones. Mejores decisiones.
-                </h2>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
+                ¿Por qué usar ATAR?
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+                Más opciones. Mejores decisiones.
+              </h2>
 
-                <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                  {BENEFITS.map((benefit) => (
-                    <div key={benefit.title} className="flex gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
-                        <BenefitIcon name={benefit.icon} />
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-950">{benefit.title}</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-500">{benefit.text}</p>
-                      </div>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+                {BENEFITS.map((benefit) => (
+                  <div key={benefit.title} className="flex gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
+                      <BenefitIcon name={benefit.icon} />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">{benefit.title}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{benefit.text}</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -394,20 +439,6 @@ export default function ProductosPage() {
 }
 
 /* Subcomponentes ---------------------------------------------------------- */
-
-function StatCell({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
-  return (
-    <div className="flex items-center gap-4 px-5 py-5 lg:px-6">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-        {icon}
-      </span>
-      <div>
-        <p className="text-lg font-semibold tracking-tight text-slate-950">{value}</p>
-        <p className="mt-0.5 text-xs text-slate-500">{label}</p>
-      </div>
-    </div>
-  );
-}
 
 function FilterTab({
   active,
@@ -433,27 +464,43 @@ function FilterTab({
   );
 }
 
+/**
+ * La imagen ocupa toda la tarjeta y el texto va encima.
+ *
+ * Para que el titulo se lea sobre cualquier foto hay un degradado oscuro en la
+ * base (no un bloque blanco): tapa lo justo abajo y deja la imagen limpia
+ * arriba.
+ */
 function CategoryCard({ category }: { category: ProductCategory }) {
   return (
     <Link
       href="/acceso"
-      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+      className="group relative flex h-[230px] flex-col justify-end overflow-hidden rounded-2xl bg-slate-100 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg sm:h-[260px]"
     >
-      <div className="relative h-40 w-full overflow-hidden bg-slate-100">
-        <Image
-          alt={category.label}
-          className={`transition duration-300 group-hover:scale-105 ${category.imageClassName || 'object-cover'}`}
-          fill
-          sizes="(min-width:1024px) 22vw, (min-width:640px) 45vw, 90vw"
-          src={category.imageSrc}
-        />
-      </div>
+      <Image
+        alt={category.label}
+        className={`transition duration-300 group-hover:scale-105 ${category.imageClassName || 'object-cover'}`}
+        fill
+        sizes="(min-width:1024px) 22vw, (min-width:640px) 45vw, 90vw"
+        src={category.imageSrc}
+      />
 
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="text-base font-semibold tracking-tight text-slate-950">{category.label}</h3>
-        <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{category.subtitle}</p>
+      {/* Degradado de legibilidad. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
+      {/* Oscurecido extra al pasar el mouse. */}
+      <div className="absolute inset-0 bg-slate-950/0 transition-colors duration-300 group-hover:bg-slate-950/25" />
 
-        <span className="mt-4 flex h-8 w-8 items-center justify-center self-end rounded-full border border-slate-200 text-slate-500 transition group-hover:border-indigo-600 group-hover:bg-indigo-600 group-hover:text-white">
+      <div className="relative z-10 flex items-end justify-between gap-3 p-4">
+        <div className="min-w-0">
+          <h3 className="truncate text-base font-semibold tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
+            {category.label}
+          </h3>
+          <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-white/85 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
+            {category.subtitle}
+          </p>
+        </div>
+
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition group-hover:bg-indigo-600">
           <ArrowIcon />
         </span>
       </div>

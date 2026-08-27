@@ -56,6 +56,16 @@ export function getPrimaryCompanyName(user: AuthUser): string {
   return user.memberships.find((membership) => membership.isPrimary)?.company.name ?? user.memberships[0]?.company.name ?? 'Mi empresa';
 }
 
+/** Nombre de pila del usuario: es lo que se saluda en el panel, no la empresa. */
+export function getUserFirstName(user: AuthUser): string {
+  return user.firstName?.trim() || user.email.split('@')[0];
+}
+
+export function getUserFullName(user: AuthUser): string {
+  const full = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+  return full || getUserFirstName(user);
+}
+
 export function getPrimaryCompanyType(user: AuthUser): CompanyType | null {
   return (
     user.memberships.find((membership) => membership.isPrimary)?.company.type ??
@@ -68,6 +78,21 @@ export function getPrimaryCompanyType(user: AuthUser): CompanyType | null {
 // comprador y proveedor a la vez.
 export function isHybridUser(user: AuthUser): boolean {
   return user.memberships.some((membership) => membership.company.type === 'HYBRID');
+}
+
+// Roles de quien es dueno o administra una empresa: la cuenta ES la empresa.
+const COMPANY_OWNER_ROLES: MembershipRole[] = ['SUPPLIER', 'BUYER', 'ADMIN'];
+
+/**
+ * Cuenta de vendedor: trabaja dentro de empresas ajenas y no administra
+ * ninguna.
+ *
+ * Es el unico perfil que puede pedir representar a otra empresa. Una
+ * proveedora o un comprador no representan a nadie: al reves, invitan
+ * vendedores desde su equipo.
+ */
+export function isSellerAccount(user: AuthUser): boolean {
+  return !user.memberships.some((membership) => COMPANY_OWNER_ROLES.includes(membership.role));
 }
 
 // Roles que trabajan del lado vendedor. El vendedor (SELLER) opera dentro de

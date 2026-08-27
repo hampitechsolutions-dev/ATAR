@@ -1,17 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import CompanyLogo from '@/components/dashboard/company-logo';
 import { useEffect, useMemo, useState } from 'react';
 import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
 import { loadBuyerFavorites, toggleBuyerFavorite } from '@/lib/dashboard-local';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 import { mapSupplierToProviderDirectoryItem } from '@/lib/provider-directory';
-
-function getMonogram(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  const raw = words.length > 1 ? words.slice(0, 2).map((word) => word[0]).join('') : name.slice(0, 2);
-  return raw.toUpperCase();
-}
 
 export default function BuyerProvidersPage() {
   const { session, loading: dashboardLoading } = useBuyerDashboardData();
@@ -143,9 +138,14 @@ export default function BuyerProvidersPage() {
                 className="flex flex-col rounded-[22px] border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-gradient-to-br from-white to-[#f4f5ff] text-base font-extrabold tracking-tight text-indigo-600">
-                    {getMonogram(provider.name)}
-                  </div>
+                  <CompanyLogo
+                    className="h-16 w-16"
+                    logoUrl={provider.logoUrl}
+                    name={provider.name}
+                    rounded="rounded-full"
+                    textClassName="text-base tracking-tight"
+                    tone="bg-gradient-to-br from-white to-[#f4f5ff] text-indigo-600 border border-slate-200"
+                  />
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">
@@ -180,7 +180,7 @@ export default function BuyerProvidersPage() {
                 <div className="mt-5 grid gap-2.5">
                   <Link
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 text-sm font-semibold text-white transition hover:bg-indigo-500"
-                    href={`/productos/${provider.slug}`}
+                    href={`/dashboard/comprador/proveedores/${provider.slug}`}
                   >
                     Ver ficha
                   </Link>

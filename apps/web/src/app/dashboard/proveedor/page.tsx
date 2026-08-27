@@ -9,9 +9,10 @@ import SupplierAccountMenu from '@/components/dashboard/supplier-account-menu';
 import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
 import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
 import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
+import { useWorkspace } from '@/components/auth/workspace-provider';
 import { type OrderFulfillmentStatus, type RequestRecord } from '@/lib/atar-api';
 import { useSupplierDashboardData, useSupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
-import { getPrimaryCompanyName } from '@/lib/session';
+import { getPrimaryCompanyName, getUserFirstName } from '@/lib/session';
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -180,13 +181,18 @@ function getProductionLabel(status: OrderFulfillmentStatus) {
 
 export default function DashboardProveedorPage() {
   const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
+  const { activeWorkspace, hasMultipleWorkspaces } = useWorkspace();
   const counters = useSupplierWorkspaceCounters({
     accessToken: session?.accessToken,
     openRequests,
     myQuotes,
   });
 
-  const companyName = session ? getPrimaryCompanyName(session.user) : 'Tu empresa';
+  // Se saluda a la persona, no a la empresa: el vendedor puede representar a
+  // varias y la empresa activa se muestra aparte (y se cambia en el selector).
+  const sellerName = session ? getUserFirstName(session.user) : 'Vendedor';
+  const companyName =
+    activeWorkspace?.company.name ?? (session ? getPrimaryCompanyName(session.user) : 'Tu empresa');
 
   const dashboardData = useMemo(() => {
     const sortedRequests = [...openRequests].sort(
@@ -331,8 +337,6 @@ export default function DashboardProveedorPage() {
 
   const levelMetrics = [
     { value: `${acceptanceRate}%`, label: 'Aceptación' },
-    { value: myQuotes.length, label: 'Cotizac.' },
-    { value: dashboardData.activeOrders.length, label: 'Pedidos' },
     { value: dashboardData.clientsCount, label: 'Clientes' },
   ];
 
@@ -410,9 +414,14 @@ export default function DashboardProveedorPage() {
 
         <div className="px-4 pb-28 pt-5">
           <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-slate-950">
-            Hola, {companyName} 👋
+            Hola, {sellerName} 👋
           </h1>
-          <p className="mt-1 text-sm text-slate-500">Panel de vendedor</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Panel de vendedor · {companyName}
+          </p>
+
+          {/* En mobile el selector va debajo del saludo: no entra en el header. */}
+          {hasMultipleWorkspaces ? <CompanySwitcher className="mt-3" /> : null}
 
           {/* Nivel */}
           <section className="mt-5 overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#4f46e5_0%,#6d5cf5_52%,#7c3aed_100%)] p-5 text-white shadow-lg shadow-indigo-600/25">
@@ -433,7 +442,7 @@ export default function DashboardProveedorPage() {
                 </svg>
               </Link>
             </div>
-            <div className="mt-5 grid grid-cols-4 gap-2">
+            <div className="mt-5 grid grid-cols-2 gap-2">
               {levelMetrics.map((metric) => (
                 <div key={metric.label} className="text-center">
                   <p className="text-xl font-bold tracking-tight">{metric.value}</p>
@@ -473,6 +482,10 @@ export default function DashboardProveedorPage() {
               </article>
             ))}
           </div>
+
+          {/* Stats comerciales: consolidado de todas las empresas + filtro. */}
+          <h2 className="mt-6 text-base font-bold text-slate-950">Tus estadísticas</h2>
+          <CommercialPanel className="mt-3" />
 
           {/* Actividad reciente */}
           <div className="mt-6 flex items-center justify-between">
@@ -587,9 +600,11 @@ export default function DashboardProveedorPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <h1 className="text-[1.85rem] font-semibold tracking-tight text-slate-950">
-                  Hola, {companyName.split(' ')[0]}! 👋
+                  Hola, {sellerName}! 👋
                 </h1>
-                <p className="mt-1 text-sm text-slate-500">Este es el resumen de tu actividad de hoy.</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Resumen de tu actividad de hoy en {companyName}.
+                </p>
               </div>
               <button className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50" type="button">
                 <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
@@ -602,315 +617,275 @@ export default function DashboardProveedorPage() {
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_278px]">
+            <div className="mt-4">
               <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {[
-                    { label: 'Solicitudes nuevas', value: openRequests.length, detail: `${dashboardData.privateRequests.length} privadas para tu empresa`, icon: 'requests' as const, tone: 'bg-indigo-50 text-indigo-600' },
-                    { label: 'Cotizaciones aceptadas', value: dashboardData.awardedQuotes.length, detail: `${dashboardData.submittedQuotes.length} pendientes de respuesta`, icon: 'quotes' as const, tone: 'bg-emerald-50 text-emerald-600' },
-                    { label: 'Oportunidades', value: dashboardData.openOpportunities.length, detail: `${Math.max(0, openRequests.length - dashboardData.openOpportunities.length)} ya respondidas`, icon: 'money' as const, tone: 'bg-amber-50 text-amber-600' },
-                    { label: 'Ventas concretadas', value: formatCurrency(dashboardData.totalSales), detail: `${dashboardData.activeOrders.length} pedidos activos`, icon: 'sales' as const, tone: 'bg-sky-50 text-sky-600' },
-                  ].map((card) => (
-                    <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
-                        <ProviderStatIcon kind={card.icon} />
-                      </span>
-                      <p className="mt-4 text-[1.55rem] font-semibold tracking-tight text-slate-950">{card.value}</p>
-                      <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
-                      <p className="mt-2 text-[11px] text-slate-500">{card.detail}</p>
-                    </article>
-                  ))}
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    En {companyName}
+                  </p>
+                  <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {[
+                      { label: 'Solicitudes nuevas', value: openRequests.length, detail: `${dashboardData.privateRequests.length} privadas para tu empresa`, icon: 'requests' as const, tone: 'bg-indigo-50 text-indigo-600' },
+                      { label: 'Cotizaciones aceptadas', value: dashboardData.awardedQuotes.length, detail: `${dashboardData.submittedQuotes.length} pendientes de respuesta`, icon: 'quotes' as const, tone: 'bg-emerald-50 text-emerald-600' },
+                      { label: 'Oportunidades', value: dashboardData.openOpportunities.length, detail: `${Math.max(0, openRequests.length - dashboardData.openOpportunities.length)} ya respondidas`, icon: 'money' as const, tone: 'bg-amber-50 text-amber-600' },
+                      { label: 'Ventas concretadas', value: formatCurrency(dashboardData.totalSales), detail: `${dashboardData.activeOrders.length} pedidos activos`, icon: 'sales' as const, tone: 'bg-sky-50 text-sky-600' },
+                    ].map((card) => (
+                      <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
+                          <ProviderStatIcon kind={card.icon} />
+                        </span>
+                        <p className="mt-4 text-[1.55rem] font-semibold tracking-tight text-slate-950">{card.value}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
+                        <p className="mt-2 text-[11px] text-slate-500">{card.detail}</p>
+                      </article>
+                    ))}
+                  </div>
                 </div>
 
                 <CommercialPanel />
 
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_1fr]">
-                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-950">Solicitudes recientes</p>
-                      <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
-                        Ver todas
-                      </Link>
-                    </div>
-                    <div className="mt-3 space-y-3">
-                      {dashboardData.recentRequests.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
-                          No hay solicitudes para mostrar.
-                        </div>
-                      ) : (
-                        dashboardData.recentRequests.map((request) => (
-                          <article key={request.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-3 py-3">
-                            <div className="flex min-w-0 items-start gap-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                                <ProviderStatIcon kind="requests" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-950">{request.title}</p>
-                                <p className="mt-0.5 text-[11px] text-slate-500">
-                                  {request.buyerCompany?.name ?? 'Cliente'}
-                                </p>
-                                <p className="mt-0.5 text-[11px] text-slate-400">
-                                  {request.buyerCompany?.city ?? request.buyerCompany?.country ?? 'Sin ubicacion'}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="shrink-0 text-right">
-                              <p className="text-[11px] text-slate-400">{formatRelativeTime(request.updatedAt)}</p>
-                              <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${getRequestTagClass(request.status)}`}>
-                                {getRequestTag(request.status)}
-                              </span>
-                            </div>
-                          </article>
-                        ))
-                      )}
-                    </div>
-                    <Link className="mt-3 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
-                      Ver todas las solicitudes
-                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      </svg>
-                    </Link>
-                  </section>
-
-                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-950">Pedidos activos</p>
-                      <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/pedidos">
-                        Ver todos
-                      </Link>
-                    </div>
-                    <p className="mt-4 text-[2rem] font-semibold tracking-tight text-slate-950">
-                      {dashboardData.activeOrders.length}
-                    </p>
-                    <p className="text-xs text-slate-500">Pedidos en proceso</p>
-                    <div className="mt-4 grid grid-cols-4 gap-2 text-center">
-                      {Object.entries(dashboardData.stageCounts).map(([key, value]) => (
-                        <div key={key} className="rounded-xl bg-slate-50 px-2 py-2">
-                          <p className="text-base font-semibold text-slate-950">{value}</p>
-                          <p className="mt-1 text-[10px] text-slate-500">
-                            {getProductionLabel(
-                              key === 'production'
-                                ? 'IN_PRODUCTION'
-                                : key === 'transit'
-                                  ? 'DISPATCHED'
-                                  : key === 'delivered'
-                                    ? 'DELIVERED'
-                                    : 'CONFIRMED',
-                            )}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex items-center justify-between rounded-2xl bg-indigo-50 px-3 py-3 text-[11px] text-indigo-700">
-                      <span>{dashboardData.stageCounts.production} pedidos en produccion</span>
-                      <Link className="font-semibold" href="/dashboard/proveedor/pedidos">
-                        Revisar
-                      </Link>
-                    </div>
-                  </section>
-
-                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-950">Calendario operativo</p>
-                      <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/pedidos">
-                        Ver pedidos
-                      </Link>
-                    </div>
-                    <div className="mt-6 flex items-end justify-between gap-3">
-                      <div>
-                        <p className="text-xs text-slate-500">Proxima fecha comprometida</p>
-                        <p className="mt-1 text-[2rem] font-semibold tracking-tight text-indigo-600">
-                          {dashboardData.nextPromisedDate ? formatShortDate(dashboardData.nextPromisedDate) : '--'}
-                        </p>
+                <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.3fr_1fr]">
+                  <div className="space-y-4">
+                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-950">Solicitudes recientes</p>
+                        <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
+                          Ver todas
+                        </Link>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[11px] text-slate-400">Pedidos con fecha comprometida</p>
-                        <p className="mt-1 text-lg font-semibold text-slate-950">
-                          {dashboardData.activeOrders.filter((quote) => quote.request?.order?.promisedDate).length}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-3">
-                      <p className="text-[11px] text-slate-500">Pedidos en produccion</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-950">{dashboardData.stageCounts.production}</p>
-                    </div>
-                  </section>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-950">Rendimiento de cotizaciones</p>
-                      <button className="inline-flex h-8 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-semibold text-slate-600" type="button">
-                        Datos acumulados
-                      </button>
-                    </div>
-                    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[210px_1fr] lg:items-center">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <div
-                          className="relative h-36 w-36 rounded-full"
-                          style={{
-                            background: `conic-gradient(#6EE7B7 0deg ${donutAccepted}deg, #FCD34D ${donutAccepted}deg ${donutAccepted + donutPending}deg, #FCA5A5 ${donutAccepted + donutPending}deg 360deg)`,
-                          }}
-                        >
-                          <div className="absolute inset-[18px] flex flex-col items-center justify-center rounded-full bg-white">
-                            <p className="text-[11px] text-slate-400">Total</p>
-                            <p className="text-2xl font-semibold text-slate-950">{myQuotes.length}</p>
-                            <p className="text-[11px] text-slate-500">cotizaciones</p>
+                      <div className="mt-3 space-y-3">
+                        {dashboardData.recentRequests.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                            No hay solicitudes para mostrar.
                           </div>
-                        </div>
-                        <div className="w-full space-y-2 text-[11px] text-slate-500">
-                          {[
-                            { label: 'Aceptadas', value: dashboardData.awardedQuotes.length, tone: 'bg-emerald-400' },
-                            { label: 'Pendientes', value: dashboardData.submittedQuotes.length, tone: 'bg-amber-400' },
-                            { label: 'Rechazadas', value: dashboardData.rejectedQuotes.length, tone: 'bg-rose-400' },
-                          ].map((item) => (
-                            <div key={item.label} className="flex items-center justify-between gap-3">
-                              <span className="flex items-center gap-2">
-                                <span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />
-                                {item.label}
-                              </span>
-                              <span className="font-semibold text-slate-700">{item.value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-slate-400">Tasa de aceptacion</p>
-                        <div className="mt-1 flex items-baseline gap-2">
-                          <p className="text-3xl font-semibold tracking-tight text-slate-950">{acceptanceRate}%</p>
-                          <span className="text-xs text-slate-500">
-                            {dashboardData.awardedQuotes.length} cotizaciones adjudicadas
-                          </span>
-                        </div>
-                        <div className="mt-4">
-                          <MiniLineChart />
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-950">Clientes destacados</p>
-                      <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
-                        Ver todos
-                      </Link>
-                    </div>
-                    <div className="mt-4 space-y-3">
-                      {dashboardData.topClients.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-sm text-slate-500">
-                          Aun no hay clientes destacados para mostrar.
-                        </div>
-                      ) : (
-                        dashboardData.topClients.map((client) => (
-                          <article key={client.name} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-3 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-xs font-semibold text-slate-700">
-                                {client.name.slice(0, 2).toUpperCase()}
+                        ) : (
+                          dashboardData.recentRequests.map((request) => (
+                            <article key={request.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-3 py-3">
+                              <div className="flex min-w-0 items-start gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                                  <ProviderStatIcon kind="requests" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-slate-950">{request.title}</p>
+                                  <p className="mt-0.5 text-[11px] text-slate-500">
+                                    {request.buyerCompany?.name ?? 'Cliente'}
+                                  </p>
+                                  <p className="mt-0.5 text-[11px] text-slate-400">
+                                    {request.buyerCompany?.city ?? request.buyerCompany?.country ?? 'Sin ubicacion'}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm font-semibold text-slate-950">{client.name}</p>
-                                <p className="mt-0.5 text-[11px] text-slate-500">{client.orders} cotizaciones</p>
+                              <div className="shrink-0 text-right">
+                                <p className="text-[11px] text-slate-400">{formatRelativeTime(request.updatedAt)}</p>
+                                <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${getRequestTagClass(request.status)}`}>
+                                  {getRequestTag(request.status)}
+                                </span>
                               </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xs font-semibold text-slate-950">{formatCurrency(client.amount)}</p>
-                              <p className="mt-1 text-[11px] text-slate-500">{client.orders} cotizaciones</p>
-                            </div>
-                          </article>
-                        ))
-                      )}
-                    </div>
-                  </section>
-                </div>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                            </article>
+                          ))
+                        )}
+                      </div>
+                      <Link className="mt-3 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
+                        Ver todas las solicitudes
                         <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-950">Tip ATAR!</p>
-                        <p className="text-xs text-slate-500">
-                          Completa tu perfil de empresa al 100% y destaca tus certificaciones para ganar mas confianza.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button className="hidden h-9 items-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
-                        Completar perfil
-                      </button>
-                      <span className="rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-700">
-                        Basado en tu actividad real
-                      </span>
-                    </div>
-                  </div>
-                </section>
-              </div>
+                      </Link>
+                    </section>
 
-              <aside className="space-y-4">
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-950">Actividad reciente</p>
-                    <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
-                      Ver todo
-                    </Link>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {dashboardData.recentActivity.map((item) => (
-                      <article key={item.id} className="flex items-start gap-3">
-                        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl ${item.tone}`}>
-                          {item.glyph === 'check' ? '✓' : item.glyph === 'quote' ? '✦' : '★'}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold leading-5 text-slate-950">{item.title}</p>
-                          <p className="mt-0.5 text-[11px] text-slate-500">{item.detail}</p>
-                        </div>
-                        <span className="shrink-0 text-[11px] text-slate-400">{item.time}</span>
-                      </article>
-                    ))}
-                  </div>
-                  <Link className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
-                    Ver toda la actividad
-                    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    </svg>
-                  </Link>
-                </section>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="text-sm font-semibold text-slate-950">Tareas pendientes</p>
-                  <div className="mt-4 space-y-3">
-                    {pendingTasks.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
-                        No hay tareas pendientes generadas por tus pedidos y cotizaciones actuales.
+                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-950">Rendimiento de cotizaciones</p>
+                        <button className="inline-flex h-8 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-semibold text-slate-600" type="button">
+                          Datos acumulados
+                        </button>
                       </div>
-                    ) : (
-                      pendingTasks.map((task) => (
-                        <div key={task.label} className="flex items-start gap-3 rounded-2xl border border-slate-200 px-3 py-3">
-                          <span className="mt-0.5 h-4 w-4 rounded border border-slate-300 bg-white" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-slate-700">{task.label}</p>
+                      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[210px_1fr] lg:items-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div
+                            className="relative h-36 w-36 rounded-full"
+                            style={{
+                              background: `conic-gradient(#6EE7B7 0deg ${donutAccepted}deg, #FCD34D ${donutAccepted}deg ${donutAccepted + donutPending}deg, #FCA5A5 ${donutAccepted + donutPending}deg 360deg)`,
+                            }}
+                          >
+                            <div className="absolute inset-[18px] flex flex-col items-center justify-center rounded-full bg-white">
+                              <p className="text-[11px] text-slate-400">Total</p>
+                              <p className="text-2xl font-semibold text-slate-950">{myQuotes.length}</p>
+                              <p className="text-[11px] text-slate-500">cotizaciones</p>
+                            </div>
                           </div>
-                          <span className="shrink-0 text-[11px] text-slate-400">
-                            {task.due}
-                          </span>
+                          <div className="w-full space-y-2 text-[11px] text-slate-500">
+                            {[
+                              { label: 'Aceptadas', value: dashboardData.awardedQuotes.length, tone: 'bg-emerald-400' },
+                              { label: 'Pendientes', value: dashboardData.submittedQuotes.length, tone: 'bg-amber-400' },
+                              { label: 'Rechazadas', value: dashboardData.rejectedQuotes.length, tone: 'bg-rose-400' },
+                            ].map((item) => (
+                              <div key={item.label} className="flex items-center justify-between gap-3">
+                                <span className="flex items-center gap-2">
+                                  <span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />
+                                  {item.label}
+                                </span>
+                                <span className="font-semibold text-slate-700">{item.value}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))
-                    )}
+                        <div>
+                          <p className="text-[11px] text-slate-400">Tasa de aceptacion</p>
+                          <div className="mt-1 flex items-baseline gap-2">
+                            <p className="text-3xl font-semibold tracking-tight text-slate-950">{acceptanceRate}%</p>
+                            <span className="text-xs text-slate-500">
+                              {dashboardData.awardedQuotes.length} cotizaciones adjudicadas
+                            </span>
+                          </div>
+                          <div className="mt-4">
+                            <MiniLineChart />
+                          </div>
+                        </div>
+                      </div>
+                    </section>
                   </div>
-                  <Link className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
-                    Ver todas las tareas
-                    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    </svg>
-                  </Link>
-                </section>
-              </aside>
+
+                  <div className="space-y-4">
+                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <p className="text-sm font-semibold text-slate-950">Tareas pendientes</p>
+                      <div className="mt-4 space-y-3">
+                        {pendingTasks.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                            No hay tareas pendientes generadas por tus pedidos y cotizaciones actuales.
+                          </div>
+                        ) : (
+                          pendingTasks.map((task) => (
+                            <div key={task.label} className="flex items-start gap-3 rounded-2xl border border-slate-200 px-3 py-3">
+                              <span className="mt-0.5 h-4 w-4 rounded border border-slate-300 bg-white" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium text-slate-700">{task.label}</p>
+                              </div>
+                              <span className="shrink-0 text-[11px] text-slate-400">
+                                {task.due}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <Link className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
+                        Ver todas las tareas
+                        <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                      </Link>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-950">Pedidos activos</p>
+                        <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/pedidos">
+                          Ver todos
+                        </Link>
+                      </div>
+                      <p className="mt-4 text-[2rem] font-semibold tracking-tight text-slate-950">
+                        {dashboardData.activeOrders.length}
+                      </p>
+                      <p className="text-xs text-slate-500">Pedidos en proceso</p>
+                      <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+                        {Object.entries(dashboardData.stageCounts).map(([key, value]) => (
+                          <div key={key} className="rounded-xl bg-slate-50 px-2 py-2">
+                            <p className="text-base font-semibold text-slate-950">{value}</p>
+                            <p className="mt-1 text-[10px] text-slate-500">
+                              {getProductionLabel(
+                                key === 'production'
+                                  ? 'IN_PRODUCTION'
+                                  : key === 'transit'
+                                    ? 'DISPATCHED'
+                                    : key === 'delivered'
+                                      ? 'DELIVERED'
+                                      : 'CONFIRMED',
+                              )}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 flex items-center justify-between rounded-2xl bg-indigo-50 px-3 py-3 text-[11px] text-indigo-700">
+                        <span>
+                          Proxima entrega:{' '}
+                          <span className="font-semibold">
+                            {dashboardData.nextPromisedDate
+                              ? formatShortDate(dashboardData.nextPromisedDate)
+                              : 'sin fecha'}
+                          </span>
+                        </span>
+                        <Link className="font-semibold" href="/dashboard/proveedor/pedidos">
+                          Revisar
+                        </Link>
+                      </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-950">Clientes destacados</p>
+                        <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
+                          Ver todos
+                        </Link>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {dashboardData.topClients.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-sm text-slate-500">
+                            Aun no hay clientes destacados para mostrar.
+                          </div>
+                        ) : (
+                          dashboardData.topClients.map((client) => (
+                            <article key={client.name} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-3 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-xs font-semibold text-slate-700">
+                                  {client.name.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-950">{client.name}</p>
+                                  <p className="mt-0.5 text-[11px] text-slate-500">{client.orders} cotizaciones</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs font-semibold text-slate-950">{formatCurrency(client.amount)}</p>
+                                <p className="mt-1 text-[11px] text-slate-500">{client.orders} cotizaciones</p>
+                              </div>
+                            </article>
+                          ))
+                        )}
+                      </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-950">Actividad reciente</p>
+                        <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
+                          Ver todo
+                        </Link>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {dashboardData.recentActivity.map((item) => (
+                          <article key={item.id} className="flex items-start gap-3">
+                            <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl ${item.tone}`}>
+                              {item.glyph === 'check' ? '✓' : item.glyph === 'quote' ? '✦' : '★'}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold leading-5 text-slate-950">{item.title}</p>
+                              <p className="mt-0.5 text-[11px] text-slate-500">{item.detail}</p>
+                            </div>
+                            <span className="shrink-0 text-[11px] text-slate-400">{item.time}</span>
+                          </article>
+                        ))}
+                      </div>
+                      <Link className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
+                        Ver toda la actividad
+                        <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                      </Link>
+                    </section>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
         </section>

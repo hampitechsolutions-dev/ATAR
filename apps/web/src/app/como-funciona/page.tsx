@@ -1,4 +1,13 @@
 import Image from 'next/image';
+import Link from 'next/link';
+
+function ArrowIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
 
 function StepIcon({ name }: { name: 'request' | 'quotes' | 'compare' | 'produce' | 'deliver' }) {
   if (name === 'request') {
@@ -214,19 +223,19 @@ export default function ComoFuncionaPage() {
     {
       index: '02',
       title: 'Cotizaciones',
-      description: 'Proveedores verificados reciben tu solicitud y envían sus mejores propuestas.',
+      description: 'Proveedores verificados reciben tu solicitud y envían sus propuestas.',
       icon: 'quotes' as const,
     },
     {
       index: '03',
       title: 'Comparación',
-      description: 'Compará precios, plazos, calidades y condiciones para tomar la mejor decisión.',
+      description: 'Compará precios, plazos, calidades y condiciones para decidir.',
       icon: 'compare' as const,
     },
     {
       index: '04',
       title: 'Producción',
-      description: 'Aprobás y el proveedor inicia la producción. Seguimiento en tiempo real.',
+      description: 'Aprobás y el proveedor arranca. Seguimiento en tiempo real.',
       icon: 'produce' as const,
     },
     {
@@ -241,22 +250,18 @@ export default function ComoFuncionaPage() {
     {
       title: 'Visibilidad total',
       description: 'Estado de cada pedido en tiempo real. Sin llamadas ni mensajes.',
-      icon: 'chart' as const,
     },
     {
       title: 'Comunicación centralizada',
       description: 'Conversaciones, archivos y aprobaciones en un solo lugar.',
-      icon: 'chat' as const,
     },
     {
       title: 'Documentación siempre disponible',
       description: 'Especificaciones, cotizaciones, órdenes y facturación organizadas.',
-      icon: 'file' as const,
     },
     {
       title: 'Reportes y métricas',
       description: 'Analizá tu compra y proveedores para optimizar cada operación.',
-      icon: 'pie' as const,
     },
   ];
 
@@ -266,8 +271,16 @@ export default function ComoFuncionaPage() {
       description: 'Proveedores verificados y documentación respaldada.',
       icon: 'shield' as const,
     },
-    { title: 'Ahorro de tiempo', description: 'Cotizaciones en minutos, no en días.', icon: 'clock' as const },
-    { title: 'Mejores condiciones', description: 'Compará y elegí siempre la mejor opción.', icon: 'star' as const },
+    {
+      title: 'Ahorro de tiempo',
+      description: 'Cotizaciones en minutos, no en días.',
+      icon: 'clock' as const,
+    },
+    {
+      title: 'Mejores condiciones',
+      description: 'Compará y elegí siempre la mejor opción.',
+      icon: 'star' as const,
+    },
     {
       title: 'Decisiones basadas en datos',
       description: 'Métricas y reportes para comprar mejor, siempre.',
@@ -276,139 +289,173 @@ export default function ComoFuncionaPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-white text-slate-950">
-      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(59,91,255,0.12),_transparent_45%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
-        <div className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
-          <div className="grid gap-10 lg:grid-cols-[0.48fr_0.52fr] lg:items-center">
-            <div className="space-y-7">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
+    <main className="bg-white text-slate-950">
+      {/* ==================== HERO (con el video) ==================== */}
+      <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#070b17] text-white lg:min-h-[720px]">
+        <Image alt="" className="object-cover object-center" fill priority sizes="100vw" src="/heroatar.png" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#070b17_0%,rgba(7,11,23,0.94)_38%,rgba(7,11,23,0.72)_70%,rgba(7,11,23,0.55)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(7,11,23,0.7)_0%,transparent_35%)]" />
+
+        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-12 lg:py-20">
+          <div className="grid items-center gap-12 lg:grid-cols-[0.52fr_0.48fr] lg:gap-16">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#4f7bff]">
                 Cómo funciona
               </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                Procesos simples. <br />
-                <span className="text-indigo-600">Mejores</span> resultados.
+              <h1 className="mt-5 text-[2.4rem] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-[3.5rem]">
+                Procesos simples. <span className="text-[#4f7bff]">Mejores resultados.</span>
               </h1>
-              <p className="max-w-xl text-lg leading-8 text-slate-600">
-                De la solicitud a la entrega, ATAR conecta tu industria con los proveedores adecuados en cada etapa.
+              <p className="mt-6 max-w-xl text-lg leading-8 text-white/70">
+                De la solicitud a la entrega, ATAR conecta tu industria con los proveedores adecuados
+                en cada etapa.
               </p>
+
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/acceso"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2f6bff] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(47,107,255,0.4)] transition hover:bg-[#255bef]"
+                >
+                  Iniciar cotización
+                  <ArrowIcon />
+                </Link>
+                <Link
+                  href="/productos"
+                  className="inline-flex items-center justify-center rounded-full border border-white/25 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Ver productos
+                </Link>
+              </div>
             </div>
 
-            <div className="relative h-[320px] w-full sm:h-[380px] lg:h-[420px]">
-              <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_bottom,_rgba(59,91,255,0.20),_transparent_55%)] blur-2xl" />
-              <video
-                className="absolute inset-0 h-full w-full rounded-[2rem] object-cover shadow-lg ring-1 ring-slate-200"
-                controls
-                playsInline
-                preload="metadata"
-                poster="/cf.png"
-              >
-                <source src="/como-funciona.mp4" type="video/mp4" />
-                Tu navegador no soporta la reproducción de video.
-              </video>
-            </div>
-          </div>
-
-          <div className="pointer-events-none absolute left-10 top-[260px] hidden h-28 w-28 opacity-50 lg:block">
-            <div className="grid h-full w-full grid-cols-6 gap-2">
-              {Array.from({ length: 36 }).map((_, index) => (
-                <span key={index} className="h-1 w-1 rounded-full bg-indigo-200" />
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-12 rounded-[2rem] border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur">
-            <div className="grid gap-8 lg:grid-cols-5">
-              {steps.map((step, index) => (
-                <div key={step.index} className="relative">
-                  {index !== 0 ? (
-                    <div className="absolute -left-6 top-7 hidden h-px w-12 bg-slate-200 lg:block" />
-                  ) : null}
-
-                  <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-                    <StepIcon name={step.icon} />
-                    <span className="absolute -left-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-semibold text-white">
-                      {step.index}
-                    </span>
-                  </div>
-
-                  <p className="mt-5 text-sm font-semibold text-slate-950">{step.title}</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">{step.description}</p>
-                </div>
-              ))}
+            {/* El video vive dentro del hero, no como franja aparte. */}
+            <div className="relative">
+              <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_center,rgba(47,107,255,0.28),transparent_65%)] blur-2xl" />
+              <div className="relative overflow-hidden rounded-[1.5rem] shadow-[0_30px_80px_rgba(0,0,0,0.45)] ring-1 ring-white/15">
+                <video
+                  className="aspect-video h-full w-full object-cover"
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster="/cf.png"
+                >
+                  <source src="/como-funciona.mp4" type="video/mp4" />
+                  Tu navegador no soporta la reproducción de video.
+                </video>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-t border-slate-200 bg-slate-50">
-        <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:px-10">
-          <div className="grid gap-10 lg:grid-cols-[0.4fr_0.6fr] lg:items-center">
-            <div className="space-y-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">Cada etapa, bajo control</p>
-              <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Desde tu panel <span className="text-indigo-600">central</span>
+      {/* ==================== LOS CINCO PASOS ==================== */}
+      <section className="bg-[#f7f8fb]">
+        <div className="mx-auto w-full max-w-[1180px] px-6 py-24 lg:px-10 lg:py-28">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.3em] text-[#2f6bff]">
+            El recorrido
+          </p>
+          <h2 className="mx-auto mt-4 max-w-2xl text-center text-3xl font-semibold tracking-[-0.02em] text-slate-950 sm:text-[2.6rem]">
+            De la solicitud a la entrega, en cinco pasos.
+          </h2>
+
+          <div className="relative mt-16 grid grid-cols-1 gap-y-12 sm:grid-cols-2 lg:grid-cols-5 lg:gap-y-0">
+            {/* Línea conectora: arranca y termina en el centro de los extremos. */}
+            <div className="pointer-events-none absolute left-[10%] right-[10%] top-[26px] hidden h-px bg-slate-300/70 lg:block" />
+            {steps.map((step) => (
+              <div key={step.index} className="relative flex flex-col items-center px-4 text-center">
+                <span className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#2f6bff] shadow-sm">
+                  <StepIcon name={step.icon} />
+                </span>
+                <span className="mt-5 text-sm font-bold tracking-[0.2em] text-[#2f6bff]">
+                  {step.index}
+                </span>
+                <h3 className="mt-2 text-lg font-semibold text-slate-950">{step.title}</h3>
+                <p className="mt-2 max-w-[220px] text-sm leading-6 text-slate-500">
+                  {step.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ==================== PANEL CENTRAL ==================== */}
+      <section className="bg-white">
+        <div className="mx-auto w-full max-w-[1440px] px-6 py-24 lg:px-12 lg:py-28">
+          <div className="grid gap-14 lg:grid-cols-[0.45fr_0.55fr] lg:items-center">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#2f6bff]">
+                Cada etapa, bajo control
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-slate-950 sm:text-[2.6rem]">
+                Todo desde tu panel central.
               </h2>
-              <p className="max-w-xl text-base leading-8 text-slate-600">
-                Informacion clara para decidir mejor y operar con total transparencia.
+              <p className="mt-5 max-w-xl text-base leading-8 text-slate-500">
+                Información clara para decidir mejor y operar con total transparencia.
               </p>
 
-              <div className="space-y-3">
+              <div className="mt-9 space-y-6">
                 {controlItems.map((item) => (
-                  <div
-                    key={item.title}
-                    className="flex gap-4 rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                      <span className="h-2 w-2 rounded-full bg-indigo-600" />
-                    </div>
+                  <div key={item.title} className="flex gap-4">
+                    <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#2f6bff]" />
                     <div>
-                      <p className="font-semibold text-slate-950">{item.title}</p>
-                      <p className="mt-1 text-sm leading-7 text-slate-600">{item.description}</p>
+                      <p className="text-base font-semibold text-slate-950">{item.title}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="relative lg:-mr-16 xl:-mr-28">
-              <div className="relative h-[360px] w-full sm:h-[420px] lg:h-[460px]">
-                <Image
-                  alt="Dashboard ATAR"
-                  className="object-contain object-right"
-                  fill
-                  sizes="(min-width: 1024px) 60vw, 100vw"
-                  src="/dash.png"
-                />
-              </div>
+            <div className="relative h-[360px] w-full sm:h-[420px] lg:h-[480px]">
+              <Image
+                alt="Panel de ATAR"
+                className="object-contain object-center"
+                fill
+                sizes="(min-width: 1024px) 55vw, 100vw"
+                src="/dash.png"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-t border-slate-200 bg-white">
-        <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:px-10">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="space-y-3">
-              <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Más que una plataforma, <span className="text-indigo-600">tu aliado estratégico</span>
-              </h2>
-            </div>
-          </div>
+      {/* ==================== SEPARADOR CINEMATOGRÁFICO ==================== */}
+      <section className="relative isolate flex min-h-[420px] items-center overflow-hidden bg-[#070b17] text-white lg:min-h-[520px]">
+        <Image alt="" className="object-cover object-center" fill sizes="100vw" src="/hero-industria.png" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,11,23,0.9)_0%,rgba(7,11,23,0.55)_50%,rgba(7,11,23,0.2)_100%)]" />
+        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 lg:px-12">
+          <h2 className="max-w-2xl text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-5xl">
+            Cada pedido, con la trazabilidad que la industria necesita.
+          </h2>
+          <span className="mt-8 block h-1 w-16 rounded-full bg-[#2f6bff]" />
+        </div>
+      </section>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* ==================== BENEFICIOS (franja oscura) ==================== */}
+      <section className="bg-[#0a0f1e] text-white">
+        <div className="mx-auto w-full max-w-[1440px] px-6 py-24 lg:px-12 lg:py-28">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.32em] text-white/40">
+            Por qué ATAR
+          </p>
+          <h2 className="mx-auto mt-4 max-w-2xl text-center text-3xl font-semibold tracking-[-0.02em] sm:text-[2.6rem]">
+            Más que una plataforma, tu aliado estratégico.
+          </h2>
+
+          <div className="mt-16 grid grid-cols-1 gap-y-12 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-white/10">
             {benefits.map((item) => (
-              <article key={item.title} className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+              <div key={item.title} className="flex flex-col items-center px-6 text-center">
+                <span className="text-[#4f7bff]">
                   <BenefitIcon name={item.icon} />
-                </div>
-                <p className="mt-5 text-base font-semibold text-slate-950">{item.title}</p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">{item.description}</p>
-              </article>
+                </span>
+                <h3 className="mt-5 text-lg font-semibold">{item.title}</h3>
+                <p className="mt-2 max-w-[240px] text-sm leading-6 text-white/55">
+                  {item.description}
+                </p>
+              </div>
             ))}
           </div>
         </div>
       </section>
-
     </main>
   );
 }

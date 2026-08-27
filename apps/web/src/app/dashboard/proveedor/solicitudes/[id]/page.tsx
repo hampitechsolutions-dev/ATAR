@@ -253,7 +253,7 @@ export default function SupplierRequestDetailPage() {
             {/* Detalles */}
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">Detalles de la solicitud</p>
-              <dl className="mt-3 divide-y divide-slate-100">
+              <dl className="mt-3 divide-y divide-slate-200">
                 {detailRows.map((row) =>
                   row.wide ? (
                     <div key={row.label} className="py-2.5">
@@ -277,7 +277,7 @@ export default function SupplierRequestDetailPage() {
               <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
                 <div className="absolute inset-0 bg-slate-950/50" onClick={() => setShowQuoteForm(false)} />
                 <div className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-t-3xl bg-white shadow-[0_-20px_60px_rgba(2,6,23,0.28)]">
-                  <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                     <p className="text-base font-bold text-slate-950">
                       {existingQuote ? 'Editar cotización' : 'Nueva cotización'}
                     </p>

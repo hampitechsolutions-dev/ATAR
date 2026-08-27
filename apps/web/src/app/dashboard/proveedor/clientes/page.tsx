@@ -240,7 +240,7 @@ export default function SupplierClientsPage() {
                     <th className="px-5 py-3 text-right font-semibold">Volumen</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-200">
                   {filteredCustomers.map((customer) => (
                     <tr className="transition hover:bg-slate-50/60" key={customer.companyId}>
                       <td className="px-5 py-3">

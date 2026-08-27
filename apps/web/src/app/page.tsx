@@ -117,7 +117,7 @@ const STEPS: { n: string; label: string; text: string; icon: IconName }[] = [
 const TRUST = ['Arcor', 'Molinos', 'Cargill', 'Bünge', 'Terminal 6', 'AGD', 'Louis Dreyfus'];
 
 const CATEGORIES: { title: string; count: string; img: string; span: string }[] = [
-  { title: 'Polímeros', count: '+120 productos', img: '/polimerosweb.png', span: 'lg:col-span-2 lg:row-span-2' },
+  { title: 'Polímeros', count: '+120 productos', img: '/polimero.png', span: 'lg:col-span-2 lg:row-span-2' },
   { title: 'Envases y embalajes', count: '+65 productos', img: '/envasesweb.png', span: 'lg:col-span-2' },
   { title: 'Telas y mallas', count: '+80 productos', img: '/telasweb.png', span: '' },
   { title: 'Hilos y cuerdas', count: '+63 productos', img: '/hilosweb.png', span: '' },
@@ -151,36 +151,6 @@ const HERO_STATS: { icon: IconName; v: string; l: string }[] = [
   { icon: 'users', v: '+450 empresas', l: 'confían en ATAR' },
   { icon: 'box', v: '+12.000 productos', l: 'disponibles' },
   { icon: 'clock', v: '24 h', l: 'respuesta promedio' },
-];
-
-const FOOTER_COLS: { title: string; items: { label: string; href: string }[] }[] = [
-  {
-    title: 'Plataforma',
-    items: [
-      { label: 'Productos', href: '/productos' },
-      { label: 'Proveedores', href: '/proveedores' },
-      { label: 'Cómo funciona', href: '/como-funciona' },
-      { label: 'Planes', href: '/acceso' },
-    ],
-  },
-  {
-    title: 'Recursos',
-    items: [
-      { label: 'Centro de ayuda', href: '#' },
-      { label: 'Blog', href: '#' },
-      { label: 'Guías y recursos', href: '#' },
-      { label: 'Contacto', href: '/contacto' },
-    ],
-  },
-  {
-    title: 'Empresa',
-    items: [
-      { label: 'Sobre nosotros', href: '#' },
-      { label: 'Trabajá con nosotros', href: '#' },
-      { label: 'Términos y condiciones', href: '#' },
-      { label: 'Política de privacidad', href: '#' },
-    ],
-  },
 ];
 
 /* ============================ HOME ============================ */
@@ -455,72 +425,6 @@ export default function Home() {
           </Link>
         </div>
       </section>
-
-      {/* ==================== FOOTER OSCURO ==================== */}
-      <footer className="bg-[#070b17] text-white">
-        <div className="mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-12">
-          <div className="grid gap-12 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_1.2fr]">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <Image alt="ATAR" height={30} src="/logoatarblanco.png" width={30} />
-                <span className="text-lg font-bold tracking-tight">ATAR</span>
-              </div>
-              <p className="mt-4 max-w-xs text-sm leading-6 text-white/50">
-                Conectamos industrias proveedoras con la red más grande de clientes.
-              </p>
-              <div className="mt-6 flex gap-3">
-                {(['in', 'ig', 'yt'] as IconName[]).map((social) => (
-                  <span
-                    key={social}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/60 transition hover:border-white/40 hover:text-white"
-                  >
-                    <Icon name={social} className="h-4 w-4" />
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {FOOTER_COLS.map((col) => (
-              <div key={col.title}>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/40">{col.title}</p>
-                <ul className="mt-5 space-y-3">
-                  {col.items.map((item) => (
-                    <li key={item.label}>
-                      <Link className="text-sm text-white/65 transition hover:text-white" href={item.href}>
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/40">
-                Suscribite a nuestro newsletter
-              </p>
-              <form className="mt-5 flex items-center gap-2 rounded-full border border-white/15 bg-white/5 p-1.5">
-                <input
-                  className="w-full bg-transparent px-4 py-2 text-sm text-white outline-none placeholder:text-white/40"
-                  placeholder="Tu email"
-                  type="email"
-                />
-                <button
-                  type="submit"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2f6bff] text-white transition hover:bg-[#255bef]"
-                  aria-label="Suscribirme"
-                >
-                  <Icon name="arrow" className="h-4 w-4" />
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <div className="mt-14 border-t border-white/10 pt-6 text-center text-xs text-white/40">
-            © 2026 ATAR. Todos los derechos reservados.
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }

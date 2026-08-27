@@ -5,7 +5,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useWorkspace } from '@/components/auth/workspace-provider';
 import { type SupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
-import { clearSession, getPrimaryCompanyName, type WebSession } from '@/lib/session';
+import {
+  clearSession,
+  getPrimaryCompanyName,
+  getUserFullName,
+  isSellerAccount,
+  type WebSession,
+} from '@/lib/session';
 
 type DashboardSidebarProps = {
   role: 'buyer' | 'supplier';
@@ -36,7 +42,10 @@ type SidebarItem = {
   href?: string;
   icon: SidebarIconName;
   badge?: number;
-  dividerBefore?: boolean;
+  /** Encabezado del grupo. Se repite en cada item del mismo bloque. */
+  section?: string;
+  /** Administracion de la empresa: un vendedor no lo ve. */
+  managerOnly?: boolean;
 };
 
 const buyerItems: ReadonlyArray<SidebarItem> = [
@@ -51,20 +60,30 @@ const buyerItems: ReadonlyArray<SidebarItem> = [
   { label: 'Configuración', href: '/dashboard/comprador/configuracion', icon: 'gear' },
 ];
 
+/**
+ * El menu del proveedor esta agrupado por para que sirve cada cosa, no por
+ * orden historico: un vendedor entra a "Mi trabajo" todos los dias y casi
+ * nunca al resto. Lo marcado como `managerOnly` es administracion de la
+ * empresa y no le aparece.
+ */
 const supplierItems: ReadonlyArray<SidebarItem> = [
   { label: 'Inicio', href: '/dashboard/proveedor', icon: 'home' },
-  { label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes', icon: 'file' },
-  { label: 'Cotizaciones', href: '/dashboard/proveedor/cotizaciones', icon: 'tag' },
-  { label: 'Pedidos', href: '/dashboard/proveedor/pedidos', icon: 'box' },
-  { label: 'Catalogo', href: '/dashboard/proveedor/catalogo', icon: 'grid' },
-  { label: 'Produccion', href: '/dashboard/proveedor/produccion', icon: 'factory' },
-  { label: 'Equipo', href: '/dashboard/proveedor/equipo', icon: 'users' },
-  { label: 'Clientes', href: '/dashboard/proveedor/clientes', icon: 'users' },
-  { label: 'Resenas', href: '/dashboard/proveedor/resenas', icon: 'star' },
-  { label: 'Estadisticas', href: '/dashboard/proveedor/reportes', icon: 'chart' },
-  { label: 'Mensajes', href: '/dashboard/proveedor/mensajes', icon: 'mail', dividerBefore: true },
-  { label: 'Notificaciones', href: '/dashboard/proveedor/notificaciones', icon: 'bell' },
-  { label: 'Empresa', href: '/dashboard/proveedor/configuracion', icon: 'gear' },
+
+  { section: 'Mi trabajo', label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes', icon: 'file' },
+  { section: 'Mi trabajo', label: 'Cotizaciones', href: '/dashboard/proveedor/cotizaciones', icon: 'tag' },
+  { section: 'Mi trabajo', label: 'Pedidos', href: '/dashboard/proveedor/pedidos', icon: 'box' },
+  { section: 'Mi trabajo', label: 'Clientes', href: '/dashboard/proveedor/clientes', icon: 'users' },
+  { section: 'Mi trabajo', label: 'Mensajes', href: '/dashboard/proveedor/mensajes', icon: 'mail' },
+
+  { section: 'Empresa', label: 'Catalogo', href: '/dashboard/proveedor/catalogo', icon: 'grid' },
+  { section: 'Empresa', label: 'Produccion', href: '/dashboard/proveedor/produccion', icon: 'factory', managerOnly: true },
+  { section: 'Empresa', label: 'Equipo', href: '/dashboard/proveedor/equipo', icon: 'users', managerOnly: true },
+  { section: 'Empresa', label: 'Resenas', href: '/dashboard/proveedor/resenas', icon: 'star', managerOnly: true },
+  { section: 'Empresa', label: 'Configuracion', href: '/dashboard/proveedor/configuracion', icon: 'gear', managerOnly: true },
+
+  { section: 'Mi cuenta', label: 'Estadisticas', href: '/dashboard/proveedor/reportes', icon: 'chart' },
+  { section: 'Mi cuenta', label: 'Notificaciones', href: '/dashboard/proveedor/notificaciones', icon: 'bell' },
+  { section: 'Mi cuenta', label: 'Mis empresas', href: '/dashboard/proveedor/empresas', icon: 'users' },
 ];
 
 function SidebarIcon({ name }: { name: SidebarIconName }) {
@@ -319,15 +338,23 @@ export default function DashboardSidebar({
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isManager } = useWorkspace();
+  const { isManager, activeWorkspace } = useWorkspace();
 
   const items =
     role === 'buyer'
       ? buyerItems
       : supplierItems
-          // El equipo comercial es administracion de la empresa: un vendedor no
-          // ve el desempeno del resto.
-          .filter((item) => item.href !== '/dashboard/proveedor/equipo' || isManager)
+          // Administrar la empresa (equipo, produccion, resenas, configuracion)
+          // no es trabajo del vendedor: se lo saca del menu en vez de dejarle
+          // pantallas donde no puede hacer nada.
+          .filter((item) => !item.managerOnly || isManager)
+          // "Mis empresas" es el perfil del vendedor: representar a otra
+          // empresa no aplica a la cuenta de una proveedora ni de un comprador.
+          .filter(
+            (item) =>
+              item.href !== '/dashboard/proveedor/empresas' ||
+              (session ? isSellerAccount(session.user) : false),
+          )
           .map((item) => {
           if (!supplierCounters) {
             return item;
@@ -355,14 +382,17 @@ export default function DashboardSidebar({
 
           return item;
         });
-  const companyName = session ? getPrimaryCompanyName(session.user) : 'Mi empresa';
+  // Identidad de la persona; la empresa activa va como contexto debajo.
+  const userName = session ? getUserFullName(session.user) : 'Mi cuenta';
+  const companyName =
+    activeWorkspace?.company.name ?? (session ? getPrimaryCompanyName(session.user) : 'Mi empresa');
   const initials =
-    companyName
+    userName
       .split(' ')
       .filter(Boolean)
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase())
-      .join('') || 'ME';
+      .join('') || 'MC';
 
   function handleLogout() {
     clearSession();
@@ -379,8 +409,10 @@ export default function DashboardSidebar({
           </div>
         </div>
 
-        <nav className="flex-1 overflow-hidden px-3 pb-3 text-[13px]">
-          {items.map((item) => {
+        <nav className="flex-1 overflow-y-auto px-3 pb-3 text-[13px]">
+          {items.map((item, index) => {
+            // El encabezado se dibuja al abrir cada grupo, no en cada item.
+            const startsSection = item.section && item.section !== items[index - 1]?.section;
             const isActive = item.href
               ? pathname === item.href ||
                 (item.href !== `/${pathname?.split('/').slice(1, 3).join('/')}` &&
@@ -404,8 +436,6 @@ export default function DashboardSidebar({
             );
 
             const classes = `group flex w-full items-center justify-between rounded-xl px-3 py-2 transition ${
-              item.dividerBefore ? 'mt-4 border-t border-slate-200 pt-4' : ''
-            } ${
               isActive
                 ? 'bg-[linear-gradient(90deg,rgba(79,70,229,0.18)_0%,rgba(99,102,241,0.10)_60%,rgba(255,255,255,0)_100%)] text-indigo-700'
                 : item.href
@@ -413,18 +443,30 @@ export default function DashboardSidebar({
                   : 'cursor-default text-slate-400'
             }`;
 
+            const heading = startsSection ? (
+              <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                {item.section}
+              </p>
+            ) : null;
+
             if (!item.href) {
               return (
-                <button key={item.label} className={classes} disabled type="button">
-                  {content}
-                </button>
+                <div key={item.label}>
+                  {heading}
+                  <button className={classes} disabled type="button">
+                    {content}
+                  </button>
+                </div>
               );
             }
 
             return (
-              <Link key={item.href} className={classes} href={item.href} onClick={() => onNavigate?.()}>
-                {content}
-              </Link>
+              <div key={item.href}>
+                {heading}
+                <Link className={classes} href={item.href} onClick={() => onNavigate?.()}>
+                  {content}
+                </Link>
+              </div>
             );
           })}
         </nav>
@@ -507,12 +549,12 @@ export default function DashboardSidebar({
 
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
-              {initials || 'JP'}
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
+              {initials}
             </span>
-            <div>
-              <p className="text-sm font-semibold text-slate-950">{companyName}</p>
-              <p className="mt-0.5 text-[11px] text-slate-500">Cliente verificado</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-950">{userName}</p>
+              <p className="mt-0.5 truncate text-[11px] text-slate-500">{companyName}</p>
             </div>
           </div>
           <button className="text-xs font-semibold text-slate-500 hover:text-slate-700" onClick={handleLogout} type="button">

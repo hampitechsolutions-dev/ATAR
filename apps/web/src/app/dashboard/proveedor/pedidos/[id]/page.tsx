@@ -199,7 +199,7 @@ export default function SupplierOrderDetailPage() {
             {/* Información */}
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">Información del pedido</p>
-              <dl className="mt-3 divide-y divide-slate-100">
+              <dl className="mt-3 divide-y divide-slate-200">
                 {infoRows.map((row) => (
                   <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
                     <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
