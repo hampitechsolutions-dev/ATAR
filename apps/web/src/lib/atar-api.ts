@@ -387,6 +387,7 @@ export type CreateRequestPayload = {
   estimatedTotalCost?: number;
   preferredSupplierName?: string;
   privateRequest?: boolean;
+  targetSupplierCompanyIds?: string[];
   dueDate?: string;
   status?: Extract<RequestStatus, 'DRAFT' | 'PUBLISHED'>;
 };

@@ -1,5 +1,7 @@
 import { RequestStatus } from '@prisma/client';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
@@ -56,6 +58,16 @@ export class CreateRequestDto {
   @IsOptional()
   @IsBoolean()
   privateRequest?: boolean;
+
+  // IDs de las empresas proveedoras a las que se dirige la solicitud. Cuando
+  // viene con elementos y la solicitud se publica, se les envia una
+  // notificacion (dashboard + push si dieron opt-in).
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(64, { each: true })
+  @ArrayMaxSize(50)
+  targetSupplierCompanyIds?: string[];
 
   @IsOptional()
   @IsDateString()

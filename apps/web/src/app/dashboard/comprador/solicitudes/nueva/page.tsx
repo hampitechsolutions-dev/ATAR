@@ -731,7 +731,8 @@ export default function BuyerNewRequestWizardPage() {
           : undefined;
       const selectedProviderNames = selectedProviders.map((provider) => provider.name.trim()).filter(Boolean);
       const preferredSupplierName = selectedProviderNames.join(' | ').slice(0, 120) || undefined;
-      const privateRequest = selectedProviderNames.length > 0;
+      const targetSupplierCompanyIds = selectedProviders.map((provider) => provider.id);
+      const privateRequest = targetSupplierCompanyIds.length > 0;
 
       const created = await atarApi.createRequest(
         {
@@ -742,6 +743,7 @@ export default function BuyerNewRequestWizardPage() {
           dueDate,
           privateRequest,
           preferredSupplierName,
+          targetSupplierCompanyIds,
         },
         session.accessToken,
       );

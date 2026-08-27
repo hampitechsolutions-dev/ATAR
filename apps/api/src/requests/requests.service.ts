@@ -41,7 +41,7 @@ export class RequestsService {
       );
     }
 
-    return this.prisma.request.create({
+    const created = await this.prisma.request.create({
       data: {
         buyerCompanyId,
         title: dto.title,
@@ -75,6 +75,30 @@ export class RequestsService {
         buyerCompany: true,
       },
     });
+
+    // Solicitud dirigida: si el comprador eligio proveedores y la publica, se
+    // les avisa. Sin proveedores elegidos sigue siendo mercado abierto (pull).
+    const targetSupplierCompanyIds = [...new Set(dto.targetSupplierCompanyIds ?? [])];
+    if (status === RequestStatus.PUBLISHED && targetSupplierCompanyIds.length > 0) {
+      // Best-effort: una notificacion que falle no debe tumbar la creacion de
+      // la solicitud (allSettled no rechaza). Push/email se manejan adentro.
+      await Promise.allSettled(
+        targetSupplierCompanyIds.map((companyId) =>
+          this.notificationsService.createForCompany({
+            companyId,
+            roles: [MembershipRole.SUPPLIER],
+            excludeUserId: user.userId,
+            type: NotificationType.REQUEST_RECEIVED,
+            title: 'Nueva solicitud de cotizacion',
+            detail: `${buyerCompanyName ?? 'Un comprador'} te envio la solicitud "${created.title}".`,
+            href: `/dashboard/proveedor/solicitudes/${created.id}`,
+            metadata: { requestId: created.id },
+          }),
+        ),
+      );
+    }
+
+    return created;
   }
 
   async findMine(user: AuthUser, activeCompanyId?: string) {
