@@ -34,6 +34,7 @@ enum RequestStatus {
   AWARDED
   NEGOTIATING
   ORDER_ISSUED
+  COMPLETED
   CANCELLED
 }
 
@@ -57,6 +58,7 @@ enum RequestEventType {
   PRODUCTION_STARTED
   ORDER_DISPATCHED
   ORDER_DELIVERED
+  REQUEST_COMPLETED
 }
 
 enum OrderFulfillmentStatus {
@@ -120,6 +122,7 @@ enum NotificationType {
   REPRESENTATION_ACCEPTED
   REPRESENTATION_REJECTED
   REPRESENTATION_CANCELLED
+  REQUEST_COMPLETED
 }
 
 enum NotificationEmailStatus {
