@@ -413,7 +413,6 @@ export type UpsertOrderPayload = {
   orderNumber?: string;
   promisedDate?: string;
   notes?: string;
-  fulfillmentStatus?: OrderFulfillmentStatus;
 };
 
 export type UpdateFulfillmentPayload = {
