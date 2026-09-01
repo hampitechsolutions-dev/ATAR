@@ -190,7 +190,7 @@ export default function SupplierNotificationsPage() {
                       )}
                       {notification.href ? (
                         <Link className="text-sm font-semibold text-[#4a3df0] hover:text-[#3d31d6]" href={notification.href}>
-                          Ver detalle
+                          {notification.type === 'NEW_MESSAGE' ? 'Ver mensaje' : 'Ver detalle'}
                         </Link>
                       ) : null}
                     </div>

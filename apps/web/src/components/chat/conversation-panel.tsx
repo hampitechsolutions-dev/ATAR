@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   atarApi,
   type MembershipRole,
+  type ConversationMessageRecord,
   type ConversationRecord,
   type SendConversationMessagePayload,
 } from '@/lib/atar-api';
@@ -459,37 +460,79 @@ export default function ConversationPanel({
       return;
     }
 
-    try {
-      setSending(true);
-      setError(null);
-      emitTypingState(false);
+    const body = message.trim();
+    const file = selectedFile;
+    if (!body && !file) {
+      return;
+    }
 
+    if (file && file.size > 10 * 1024 * 1024) {
+      setError('El archivo adjunto supera el maximo permitido de 10 MB.');
+      return;
+    }
+
+    const conversationId = conversation.id;
+    const ownCompanyName =
+      participantRole === 'SUPPLIER' ? conversation.supplierCompanyName : conversation.buyerCompanyName;
+    const tempId = `temp-${Date.now()}`;
+
+    // Optimista: el mensaje aparece al instante y el input se limpia ya mismo,
+    // sin esperar el round-trip. El adjunto real se ve cuando el server confirma.
+    const optimisticMessage: ConversationMessageRecord = {
+      id: tempId,
+      body,
+      senderRole: participantRole ?? 'BUYER',
+      senderCompanyName: ownCompanyName ?? null,
+      attachmentName: file?.name ?? null,
+      attachmentMimeType: file?.type ?? null,
+      attachmentSize: file?.size ?? null,
+      attachmentBase64: null,
+      createdAt: new Date().toISOString(),
+      buyerReadAt: null,
+      supplierReadAt: null,
+    };
+
+    setConversation((current) =>
+      current && current.id === conversationId
+        ? { ...current, messages: [...(current.messages ?? []), optimisticMessage] }
+        : current,
+    );
+    setMessage('');
+    setSelectedFile(null);
+    setTypingState(null);
+    emitTypingState(false);
+    setError(null);
+    setSending(true);
+
+    try {
       const payload: SendConversationMessagePayload = {
-        body: message.trim() || undefined,
+        body: body || undefined,
       };
 
-      if (selectedFile) {
-        if (selectedFile.size > 10 * 1024 * 1024) {
-          throw new Error('El archivo adjunto supera el maximo permitido de 10 MB.');
-        }
-
-        payload.attachmentName = selectedFile.name;
-        payload.attachmentMimeType = selectedFile.type || 'application/octet-stream';
-        payload.attachmentSize = selectedFile.size;
-        payload.attachmentBase64 = await fileToBase64(selectedFile);
+      if (file) {
+        payload.attachmentName = file.name;
+        payload.attachmentMimeType = file.type || 'application/octet-stream';
+        payload.attachmentSize = file.size;
+        payload.attachmentBase64 = await fileToBase64(file);
       }
 
       const nextConversation = await atarApi.sendConversationMessage(
-        conversation.id,
+        conversationId,
         payload,
         activeSession.accessToken,
       );
 
+      // El server devuelve la conversacion real: reemplaza al mensaje temporal.
       setConversation(nextConversation);
-      setMessage('');
-      setSelectedFile(null);
-      setTypingState(null);
     } catch (sendError) {
+      // Rollback: se quita el mensaje optimista y se restaura lo escrito.
+      setConversation((current) =>
+        current && current.id === conversationId
+          ? { ...current, messages: (current.messages ?? []).filter((item) => item.id !== tempId) }
+          : current,
+      );
+      setMessage(body);
+      setSelectedFile(file);
       setError(sendError instanceof Error ? sendError.message : 'No se pudo enviar el mensaje.');
     } finally {
       setSending(false);
