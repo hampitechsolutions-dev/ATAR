@@ -41,6 +41,21 @@ export class RequestsService {
       );
     }
 
+    // Multi-producto: si no mandan items, se sintetiza una unica linea con los
+    // campos legacy para no romper el wizard actual (una sola solicitud/producto).
+    const itemsInput =
+      dto.items && dto.items.length > 0
+        ? dto.items
+        : [
+            {
+              productName: dto.productName ?? dto.title,
+              category: dto.category,
+              quantity: dto.quantityRequested,
+              specifications: dto.description,
+              referenceUnitPrice: dto.referenceUnitPrice,
+            },
+          ];
+
     const created = await this.prisma.request.create({
       data: {
         buyerCompanyId,
@@ -55,6 +70,17 @@ export class RequestsService {
         privateRequest: dto.privateRequest ?? false,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         status,
+        items: {
+          create: itemsInput.map((item, index) => ({
+            position: index,
+            productName: item.productName,
+            category: item.category ?? null,
+            quantity: item.quantity ?? null,
+            unit: 'unit' in item ? (item.unit ?? null) : null,
+            specifications: item.specifications ?? null,
+            referenceUnitPrice: item.referenceUnitPrice ?? null,
+          })),
+        },
         events: {
           create: {
             type: RequestEventType.REQUEST_CREATED,
@@ -637,9 +663,11 @@ export class RequestsService {
     const request = await this.prisma.request.findUnique({
       where: { id },
       include: {
+        items: { orderBy: { position: 'asc' } },
         awardedQuote: {
           include: {
             supplierCompany: true,
+            items: true,
           },
         },
         order: true,
@@ -647,6 +675,7 @@ export class RequestsService {
         quotes: {
           include: {
             supplierCompany: true,
+            items: true,
           },
         },
         events: {
@@ -708,6 +737,7 @@ export class RequestsService {
       },
       include: {
         supplierCompany: true,
+        items: true,
       },
       orderBy: {
         createdAt: 'asc',

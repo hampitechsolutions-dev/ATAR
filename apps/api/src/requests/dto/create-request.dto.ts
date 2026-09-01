@@ -1,4 +1,5 @@
 import { RequestStatus } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -12,7 +13,41 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+
+// Un producto de la solicitud. Una solicitud puede pedir varios.
+export class RequestItemInputDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  productName!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  category?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  quantity?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  unit?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  specifications?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  referenceUnitPrice?: number;
+}
 
 export class CreateRequestDto {
   @IsString()
@@ -76,4 +111,13 @@ export class CreateRequestDto {
   @IsOptional()
   @IsEnum(RequestStatus)
   status?: RequestStatus;
+
+  // Productos de la solicitud (multi-producto). Si no viene, el backend
+  // sintetiza una unica linea con los campos legacy (productName/category/etc).
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RequestItemInputDto)
+  @ArrayMaxSize(50)
+  items?: RequestItemInputDto[];
 }
