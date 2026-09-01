@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import CompanyLogo from '@/components/dashboard/company-logo';
 import ConversationPanel from '@/components/chat/conversation-panel';
@@ -101,14 +102,43 @@ export default function SupplierMessagesPage() {
       });
   }, [conversations, search, activeTab]);
 
+  // Preseleccion por deep-link (?c=) al abrir desde una notificacion de mensaje.
   useEffect(() => {
-    if (selectedId && filteredConversations.some((conversation) => conversation.id === selectedId)) {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const target = new URLSearchParams(window.location.search).get('c');
+    if (target) {
+      setSelectedId(target);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedId && conversations.some((conversation) => conversation.id === selectedId)) {
+      return;
+    }
+    // Mientras carga, respeta una posible conversación deep-linked que todavía
+    // no llegó en la lista.
+    if (loading) {
       return;
     }
     setSelectedId(filteredConversations[0]?.id ?? null);
-  }, [filteredConversations, selectedId]);
+  }, [filteredConversations, conversations, selectedId, loading]);
 
-  const activeConversation = filteredConversations.find((conversation) => conversation.id === selectedId) ?? null;
+  const activeConversation = conversations.find((conversation) => conversation.id === selectedId) ?? null;
+
+  const detailLink = useMemo(() => {
+    if (!activeConversation) {
+      return null;
+    }
+    if (activeConversation.contextType === 'REQUEST' && activeConversation.requestId) {
+      return { href: `/dashboard/proveedor/solicitudes/${activeConversation.requestId}`, label: 'Ver solicitud' };
+    }
+    if (activeConversation.contextType === 'QUOTE' && activeConversation.quoteId) {
+      return { href: `/dashboard/proveedor/cotizaciones/${activeConversation.quoteId}`, label: 'Ver cotización' };
+    }
+    return null;
+  }, [activeConversation]);
 
   return (
     <SupplierDashboardShell fullBleed searchPlaceholder="Buscar mensajes o clientes..." session={session}>
@@ -212,14 +242,31 @@ export default function SupplierMessagesPage() {
           </section>
 
           <section className="flex min-h-0 flex-col overflow-hidden bg-white">
-            {activeConversation ? (
-              <ConversationPanel
-                conversationId={activeConversation.id}
-                description={`Conversación con ${activeConversation.buyerCompanyName}.`}
-                mode="existing"
-                session={session}
-                title={activeConversation.contextTitle}
-              />
+            {selectedId ? (
+              <>
+                {detailLink ? (
+                  <div className="flex shrink-0 items-center justify-end border-b border-slate-200 bg-white px-4 py-2">
+                    <Link
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
+                      href={detailLink.href}
+                    >
+                      {detailLink.label}
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M9 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                    </Link>
+                  </div>
+                ) : null}
+                <div className="min-h-0 flex-1">
+                  <ConversationPanel
+                    conversationId={selectedId}
+                    description={activeConversation ? `Conversación con ${activeConversation.buyerCompanyName}.` : 'Conversación'}
+                    mode="existing"
+                    session={session}
+                    title={activeConversation?.contextTitle ?? 'Conversación'}
+                  />
+                </div>
+              </>
             ) : (
               <div className="flex h-full items-center justify-center px-6 text-center text-sm text-slate-500">
                 Seleccioná una conversación para ver el detalle.

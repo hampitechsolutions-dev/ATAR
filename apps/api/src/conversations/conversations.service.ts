@@ -324,8 +324,8 @@ export class ConversationsService {
       participant.role === MembershipRole.BUYER ? MembershipRole.SUPPLIER : MembershipRole.BUYER;
     const href =
       participant.role === MembershipRole.BUYER
-        ? `/dashboard/proveedor/mensajes/${id}`
-        : `/dashboard/comprador/mensajes/${id}`;
+        ? `/dashboard/proveedor/mensajes?c=${id}`
+        : `/dashboard/comprador/mensajes?c=${id}`;
     const senderCompanyName = participant.companyName?.trim() || 'La otra parte';
     const preview = trimmedBody.length > 160 ? `${trimmedBody.slice(0, 157).trimEnd()}...` : trimmedBody;
 

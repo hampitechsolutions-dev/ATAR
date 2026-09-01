@@ -1,43 +1,22 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import ConversationPanel from '@/components/chat/conversation-panel';
-import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
-import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
-export default function SupplierConversationDetailPage() {
+// Unificado: ya no hay una pantalla de "Chat y seguimiento" aparte. El detalle
+// de una conversacion vive en la seccion Mensajes con esa conversacion abierta.
+export default function SupplierConversationRedirectPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { session } = useSupplierDashboardData();
-  const conversationId = typeof params.id === 'string' ? params.id : undefined;
+  const id = typeof params.id === 'string' ? params.id : '';
+
+  useEffect(() => {
+    router.replace(id ? `/dashboard/proveedor/mensajes?c=${id}` : '/dashboard/proveedor/mensajes');
+  }, [id, router]);
 
   return (
-    <SupplierDashboardShell fullBleed session={session}>
-      <div className="flex h-full min-h-0 flex-col">
-        {/* Barra de retorno (mobile) */}
-        <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-2 lg:hidden">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            aria-label="Volver"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-700"
-          >
-            <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-          </button>
-          <p className="text-sm font-semibold text-slate-950">Conversación</p>
-        </div>
-
-        <div className="min-h-0 flex-1">
-          <ConversationPanel
-            conversationId={conversationId}
-            mode="existing"
-            session={session}
-            title="Conversación activa"
-          />
-        </div>
-      </div>
-    </SupplierDashboardShell>
+    <main className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">
+      Abriendo la conversación...
+    </main>
   );
 }
