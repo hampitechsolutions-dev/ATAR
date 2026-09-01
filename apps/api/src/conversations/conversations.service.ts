@@ -329,23 +329,26 @@ export class ConversationsService {
     const senderCompanyName = participant.companyName?.trim() || 'La otra parte';
     const preview = trimmedBody.length > 160 ? `${trimmedBody.slice(0, 157).trimEnd()}...` : trimmedBody;
 
-    await this.notificationsService.createForCompany({
-      companyId: recipientCompanyId,
-      roles: [recipientRole],
-      excludeUserId: user.userId,
-      type: NotificationType.NEW_MESSAGE,
-      title: `Nuevo mensaje de ${senderCompanyName}`,
-      detail: preview
-        ? `${senderCompanyName} escribio sobre ${conversation.contextTitle}: "${preview}"`
-        : `${senderCompanyName} envio un nuevo mensaje sobre ${conversation.contextTitle}.`,
-      href,
-      metadata: {
+    // Fire-and-forget: el push/email no debe demorar la respuesta del envio.
+    // La notificacion se coalesce por conversacion ("Nuevo mensaje de X (2)").
+    void this.notificationsService
+      .notifyNewMessage({
+        companyId: recipientCompanyId,
+        roles: [recipientRole],
+        excludeUserId: user.userId,
         conversationId: id,
-        contextType: conversation.contextType,
-        requestId: conversation.requestId,
-        quoteId: conversation.quoteId,
-      },
-    });
+        senderCompanyName,
+        contextTitle: conversation.contextTitle,
+        preview,
+        href,
+        metadata: {
+          conversationId: id,
+          contextType: conversation.contextType,
+          requestId: conversation.requestId,
+          quoteId: conversation.quoteId,
+        },
+      })
+      .catch(() => undefined);
 
     return this.findOne(user, id, {});
   }

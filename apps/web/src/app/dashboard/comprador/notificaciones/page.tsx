@@ -180,7 +180,7 @@ export default function BuyerNotificationsPage() {
                   </p>
                   {notification.href ? (
                     <Link className="mt-3 inline-flex text-sm font-semibold text-indigo-700 hover:text-indigo-800" href={notification.href}>
-                      Ver detalle
+                      {notification.type === 'NEW_MESSAGE' ? 'Ver mensaje' : 'Ver detalle'}
                     </Link>
                   ) : null}
                 </div>

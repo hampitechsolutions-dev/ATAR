@@ -47,6 +47,18 @@ type CreateNotificationForUsersInput = NotificationContent & {
   userIds: string[];
 };
 
+type NewMessageNotificationInput = {
+  companyId: string;
+  roles: MembershipRole[];
+  excludeUserId?: string;
+  conversationId: string;
+  senderCompanyName: string;
+  contextTitle: string;
+  preview: string;
+  href: string;
+  metadata: Prisma.InputJsonValue;
+};
+
 type WebPushPayload = {
   endpoint: string;
   keys?: {
@@ -263,6 +275,96 @@ export class NotificationsService {
     );
 
     return notifications;
+  }
+
+  /**
+   * Notificacion de chat coalescida: en vez de una notificacion por mensaje,
+   * mantiene UNA sola por (destinatario, conversacion) sin leer y le acumula un
+   * contador -> "Nuevo mensaje de X (2)". Al leerla, el proximo mensaje abre
+   * una nueva. Pensada para llamarse sin await desde el envio (corre aparte).
+   */
+  async notifyNewMessage(input: NewMessageNotificationInput) {
+    const recipients = await this.resolveRecipients({
+      companyId: input.companyId,
+      roles: input.roles,
+      excludeUserId: input.excludeUserId,
+    });
+
+    if (recipients.length === 0) {
+      return;
+    }
+
+    const hasEmailProvider = this.hasEmailProvider();
+    const detail = input.preview
+      ? `${input.senderCompanyName} escribio sobre ${input.contextTitle}: "${input.preview}"`
+      : `${input.senderCompanyName} envio un nuevo mensaje sobre ${input.contextTitle}.`;
+    const emailStatus = hasEmailProvider
+      ? NotificationEmailStatus.PENDING
+      : NotificationEmailStatus.SKIPPED;
+
+    await Promise.all(
+      recipients.map(async (recipient) => {
+        const existing = await this.prisma.notification.findFirst({
+          where: {
+            userId: recipient.id,
+            type: NotificationType.NEW_MESSAGE,
+            readAt: null,
+            metadata: { path: ['conversationId'], equals: input.conversationId },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        const meta = (existing?.metadata ?? null) as { count?: number } | null;
+        const count = (typeof meta?.count === 'number' ? meta.count : existing ? 1 : 0) + 1;
+        const title =
+          count > 1
+            ? `Nuevo mensaje de ${input.senderCompanyName} (${count})`
+            : `Nuevo mensaje de ${input.senderCompanyName}`;
+        const metadata = {
+          ...(input.metadata as Record<string, unknown>),
+          count,
+        } as Prisma.InputJsonValue;
+
+        const notification = existing
+          ? await this.prisma.notification.update({
+              where: { id: existing.id },
+              data: {
+                title,
+                detail,
+                href: input.href,
+                metadata,
+                emailStatus,
+                // Resube la notificacion acumulada al tope de la lista.
+                createdAt: new Date(),
+              },
+            })
+          : await this.prisma.notification.create({
+              data: {
+                userId: recipient.id,
+                companyId: input.companyId,
+                type: NotificationType.NEW_MESSAGE,
+                title,
+                detail,
+                href: input.href,
+                metadata,
+                emailStatus,
+              },
+            });
+
+        await Promise.all([
+          this.sendPushNotifications(notification, recipient),
+          hasEmailProvider
+            ? this.sendEmailNotification(notification.id, {
+                email: recipient.email,
+                firstName: recipient.firstName,
+                title,
+                detail,
+                href: input.href,
+              })
+            : Promise.resolve(),
+        ]);
+      }),
+    );
   }
 
   private configureWebPush() {
