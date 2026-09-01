@@ -20,6 +20,21 @@ import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 
 type StepKey = 1 | 2 | 3 | 4 | 5 | 6;
 
+// Un producto ya agregado a la solicitud (multi-producto). Guarda el slice de
+// campos "por producto" del draft para poder mostrarlo, editarlo y armar el item.
+type ProductLine = {
+  id: string;
+  category: string;
+  description: string;
+  quantity: string;
+  material: string;
+  capacityOption: string;
+  handleType: string;
+  printType: string;
+  specSelections: Record<string, string>;
+  uploadedFiles: Record<string, string[]>;
+};
+
 type RequestDraft = {
   category: string;
   title: string;
@@ -31,6 +46,8 @@ type RequestDraft = {
   printType: string;
   specSelections: Record<string, string>;
   uploadedFiles: Record<string, string[]>;
+  // Productos ya agregados (ademas del que se esta editando en los pasos 1-2).
+  products: ProductLine[];
   deliveryCountry: string;
   deliveryCity: string;
   deliveryAddressMode: 'saved' | 'new';
@@ -151,6 +168,59 @@ function getSpecificationLines(
   });
 }
 
+// Toma una foto de los campos "por producto" del draft actual.
+function snapshotProduct(draft: RequestDraft): ProductLine {
+  return {
+    id: `p-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    category: draft.category,
+    description: draft.description,
+    quantity: draft.quantity,
+    material: draft.material,
+    capacityOption: draft.capacityOption,
+    handleType: draft.handleType,
+    printType: draft.printType,
+    specSelections: { ...draft.specSelections },
+    uploadedFiles: { ...draft.uploadedFiles },
+  };
+}
+
+// Campos "por producto" vacios, para empezar a cargar otro producto.
+function blankProductFields() {
+  return {
+    category: '',
+    title: '',
+    description: '',
+    quantity: '',
+    material: '',
+    capacityOption: '',
+    handleType: '',
+    printType: '',
+    specSelections: {} as Record<string, string>,
+    uploadedFiles: {} as Record<string, string[]>,
+  };
+}
+
+// Devuelve un draft con los campos del producto `line` cargados (para reusar
+// los helpers de specs, o para editar una linea ya agregada).
+function withProductLine(draft: RequestDraft, line: ProductLine): RequestDraft {
+  return {
+    ...draft,
+    category: line.category,
+    description: line.description,
+    quantity: line.quantity,
+    material: line.material,
+    capacityOption: line.capacityOption,
+    handleType: line.handleType,
+    printType: line.printType,
+    specSelections: line.specSelections,
+    uploadedFiles: line.uploadedFiles,
+  };
+}
+
+function getProductDisplayName(line: Pick<ProductLine, 'category'>) {
+  return line.category.trim() || 'Producto';
+}
+
 function loadDraft(): RequestDraft {
   if (typeof window === 'undefined') {
     return {
@@ -176,6 +246,7 @@ function loadDraft(): RequestDraft {
       deliveryContactName: '',
       deliveryPhone: '',
       selectedProviders: [],
+      products: [],
     };
   }
 
@@ -204,6 +275,7 @@ function loadDraft(): RequestDraft {
       deliveryContactName: '',
       deliveryPhone: '',
       selectedProviders: [],
+      products: [],
     };
   }
 
@@ -232,6 +304,7 @@ function loadDraft(): RequestDraft {
       deliveryContactName: parsed.deliveryContactName ?? '',
       deliveryPhone: parsed.deliveryPhone ?? '',
       selectedProviders: Array.isArray(parsed.selectedProviders) ? parsed.selectedProviders : [],
+      products: Array.isArray(parsed.products) ? parsed.products : [],
     };
   } catch {
     window.localStorage.removeItem(DRAFT_KEY);
@@ -258,6 +331,7 @@ function loadDraft(): RequestDraft {
       deliveryContactName: '',
       deliveryPhone: '',
       selectedProviders: [],
+      products: [],
     };
   }
 }
@@ -645,6 +719,69 @@ export default function BuyerNewRequestWizardPage() {
     });
   }
 
+  // El producto que se esta editando en los pasos 1-2 (si tiene categoria).
+  const currentProductLine: ProductLine | null = draft.category.trim()
+    ? {
+        id: 'current',
+        category: draft.category,
+        description: draft.description,
+        quantity: draft.quantity,
+        material: draft.material,
+        capacityOption: draft.capacityOption,
+        handleType: draft.handleType,
+        printType: draft.printType,
+        specSelections: draft.specSelections,
+        uploadedFiles: draft.uploadedFiles,
+      }
+    : null;
+  // Todos los productos de la solicitud: los agregados + el que se edita ahora.
+  const allProductLines: ProductLine[] = currentProductLine
+    ? [...draft.products, currentProductLine]
+    : [...draft.products];
+
+  function addAnotherProduct() {
+    setError(null);
+    if (!draft.category.trim()) {
+      setError('Elegí una categoría para este producto antes de agregar otro.');
+      return;
+    }
+    const missingModule = currentProductModules.find(
+      (module) => module.required && !getModuleValue(draft, module.id).trim(),
+    );
+    if (missingModule) {
+      setError(`Completá "${missingModule.label}" antes de agregar otro producto.`);
+      return;
+    }
+    setDraft((current) => ({
+      ...current,
+      products: [...current.products, snapshotProduct(current)],
+      ...blankProductFields(),
+    }));
+    setStep(1);
+  }
+
+  function editProduct(id: string) {
+    setError(null);
+    setDraft((current) => {
+      const line = current.products.find((product) => product.id === id);
+      if (!line) {
+        return current;
+      }
+      const others = current.products.filter((product) => product.id !== id);
+      // No perder el producto que se estaba editando: si tiene categoria, se guarda.
+      const kept = current.category.trim() ? [...others, snapshotProduct(current)] : others;
+      return { ...withProductLine(current, line), products: kept };
+    });
+    setStep(2);
+  }
+
+  function removeProduct(id: string) {
+    setDraft((current) => ({
+      ...current,
+      products: current.products.filter((product) => product.id !== id),
+    }));
+  }
+
   function goNext() {
     setError(null);
     if (step === 1 && !draft.category.trim()) {
@@ -698,10 +835,32 @@ export default function BuyerNewRequestWizardPage() {
     setError(null);
 
     try {
-      const specLines = getSpecificationLines(requestCategories, draft);
-      const title = draft.title.trim() || `${draft.category} - ${specLines[0]?.replace(/^[^:]+:\s*/, '') || 'Solicitud de cotización'}`;
-      const description = [
-        ...specLines,
+      if (allProductLines.length === 0) {
+        setError('Agregá al menos un producto a la solicitud.');
+        return;
+      }
+
+      // Un item por producto: cada uno con su nombre, cantidad y specs propias.
+      const items = allProductLines.map((line) => {
+        const lineSpecs = getSpecificationLines(requestCategories, withProductLine(draft, line));
+        const parsedQuantity = Number.parseInt(line.quantity, 10);
+        return {
+          productName: getProductDisplayName(line),
+          category: line.category || undefined,
+          quantity: Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : undefined,
+          specifications: lineSpecs.join('\n') || undefined,
+        };
+      });
+
+      const primary = allProductLines[0];
+      const primarySpecs = getSpecificationLines(requestCategories, withProductLine(draft, primary));
+      const title =
+        draft.title.trim() ||
+        (allProductLines.length > 1
+          ? `Solicitud de ${allProductLines.length} productos`
+          : `${primary.category} - ${primarySpecs[0]?.replace(/^[^:]+:\s*/, '') || 'Solicitud de cotización'}`);
+
+      const deliveryLines = [
         draft.deliveryAddressMode === 'saved'
           ? `Entrega: ${draft.deliveryAddressLine}, ${draft.deliveryCountry}`
           : draft.deliveryCountry || draft.deliveryCity || draft.deliveryAddressLine
@@ -718,9 +877,16 @@ export default function BuyerNewRequestWizardPage() {
         draft.deliveryContactName ? `Contacto en planta: ${draft.deliveryContactName}` : null,
         draft.deliveryPhone ? `Telefono de contacto: ${draft.deliveryPhone}` : null,
         draft.deliveryNotes ? `Observaciones: ${draft.deliveryNotes}` : null,
-      ]
-        .filter(Boolean)
-        .join('\n');
+      ].filter(Boolean);
+
+      const productsSummary =
+        allProductLines.length > 1
+          ? `Productos solicitados: ${allProductLines.map((line) => getProductDisplayName(line)).join(', ')}`
+          : null;
+
+      const description =
+        [productsSummary, ...primarySpecs, ...deliveryLines].filter(Boolean).join('\n') ||
+        'Solicitud de cotización.';
 
       const trimmedDeliveryDate = draft.deliveryDate.trim();
       const parsedDeliveryDate =
@@ -738,12 +904,13 @@ export default function BuyerNewRequestWizardPage() {
         {
           title,
           description,
-          category: draft.category,
+          category: primary.category,
           status: 'PUBLISHED',
           dueDate,
           privateRequest,
           preferredSupplierName,
           targetSupplierCompanyIds,
+          items,
         },
         session.accessToken,
       );
@@ -1140,6 +1307,57 @@ export default function BuyerNewRequestWizardPage() {
                   );
                 })}
               </div>
+
+              {/* Multi-producto: agregar otro producto y ver los ya agregados. */}
+              <div className="mt-5 space-y-3">
+                <button
+                  className="inline-flex items-center gap-2 rounded-[14px] border border-dashed border-[#c7cbff] bg-[#f5f6ff] px-4 py-2.5 text-[13px] font-semibold text-[#4f46ff] transition hover:bg-[#eef0ff]"
+                  onClick={addAnotherProduct}
+                  type="button"
+                >
+                  <span className="text-base leading-none">+</span>
+                  Agregar otro producto
+                </button>
+
+                {draft.products.length > 0 ? (
+                  <div className="rounded-[16px] border border-slate-200 bg-white p-3">
+                    <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                      Productos agregados ({draft.products.length})
+                    </p>
+                    <ul className="space-y-2">
+                      {draft.products.map((line) => (
+                        <li
+                          key={line.id}
+                          className="flex items-center justify-between gap-3 rounded-[12px] border border-slate-100 bg-slate-50 px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-[13px] font-semibold text-slate-900">{getProductDisplayName(line)}</p>
+                            <p className="truncate text-[11px] text-slate-500">
+                              {line.quantity ? `${line.quantity} u.` : 'Cantidad a definir'}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-3">
+                            <button
+                              className="text-[12px] font-semibold text-[#4f46ff] hover:underline"
+                              onClick={() => editProduct(line.id)}
+                              type="button"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="text-[12px] font-semibold text-rose-500 hover:underline"
+                              onClick={() => removeProduct(line.id)}
+                              type="button"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
             </div>
           ) : null}
 
@@ -1509,6 +1727,27 @@ export default function BuyerNewRequestWizardPage() {
               <div className="mt-5 grid flex-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
                 <div className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Resumen de tu solicitud</p>
+
+                  {allProductLines.length > 0 ? (
+                    <div className="mt-4 rounded-[18px] border border-slate-200 bg-white p-3">
+                      <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                        Productos ({allProductLines.length})
+                      </p>
+                      <ul className="space-y-1.5">
+                        {allProductLines.map((line, index) => (
+                          <li
+                            key={line.id === 'current' ? `current-${index}` : line.id}
+                            className="flex items-center justify-between gap-3 rounded-[12px] bg-slate-50 px-3 py-2"
+                          >
+                            <span className="truncate text-[13px] font-semibold text-slate-900">{getProductDisplayName(line)}</span>
+                            <span className="shrink-0 text-[11px] text-slate-500">
+                              {line.quantity ? `${line.quantity} u.` : 'Cant. a definir'}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
 
                   <div className="mt-5 flex items-center gap-4 rounded-[18px] bg-[#fbfcff] p-4">
                     <div className="relative h-[88px] w-[148px] overflow-hidden rounded-[14px] bg-[#f5f7ff]">

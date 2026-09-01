@@ -58,6 +58,32 @@ export class QuotesService {
       },
     });
 
+    // Precio unitario por producto: el total de la cotizacion es la suma de
+    // (cantidad pedida del producto x precio unitario ofrecido). Si no vienen
+    // items, se usa el amount legacy (una sola cifra total).
+    let computedAmount = dto.amount;
+    let quoteItemsData: { requestItemId: string; unitPrice: number }[] | null = null;
+    if (dto.items && dto.items.length > 0) {
+      const requestItems = await this.prisma.requestItem.findMany({
+        where: { requestId },
+        select: { id: true, quantity: true },
+      });
+      const byId = new Map(requestItems.map((item) => [item.id, item]));
+      let total = 0;
+      for (const line of dto.items) {
+        const requestItem = byId.get(line.requestItemId);
+        if (!requestItem) {
+          throw new BadRequestException('Una de las lineas cotizadas no pertenece a esta solicitud.');
+        }
+        total += line.unitPrice * (requestItem.quantity ?? 0);
+      }
+      computedAmount = total;
+      quoteItemsData = dto.items.map((line) => ({
+        requestItemId: line.requestItemId,
+        unitPrice: line.unitPrice,
+      }));
+    }
+
     if (existingQuote) {
       const [, updatedQuote] = await this.prisma.$transaction([
         this.prisma.request.update({
@@ -70,16 +96,19 @@ export class QuotesService {
         this.prisma.quote.update({
           where: { id: existingQuote.id },
           data: {
-            amount: dto.amount,
+            amount: computedAmount,
             currency: dto.currency ?? existingQuote.currency,
             leadTimeDays: dto.leadTimeDays,
             paymentTerms: dto.paymentTerms,
             technicalComment: dto.technicalComment,
             status: QuoteStatus.SUBMITTED,
+            // Reemplaza las lineas por las nuevas (si se cotizo por producto).
+            ...(quoteItemsData ? { items: { deleteMany: {}, create: quoteItemsData } } : {}),
           },
           include: {
             supplierCompany: true,
             request: true,
+            items: { include: { requestItem: true } },
           },
         }),
         this.prisma.requestEvent.create({
@@ -131,16 +160,18 @@ export class QuotesService {
         data: {
           requestId,
           supplierCompanyId,
-          amount: dto.amount,
+          amount: computedAmount,
           currency: dto.currency ?? 'ARS',
           leadTimeDays: dto.leadTimeDays,
           paymentTerms: dto.paymentTerms,
           technicalComment: dto.technicalComment,
           status: QuoteStatus.SUBMITTED,
+          ...(quoteItemsData ? { items: { create: quoteItemsData } } : {}),
         },
         include: {
           supplierCompany: true,
           request: true,
+          items: { include: { requestItem: true } },
         },
       }),
       this.prisma.requestEvent.create({
@@ -192,9 +223,11 @@ export class QuotesService {
           include: {
             buyerCompany: true,
             order: true,
+            items: { orderBy: { position: 'asc' } },
           },
         },
         supplierCompany: true,
+        items: { include: { requestItem: true } },
       },
       orderBy: {
         createdAt: 'desc',
@@ -216,9 +249,11 @@ export class QuotesService {
           include: {
             buyerCompany: true,
             order: true,
+            items: { orderBy: { position: 'asc' } },
           },
         },
         supplierCompany: true,
+        items: { include: { requestItem: true } },
       },
       orderBy: {
         updatedAt: 'desc',
@@ -231,10 +266,12 @@ export class QuotesService {
       where: { id },
       include: {
         supplierCompany: true,
+        items: { include: { requestItem: true } },
         request: {
           include: {
             buyerCompany: true,
             order: true,
+            items: { orderBy: { position: 'asc' } },
           },
         },
       },

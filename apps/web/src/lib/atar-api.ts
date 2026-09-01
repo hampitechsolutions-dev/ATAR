@@ -89,12 +89,31 @@ export type PurchaseOrderRecord = {
   updatedAt: string;
 };
 
+export type RequestItemRecord = {
+  id: string;
+  position: number;
+  productName: string;
+  category: string | null;
+  quantity: number | null;
+  unit: string | null;
+  specifications: string | null;
+  referenceUnitPrice: number | null;
+};
+
+export type QuoteItemRecord = {
+  id: string;
+  requestItemId: string;
+  unitPrice: number;
+  requestItem?: RequestItemRecord;
+};
+
 export type RequestRecord = {
   id: string;
   title: string;
   productName?: string | null;
   description: string;
   category: string;
+  items?: RequestItemRecord[];
   quantityRequested?: number | null;
   referenceUnitPrice?: number | null;
   estimatedTotalCost?: number | null;
@@ -132,6 +151,7 @@ export type QuoteRecord = {
   paymentTerms: string | null;
   technicalComment: string | null;
   status: QuoteStatus;
+  items?: QuoteItemRecord[];
   supplierCompany?: {
     id: string;
     name: string;
@@ -378,6 +398,15 @@ export type LoginPayload = {
   password: string;
 };
 
+export type RequestItemPayload = {
+  productName: string;
+  category?: string;
+  quantity?: number;
+  unit?: string;
+  specifications?: string;
+  referenceUnitPrice?: number;
+};
+
 export type CreateRequestPayload = {
   title: string;
   productName?: string;
@@ -391,6 +420,8 @@ export type CreateRequestPayload = {
   targetSupplierCompanyIds?: string[];
   dueDate?: string;
   status?: Extract<RequestStatus, 'DRAFT' | 'PUBLISHED'>;
+  /** Multi-producto: una línea por producto pedido. */
+  items?: RequestItemPayload[];
 };
 
 export type CreateQuotePayload = {
@@ -399,6 +430,8 @@ export type CreateQuotePayload = {
   leadTimeDays?: number;
   paymentTerms?: string;
   technicalComment?: string;
+  /** Precio unitario por producto. Si viene, el total se calcula en el backend. */
+  items?: { requestItemId: string; unitPrice: number }[];
 };
 
 export type AwardQuotePayload = {

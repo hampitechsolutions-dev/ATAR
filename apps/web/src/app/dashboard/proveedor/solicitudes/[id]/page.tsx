@@ -4,7 +4,14 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
-import { ApiError, atarApi, type CreateQuotePayload, type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
+import {
+  ApiError,
+  atarApi,
+  type CreateQuotePayload,
+  type QuoteRecord,
+  type RequestRecord,
+  type SupplierProfileRecord,
+} from '@/lib/atar-api';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function formatCurrency(value: number | null | undefined, currency = 'ARS') {
@@ -38,7 +45,10 @@ function getBuyerLocation(request: RequestRecord) {
 }
 
 type QuoteDraft = {
+  // Fallback para solicitudes sin items (legacy): un total unico.
   amount: string;
+  // Precio unitario por producto, indexado por RequestItem.id.
+  unitPrices: Record<string, string>;
   currency: string;
   minimumOrder: string;
   leadTimeDays: string;
@@ -48,8 +58,13 @@ type QuoteDraft = {
 };
 
 function createDraft(quote?: QuoteRecord | null): QuoteDraft {
+  const unitPrices: Record<string, string> = {};
+  for (const item of quote?.items ?? []) {
+    unitPrices[item.requestItemId] = String(item.unitPrice);
+  }
   return {
     amount: typeof quote?.amount === 'number' ? String(quote.amount) : '',
+    unitPrices,
     currency: quote?.currency ?? 'ARS',
     minimumOrder: '',
     leadTimeDays: typeof quote?.leadTimeDays === 'number' ? String(quote.leadTimeDays) : '',
@@ -89,6 +104,48 @@ export default function SupplierRequestDetailPage() {
   useEffect(() => {
     setDraft(createDraft(existingQuote));
   }, [existingQuote]);
+
+  const [profile, setProfile] = useState<SupplierProfileRecord | null>(null);
+
+  useEffect(() => {
+    if (!session?.accessToken) {
+      return;
+    }
+    let cancelled = false;
+    atarApi
+      .getOwnSupplierProfile(session.accessToken)
+      .then((data) => {
+        if (!cancelled) {
+          setProfile(data);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.accessToken]);
+
+  // Pre-carga desde el perfil del proveedor (mínimo, plazo, condiciones) solo en
+  // cotización nueva y sin pisar lo que el usuario ya escribió. Son opcionales.
+  useEffect(() => {
+    const sp = profile?.supplierProfile;
+    if (!sp || existingQuote) {
+      return;
+    }
+    setDraft((current) => ({
+      ...current,
+      leadTimeDays: current.leadTimeDays || (sp.leadTimeDays != null ? String(sp.leadTimeDays) : ''),
+      minimumOrder: current.minimumOrder || (sp.minimumOrder != null ? String(sp.minimumOrder) : ''),
+      paymentTerms: current.paymentTerms || (sp.financingSummary ?? ''),
+    }));
+  }, [profile, existingQuote]);
+
+  const requestItems = request?.items ?? [];
+  const quoteTotal = requestItems.reduce((sum, item) => {
+    const price = Number(draft.unitPrices[item.id] ?? '');
+    const qty = item.quantity ?? 0;
+    return Number.isFinite(price) ? sum + price * qty : sum;
+  }, 0);
 
   /** Abre (o crea) el chat de la solicitud para consultar antes de cotizar. */
   async function handleOpenChat() {
@@ -131,19 +188,33 @@ export default function SupplierRequestDetailPage() {
         .filter(Boolean)
         .join('\n');
 
+      const leadTimeDays = draft.leadTimeDays.trim() ? Number(draft.leadTimeDays) : undefined;
+      if (leadTimeDays !== undefined && Number.isNaN(leadTimeDays)) {
+        throw new ApiError('El plazo debe ser numérico.', 400);
+      }
+
       const payload: CreateQuotePayload = {
-        amount: draft.amount.trim() ? Number(draft.amount) : undefined,
         currency: draft.currency.trim() || 'ARS',
-        leadTimeDays: draft.leadTimeDays.trim() ? Number(draft.leadTimeDays) : undefined,
+        leadTimeDays,
         paymentTerms: draft.paymentTerms.trim() || undefined,
         technicalComment: notes || undefined,
       };
 
-      if (payload.amount !== undefined && Number.isNaN(payload.amount)) {
-        throw new ApiError('El precio debe ser numérico.', 400);
-      }
-      if (payload.leadTimeDays !== undefined && Number.isNaN(payload.leadTimeDays)) {
-        throw new ApiError('El plazo debe ser numérico.', 400);
+      if (requestItems.length > 0) {
+        // Precio unitario por producto: el total lo calcula el backend.
+        const items = requestItems
+          .map((item) => ({ requestItemId: item.id, unitPrice: Number(draft.unitPrices[item.id] ?? '') }))
+          .filter((line) => Number.isFinite(line.unitPrice) && line.unitPrice > 0);
+        if (items.length === 0) {
+          throw new ApiError('Ingresá el precio de al menos un producto.', 400);
+        }
+        payload.items = items;
+      } else {
+        const amount = draft.amount.trim() ? Number(draft.amount) : undefined;
+        if (amount !== undefined && Number.isNaN(amount)) {
+          throw new ApiError('El precio debe ser numérico.', 400);
+        }
+        payload.amount = amount;
       }
 
       await atarApi.createQuote(request.id, payload, session.accessToken);
@@ -294,34 +365,101 @@ export default function SupplierRequestDetailPage() {
                   </div>
                   <div className="overflow-y-auto px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4">
                     <div className="space-y-4">
-                  <Field label="Precio unitario">
-                    <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400">
-                      <span className="flex items-center px-3 text-sm text-slate-400">$</span>
-                      <input
-                        className="w-full bg-transparent py-3 pr-3 text-sm outline-none"
-                        inputMode="decimal"
-                        onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
-                        placeholder="26000"
-                        value={draft.amount}
-                      />
-                      <input
-                        className="w-16 border-l border-slate-200 bg-transparent px-2 text-center text-xs uppercase outline-none"
-                        maxLength={4}
-                        onChange={(event) =>
-                          setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
-                        }
-                        value={draft.currency}
-                      />
+                  {requestItems.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-600">Precio unitario por producto</span>
+                        <label className="flex items-center gap-1 text-xs text-slate-400">
+                          Moneda
+                          <input
+                            className="w-16 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-center text-xs uppercase text-slate-700 outline-none focus:border-indigo-400"
+                            maxLength={4}
+                            onChange={(event) =>
+                              setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
+                            }
+                            value={draft.currency}
+                          />
+                        </label>
+                      </div>
+
+                      {requestItems.map((item) => {
+                        const price = Number(draft.unitPrices[item.id] ?? '');
+                        const subtotal =
+                          Number.isFinite(price) && item.quantity ? price * item.quantity : null;
+                        return (
+                          <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-slate-900">{item.productName}</p>
+                                <p className="text-[11px] text-slate-500">
+                                  {item.quantity ? `${item.quantity} unidades` : 'Cantidad a definir'}
+                                </p>
+                              </div>
+                              {subtotal != null ? (
+                                <p className="shrink-0 text-xs font-semibold text-slate-700">
+                                  {formatCurrency(subtotal, draft.currency)}
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-indigo-400">
+                              <span className="flex items-center px-3 text-sm text-slate-400">$</span>
+                              <input
+                                className="w-full bg-transparent py-2.5 pr-3 text-sm outline-none"
+                                inputMode="decimal"
+                                onChange={(event) =>
+                                  setDraft((current) => ({
+                                    ...current,
+                                    unitPrices: { ...current.unitPrices, [item.id]: event.target.value },
+                                  }))
+                                }
+                                placeholder="Precio por unidad"
+                                value={draft.unitPrices[item.id] ?? ''}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <div className="flex items-center justify-between rounded-xl bg-indigo-50 px-3 py-2.5">
+                        <span className="text-xs font-semibold text-indigo-700">Total de la cotización</span>
+                        <span className="text-sm font-bold text-indigo-700">
+                          {formatCurrency(quoteTotal, draft.currency)}
+                        </span>
+                      </div>
                     </div>
-                  </Field>
-                  <Field label="Cantidad mínima">
+                  ) : (
+                    <Field label="Precio total">
+                      <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400">
+                        <span className="flex items-center px-3 text-sm text-slate-400">$</span>
+                        <input
+                          className="w-full bg-transparent py-3 pr-3 text-sm outline-none"
+                          inputMode="decimal"
+                          onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
+                          placeholder="26000"
+                          value={draft.amount}
+                        />
+                        <input
+                          className="w-16 border-l border-slate-200 bg-transparent px-2 text-center text-xs uppercase outline-none"
+                          maxLength={4}
+                          onChange={(event) =>
+                            setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
+                          }
+                          value={draft.currency}
+                        />
+                      </div>
+                    </Field>
+                  )}
+                  <p className="text-[11px] text-slate-400">
+                    Estos datos vienen de tu perfil. Podés dejarlos como están o ajustarlos para esta cotización.
+                  </p>
+                  <Field label="Cantidad mínima (opcional)">
                     <Input
                       value={draft.minimumOrder}
                       onChange={(value) => setDraft((current) => ({ ...current, minimumOrder: value }))}
                       placeholder="500 unidades"
                     />
                   </Field>
-                  <Field label="Tiempo de entrega (días)">
+                  <Field label="Tiempo de entrega en días (opcional)">
                     <Input
                       value={draft.leadTimeDays}
                       onChange={(value) => setDraft((current) => ({ ...current, leadTimeDays: value }))}
@@ -329,7 +467,7 @@ export default function SupplierRequestDetailPage() {
                       inputMode="numeric"
                     />
                   </Field>
-                  <Field label="Condiciones de pago">
+                  <Field label="Condiciones de pago (opcional)">
                     <Input
                       value={draft.paymentTerms}
                       onChange={(value) => setDraft((current) => ({ ...current, paymentTerms: value }))}

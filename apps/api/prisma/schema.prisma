@@ -322,6 +322,7 @@ model Request {
   order          PurchaseOrder?
   quotes         Quote[]       @relation("RequestQuotes")
   assignments    RequestAssignment[]
+  items          RequestItem[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -366,6 +367,7 @@ model Quote {
   status            QuoteStatus @default(DRAFT)
   awardedForRequest Request?    @relation("AwardedRequestQuote")
   conversations     Conversation[]
+  items             QuoteItem[]
   request           Request     @relation("RequestQuotes", fields: [requestId], references: [id], onDelete: Cascade)
   supplierCompany   Company     @relation("SupplierQuotes", fields: [supplierCompanyId], references: [id], onDelete: Cascade)
   createdAt         DateTime    @default(now())
@@ -373,6 +375,43 @@ model Quote {
 
   @@index([requestId])
   @@index([supplierCompanyId])
+}
+
+// Linea de una solicitud: un producto concreto pedido (con su cantidad y
+// specs). Una solicitud puede pedir varios productos al mismo proveedor.
+model RequestItem {
+  id                 String      @id @default(cuid())
+  requestId          String
+  position           Int         @default(0)
+  productName        String
+  category           String?
+  quantity           Int?
+  unit               String?
+  specifications     String?
+  referenceUnitPrice Float?
+  request            Request     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  quoteItems         QuoteItem[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([requestId])
+}
+
+// Linea de una cotizacion: el precio unitario que el proveedor ofrece para un
+// RequestItem. El total de la cotizacion es la suma de cantidad x precioUnit.
+model QuoteItem {
+  id            String      @id @default(cuid())
+  quoteId       String
+  requestItemId String
+  unitPrice     Float
+  quote         Quote       @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  requestItem   RequestItem @relation(fields: [requestItemId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([quoteId, requestItemId])
+  @@index([quoteId])
+  @@index([requestItemId])
 }
 
 model RequestEvent {
