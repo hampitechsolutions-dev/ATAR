@@ -7,6 +7,7 @@ export type RequestStatus =
   | 'AWARDED'
   | 'NEGOTIATING'
   | 'ORDER_ISSUED'
+  | 'COMPLETED'
   | 'CANCELLED';
 export type QuoteStatus = 'DRAFT' | 'SUBMITTED' | 'AWARDED' | 'REJECTED' | 'WITHDRAWN';
 
@@ -438,14 +439,13 @@ export type AwardQuotePayload = {
 };
 
 export type ProgressRequestPayload = {
-  action: 'START_NEGOTIATION' | 'ISSUE_ORDER';
+  action: 'START_NEGOTIATION' | 'ISSUE_ORDER' | 'CONFIRM_RECEIPT';
 };
 
 export type UpsertOrderPayload = {
   orderNumber?: string;
   promisedDate?: string;
   notes?: string;
-  fulfillmentStatus?: OrderFulfillmentStatus;
 };
 
 export type UpdateFulfillmentPayload = {

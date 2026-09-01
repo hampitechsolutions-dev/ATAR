@@ -342,6 +342,7 @@ export class RequestsService {
     const request = await this.prisma.request.findUnique({
       where: { id },
       include: {
+        order: true,
         awardedQuote: {
           include: {
             supplierCompany: true,
@@ -360,6 +361,17 @@ export class RequestsService {
 
     if (!request.awardedQuoteId || !request.awardedQuote) {
       throw new BadRequestException('La solicitud debe estar adjudicada antes de avanzar comercialmente.');
+    }
+
+    // Confirmar recepcion solo tiene sentido cuando el proveedor ya marco la
+    // entrega. Es el handshake que cierra el pedido.
+    if (
+      action === 'CONFIRM_RECEIPT' &&
+      request.order?.fulfillmentStatus !== OrderFulfillmentStatus.DELIVERED
+    ) {
+      throw new BadRequestException(
+        'Solo podes confirmar la recepcion cuando el proveedor marco el pedido como entregado.',
+      );
     }
 
     const nextState = this.resolveProgressTransition(request.status, action);
@@ -425,16 +437,28 @@ export class RequestsService {
       },
     });
 
-    const notificationType =
-      action === 'START_NEGOTIATION'
-        ? NotificationType.NEGOTIATION_STARTED
-        : NotificationType.ORDER_ISSUED;
-    const notificationTitle =
-      action === 'START_NEGOTIATION' ? 'Negociacion iniciada' : 'Orden emitida';
-    const notificationDetail =
-      action === 'START_NEGOTIATION'
-        ? `${buyerCompanyName ?? 'El comprador'} inicio una negociacion sobre ${request.title}.`
-        : `${buyerCompanyName ?? 'El comprador'} emitio la orden comercial para ${request.title}.`;
+    const notificationByAction: Record<
+      ProgressRequestAction,
+      { type: NotificationType; title: string; detail: string }
+    > = {
+      START_NEGOTIATION: {
+        type: NotificationType.NEGOTIATION_STARTED,
+        title: 'Negociacion iniciada',
+        detail: `${buyerCompanyName ?? 'El comprador'} inicio una negociacion sobre ${request.title}.`,
+      },
+      ISSUE_ORDER: {
+        type: NotificationType.ORDER_ISSUED,
+        title: 'Orden emitida',
+        detail: `${buyerCompanyName ?? 'El comprador'} emitio la orden comercial para ${request.title}.`,
+      },
+      CONFIRM_RECEIPT: {
+        type: NotificationType.REQUEST_COMPLETED,
+        title: 'Pedido completado',
+        detail: `${buyerCompanyName ?? 'El comprador'} confirmo la recepcion de ${request.title}. Operacion completada.`,
+      },
+    };
+    const { type: notificationType, title: notificationTitle, detail: notificationDetail } =
+      notificationByAction[action];
 
     if (request.awardedQuote?.supplierCompanyId) {
       await this.notificationsService.createForCompany({
@@ -490,14 +514,15 @@ export class RequestsService {
           orderNumber: nextOrderNumber,
           promisedDate: dto.promisedDate ? new Date(dto.promisedDate) : undefined,
           notes: dto.notes,
-          fulfillmentStatus: dto.fulfillmentStatus ?? OrderFulfillmentStatus.ISSUED,
+          fulfillmentStatus: OrderFulfillmentStatus.ISSUED,
         },
+        // fulfillmentStatus NO se toca en el update: lo maneja solo el proveedor
+        // via updateFulfillment. El comprador edita unicamente datos operativos.
         update: {
           orderNumber: nextOrderNumber,
           promisedDate:
             typeof dto.promisedDate === 'string' ? new Date(dto.promisedDate) : request.order?.promisedDate,
           notes: dto.notes ?? request.order?.notes ?? undefined,
-          fulfillmentStatus: dto.fulfillmentStatus ?? request.order?.fulfillmentStatus ?? OrderFulfillmentStatus.ISSUED,
         },
       }),
       this.prisma.requestEvent.create({
@@ -790,6 +815,14 @@ export class RequestsService {
       return RequestStatus.ORDER_ISSUED;
     }
 
+    if (action === 'CONFIRM_RECEIPT') {
+      if (currentStatus !== RequestStatus.ORDER_ISSUED) {
+        throw new BadRequestException('Solo podes confirmar la recepcion de una orden emitida.');
+      }
+
+      return RequestStatus.COMPLETED;
+    }
+
     throw new BadRequestException('Accion de progreso no soportada.');
   }
 
@@ -807,6 +840,14 @@ export class RequestsService {
         type: RequestEventType.NEGOTIATION_STARTED,
         title: 'Negociacion iniciada',
         detail: `${actorCompanyName ?? 'El comprador'} inicio una instancia de negociacion con ${awardedQuote?.supplierCompany?.name ?? 'el proveedor adjudicado'}.`,
+      };
+    }
+
+    if (action === 'CONFIRM_RECEIPT') {
+      return {
+        type: RequestEventType.REQUEST_COMPLETED,
+        title: 'Recepcion confirmada',
+        detail: `${actorCompanyName ?? 'El comprador'} confirmo la recepcion del pedido. Operacion completada.`,
       };
     }
 
