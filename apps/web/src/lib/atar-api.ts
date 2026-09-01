@@ -377,6 +377,15 @@ export type LoginPayload = {
   password: string;
 };
 
+export type RequestItemPayload = {
+  productName: string;
+  category?: string;
+  quantity?: number;
+  unit?: string;
+  specifications?: string;
+  referenceUnitPrice?: number;
+};
+
 export type CreateRequestPayload = {
   title: string;
   productName?: string;
@@ -390,6 +399,8 @@ export type CreateRequestPayload = {
   targetSupplierCompanyIds?: string[];
   dueDate?: string;
   status?: Extract<RequestStatus, 'DRAFT' | 'PUBLISHED'>;
+  /** Multi-producto: una línea por producto pedido. */
+  items?: RequestItemPayload[];
 };
 
 export type CreateQuotePayload = {
