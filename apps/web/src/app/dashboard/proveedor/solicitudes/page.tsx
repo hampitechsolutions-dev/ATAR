@@ -436,9 +436,13 @@ export default function SupplierRequestsPage() {
   const { session, assignments, team, loading, error, refresh } = useSupplierInbox();
 
   function openQuoteModal() {
+    // Unificado: la cotizacion se carga en el form completo (precio unitario por
+    // producto + pre-carga del perfil), no en un modal aparte con total unico.
     setSubmitError(null);
     setMessage(null);
-    setQuoteModalOpen(true);
+    if (activeAssignment) {
+      router.push(`/dashboard/proveedor/solicitudes/${activeAssignment.requestId}`);
+    }
   }
 
   function closeQuoteModal() {

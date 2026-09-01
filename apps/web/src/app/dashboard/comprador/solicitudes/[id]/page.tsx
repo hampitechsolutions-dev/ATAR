@@ -802,6 +802,31 @@ export default function BuyerRequestDetailPage() {
                             </div>
                           </div>
 
+                          {quote.items && quote.items.length > 0 && (request?.items?.length ?? 0) > 1 ? (
+                            <div className="mt-3 rounded-[14px] border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+                              <p className="text-[11px] font-semibold text-slate-400">Precio por producto</p>
+                              <ul className="mt-1.5 space-y-1">
+                                {quote.items.map((line) => {
+                                  const reqItem = request?.items?.find((item) => item.id === line.requestItemId);
+                                  const qty = reqItem?.quantity ?? null;
+                                  const subtotal = qty ? line.unitPrice * qty : null;
+                                  return (
+                                    <li key={line.id} className="flex items-center justify-between gap-3 text-[12px]">
+                                      <span className="min-w-0 truncate text-slate-700">
+                                        {reqItem?.productName ?? 'Producto'}
+                                        {qty ? ` · ${qty} u.` : ''}
+                                      </span>
+                                      <span className="shrink-0 font-semibold text-slate-900">
+                                        {formatCurrency(line.unitPrice, quote.currency)}/u
+                                        {subtotal != null ? ` · ${formatCurrency(subtotal, quote.currency)}` : ''}
+                                      </span>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          ) : null}
+
                           {quote.technicalComment ? (
                             <p className="mt-3 whitespace-pre-wrap rounded-[14px] bg-slate-50 px-3 py-2.5 text-[12px] leading-6 text-slate-600">
                               {quote.technicalComment}
