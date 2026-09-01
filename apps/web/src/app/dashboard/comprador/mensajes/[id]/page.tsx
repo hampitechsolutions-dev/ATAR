@@ -1,36 +1,22 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import ConversationPanel from '@/components/chat/conversation-panel';
-import { DashboardHero, DashboardShell } from '@/components/dashboard/dashboard-ui';
-import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 
-export default function BuyerConversationDetailPage() {
+// Unificado: ya no hay una pantalla de "Chat y seguimiento" aparte. El detalle
+// de una conversacion vive en la seccion Mensajes con esa conversacion abierta.
+export default function BuyerConversationRedirectPage() {
   const params = useParams<{ id: string }>();
-  const { session, error } = useBuyerDashboardData();
+  const router = useRouter();
+  const id = typeof params.id === 'string' ? params.id : '';
+
+  useEffect(() => {
+    router.replace(id ? `/dashboard/comprador/mensajes?c=${id}` : '/dashboard/comprador/mensajes');
+  }, [id, router]);
 
   return (
-    <DashboardShell role="buyer" session={session}>
-      <DashboardHero
-        description="Retoma la conversación, busca mensajes anteriores y comparte archivos dentro del contexto comercial correspondiente."
-        eyebrow="Detalle de conversacion"
-        title={
-          <>
-            Chat y <span className="text-indigo-600">seguimiento</span>
-          </>
-        }
-      />
-
-      {error ? (
-        <div className="rounded-[1.5rem] bg-rose-100 px-5 py-4 text-sm text-rose-800">{error}</div>
-      ) : null}
-
-      <ConversationPanel
-        conversationId={typeof params.id === 'string' ? params.id : undefined}
-        mode="existing"
-        session={session}
-        title="Conversacion activa"
-      />
-    </DashboardShell>
+    <main className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">
+      Abriendo la conversación...
+    </main>
   );
 }
