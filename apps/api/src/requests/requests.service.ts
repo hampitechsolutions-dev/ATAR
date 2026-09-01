@@ -182,6 +182,7 @@ export class RequestsService {
       },
       include: {
         buyerCompany: true,
+        items: { orderBy: { position: 'asc' } },
       },
       orderBy: {
         createdAt: 'desc',
