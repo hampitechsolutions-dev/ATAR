@@ -367,6 +367,23 @@ export class NotificationsService {
     );
   }
 
+  /**
+   * Marca leidas las notificaciones de mensajes (coalescidas) de una
+   * conversacion para un usuario. Se llama al abrir el chat, asi el contador
+   * acumulado ("(2)") arranca de cero la proxima vez que llega un mensaje.
+   */
+  async markMessageNotificationsRead(userId: string, conversationId: string) {
+    await this.prisma.notification.updateMany({
+      where: {
+        userId,
+        type: NotificationType.NEW_MESSAGE,
+        readAt: null,
+        metadata: { path: ['conversationId'], equals: conversationId },
+      },
+      data: { readAt: new Date() },
+    });
+  }
+
   private configureWebPush() {
     const subject = this.configService.get<string>('WEB_PUSH_SUBJECT');
     const publicKey = this.configService.get<string>('WEB_PUSH_PUBLIC_KEY');

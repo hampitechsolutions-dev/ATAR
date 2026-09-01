@@ -410,6 +410,12 @@ export class ConversationsService {
       readByRole: participant.role,
     });
 
+    // Abrir el chat tambien limpia la notificacion coalescida de mensajes, para
+    // que el contador arranque de cero cuando llegue el proximo. Best-effort.
+    void this.notificationsService
+      .markMessageNotificationsRead(user.userId, id)
+      .catch(() => undefined);
+
     return {
       conversationId: id,
       readAt: now.toISOString(),
