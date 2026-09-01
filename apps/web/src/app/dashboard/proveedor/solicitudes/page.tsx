@@ -23,30 +23,10 @@ import {
   type InboxFilterKey,
 } from '@/lib/opportunity-status';
 
-type QuoteDraft = {
-  amount: string;
-  currency: string;
-  leadTimeDays: string;
-  paymentTerms: string;
-  technicalComment: string;
-};
 
 const PAGE_SIZE = 6;
 
-const CURRENCIES = [
-  { code: 'ARS', label: 'ARS - Peso Argentino' },
-  { code: 'USD', label: 'USD - Dolar estadounidense' },
-  { code: 'EUR', label: 'EUR - Euro' },
-  { code: 'BRL', label: 'BRL - Real brasileno' },
-];
 
-const PAYMENT_TERMS = [
-  'Contado',
-  '15 dias fecha factura',
-  '30 dias fecha factura',
-  '60 dias fecha factura',
-  '50% anticipo / 50% contra entrega',
-];
 
 function formatCurrency(value: number | null | undefined, currency = 'ARS') {
   if (typeof value !== 'number') {
@@ -140,15 +120,6 @@ function getBuyerLocation(request: RequestAssignmentRecord['request']) {
   return city && country ? `${city}, ${country}` : city || country || 'Ubicacion no informada';
 }
 
-function createDraft(quote?: QuoteRecord | null): QuoteDraft {
-  return {
-    amount: typeof quote?.amount === 'number' ? String(quote.amount) : '',
-    currency: quote?.currency ?? 'ARS',
-    leadTimeDays: typeof quote?.leadTimeDays === 'number' ? String(quote.leadTimeDays) : '',
-    paymentTerms: quote?.paymentTerms ?? '',
-    technicalComment: quote?.technicalComment ?? '',
-  };
-}
 
 /* ============================ ICONOS ============================ */
 
@@ -423,13 +394,9 @@ export default function SupplierRequestsPage() {
   const [page, setPage] = useState(1);
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const [detailClosed, setDetailClosed] = useState(false);
-  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [openingChat, setOpeningChat] = useState(false);
-  const [draft, setDraft] = useState<QuoteDraft>(() => createDraft());
-  const [customTerms, setCustomTerms] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -445,24 +412,7 @@ export default function SupplierRequestsPage() {
     }
   }
 
-  function closeQuoteModal() {
-    setQuoteModalOpen(false);
-  }
 
-  useEffect(() => {
-    if (!quoteModalOpen) {
-      return;
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setQuoteModalOpen(false);
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [quoteModalOpen]);
 
   const categories = useMemo(() => {
     return Array.from(
@@ -550,13 +500,7 @@ export default function SupplierRequestsPage() {
       return;
     }
 
-    setDraft(createDraft(activeAssignment.quote));
-    setCustomTerms(
-      Boolean(activeAssignment.quote?.paymentTerms) &&
-        !PAYMENT_TERMS.includes(activeAssignment.quote?.paymentTerms ?? ''),
-    );
     setSubmitError(null);
-    setQuoteModalOpen(false);
     setAssignDialogOpen(false);
   }, [activeAssignment]);
 
@@ -624,46 +568,6 @@ export default function SupplierRequestsPage() {
     }
   }
 
-  async function handleSubmitQuote() {
-    if (!session?.accessToken || !activeAssignment) {
-      return;
-    }
-
-    setSubmitting(true);
-    setSubmitError(null);
-    setMessage(null);
-
-    try {
-      const payload: CreateQuotePayload = {
-        amount: draft.amount.trim() ? Number(draft.amount) : undefined,
-        currency: draft.currency.trim() || 'ARS',
-        leadTimeDays: draft.leadTimeDays.trim() ? Number(draft.leadTimeDays) : undefined,
-        paymentTerms: draft.paymentTerms.trim() || undefined,
-        technicalComment: draft.technicalComment.trim() || undefined,
-      };
-
-      if (payload.amount !== undefined && Number.isNaN(payload.amount)) {
-        throw new ApiError('El monto debe ser numerico.', 400);
-      }
-
-      if (payload.leadTimeDays !== undefined && Number.isNaN(payload.leadTimeDays)) {
-        throw new ApiError('El plazo debe ser numerico.', 400);
-      }
-
-      await atarApi.createQuote(activeAssignment.requestId, payload, session.accessToken);
-      await refresh();
-      setMessage(activeQuote ? 'Cotización actualizada.' : 'Cotización enviada.');
-      setQuoteModalOpen(false);
-    } catch (submitQuoteError) {
-      setSubmitError(
-        submitQuoteError instanceof Error
-          ? submitQuoteError.message
-          : 'No se pudo guardar la cotizacion.',
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   const fichaRows: DescriptionRow[] = activeRequest
     ? [
@@ -1349,169 +1253,6 @@ export default function SupplierRequestsPage() {
           </div>
         </div>
 
-        {/* ---------- Modal flotante de cotización ---------- */}
-        {quoteModalOpen && activeAssignment && activeRequest ? (
-          <div
-            aria-labelledby="quote-modal-title"
-            aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
-            role="dialog"
-          >
-            <button
-              aria-label="Cerrar formulario de cotización"
-              className="absolute inset-0 cursor-default bg-slate-950/50"
-              onClick={closeQuoteModal}
-              type="button"
-            />
-
-            <div className="relative z-10 flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_70px_rgba(2,6,23,0.35)]">
-              <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-4">
-                <div className="flex min-w-0 items-start gap-2">
-                  <span className="mt-0.5 text-slate-500">
-                    <Icon name="send" />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-slate-950" id="quote-modal-title">
-                      {activeQuote ? 'Actualizar cotización' : 'Responder solicitud'}
-                    </h3>
-                    <p className="mt-0.5 truncate text-[11px] text-slate-500">{activeRequest.title}</p>
-                  </div>
-                </div>
-
-                <button
-                  aria-label="Cerrar"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"
-                  onClick={closeQuoteModal}
-                  type="button"
-                >
-                  <Icon className="h-3.5 w-3.5" name="close" />
-                </button>
-              </header>
-
-              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                {submitError ? (
-                  <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
-                    {submitError}
-                  </div>
-                ) : null}
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-medium text-slate-600">Monto total</span>
-                    <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 bg-white transition focus-within:border-indigo-400">
-                      <span className="flex items-center border-r border-slate-200 px-3 text-xs text-slate-400">$</span>
-                      <input
-                        autoFocus
-                        className="w-full bg-transparent px-3 py-2.5 text-xs outline-none"
-                        inputMode="decimal"
-                        onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
-                        placeholder="1.200.000"
-                        type="number"
-                        value={draft.amount}
-                      />
-                    </div>
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-medium text-slate-600">Moneda</span>
-                    <select
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-700 outline-none transition focus:border-indigo-400"
-                      onChange={(event) => setDraft((current) => ({ ...current, currency: event.target.value }))}
-                      value={draft.currency}
-                    >
-                      {CURRENCIES.map((currency) => (
-                        <option key={currency.code} value={currency.code}>
-                          {currency.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-medium text-slate-600">Plazo de entrega</span>
-                    <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 bg-white transition focus-within:border-indigo-400">
-                      <input
-                        className="w-full bg-transparent px-3 py-2.5 text-xs outline-none"
-                        inputMode="numeric"
-                        onChange={(event) => setDraft((current) => ({ ...current, leadTimeDays: event.target.value }))}
-                        placeholder="15"
-                        type="number"
-                        value={draft.leadTimeDays}
-                      />
-                      <span className="flex items-center border-l border-slate-200 px-3 text-xs text-slate-400">días</span>
-                    </div>
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-medium text-slate-600">Condiciones de pago</span>
-                    <select
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-700 outline-none transition focus:border-indigo-400"
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        if (value === '__custom') {
-                          setCustomTerms(true);
-                          setDraft((current) => ({ ...current, paymentTerms: '' }));
-                          return;
-                        }
-
-                        setCustomTerms(false);
-                        setDraft((current) => ({ ...current, paymentTerms: value }));
-                      }}
-                      value={customTerms ? '__custom' : draft.paymentTerms}
-                    >
-                      <option value="">Seleccioná una condición</option>
-                      {PAYMENT_TERMS.map((term) => (
-                        <option key={term} value={term}>
-                          {term}
-                        </option>
-                      ))}
-                      <option value="__custom">Otra condición...</option>
-                    </select>
-                    {customTerms ? (
-                      <input
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none transition focus:border-indigo-400"
-                        onChange={(event) => setDraft((current) => ({ ...current, paymentTerms: event.target.value }))}
-                        placeholder="Detallá la condición de pago"
-                        value={draft.paymentTerms}
-                      />
-                    ) : null}
-                  </label>
-                </div>
-
-                <label className="mt-4 block">
-                  <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
-                    Comentario técnico (opcional)
-                  </span>
-                  <textarea
-                    className="min-h-[110px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none transition placeholder:text-slate-400 focus:border-indigo-400"
-                    onChange={(event) => setDraft((current) => ({ ...current, technicalComment: event.target.value }))}
-                    placeholder="Detallá materiales, capacidad instalada, condiciones de entrega o aclaraciones técnicas."
-                    value={draft.technicalComment}
-                  />
-                </label>
-              </div>
-
-              <footer className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
-                <button
-                  className="inline-flex h-11 items-center rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-                  onClick={closeQuoteModal}
-                  type="button"
-                >
-                  Cancelar
-                </button>
-                <button
-                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={submitting}
-                  onClick={() => void handleSubmitQuote()}
-                  type="button"
-                >
-                  {submitting ? 'Guardando...' : activeQuote ? 'Actualizar cotización' : 'Enviar cotización'}
-                  <Icon name="send" />
-                </button>
-              </footer>
-            </div>
-          </div>
-        ) : null}
       </section>
 
       {/* Asignación de vendedor (desktop y mobile) */}

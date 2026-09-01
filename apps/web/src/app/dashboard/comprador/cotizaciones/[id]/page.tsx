@@ -474,6 +474,42 @@ export default function BuyerQuoteDetailPage() {
                   </SpecRow>
                 </dl>
 
+                {quote.items && quote.items.length > 0 && (request?.items?.length ?? 0) > 1 ? (
+                  <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                    <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-2.5">
+                      <p className="text-[11px] font-semibold text-slate-500">Precio por producto</p>
+                    </div>
+                    <ul className="divide-y divide-slate-100">
+                      {quote.items.map((line) => {
+                        const reqItem = request?.items?.find((item) => item.id === line.requestItemId);
+                        const qty = reqItem?.quantity ?? null;
+                        const subtotal = qty ? line.unitPrice * qty : null;
+                        return (
+                          <li key={line.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-slate-900">{reqItem?.productName ?? 'Producto'}</p>
+                              <p className="text-[11px] text-slate-400">
+                                {qty
+                                  ? `${qty} u. × ${formatCurrency(line.unitPrice, quote.currency)}`
+                                  : `${formatCurrency(line.unitPrice, quote.currency)}/u`}
+                              </p>
+                            </div>
+                            <span className="shrink-0 font-semibold text-slate-900">
+                              {subtotal != null ? formatCurrency(subtotal, quote.currency) : '—'}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/70 px-4 py-2.5">
+                      <span className="text-[12px] font-semibold text-slate-600">Total</span>
+                      <span className="text-[14px] font-bold text-slate-950">
+                        {formatCurrency(quote.amount, quote.currency)}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
                   <p className="text-[11px] font-semibold text-slate-500">Comentario técnico</p>
                   <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-6 text-slate-700">
