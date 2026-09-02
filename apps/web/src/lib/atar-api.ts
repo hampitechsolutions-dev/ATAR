@@ -844,6 +844,12 @@ export const atarApi = {
       body: JSON.stringify(payload),
     }, token);
   },
+  updateRequest(requestId: string, payload: CreateRequestPayload, token: string) {
+    return request<RequestRecord>(`/requests/${requestId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }, token);
+  },
   getRequestDetail(requestId: string, token: string) {
     return request<RequestRecord>(`/requests/${requestId}`, undefined, token);
   },

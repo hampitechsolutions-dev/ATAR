@@ -127,6 +127,78 @@ export class RequestsService {
     return created;
   }
 
+  // Edicion de una solicitud existente. Solo el comprador dueño, en borrador o
+  // publicada y SIN cotizaciones (editar productos/cantidades despues de recibir
+  // cotizaciones las invalidaria). Reemplaza las lineas por las nuevas.
+  async update(user: AuthUser, id: string, dto: CreateRequestDto, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
+
+    const request = await this.prisma.request.findUnique({
+      where: { id },
+      include: { _count: { select: { quotes: true } } },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Pedido no encontrado.');
+    }
+    if (request.buyerCompanyId !== buyerCompanyId && !this.isAdmin(user)) {
+      throw new ForbiddenException('No tenes acceso para editar este pedido.');
+    }
+    if (request.status !== RequestStatus.DRAFT && request.status !== RequestStatus.PUBLISHED) {
+      throw new BadRequestException(
+        'Solo se pueden editar solicitudes en borrador o publicadas sin adjudicar.',
+      );
+    }
+    if (request._count.quotes > 0) {
+      throw new BadRequestException('No se puede editar una solicitud que ya recibio cotizaciones.');
+    }
+
+    const itemsInput =
+      dto.items && dto.items.length > 0
+        ? dto.items
+        : [
+            {
+              productName: dto.productName ?? dto.title,
+              category: dto.category,
+              quantity: dto.quantityRequested,
+              specifications: dto.description,
+              referenceUnitPrice: dto.referenceUnitPrice,
+            },
+          ];
+
+    await this.prisma.$transaction([
+      this.prisma.requestItem.deleteMany({ where: { requestId: id } }),
+      this.prisma.request.update({
+        where: { id },
+        data: {
+          title: dto.title,
+          productName: dto.productName,
+          description: dto.description,
+          category: dto.category,
+          quantityRequested: dto.quantityRequested,
+          referenceUnitPrice: dto.referenceUnitPrice,
+          estimatedTotalCost: dto.estimatedTotalCost,
+          preferredSupplierName: dto.preferredSupplierName,
+          privateRequest: dto.privateRequest ?? false,
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+          items: {
+            create: itemsInput.map((item, index) => ({
+              position: index,
+              productName: item.productName,
+              category: item.category ?? null,
+              quantity: item.quantity ?? null,
+              unit: 'unit' in item ? (item.unit ?? null) : null,
+              specifications: item.specifications ?? null,
+              referenceUnitPrice: item.referenceUnitPrice ?? null,
+            })),
+          },
+        },
+      }),
+    ]);
+
+    return this.findOne(user, id, activeCompanyId);
+  }
+
   async findMine(user: AuthUser, activeCompanyId?: string) {
     const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
 

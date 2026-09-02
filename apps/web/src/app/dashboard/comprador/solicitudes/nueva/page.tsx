@@ -9,6 +9,7 @@ import {
   atarApi,
   type RequestCatalogCategoryRecord,
   type RequestCatalogFieldRecord,
+  type RequestRecord,
 } from '@/lib/atar-api';
 import { mapSupplierToProviderDirectoryItem, type ProviderDirectoryItem } from '@/lib/provider-directory';
 import {
@@ -33,6 +34,9 @@ type ProductLine = {
   printType: string;
   specSelections: Record<string, string>;
   uploadedFiles: Record<string, string[]>;
+  // Solo para productos cargados al EDITAR una solicitud: texto de specs ya
+  // guardado. Se usa tal cual (no se re-deriva de los modulos del catalogo).
+  specifications?: string;
 };
 
 type RequestDraft = {
@@ -219,6 +223,70 @@ function withProductLine(draft: RequestDraft, line: ProductLine): RequestDraft {
 
 function getProductDisplayName(line: Pick<ProductLine, 'category'>) {
   return line.category.trim() || 'Producto';
+}
+
+// Reconstruye los campos de entrega desde la descripcion (que el wizard arma
+// con "Label: value"). Best-effort, para pre-cargar al editar.
+function parseDeliveryFromDescription(description: string): Partial<RequestDraft> {
+  const out: Partial<RequestDraft> = {};
+  for (const raw of description.split('\n')) {
+    const line = raw.trim();
+    const idx = line.indexOf(':');
+    if (idx === -1) {
+      continue;
+    }
+    const label = line.slice(0, idx).trim().toLowerCase();
+    const value = line.slice(idx + 1).trim();
+    if (!value) {
+      continue;
+    }
+    if (label.startsWith('entrega')) {
+      const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
+      out.deliveryAddressMode = 'new';
+      out.deliveryAddressLine = parts[0] ?? '';
+      if (parts.length >= 3) {
+        out.deliveryCity = parts[1];
+      }
+      out.deliveryCountry = parts[parts.length - 1] ?? 'Argentina';
+    } else if (label.startsWith('fecha de entrega')) {
+      if (value.toLowerCase().includes('antes posible')) {
+        out.deliveryDateMode = 'asap';
+      } else {
+        out.deliveryDateMode = 'exact';
+        out.deliveryDate = value;
+      }
+    } else if (label.startsWith('rango de entrega')) {
+      out.deliveryDateMode = 'range';
+      out.deliveryDateRange = value;
+    } else if (label.startsWith('horario')) {
+      out.deliverySchedule = value;
+    } else if (label.startsWith('contacto')) {
+      out.deliveryContactName = value;
+    } else if (label.startsWith('telefono')) {
+      out.deliveryPhone = value;
+    } else if (label.startsWith('observaciones')) {
+      out.deliveryNotes = value;
+    }
+  }
+  return out;
+}
+
+// Convierte las lineas (RequestItem) de una solicitud en ProductLine[] para
+// pre-cargar el wizard al editar. Preserva las specs guardadas como texto.
+function productLinesFromRequest(request: RequestRecord): ProductLine[] {
+  return (request.items ?? []).map((item, index) => ({
+    id: `edit-${item.id ?? index}`,
+    category: item.category ?? request.category ?? '',
+    description: '',
+    quantity: item.quantity != null ? String(item.quantity) : '',
+    material: '',
+    capacityOption: '',
+    handleType: '',
+    printType: '',
+    specSelections: {},
+    uploadedFiles: {},
+    specifications: item.specifications ?? '',
+  }));
 }
 
 function loadDraft(): RequestDraft {
@@ -462,6 +530,64 @@ export default function BuyerNewRequestWizardPage() {
   useEffect(() => {
     setStep(initialStep);
   }, [initialStep]);
+
+  // Modo edición: si viene ?edit=<id>, se carga la solicitud y se pre-llena el
+  // wizard para ACTUALIZARLA (no crear otra).
+  const editId = searchParams?.get('edit') ?? null;
+  const [editRequestId, setEditRequestId] = useState<string | null>(null);
+  const [prefillProviderNames, setPrefillProviderNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!editId || !session?.accessToken || editRequestId === editId) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const req = await atarApi.getRequestDetail(editId, session.accessToken);
+        if (cancelled) {
+          return;
+        }
+        setDraft((current) => ({
+          ...current,
+          ...blankProductFields(),
+          title: req.title ?? '',
+          products: productLinesFromRequest(req),
+          ...parseDeliveryFromDescription(req.description ?? ''),
+        }));
+        setPrefillProviderNames(
+          (req.preferredSupplierName ?? '')
+            .split('|')
+            .map((name) => name.trim().toLowerCase())
+            .filter(Boolean),
+        );
+        setEditRequestId(editId);
+        setStep(2);
+      } catch {
+        if (!cancelled) {
+          setError('No se pudo cargar la solicitud para editar.');
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [editId, editRequestId, session?.accessToken]);
+
+  // Al cargar el directorio de proveedores, matchear por nombre los que la
+  // solicitud tenía seleccionados.
+  useEffect(() => {
+    if (!editRequestId || providers.length === 0 || prefillProviderNames.length === 0) {
+      return;
+    }
+    const ids = providers
+      .filter((provider) => prefillProviderNames.includes(provider.name.trim().toLowerCase()))
+      .map((provider) => provider.id);
+    if (ids.length > 0) {
+      setDraft((current) => ({ ...current, selectedProviders: ids }));
+    }
+    setPrefillProviderNames([]);
+  }, [editRequestId, providers, prefillProviderNames]);
 
   // Al cambiar de paso, subir al tope del contenido (evita quedar al medio).
   const stepScrollRef = useRef<HTMLElement | null>(null);
@@ -842,13 +968,14 @@ export default function BuyerNewRequestWizardPage() {
 
       // Un item por producto: cada uno con su nombre, cantidad y specs propias.
       const items = allProductLines.map((line) => {
+        const storedSpecs = line.specifications?.trim();
         const lineSpecs = getSpecificationLines(requestCategories, withProductLine(draft, line));
         const parsedQuantity = Number.parseInt(line.quantity, 10);
         return {
           productName: getProductDisplayName(line),
           category: line.category || undefined,
           quantity: Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : undefined,
-          specifications: lineSpecs.join('\n') || undefined,
+          specifications: storedSpecs || lineSpecs.join('\n') || undefined,
         };
       });
 
@@ -900,20 +1027,22 @@ export default function BuyerNewRequestWizardPage() {
       const targetSupplierCompanyIds = selectedProviders.map((provider) => provider.id);
       const privateRequest = targetSupplierCompanyIds.length > 0;
 
-      const created = await atarApi.createRequest(
-        {
-          title,
-          description,
-          category: primary.category,
-          status: 'PUBLISHED',
-          dueDate,
-          privateRequest,
-          preferredSupplierName,
-          targetSupplierCompanyIds,
-          items,
-        },
-        session.accessToken,
-      );
+      const payload = {
+        title,
+        description,
+        category: primary.category,
+        status: 'PUBLISHED' as const,
+        dueDate,
+        privateRequest,
+        preferredSupplierName,
+        targetSupplierCompanyIds,
+        items,
+      };
+
+      // Editar = actualizar la solicitud existente (no crear otra).
+      const created = editRequestId
+        ? await atarApi.updateRequest(editRequestId, payload, session.accessToken)
+        : await atarApi.createRequest(payload, session.accessToken);
 
       if (typeof window !== 'undefined') {
         window.localStorage.removeItem(DRAFT_KEY);
@@ -935,7 +1064,7 @@ export default function BuyerNewRequestWizardPage() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
               <Icon name="check" />
             </div>
-            <h1 className="mt-6 text-[30px] font-semibold tracking-[-0.04em] text-slate-950">¡Solicitud enviada con éxito!</h1>
+            <h1 className="mt-6 text-[30px] font-semibold tracking-[-0.04em] text-slate-950">{editRequestId ? '¡Cambios guardados!' : '¡Solicitud enviada con éxito!'}</h1>
             <p className="mt-2 text-sm text-slate-500">
               Tu solicitud {createdId ? `#${createdId.slice(0, 8)}` : ''} fue enviada a proveedores verificados.
             </p>
@@ -1996,7 +2125,7 @@ export default function BuyerNewRequestWizardPage() {
                   onClick={handleSubmit}
                   type="button"
                 >
-                  {submitting ? 'Enviando...' : 'Enviar solicitud →'}
+                  {submitting ? 'Guardando...' : editRequestId ? 'Guardar cambios →' : 'Enviar solicitud →'}
                 </button>
               ) : null}
 
@@ -2036,7 +2165,7 @@ export default function BuyerNewRequestWizardPage() {
               onClick={handleSubmit}
               type="button"
             >
-              {submitting ? 'Enviando...' : 'Enviar solicitud'}
+              {submitting ? 'Guardando...' : editRequestId ? 'Guardar cambios' : 'Enviar solicitud'}
             </button>
           )}
         </div>
