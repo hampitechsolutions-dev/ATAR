@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { LoadingState } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 
 function formatCurrency(value: number | null | undefined) {
@@ -102,8 +103,8 @@ export default function BuyerQuotesPage() {
 
       <section className="space-y-4">
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-6 text-sm text-slate-500 shadow-sm">
-            Cargando cotizaciones...
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm">
+            <LoadingState label="Cargando cotizaciones..." />
           </div>
         ) : quotedRequests.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-sm text-slate-500 shadow-sm">

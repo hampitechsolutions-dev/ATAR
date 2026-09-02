@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo } from 'react';
+import { LoadingState } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 import type { RequestRecord } from '@/lib/atar-api';
 
@@ -220,8 +221,8 @@ export default function DashboardCompradorPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4 text-sm text-slate-600">
-        Cargando...
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <LoadingState label="Cargando..." />
       </div>
     );
   }

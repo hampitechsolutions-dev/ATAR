@@ -5,6 +5,7 @@ import CompanyLogo from '@/components/dashboard/company-logo';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 import { mapSupplierToProviderDirectoryItem } from '@/lib/provider-directory';
 
@@ -159,8 +160,8 @@ export default function DashboardCompradorPanelPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4 text-sm text-slate-600">
-        Cargando panel...
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <LoadingState label="Cargando panel..." />
       </div>
     );
   }

@@ -9,6 +9,7 @@ import SupplierAccountMenu from '@/components/dashboard/supplier-account-menu';
 import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
 import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
 import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
+import { LoadingState } from '@/components/ui/spinner';
 import { useWorkspace } from '@/components/auth/workspace-provider';
 import { type OrderFulfillmentStatus, type RequestRecord } from '@/lib/atar-api';
 import { useSupplierDashboardData, useSupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
@@ -375,7 +376,7 @@ export default function DashboardProveedorPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-950">
         <div className="rounded-3xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-          Cargando dashboard proveedor...
+          <LoadingState label="Cargando dashboard proveedor..." className="gap-3" />
         </div>
       </main>
     );

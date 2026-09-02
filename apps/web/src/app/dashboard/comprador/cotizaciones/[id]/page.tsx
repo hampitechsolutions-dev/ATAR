@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
 import ConversationPanel from '@/components/chat/conversation-panel';
+import { LoadingState } from '@/components/ui/spinner';
 import { atarApi, type QuoteRecord, type QuoteStatus } from '@/lib/atar-api';
 import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
+import { formatRequestCode } from '@/lib/request-code';
 
 /* ============================ HELPERS ============================ */
 
@@ -355,8 +357,8 @@ export default function BuyerQuoteDetailPage() {
         ) : null}
 
         {loading ? (
-          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-16 text-center text-sm text-slate-500">
-            Cargando detalle de cotización...
+          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-16">
+            <LoadingState label="Cargando detalle de cotización..." />
           </div>
         ) : !quote ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-sm text-slate-500">
@@ -396,7 +398,7 @@ export default function BuyerQuoteDetailPage() {
 
                 <div className="mt-5 flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
-                    Solicitud #{request?.id.slice(0, 8) ?? '—'}
+                    {request ? formatRequestCode(request.id) : '—'}
                   </span>
                   <span className="rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
                     Creada el {formatDateTime(request?.createdAt)}

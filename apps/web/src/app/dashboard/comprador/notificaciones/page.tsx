@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import PushOptIn from '@/components/notifications/push-opt-in';
 import { atarApi, type NotificationRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 
 function formatRelative(value: string) {
@@ -151,7 +152,7 @@ export default function BuyerNotificationsPage() {
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         {dashboardLoading || loading ? (
-          <div className="px-6 py-8 text-sm text-slate-500">Cargando notificaciones...</div>
+          <div className="px-6 py-8"><LoadingState label="Cargando notificaciones..." /></div>
         ) : notifications.length === 0 ? (
           <div className="px-6 py-10 text-sm text-slate-500">No hay notificaciones recientes.</div>
         ) : (

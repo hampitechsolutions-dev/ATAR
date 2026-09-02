@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { atarApi, type OrderFulfillmentStatus, type QuoteRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function stageBadgeClass(column: OrderColumnKey) {
@@ -484,8 +485,8 @@ export default function SupplierOrdersPage() {
         {/* Lista */}
         <div className="mt-4 space-y-3">
           {loading ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
-              Cargando pedidos...
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10">
+              <LoadingState label="Cargando pedidos..." />
             </div>
           ) : mobileOrders.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
@@ -621,8 +622,8 @@ export default function SupplierOrdersPage() {
         </div>
 
         {loading ? (
-          <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10 text-sm text-[#7e85b2]">
-            Cargando pedidos...
+          <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10">
+            <LoadingState label="Cargando pedidos..." />
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10 text-sm text-[#7e85b2]">

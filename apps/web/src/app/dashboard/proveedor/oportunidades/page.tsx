@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
+import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function formatDate(value: string | null) {
@@ -67,8 +68,8 @@ export default function SupplierOpportunitiesPage() {
 
           <div className="grid gap-4">
             {loading ? (
-              <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-8 text-sm text-slate-500 shadow-sm">
-                Cargando oportunidades...
+              <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-8 shadow-sm">
+                <LoadingState label="Cargando oportunidades..." />
               </div>
             ) : filteredRequests.length === 0 ? (
               <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-10 text-sm text-slate-500 shadow-sm">

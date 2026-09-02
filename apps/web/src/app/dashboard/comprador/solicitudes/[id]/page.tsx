@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
+import { LoadingState } from '@/components/ui/spinner';
+import { formatRequestCode } from '@/lib/request-code';
 import {
   atarApi,
   type OrderFulfillmentStatus,
@@ -951,7 +953,7 @@ export default function BuyerRequestDetailPage() {
         .head{border-bottom:2px solid #1847ff;padding-bottom:10px;margin-bottom:16px}
       </style></head><body>
       <div class="head"><h1>${esc(request.title ?? 'Solicitud de cotización')}</h1>
-      <p class="muted">Solicitud #${esc(request.id)} · ${esc(request.category ?? '')}</p></div>
+      <p class="muted">${esc(formatRequestCode(request.id))} · ${esc(request.category ?? '')}</p></div>
       ${productsHtml}
       <script>window.onload=function(){window.print();}</script>
       </body></html>`;
@@ -983,7 +985,9 @@ export default function BuyerRequestDetailPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-950">
-        <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">Cargando detalle...</div>
+        <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">
+          <LoadingState label="Cargando detalle..." className="gap-3" />
+        </div>
       </main>
     );
   }
@@ -1011,7 +1015,7 @@ export default function BuyerRequestDetailPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#4f46ff]">Solicitud publicada</p>
                 <h1 className="mt-3 text-[26px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[32px] lg:text-[40px] lg:tracking-[-0.05em]">{request?.title ?? 'Solicitud no encontrada'}</h1>
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-slate-500">
-                  <span>ID de solicitud: <span className="font-semibold text-[#6474a3]">#{requestId}</span></span>
+                  <span>Solicitud: <span className="font-semibold text-[#6474a3]">{formatRequestCode(request?.id ?? requestId)}</span></span>
                   <span className="h-1 w-1 rounded-full bg-slate-300" />
                   <span>Creada el {requestCreatedLabel}</span>
                   {request ? (
