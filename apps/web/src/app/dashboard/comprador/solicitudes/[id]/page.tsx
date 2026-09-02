@@ -7,9 +7,11 @@ import { useAuth } from '@/components/auth/auth-provider';
 import {
   atarApi,
   type OrderFulfillmentStatus,
+  type QuoteItemRecord,
   type QuoteRecord,
   type QuoteStatus,
   type RequestEventRecord,
+  type RequestItemRecord,
   type RequestRecord,
 } from '@/lib/atar-api';
 
@@ -23,6 +25,206 @@ function formatCurrency(value: number | null, currency = 'ARS') {
     currency,
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+// Celda de un producto dentro de la tabla comparativa: precio/subtotal, o el
+// estado de disponibilidad (no disponible / alternativa) con su nota.
+function QuoteCell({
+  line,
+  quantity,
+  currency,
+}: {
+  line: QuoteItemRecord | null;
+  quantity: number | null;
+  currency: string;
+}) {
+  if (!line) {
+    return <span className="text-slate-300">—</span>;
+  }
+  if (line.availability === 'UNAVAILABLE') {
+    return (
+      <div>
+        <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600">No disp.</span>
+        {line.note ? <p className="mt-1 text-[10px] leading-4 text-slate-500">{line.note}</p> : null}
+      </div>
+    );
+  }
+  const subtotal = quantity != null && line.unitPrice != null ? line.unitPrice * quantity : null;
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-1">
+        <span className="font-semibold tabular-nums text-slate-900">
+          {line.unitPrice != null ? `${formatCurrency(line.unitPrice, currency)}/u` : '—'}
+        </span>
+        {line.availability === 'ALTERNATIVE' ? (
+          <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">Alt.</span>
+        ) : null}
+      </div>
+      {subtotal != null ? (
+        <p className="tabular-nums text-[10px] text-slate-400">{formatCurrency(subtotal, currency)}</p>
+      ) : null}
+      {line.note ? <p className="mt-1 text-[10px] leading-4 text-slate-500">{line.note}</p> : null}
+    </div>
+  );
+}
+
+// Tabla "manzanas con manzanas": una columna por proveedor, una fila por
+// producto (si el pedido es multi-producto) + total, plazo, condiciones y la
+// acción de adjudicar. Deslizable en horizontal para no romper el layout.
+function QuoteComparison({
+  quotes,
+  items,
+  bestPriceId,
+  fastestId,
+  awardedQuoteId,
+  canAward,
+  awardingQuoteId,
+  onAward,
+}: {
+  quotes: QuoteRecord[];
+  items: RequestItemRecord[];
+  bestPriceId: string | null;
+  fastestId: string | null;
+  awardedQuoteId: string | null;
+  canAward: boolean;
+  awardingQuoteId: string | null;
+  onAward: (quoteId: string) => void;
+}) {
+  const multiProduct = items.length > 1;
+  return (
+    <div className="mt-4 overflow-hidden rounded-[18px] border border-slate-200 bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+        <p className="text-[13px] font-semibold text-slate-900">Comparar lado a lado</p>
+        <p className="hidden text-[11px] text-slate-400 sm:block">Deslizá para ver todos los proveedores →</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table
+          className="w-full border-collapse text-left"
+          style={{ minWidth: `${150 + quotes.length * 150}px` }}
+        >
+          <thead>
+            <tr className="border-b border-slate-100">
+              <th className="sticky left-0 z-10 w-[150px] bg-white px-4 py-3 align-bottom text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+                Proveedor
+              </th>
+              {quotes.map((quote) => {
+                const awarded = quote.id === awardedQuoteId;
+                return (
+                  <th
+                    key={quote.id}
+                    className={`min-w-[150px] px-3 py-3 align-bottom ${awarded ? 'bg-emerald-50/60' : ''}`}
+                  >
+                    <p className="truncate text-[13px] font-semibold text-slate-950">
+                      {quote.supplierCompany?.name ?? 'Proveedor'}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {bestPriceId === quote.id ? (
+                        <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[9px] font-semibold text-[#4f46ff]">Mejor precio</span>
+                      ) : null}
+                      {fastestId === quote.id ? (
+                        <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[9px] font-semibold text-teal-700">Más rápida</span>
+                      ) : null}
+                      {awarded ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">Asignada</span>
+                      ) : null}
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {multiProduct
+              ? items.map((item) => (
+                  <tr key={item.id}>
+                    <th className="sticky left-0 z-10 bg-white px-4 py-2.5 text-left align-top">
+                      <p className="text-[12px] font-semibold text-slate-800">{item.productName}</p>
+                      {item.quantity ? (
+                        <p className="text-[10px] text-slate-400">
+                          {item.quantity} {item.unit ?? 'u.'}
+                        </p>
+                      ) : null}
+                    </th>
+                    {quotes.map((quote) => {
+                      const line = quote.items?.find((l) => l.requestItemId === item.id) ?? null;
+                      const awarded = quote.id === awardedQuoteId;
+                      return (
+                        <td key={quote.id} className={`px-3 py-2.5 align-top text-[12px] ${awarded ? 'bg-emerald-50/40' : ''}`}>
+                          <QuoteCell line={line} quantity={item.quantity ?? null} currency={quote.currency} />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              : null}
+            <tr className="bg-slate-50/70">
+              <th className="sticky left-0 z-10 bg-slate-50/70 px-4 py-3 text-left text-[12px] font-semibold text-slate-700">
+                Total
+              </th>
+              {quotes.map((quote) => {
+                const best = bestPriceId === quote.id;
+                const awarded = quote.id === awardedQuoteId;
+                return (
+                  <td key={quote.id} className={`px-3 py-3 align-top ${awarded ? 'bg-emerald-50/60' : ''}`}>
+                    <span className={`text-[15px] font-bold tabular-nums ${best ? 'text-[#4f46ff]' : 'text-slate-950'}`}>
+                      {formatCurrency(quote.amount, quote.currency)}
+                    </span>
+                  </td>
+                );
+              })}
+            </tr>
+            <tr>
+              <th className="sticky left-0 z-10 bg-white px-4 py-2.5 text-left text-[12px] font-semibold text-slate-500">
+                Plazo de entrega
+              </th>
+              {quotes.map((quote) => {
+                const fast = fastestId === quote.id;
+                return (
+                  <td key={quote.id} className="px-3 py-2.5 text-[12px] tabular-nums">
+                    <span className={fast ? 'font-semibold text-teal-700' : 'text-slate-700'}>
+                      {typeof quote.leadTimeDays === 'number' ? `${quote.leadTimeDays} días` : 'A convenir'}
+                    </span>
+                  </td>
+                );
+              })}
+            </tr>
+            <tr>
+              <th className="sticky left-0 z-10 bg-white px-4 py-2.5 text-left text-[12px] font-semibold text-slate-500">
+                Condiciones de pago
+              </th>
+              {quotes.map((quote) => (
+                <td key={quote.id} className="px-3 py-2.5 text-[12px] text-slate-700">
+                  {quote.paymentTerms || 'A convenir'}
+                </td>
+              ))}
+            </tr>
+            {canAward ? (
+              <tr>
+                <th className="sticky left-0 z-10 bg-white px-4 py-3" aria-hidden="true" />
+                {quotes.map((quote) => {
+                  const awarding = awardingQuoteId === quote.id;
+                  return (
+                    <td key={quote.id} className="px-3 py-3 align-top">
+                      {quote.status === 'SUBMITTED' ? (
+                        <button
+                          type="button"
+                          disabled={Boolean(awardingQuoteId)}
+                          onClick={() => onAward(quote.id)}
+                          className="inline-flex h-9 w-full items-center justify-center rounded-[10px] bg-[#1847ff] px-3 text-[12px] font-semibold text-white transition hover:bg-[#0f3ff5] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {awarding ? 'Asignando...' : 'Elegir'}
+                        </button>
+                      ) : null}
+                    </td>
+                  );
+                })}
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function compareQuotes(a: QuoteRecord, b: QuoteRecord) {
@@ -742,6 +944,20 @@ export default function BuyerRequestDetailPage() {
                     Compará las propuestas y asignale la compra al proveedor que elijas. Al confirmar, el resto de las
                     cotizaciones quedan rechazadas y la solicitud se cierra.
                   </p>
+                ) : null}
+
+                {/* Comparación lado a lado (manzanas con manzanas) */}
+                {comparableQuotes.length >= 2 ? (
+                  <QuoteComparison
+                    quotes={comparableQuotes}
+                    items={request?.items ?? []}
+                    bestPriceId={bestPrice?.id ?? null}
+                    fastestId={fastest?.id ?? null}
+                    awardedQuoteId={request?.awardedQuoteId ?? null}
+                    canAward={canAward}
+                    awardingQuoteId={awardingQuoteId}
+                    onAward={handleAward}
+                  />
                 ) : null}
 
                 <div className="mt-4 space-y-3">
