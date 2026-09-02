@@ -11,6 +11,7 @@ import {
   type SendConversationMessagePayload,
 } from '@/lib/atar-api';
 import { getConversationSocket } from '@/lib/conversation-socket';
+import { LoadingState } from '@/components/ui/spinner';
 import { SUPPLIER_COUNTERS_REFRESH_EVENT } from '@/lib/dashboard-hooks';
 import { loadSession, type WebSession } from '@/lib/session';
 import {
@@ -621,7 +622,7 @@ export default function ConversationPanel({
       <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)] px-4 py-4 sm:px-5">
         <div className="mx-auto w-full max-w-[880px] space-y-4">
           {loading ? (
-            <p className="py-8 text-center text-sm text-slate-500">Cargando conversación...</p>
+            <LoadingState label="Cargando conversación..." className="py-8" />
           ) : !conversation || (conversation.messages?.length ?? 0) === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">Todavía no hay mensajes. Escribí el primero 👇</p>
           ) : (

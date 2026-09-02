@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { type QuoteRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 type QuoteTab = 'all' | 'draft' | 'submitted' | 'awarded' | 'rejected' | 'expired';
@@ -498,7 +499,7 @@ export default function SupplierQuotesPage() {
             </div>
 
             {loading ? (
-              <div className="px-6 py-10 text-sm text-[#7e85b2]">Cargando cotizaciones...</div>
+              <div className="px-6 py-10"><LoadingState label="Cargando cotizaciones..." /></div>
             ) : visibleQuotes.length === 0 ? (
               <div className="px-6 py-10 text-sm text-[#7e85b2]">
                 No hay cotizaciones para este filtro.

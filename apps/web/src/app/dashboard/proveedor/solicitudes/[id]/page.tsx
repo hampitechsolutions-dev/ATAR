@@ -13,6 +13,7 @@ import {
   type RequestRecord,
   type SupplierProfileRecord,
 } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function formatCurrency(value: number | null | undefined, currency = 'ARS') {
@@ -339,8 +340,8 @@ export default function SupplierRequestDetailPage() {
         ) : null}
 
         {loading && !request ? (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
-            Cargando solicitud...
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-10">
+            <LoadingState label="Cargando solicitud..." />
           </div>
         ) : !request ? (
           <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">

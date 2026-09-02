@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import CompanyLogo from '@/components/dashboard/company-logo';
 import ConversationPanel from '@/components/chat/conversation-panel';
 import { atarApi, type ConversationRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 
 function formatRelative(value: string | null | undefined) {
@@ -187,7 +188,7 @@ export default function BuyerMessagesPage() {
 
           <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">
             {dashboardLoading || loading ? (
-              <div className="rounded-2xl bg-slate-50 px-4 py-8 text-sm text-slate-500">Cargando conversaciones...</div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-8"><LoadingState label="Cargando conversaciones..." /></div>
             ) : filteredConversations.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500">
                 Todavía no hay conversaciones.

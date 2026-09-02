@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import ConversationPanel from '@/components/chat/conversation-panel';
+import { LoadingState } from '@/components/ui/spinner';
 import {
   DashboardCard,
   DashboardHero,
@@ -117,7 +118,7 @@ export default function SupplierQuoteDetailPage() {
 
       {loading ? (
         <DashboardCard>
-          <p className="text-sm text-slate-500">Cargando detalle de cotizacion...</p>
+          <LoadingState label="Cargando detalle de cotización..." />
         </DashboardCard>
       ) : quote ? (
         <div className="space-y-6">

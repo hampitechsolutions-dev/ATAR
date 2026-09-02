@@ -13,6 +13,7 @@ import {
   type QuoteRecord,
   type RequestAssignmentRecord,
 } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierInbox } from '@/lib/dashboard-hooks';
 import {
   INBOX_FILTERS,
@@ -629,8 +630,8 @@ export default function SupplierRequestsPage() {
 
         <div className="mt-4 space-y-3 pb-4">
           {loading ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
-              Cargando solicitudes...
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10">
+              <LoadingState label="Cargando solicitudes..." />
             </div>
           ) : filteredAssignments.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
@@ -786,8 +787,8 @@ export default function SupplierRequestsPage() {
 
             <div className="mt-4 space-y-2.5">
               {loading ? (
-                <div className="rounded-xl bg-slate-50 px-4 py-8 text-center text-xs text-slate-500">
-                  Cargando solicitudes...
+                <div className="rounded-xl bg-slate-50 px-4 py-8">
+                  <LoadingState label="Cargando solicitudes..." />
                 </div>
               ) : pagedAssignments.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-xs text-slate-500">

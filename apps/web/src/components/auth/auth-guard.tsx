@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
+import { LoadingState } from '@/components/ui/spinner';
 import type { MembershipRole } from '@/lib/atar-api';
 import { canAccessDashboard, getDefaultDashboardPath } from '@/lib/session';
 
@@ -45,7 +46,7 @@ export default function AuthGuard({
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-950">
         <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">
-          Cargando sesion...
+          <LoadingState label="Cargando sesión..." className="gap-3" />
         </div>
       </main>
     );

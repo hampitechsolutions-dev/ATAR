@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { LoadingState } from '@/components/ui/spinner';
+import { formatRequestCode } from '@/lib/request-code';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 
 function formatCurrency(value: number | null | undefined) {
@@ -283,7 +285,7 @@ export default function BuyerOrdersPage() {
 
         <div className="divide-y divide-slate-200">
           {loading ? (
-            <div className="px-6 py-8 text-sm text-slate-500">Cargando pedidos...</div>
+            <div className="px-6 py-8"><LoadingState label="Cargando pedidos..." /></div>
           ) : visibleOrders.length === 0 ? (
             <div className="px-6 py-10 text-sm text-slate-500">No hay pedidos para mostrar.</div>
           ) : (
@@ -291,6 +293,7 @@ export default function BuyerOrdersPage() {
               const providerName = request.awardedQuote?.supplierCompany?.name ?? 'Proveedor asignado';
               const orderMeta = getOrderMeta(request.status);
               const orderNumber = request.order?.orderNumber ?? `Pedido #${5678 - ((safePage - 1) * pageSize + index)}`;
+              const requestCode = formatRequestCode(request.id);
               const deliveredLabel = request.status === 'ORDER_ISSUED' ? 'Entregado' : `${Math.max(3, index + 3)} días hábiles`;
 
               return (
@@ -304,7 +307,7 @@ export default function BuyerOrdersPage() {
                         <p className="text-sm font-semibold text-slate-950">{orderNumber}</p>
                         <p className="mt-1 text-[11px] text-slate-500">Creado el {formatDate(request.createdAt)}</p>
                         <p className="mt-2 inline-flex rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-600">
-                          Solicitud #{1248 - ((safePage - 1) * pageSize + index)}
+                          {requestCode}
                         </p>
                       </div>
                     </div>

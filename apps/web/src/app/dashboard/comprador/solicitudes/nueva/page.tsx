@@ -19,6 +19,7 @@ import {
 } from '@/lib/request-catalog';
 import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 import { getCategoryUnits, getDefaultUnit } from '@/lib/request-units';
+import { formatRequestCode } from '@/lib/request-code';
 
 type StepKey = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -1087,7 +1088,7 @@ export default function BuyerNewRequestWizardPage() {
             </div>
             <h1 className="mt-6 text-[30px] font-semibold tracking-[-0.04em] text-slate-950">{editRequestId ? '¡Cambios guardados!' : '¡Solicitud enviada con éxito!'}</h1>
             <p className="mt-2 text-sm text-slate-500">
-              Tu solicitud {createdId ? `#${createdId.slice(0, 8)}` : ''} fue enviada a proveedores verificados.
+              Tu solicitud {createdId ? formatRequestCode(createdId) : ''} fue enviada a proveedores verificados.
             </p>
 
             <div className="mx-auto mt-8 grid max-w-[420px] gap-3 sm:grid-cols-2">

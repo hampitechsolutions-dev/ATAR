@@ -5,6 +5,7 @@ import CompanyLogo from '@/components/dashboard/company-logo';
 import { useEffect, useMemo, useState } from 'react';
 import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
 import { loadBuyerFavorites, toggleBuyerFavorite } from '@/lib/dashboard-local';
+import { LoadingState } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 import { mapSupplierToProviderDirectoryItem } from '@/lib/provider-directory';
 
@@ -121,8 +122,8 @@ export default function BuyerProvidersPage() {
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {dashboardLoading || loading ? (
-          <div className="rounded-[20px] border border-slate-200 bg-white px-5 py-6 text-sm text-slate-500 shadow-sm sm:col-span-2 xl:col-span-3">
-            Cargando módulo de proveedores...
+          <div className="rounded-[20px] border border-slate-200 bg-white px-5 py-6 shadow-sm sm:col-span-2 xl:col-span-3">
+            <LoadingState label="Cargando módulo de proveedores..." />
           </div>
         ) : filteredProviders.length === 0 ? (
           <div className="rounded-[20px] border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-slate-500 shadow-sm sm:col-span-2 xl:col-span-3">

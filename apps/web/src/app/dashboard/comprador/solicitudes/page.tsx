@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { atarApi, type RequestRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
+import { formatRequestCode } from '@/lib/request-code';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 
 function formatDate(value: string | null) {
@@ -331,12 +333,12 @@ export default function BuyerRequestsPage() {
 
         <div className="divide-y divide-slate-200">
           {loading ? (
-            <div className="px-6 py-8 text-sm text-slate-500">Cargando solicitudes...</div>
+            <div className="px-6 py-8"><LoadingState label="Cargando solicitudes..." /></div>
           ) : filteredRequests.length === 0 ? (
             <div className="px-6 py-10 text-sm text-slate-500">No hay solicitudes con ese criterio.</div>
           ) : (
-            pageItems.map((request, index) => {
-              const code = `Solicitud #${String(index + 1244 + (safePage - 1) * pageSize)}`;
+            pageItems.map((request) => {
+              const code = formatRequestCode(request.id);
               const replies = request._count?.quotes ?? 0;
               return (
                 <div key={request.id} className="px-4 py-4 sm:px-6">
