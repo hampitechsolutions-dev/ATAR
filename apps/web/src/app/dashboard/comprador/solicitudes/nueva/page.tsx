@@ -867,8 +867,9 @@ export default function BuyerNewRequestWizardPage() {
 
   function addAnotherProduct() {
     setError(null);
+    // Sin producto en edición (p. ej. desde el Resumen): arranca uno nuevo.
     if (!draft.category.trim()) {
-      setError('Elegí una categoría para este producto antes de agregar otro.');
+      setStep(1);
       return;
     }
     const missingModule = currentProductModules.find(
@@ -1854,22 +1855,54 @@ export default function BuyerNewRequestWizardPage() {
 
                   {allProductLines.length > 0 ? (
                     <div className="mt-4 rounded-[18px] border border-slate-200 bg-white p-3">
-                      <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                        Productos ({allProductLines.length})
-                      </p>
+                      <div className="flex items-center justify-between px-1 pb-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Productos ({allProductLines.length})
+                        </p>
+                        <button
+                          className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#a9b0ff] bg-white px-3 py-1 text-[12px] font-semibold text-[#4f46ff] transition hover:bg-[#eef0ff]"
+                          onClick={addAnotherProduct}
+                          type="button"
+                        >
+                          + Agregar producto
+                        </button>
+                      </div>
                       <ul className="space-y-1.5">
                         {allProductLines.map((line, index) => (
                           <li
                             key={line.id === 'current' ? `current-${index}` : line.id}
                             className="flex items-center justify-between gap-3 rounded-[12px] bg-slate-50 px-3 py-2"
                           >
-                            <span className="truncate text-[13px] font-semibold text-slate-900">{getProductDisplayName(line)}</span>
-                            <span className="shrink-0 text-[11px] text-slate-500">
-                              {line.quantity ? `${line.quantity} u.` : 'Cant. a definir'}
-                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate text-[13px] font-semibold text-slate-900">{getProductDisplayName(line)}</p>
+                              <p className="text-[11px] text-slate-500">
+                                {line.quantity ? `${line.quantity} u.` : 'Cant. a definir'}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-3">
+                              <button
+                                className="text-[12px] font-semibold text-[#4f46ff] hover:underline"
+                                onClick={() => (line.id === 'current' ? setStep(2) : editProduct(line.id))}
+                                type="button"
+                              >
+                                Editar
+                              </button>
+                              {allProductLines.length > 1 && line.id !== 'current' ? (
+                                <button
+                                  className="text-[12px] font-semibold text-rose-500 hover:underline"
+                                  onClick={() => removeProduct(line.id)}
+                                  type="button"
+                                >
+                                  Quitar
+                                </button>
+                              ) : null}
+                            </div>
                           </li>
                         ))}
                       </ul>
+                      <p className="mt-2 px-1 text-[11px] leading-4 text-slate-500">
+                        Podés pedirle varios productos al mismo proveedor en una sola solicitud. El proveedor cotiza los que tenga y te avisa por el chat si falta alguno o puede reemplazarlo.
+                      </p>
                     </div>
                   ) : null}
 
