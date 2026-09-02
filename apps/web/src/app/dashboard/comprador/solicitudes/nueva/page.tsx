@@ -18,6 +18,7 @@ import {
   getRequestCatalogKeywords,
 } from '@/lib/request-catalog';
 import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
+import { getCategoryUnits, getDefaultUnit } from '@/lib/request-units';
 
 type StepKey = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -28,6 +29,8 @@ type ProductLine = {
   category: string;
   description: string;
   quantity: string;
+  // Unidad de la cantidad (metro lineal, kg, rollo…), sugerida por categoría.
+  unit: string;
   material: string;
   capacityOption: string;
   handleType: string;
@@ -44,6 +47,7 @@ type RequestDraft = {
   title: string;
   description: string;
   quantity: string;
+  unit: string;
   material: string;
   capacityOption: string;
   handleType: string;
@@ -179,6 +183,7 @@ function snapshotProduct(draft: RequestDraft): ProductLine {
     category: draft.category,
     description: draft.description,
     quantity: draft.quantity,
+    unit: draft.unit,
     material: draft.material,
     capacityOption: draft.capacityOption,
     handleType: draft.handleType,
@@ -195,6 +200,7 @@ function blankProductFields() {
     title: '',
     description: '',
     quantity: '',
+    unit: '',
     material: '',
     capacityOption: '',
     handleType: '',
@@ -212,6 +218,7 @@ function withProductLine(draft: RequestDraft, line: ProductLine): RequestDraft {
     category: line.category,
     description: line.description,
     quantity: line.quantity,
+    unit: line.unit,
     material: line.material,
     capacityOption: line.capacityOption,
     handleType: line.handleType,
@@ -279,6 +286,7 @@ function productLinesFromRequest(request: RequestRecord): ProductLine[] {
     category: item.category ?? request.category ?? '',
     description: '',
     quantity: item.quantity != null ? String(item.quantity) : '',
+    unit: item.unit ?? '',
     material: '',
     capacityOption: '',
     handleType: '',
@@ -296,6 +304,7 @@ function loadDraft(): RequestDraft {
       title: '',
       description: '',
       quantity: '',
+      unit: '',
       material: '',
       capacityOption: '',
       handleType: '',
@@ -325,6 +334,7 @@ function loadDraft(): RequestDraft {
       title: '',
       description: '',
       quantity: '',
+      unit: '',
       material: '',
       capacityOption: '',
       handleType: '',
@@ -354,6 +364,7 @@ function loadDraft(): RequestDraft {
       title: parsed.title ?? '',
       description: parsed.description ?? '',
       quantity: parsed.quantity ?? '',
+      unit: parsed.unit ?? '',
       material: parsed.material ?? '',
       capacityOption: parsed.capacityOption ?? '',
       handleType: parsed.handleType ?? '',
@@ -381,6 +392,7 @@ function loadDraft(): RequestDraft {
       title: '',
       description: '',
       quantity: '',
+      unit: '',
       material: '',
       capacityOption: '',
       handleType: '',
@@ -521,7 +533,7 @@ export default function BuyerNewRequestWizardPage() {
   useEffect(() => {
     const initialCategory = searchParams?.get('category');
     if (initialCategory && !draft.category) {
-      const next = { ...draft, category: initialCategory };
+      const next = { ...draft, category: initialCategory, unit: draft.unit || getDefaultUnit(initialCategory) };
       setDraft(next);
       saveDraft(next);
     }
@@ -852,6 +864,7 @@ export default function BuyerNewRequestWizardPage() {
         category: draft.category,
         description: draft.description,
         quantity: draft.quantity,
+        unit: draft.unit,
         material: draft.material,
         capacityOption: draft.capacityOption,
         handleType: draft.handleType,
@@ -976,6 +989,7 @@ export default function BuyerNewRequestWizardPage() {
           productName: getProductDisplayName(line),
           category: line.category || undefined,
           quantity: Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : undefined,
+          unit: line.unit || getDefaultUnit(line.category) || undefined,
           specifications: storedSpecs || lineSpecs.join('\n') || undefined,
         };
       });
@@ -1190,7 +1204,11 @@ export default function BuyerNewRequestWizardPage() {
                           active ? 'ring-2 ring-[#4f46ff] ring-offset-2' : ''
                         }`}
                         onClick={() => {
-                          const next = { ...draft, category: option.label };
+                          // Al cambiar de categoría se sugiere su unidad por
+                          // defecto; si es la misma categoría, se respeta la elegida.
+                          const unit =
+                            option.label === draft.category ? draft.unit : getDefaultUnit(option.label);
+                          const next = { ...draft, category: option.label, unit };
                           setDraft(next);
                           saveDraft(next);
                           setError(null);
@@ -1434,7 +1452,34 @@ export default function BuyerNewRequestWizardPage() {
                             >
                               +
                             </button>
-                            <span className="ml-1.5 text-[10px] font-semibold text-slate-500 sm:ml-2 sm:text-[11px]">unidades</span>
+                            <span className="ml-1.5 max-w-[92px] truncate text-[10px] font-semibold text-slate-500 sm:ml-2 sm:text-[11px]">
+                              {draft.unit || getDefaultUnit(draft.category)}
+                            </span>
+                          </div>
+
+                          {/* Unidad de medida sugerida por categoría */}
+                          <div className="mt-2.5">
+                            <p className="mb-1.5 text-[11px] font-medium text-slate-500">Unidad de medida</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {getCategoryUnits(draft.category).map((unitOption) => {
+                                const activeUnit =
+                                  (draft.unit || getDefaultUnit(draft.category)) === unitOption;
+                                return (
+                                  <button
+                                    key={unitOption}
+                                    className={`inline-flex h-7 items-center justify-center rounded-[9px] border px-2.5 text-[10px] font-semibold transition ${
+                                      activeUnit
+                                        ? 'border-[#8b84ff] bg-[#f5f4ff] text-[#4f46ff]'
+                                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                                    }`}
+                                    onClick={() => setDraft((current) => ({ ...current, unit: unitOption }))}
+                                    type="button"
+                                  >
+                                    {unitOption}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
 
                           <div className="mt-2.5 flex flex-wrap gap-1.5">

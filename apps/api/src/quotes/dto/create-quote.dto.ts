@@ -1,7 +1,9 @@
 import { Type } from 'class-transformer';
+import { QuoteItemAvailability } from '@prisma/client';
 import {
   ArrayMaxSize,
   IsArray,
+  IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
@@ -11,15 +13,26 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-// Precio unitario ofrecido para un producto (RequestItem) de la solicitud.
+// Respuesta del vendedor para un producto (RequestItem) de la solicitud:
+// precio unitario, disponibilidad y una nota (reemplazo / motivo / consejo).
 export class QuoteItemInputDto {
   @IsString()
   @MaxLength(64)
   requestItemId!: string;
 
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  unitPrice!: number;
+  unitPrice?: number;
+
+  @IsOptional()
+  @IsEnum(QuoteItemAvailability)
+  availability?: QuoteItemAvailability;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  note?: string;
 }
 
 export class CreateQuoteDto {

@@ -1,6 +1,8 @@
+import { SupplierRole } from '@prisma/client';
 import {
   ArrayMaxSize,
   IsArray,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -21,6 +23,11 @@ export class UpdateSupplierProfileDto {
   @IsString()
   @MaxLength(40)
   genericCode?: string;
+
+  /** Rol comercial: fabricante, distribuidor, integrador o representante. */
+  @IsOptional()
+  @IsEnum(SupplierRole)
+  supplierRole?: SupplierRole;
 
   @IsOptional()
   @IsInt()

@@ -8,6 +8,7 @@ import {
   ApiError,
   atarApi,
   type CreateQuotePayload,
+  type QuoteItemAvailability,
   type QuoteRecord,
   type RequestRecord,
   type SupplierProfileRecord,
@@ -44,11 +45,29 @@ function getBuyerLocation(request: RequestRecord) {
   return city && country ? `${city}, ${country}` : city || country || 'No informada';
 }
 
+// Parte las specs guardadas de un producto ("Label: value" por linea) en filas.
+function parseSpecRows(text: string | null | undefined) {
+  return (text ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const idx = line.indexOf(':');
+      return idx === -1
+        ? { label: 'Detalle', value: line }
+        : { label: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() };
+    });
+}
+
 type QuoteDraft = {
   // Fallback para solicitudes sin items (legacy): un total unico.
   amount: string;
   // Precio unitario por producto, indexado por RequestItem.id.
   unitPrices: Record<string, string>;
+  // Disponibilidad por producto (cotizo / no disponible / alternativa).
+  availabilities: Record<string, QuoteItemAvailability>;
+  // Nota por producto (motivo de no disponible, detalle del reemplazo, consejo).
+  itemNotes: Record<string, string>;
   currency: string;
   minimumOrder: string;
   leadTimeDays: string;
@@ -59,12 +78,18 @@ type QuoteDraft = {
 
 function createDraft(quote?: QuoteRecord | null): QuoteDraft {
   const unitPrices: Record<string, string> = {};
+  const availabilities: Record<string, QuoteItemAvailability> = {};
+  const itemNotes: Record<string, string> = {};
   for (const item of quote?.items ?? []) {
-    unitPrices[item.requestItemId] = String(item.unitPrice);
+    unitPrices[item.requestItemId] = item.unitPrice != null ? String(item.unitPrice) : '';
+    availabilities[item.requestItemId] = item.availability ?? 'QUOTED';
+    itemNotes[item.requestItemId] = item.note ?? '';
   }
   return {
     amount: typeof quote?.amount === 'number' ? String(quote.amount) : '',
     unitPrices,
+    availabilities,
+    itemNotes,
     currency: quote?.currency ?? 'ARS',
     minimumOrder: '',
     leadTimeDays: typeof quote?.leadTimeDays === 'number' ? String(quote.leadTimeDays) : '',
@@ -142,6 +167,10 @@ export default function SupplierRequestDetailPage() {
 
   const requestItems = request?.items ?? [];
   const quoteTotal = requestItems.reduce((sum, item) => {
+    const availability = draft.availabilities[item.id] ?? 'QUOTED';
+    if (availability === 'UNAVAILABLE') {
+      return sum;
+    }
     const price = Number(draft.unitPrices[item.id] ?? '');
     const qty = item.quantity ?? 0;
     return Number.isFinite(price) ? sum + price * qty : sum;
@@ -201,12 +230,35 @@ export default function SupplierRequestDetailPage() {
       };
 
       if (requestItems.length > 0) {
-        // Precio unitario por producto: el total lo calcula el backend.
+        // Respuesta por producto: precio + disponibilidad + nota. El total lo
+        // calcula el backend (solo suma lo que tiene precio).
         const items = requestItems
-          .map((item) => ({ requestItemId: item.id, unitPrice: Number(draft.unitPrices[item.id] ?? '') }))
-          .filter((line) => Number.isFinite(line.unitPrice) && line.unitPrice > 0);
+          .map((item) => {
+            const availability = draft.availabilities[item.id] ?? 'QUOTED';
+            const priceNum = Number(draft.unitPrices[item.id] ?? '');
+            const hasPrice = Number.isFinite(priceNum) && priceNum > 0;
+            const note = (draft.itemNotes[item.id] ?? '').trim();
+            return { id: item.id, availability, priceNum, hasPrice, note };
+          })
+          // Se incluye una línea si el vendedor la respondió: cotizó con precio,
+          // la marcó no disponible, u ofrece una alternativa (precio y/o nota).
+          .filter(
+            (l) =>
+              (l.availability === 'QUOTED' && l.hasPrice) ||
+              l.availability === 'UNAVAILABLE' ||
+              (l.availability === 'ALTERNATIVE' && (l.hasPrice || l.note)),
+          )
+          .map((l) => ({
+            requestItemId: l.id,
+            availability: l.availability,
+            unitPrice: l.availability !== 'UNAVAILABLE' && l.hasPrice ? l.priceNum : undefined,
+            note: l.note || undefined,
+          }));
         if (items.length === 0) {
-          throw new ApiError('Ingresá el precio de al menos un producto.', 400);
+          throw new ApiError(
+            'Respondé al menos un producto: ingresá un precio, marcalo como no disponible u ofrecé una alternativa.',
+            400,
+          );
         }
         payload.items = items;
       } else {
@@ -228,15 +280,9 @@ export default function SupplierRequestDetailPage() {
     }
   }
 
-  const detailRows: { label: string; value: string; wide?: boolean }[] = request
+  // Datos a nivel solicitud (los productos se muestran aparte, uno por uno).
+  const detailRows: { label: string; value: string }[] = request
     ? [
-        { label: 'Producto', value: request.productName || request.title },
-        {
-          label: 'Cantidad',
-          value: typeof request.quantityRequested === 'number' ? `${request.quantityRequested} unidades` : 'A definir',
-        },
-        { label: 'Especificaciones', value: request.description || 'Sin especificaciones', wide: true },
-        { label: 'Material', value: request.category || 'No informado' },
         { label: 'Entrega estimada', value: formatDate(request.dueDate) },
         { label: 'Ubicación de entrega', value: getBuyerLocation(request) },
         {
@@ -321,25 +367,62 @@ export default function SupplierRequestDetailPage() {
               </div>
             </div>
 
-            {/* Detalles */}
+            {/* Productos solicitados (uno por uno, con su detalle) */}
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-sm font-bold text-slate-950">Detalles de la solicitud</p>
+              <p className="text-sm font-bold text-slate-950">
+                Productos solicitados{requestItems.length > 0 ? ` (${requestItems.length})` : ''}
+              </p>
+              {requestItems.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {requestItems.map((item, index) => {
+                    const specRows = parseSpecRows(item.specifications);
+                    return (
+                      <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
+                              Producto {index + 1}
+                            </p>
+                            <p className="mt-0.5 text-sm font-semibold text-slate-950">{item.productName}</p>
+                            {item.category ? <p className="text-[11px] text-slate-500">{item.category}</p> : null}
+                          </div>
+                          <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200">
+                            {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cant. a definir'}
+                          </span>
+                        </div>
+                        {specRows.length ? (
+                          <dl className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                            {specRows.map((row, rowIndex) => (
+                              <div key={`${row.label}-${rowIndex}`} className="rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-slate-100">
+                                <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">{row.label}</dt>
+                                <dd className="mt-0.5 text-xs font-medium text-slate-900">{row.value || '-'}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        ) : (
+                          <p className="mt-2 text-[11px] text-slate-400">Sin especificaciones adicionales.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                  {request.description || 'Sin especificaciones.'}
+                </p>
+              )}
+            </div>
+
+            {/* Entrega y condiciones (a nivel solicitud) */}
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-sm font-bold text-slate-950">Entrega y condiciones</p>
               <dl className="mt-3 divide-y divide-slate-200">
-                {detailRows.map((row) =>
-                  row.wide ? (
-                    <div key={row.label} className="py-2.5">
-                      <dt className="text-xs text-slate-500">{row.label}</dt>
-                      <dd className="mt-1 whitespace-pre-wrap text-sm font-medium leading-6 text-slate-900">
-                        {row.value}
-                      </dd>
-                    </div>
-                  ) : (
-                    <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
-                      <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
-                      <dd className="text-right text-sm font-medium text-slate-900">{row.value}</dd>
-                    </div>
-                  ),
-                )}
+                {detailRows.map((row) => (
+                  <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
+                    <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
+                    <dd className="text-right text-sm font-medium text-slate-900">{row.value}</dd>
+                  </div>
+                ))}
               </dl>
             </div>
 
@@ -383,16 +466,29 @@ export default function SupplierRequestDetailPage() {
                       </div>
 
                       {requestItems.map((item) => {
+                        const availability = draft.availabilities[item.id] ?? 'QUOTED';
                         const price = Number(draft.unitPrices[item.id] ?? '');
                         const subtotal =
-                          Number.isFinite(price) && item.quantity ? price * item.quantity : null;
+                          availability !== 'UNAVAILABLE' && Number.isFinite(price) && item.quantity
+                            ? price * item.quantity
+                            : null;
+                        const options: { value: QuoteItemAvailability; label: string }[] = [
+                          { value: 'QUOTED', label: 'Cotizo' },
+                          { value: 'ALTERNATIVE', label: 'Alternativa' },
+                          { value: 'UNAVAILABLE', label: 'No disponible' },
+                        ];
+                        const setAvailability = (value: QuoteItemAvailability) =>
+                          setDraft((current) => ({
+                            ...current,
+                            availabilities: { ...current.availabilities, [item.id]: value },
+                          }));
                         return (
                           <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-slate-900">{item.productName}</p>
                                 <p className="text-[11px] text-slate-500">
-                                  {item.quantity ? `${item.quantity} unidades` : 'Cantidad a definir'}
+                                  {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cantidad a definir'}
                                 </p>
                               </div>
                               {subtotal != null ? (
@@ -401,21 +497,74 @@ export default function SupplierRequestDetailPage() {
                                 </p>
                               ) : null}
                             </div>
-                            <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-indigo-400">
-                              <span className="flex items-center px-3 text-sm text-slate-400">$</span>
-                              <input
-                                className="w-full bg-transparent py-2.5 pr-3 text-sm outline-none"
-                                inputMode="decimal"
+
+                            {/* Disponibilidad de este producto */}
+                            <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-white p-1 ring-1 ring-slate-200">
+                              {options.map((opt) => {
+                                const active = availability === opt.value;
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setAvailability(opt.value)}
+                                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition ${
+                                      active
+                                        ? opt.value === 'UNAVAILABLE'
+                                          ? 'bg-rose-500 text-white'
+                                          : opt.value === 'ALTERNATIVE'
+                                            ? 'bg-amber-500 text-white'
+                                            : 'bg-indigo-600 text-white'
+                                        : 'text-slate-500 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Precio (oculto si el producto no está disponible) */}
+                            {availability !== 'UNAVAILABLE' ? (
+                              <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-indigo-400">
+                                <span className="flex items-center px-3 text-sm text-slate-400">$</span>
+                                <input
+                                  className="w-full bg-transparent py-2.5 pr-3 text-sm outline-none"
+                                  inputMode="decimal"
+                                  onChange={(event) =>
+                                    setDraft((current) => ({
+                                      ...current,
+                                      unitPrices: { ...current.unitPrices, [item.id]: event.target.value },
+                                    }))
+                                  }
+                                  placeholder={
+                                    availability === 'ALTERNATIVE'
+                                      ? 'Precio de la alternativa (opcional)'
+                                      : 'Precio por unidad'
+                                  }
+                                  value={draft.unitPrices[item.id] ?? ''}
+                                />
+                              </div>
+                            ) : null}
+
+                            {/* Nota: motivo de no disponible o detalle del reemplazo */}
+                            {availability !== 'QUOTED' ? (
+                              <textarea
+                                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                                rows={2}
                                 onChange={(event) =>
                                   setDraft((current) => ({
                                     ...current,
-                                    unitPrices: { ...current.unitPrices, [item.id]: event.target.value },
+                                    itemNotes: { ...current.itemNotes, [item.id]: event.target.value },
                                   }))
                                 }
-                                placeholder="Precio por unidad"
-                                value={draft.unitPrices[item.id] ?? ''}
+                                placeholder={
+                                  availability === 'UNAVAILABLE'
+                                    ? 'Motivo / cuándo lo tendrías (opcional)'
+                                    : 'Detalle del reemplazo que ofrecés'
+                                }
+                                value={draft.itemNotes[item.id] ?? ''}
                               />
-                            </div>
+                            ) : null}
                           </div>
                         );
                       })}
