@@ -505,7 +505,7 @@ export default function BuyerQuoteDetailPage() {
                               {!unavailable && line.unitPrice != null ? (
                                 <p className="text-[11px] text-slate-400">
                                   {qty
-                                    ? `${qty} u. × ${formatCurrency(line.unitPrice, quote.currency)}`
+                                    ? `${qty} ${reqItem?.unit ?? 'u.'} × ${formatCurrency(line.unitPrice, quote.currency)}`
                                     : `${formatCurrency(line.unitPrice, quote.currency)}/u`}
                                 </p>
                               ) : null}

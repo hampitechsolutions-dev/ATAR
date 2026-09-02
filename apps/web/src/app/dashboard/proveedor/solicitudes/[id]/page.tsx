@@ -488,7 +488,7 @@ export default function SupplierRequestDetailPage() {
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-slate-900">{item.productName}</p>
                                 <p className="text-[11px] text-slate-500">
-                                  {item.quantity ? `${item.quantity} unidades` : 'Cantidad a definir'}
+                                  {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cantidad a definir'}
                                 </p>
                               </div>
                               {subtotal != null ? (

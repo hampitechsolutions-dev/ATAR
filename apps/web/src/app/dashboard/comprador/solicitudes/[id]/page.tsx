@@ -857,7 +857,7 @@ export default function BuyerRequestDetailPage() {
                                         <span className="flex flex-wrap items-center gap-1.5">
                                           <span className="truncate text-slate-700">
                                             {reqItem?.productName ?? 'Producto'}
-                                            {qty ? ` · ${qty} u.` : ''}
+                                            {qty ? ` · ${qty} ${reqItem?.unit ?? 'u.'}` : ''}
                                           </span>
                                           {unavailable ? (
                                             <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[9px] font-semibold text-rose-600">
