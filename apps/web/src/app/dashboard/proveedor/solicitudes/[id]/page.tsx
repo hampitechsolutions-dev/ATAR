@@ -44,6 +44,20 @@ function getBuyerLocation(request: RequestRecord) {
   return city && country ? `${city}, ${country}` : city || country || 'No informada';
 }
 
+// Parte las specs guardadas de un producto ("Label: value" por linea) en filas.
+function parseSpecRows(text: string | null | undefined) {
+  return (text ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const idx = line.indexOf(':');
+      return idx === -1
+        ? { label: 'Detalle', value: line }
+        : { label: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() };
+    });
+}
+
 type QuoteDraft = {
   // Fallback para solicitudes sin items (legacy): un total unico.
   amount: string;
@@ -228,15 +242,9 @@ export default function SupplierRequestDetailPage() {
     }
   }
 
-  const detailRows: { label: string; value: string; wide?: boolean }[] = request
+  // Datos a nivel solicitud (los productos se muestran aparte, uno por uno).
+  const detailRows: { label: string; value: string }[] = request
     ? [
-        { label: 'Producto', value: request.productName || request.title },
-        {
-          label: 'Cantidad',
-          value: typeof request.quantityRequested === 'number' ? `${request.quantityRequested} unidades` : 'A definir',
-        },
-        { label: 'Especificaciones', value: request.description || 'Sin especificaciones', wide: true },
-        { label: 'Material', value: request.category || 'No informado' },
         { label: 'Entrega estimada', value: formatDate(request.dueDate) },
         { label: 'Ubicación de entrega', value: getBuyerLocation(request) },
         {
@@ -321,25 +329,62 @@ export default function SupplierRequestDetailPage() {
               </div>
             </div>
 
-            {/* Detalles */}
+            {/* Productos solicitados (uno por uno, con su detalle) */}
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-sm font-bold text-slate-950">Detalles de la solicitud</p>
+              <p className="text-sm font-bold text-slate-950">
+                Productos solicitados{requestItems.length > 0 ? ` (${requestItems.length})` : ''}
+              </p>
+              {requestItems.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {requestItems.map((item, index) => {
+                    const specRows = parseSpecRows(item.specifications);
+                    return (
+                      <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
+                              Producto {index + 1}
+                            </p>
+                            <p className="mt-0.5 text-sm font-semibold text-slate-950">{item.productName}</p>
+                            {item.category ? <p className="text-[11px] text-slate-500">{item.category}</p> : null}
+                          </div>
+                          <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200">
+                            {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cant. a definir'}
+                          </span>
+                        </div>
+                        {specRows.length ? (
+                          <dl className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                            {specRows.map((row, rowIndex) => (
+                              <div key={`${row.label}-${rowIndex}`} className="rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-slate-100">
+                                <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">{row.label}</dt>
+                                <dd className="mt-0.5 text-xs font-medium text-slate-900">{row.value || '-'}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        ) : (
+                          <p className="mt-2 text-[11px] text-slate-400">Sin especificaciones adicionales.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                  {request.description || 'Sin especificaciones.'}
+                </p>
+              )}
+            </div>
+
+            {/* Entrega y condiciones (a nivel solicitud) */}
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-sm font-bold text-slate-950">Entrega y condiciones</p>
               <dl className="mt-3 divide-y divide-slate-200">
-                {detailRows.map((row) =>
-                  row.wide ? (
-                    <div key={row.label} className="py-2.5">
-                      <dt className="text-xs text-slate-500">{row.label}</dt>
-                      <dd className="mt-1 whitespace-pre-wrap text-sm font-medium leading-6 text-slate-900">
-                        {row.value}
-                      </dd>
-                    </div>
-                  ) : (
-                    <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
-                      <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
-                      <dd className="text-right text-sm font-medium text-slate-900">{row.value}</dd>
-                    </div>
-                  ),
-                )}
+                {detailRows.map((row) => (
+                  <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
+                    <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
+                    <dd className="text-right text-sm font-medium text-slate-900">{row.value}</dd>
+                  </div>
+                ))}
               </dl>
             </div>
 

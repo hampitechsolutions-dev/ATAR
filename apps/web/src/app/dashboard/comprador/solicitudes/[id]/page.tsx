@@ -659,19 +659,55 @@ export default function BuyerRequestDetailPage() {
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                     <DetailIcon type="file" />
                   </span>
-                  <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Detalle de la solicitud</h2>
+                  <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">
+                    Productos solicitados{(request?.items?.length ?? 0) > 0 ? ` (${request?.items?.length})` : ''}
+                  </h2>
                 </div>
-                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
-                  {detailItems.map((item) => (
-                    <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-200 bg-white px-4 py-4">
-                      <div className="flex items-center gap-2 text-slate-400">
-                        <DetailIcon type={getDetailIcon(item.label)} />
-                        <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
-                      </div>
-                      <p className="mt-3 text-[15px] font-semibold leading-6 text-slate-950">{item.value || '-'}</p>
-                    </article>
-                  ))}
-                </div>
+                {(request?.items?.length ?? 0) > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {(request?.items ?? []).map((item, index) => {
+                      const specRows = parseRequestDescription(item.specifications ?? '');
+                      return (
+                        <article key={item.id} className="rounded-[16px] border border-slate-200 bg-white p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4f46ff]">Producto {index + 1}</p>
+                              <h3 className="mt-0.5 text-[16px] font-semibold text-slate-950">{item.productName}</h3>
+                              {item.category ? <p className="text-[12px] text-slate-500">{item.category}</p> : null}
+                            </div>
+                            <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-[12px] font-semibold text-slate-700">
+                              {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cantidad a definir'}
+                            </span>
+                          </div>
+                          {specRows.length ? (
+                            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                              {specRows.map((row, rowIndex) => (
+                                <div key={`${row.label}-${rowIndex}`} className="rounded-[12px] bg-slate-50 px-3 py-2">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">{row.label}</p>
+                                  <p className="mt-0.5 text-[13px] font-medium leading-5 text-slate-900">{row.value || '-'}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-3 text-[12px] text-slate-400">Sin especificaciones adicionales.</p>
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+                    {detailItems.map((item) => (
+                      <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-200 bg-white px-4 py-4">
+                        <div className="flex items-center gap-2 text-slate-400">
+                          <DetailIcon type={getDetailIcon(item.label)} />
+                          <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
+                        </div>
+                        <p className="mt-3 text-[15px] font-semibold leading-6 text-slate-950">{item.value || '-'}</p>
+                      </article>
+                    ))}
+                  </div>
+                )}
               </section>
 
               {/* ==================== COTIZACIONES RECIBIDAS ==================== */}
