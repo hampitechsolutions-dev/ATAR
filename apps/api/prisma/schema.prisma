@@ -399,15 +399,27 @@ model RequestItem {
 
 // Linea de una cotizacion: el precio unitario que el proveedor ofrece para un
 // RequestItem. El total de la cotizacion es la suma de cantidad x precioUnit.
+// Disponibilidad que declara el vendedor para cada producto cotizado.
+enum QuoteItemAvailability {
+  QUOTED // lo cotiza normalmente
+  UNAVAILABLE // no lo tiene / no lo ofrece
+  ALTERNATIVE // ofrece un reemplazo (detalle en note)
+}
+
 model QuoteItem {
-  id            String      @id @default(cuid())
+  id            String                @id @default(cuid())
   quoteId       String
   requestItemId String
-  unitPrice     Float
-  quote         Quote       @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  requestItem   RequestItem @relation(fields: [requestItemId], references: [id], onDelete: Cascade)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  availability  QuoteItemAvailability  @default(QUOTED)
+  // Null cuando el producto no esta disponible. Para ALTERNATIVE es el precio
+  // del reemplazo ofrecido.
+  unitPrice     Float?
+  // Nota del vendedor: detalle del reemplazo, motivo del faltante o consejo.
+  note          String?
+  quote         Quote                 @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  requestItem   RequestItem           @relation(fields: [requestItemId], references: [id], onDelete: Cascade)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
   @@unique([quoteId, requestItemId])
   @@index([quoteId])

@@ -7,6 +7,7 @@ import {
 import {
   MembershipRole,
   NotificationType,
+  QuoteItemAvailability,
   QuoteStatus,
   RequestEventType,
   RequestStatus,
@@ -62,7 +63,14 @@ export class QuotesService {
     // (cantidad pedida del producto x precio unitario ofrecido). Si no vienen
     // items, se usa el amount legacy (una sola cifra total).
     let computedAmount = dto.amount;
-    let quoteItemsData: { requestItemId: string; unitPrice: number }[] | null = null;
+    let quoteItemsData:
+      | {
+          requestItemId: string;
+          unitPrice: number | null;
+          availability: QuoteItemAvailability;
+          note: string | null;
+        }[]
+      | null = null;
     if (dto.items && dto.items.length > 0) {
       const requestItems = await this.prisma.requestItem.findMany({
         where: { requestId },
@@ -70,18 +78,29 @@ export class QuotesService {
       });
       const byId = new Map(requestItems.map((item) => [item.id, item]));
       let total = 0;
-      for (const line of dto.items) {
+      quoteItemsData = dto.items.map((line) => {
         const requestItem = byId.get(line.requestItemId);
         if (!requestItem) {
           throw new BadRequestException('Una de las lineas cotizadas no pertenece a esta solicitud.');
         }
-        total += line.unitPrice * (requestItem.quantity ?? 0);
-      }
+        const availability = line.availability ?? QuoteItemAvailability.QUOTED;
+        // Solo suma al total lo que tiene precio (cotizado o alternativa). Un
+        // producto no disponible aporta 0 pero queda registrado con su nota.
+        const price =
+          availability !== QuoteItemAvailability.UNAVAILABLE && typeof line.unitPrice === 'number'
+            ? line.unitPrice
+            : null;
+        if (price != null) {
+          total += price * (requestItem.quantity ?? 0);
+        }
+        return {
+          requestItemId: line.requestItemId,
+          unitPrice: price,
+          availability,
+          note: line.note?.trim() || null,
+        };
+      });
       computedAmount = total;
-      quoteItemsData = dto.items.map((line) => ({
-        requestItemId: line.requestItemId,
-        unitPrice: line.unitPrice,
-      }));
     }
 
     if (existingQuote) {

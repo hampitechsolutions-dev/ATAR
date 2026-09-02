@@ -8,6 +8,7 @@ import {
   ApiError,
   atarApi,
   type CreateQuotePayload,
+  type QuoteItemAvailability,
   type QuoteRecord,
   type RequestRecord,
   type SupplierProfileRecord,
@@ -63,6 +64,10 @@ type QuoteDraft = {
   amount: string;
   // Precio unitario por producto, indexado por RequestItem.id.
   unitPrices: Record<string, string>;
+  // Disponibilidad por producto (cotizo / no disponible / alternativa).
+  availabilities: Record<string, QuoteItemAvailability>;
+  // Nota por producto (motivo de no disponible, detalle del reemplazo, consejo).
+  itemNotes: Record<string, string>;
   currency: string;
   minimumOrder: string;
   leadTimeDays: string;
@@ -73,12 +78,18 @@ type QuoteDraft = {
 
 function createDraft(quote?: QuoteRecord | null): QuoteDraft {
   const unitPrices: Record<string, string> = {};
+  const availabilities: Record<string, QuoteItemAvailability> = {};
+  const itemNotes: Record<string, string> = {};
   for (const item of quote?.items ?? []) {
-    unitPrices[item.requestItemId] = String(item.unitPrice);
+    unitPrices[item.requestItemId] = item.unitPrice != null ? String(item.unitPrice) : '';
+    availabilities[item.requestItemId] = item.availability ?? 'QUOTED';
+    itemNotes[item.requestItemId] = item.note ?? '';
   }
   return {
     amount: typeof quote?.amount === 'number' ? String(quote.amount) : '',
     unitPrices,
+    availabilities,
+    itemNotes,
     currency: quote?.currency ?? 'ARS',
     minimumOrder: '',
     leadTimeDays: typeof quote?.leadTimeDays === 'number' ? String(quote.leadTimeDays) : '',
@@ -156,6 +167,10 @@ export default function SupplierRequestDetailPage() {
 
   const requestItems = request?.items ?? [];
   const quoteTotal = requestItems.reduce((sum, item) => {
+    const availability = draft.availabilities[item.id] ?? 'QUOTED';
+    if (availability === 'UNAVAILABLE') {
+      return sum;
+    }
     const price = Number(draft.unitPrices[item.id] ?? '');
     const qty = item.quantity ?? 0;
     return Number.isFinite(price) ? sum + price * qty : sum;
@@ -215,12 +230,35 @@ export default function SupplierRequestDetailPage() {
       };
 
       if (requestItems.length > 0) {
-        // Precio unitario por producto: el total lo calcula el backend.
+        // Respuesta por producto: precio + disponibilidad + nota. El total lo
+        // calcula el backend (solo suma lo que tiene precio).
         const items = requestItems
-          .map((item) => ({ requestItemId: item.id, unitPrice: Number(draft.unitPrices[item.id] ?? '') }))
-          .filter((line) => Number.isFinite(line.unitPrice) && line.unitPrice > 0);
+          .map((item) => {
+            const availability = draft.availabilities[item.id] ?? 'QUOTED';
+            const priceNum = Number(draft.unitPrices[item.id] ?? '');
+            const hasPrice = Number.isFinite(priceNum) && priceNum > 0;
+            const note = (draft.itemNotes[item.id] ?? '').trim();
+            return { id: item.id, availability, priceNum, hasPrice, note };
+          })
+          // Se incluye una línea si el vendedor la respondió: cotizó con precio,
+          // la marcó no disponible, u ofrece una alternativa (precio y/o nota).
+          .filter(
+            (l) =>
+              (l.availability === 'QUOTED' && l.hasPrice) ||
+              l.availability === 'UNAVAILABLE' ||
+              (l.availability === 'ALTERNATIVE' && (l.hasPrice || l.note)),
+          )
+          .map((l) => ({
+            requestItemId: l.id,
+            availability: l.availability,
+            unitPrice: l.availability !== 'UNAVAILABLE' && l.hasPrice ? l.priceNum : undefined,
+            note: l.note || undefined,
+          }));
         if (items.length === 0) {
-          throw new ApiError('Ingresá el precio de al menos un producto.', 400);
+          throw new ApiError(
+            'Respondé al menos un producto: ingresá un precio, marcalo como no disponible u ofrecé una alternativa.',
+            400,
+          );
         }
         payload.items = items;
       } else {
@@ -428,9 +466,22 @@ export default function SupplierRequestDetailPage() {
                       </div>
 
                       {requestItems.map((item) => {
+                        const availability = draft.availabilities[item.id] ?? 'QUOTED';
                         const price = Number(draft.unitPrices[item.id] ?? '');
                         const subtotal =
-                          Number.isFinite(price) && item.quantity ? price * item.quantity : null;
+                          availability !== 'UNAVAILABLE' && Number.isFinite(price) && item.quantity
+                            ? price * item.quantity
+                            : null;
+                        const options: { value: QuoteItemAvailability; label: string }[] = [
+                          { value: 'QUOTED', label: 'Cotizo' },
+                          { value: 'ALTERNATIVE', label: 'Alternativa' },
+                          { value: 'UNAVAILABLE', label: 'No disponible' },
+                        ];
+                        const setAvailability = (value: QuoteItemAvailability) =>
+                          setDraft((current) => ({
+                            ...current,
+                            availabilities: { ...current.availabilities, [item.id]: value },
+                          }));
                         return (
                           <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                             <div className="flex items-start justify-between gap-3">
@@ -446,21 +497,74 @@ export default function SupplierRequestDetailPage() {
                                 </p>
                               ) : null}
                             </div>
-                            <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-indigo-400">
-                              <span className="flex items-center px-3 text-sm text-slate-400">$</span>
-                              <input
-                                className="w-full bg-transparent py-2.5 pr-3 text-sm outline-none"
-                                inputMode="decimal"
+
+                            {/* Disponibilidad de este producto */}
+                            <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-white p-1 ring-1 ring-slate-200">
+                              {options.map((opt) => {
+                                const active = availability === opt.value;
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setAvailability(opt.value)}
+                                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition ${
+                                      active
+                                        ? opt.value === 'UNAVAILABLE'
+                                          ? 'bg-rose-500 text-white'
+                                          : opt.value === 'ALTERNATIVE'
+                                            ? 'bg-amber-500 text-white'
+                                            : 'bg-indigo-600 text-white'
+                                        : 'text-slate-500 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Precio (oculto si el producto no está disponible) */}
+                            {availability !== 'UNAVAILABLE' ? (
+                              <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-indigo-400">
+                                <span className="flex items-center px-3 text-sm text-slate-400">$</span>
+                                <input
+                                  className="w-full bg-transparent py-2.5 pr-3 text-sm outline-none"
+                                  inputMode="decimal"
+                                  onChange={(event) =>
+                                    setDraft((current) => ({
+                                      ...current,
+                                      unitPrices: { ...current.unitPrices, [item.id]: event.target.value },
+                                    }))
+                                  }
+                                  placeholder={
+                                    availability === 'ALTERNATIVE'
+                                      ? 'Precio de la alternativa (opcional)'
+                                      : 'Precio por unidad'
+                                  }
+                                  value={draft.unitPrices[item.id] ?? ''}
+                                />
+                              </div>
+                            ) : null}
+
+                            {/* Nota: motivo de no disponible o detalle del reemplazo */}
+                            {availability !== 'QUOTED' ? (
+                              <textarea
+                                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                                rows={2}
                                 onChange={(event) =>
                                   setDraft((current) => ({
                                     ...current,
-                                    unitPrices: { ...current.unitPrices, [item.id]: event.target.value },
+                                    itemNotes: { ...current.itemNotes, [item.id]: event.target.value },
                                   }))
                                 }
-                                placeholder="Precio por unidad"
-                                value={draft.unitPrices[item.id] ?? ''}
+                                placeholder={
+                                  availability === 'UNAVAILABLE'
+                                    ? 'Motivo / cuándo lo tendrías (opcional)'
+                                    : 'Detalle del reemplazo que ofrecés'
+                                }
+                                value={draft.itemNotes[item.id] ?? ''}
                               />
-                            </div>
+                            ) : null}
                           </div>
                         );
                       })}

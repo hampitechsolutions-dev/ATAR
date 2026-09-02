@@ -483,16 +483,35 @@ export default function BuyerQuoteDetailPage() {
                       {quote.items.map((line) => {
                         const reqItem = request?.items?.find((item) => item.id === line.requestItemId);
                         const qty = reqItem?.quantity ?? null;
-                        const subtotal = qty ? line.unitPrice * qty : null;
+                        const unavailable = line.availability === 'UNAVAILABLE';
+                        const alternative = line.availability === 'ALTERNATIVE';
+                        const subtotal =
+                          !unavailable && qty != null && line.unitPrice != null ? line.unitPrice * qty : null;
                         return (
-                          <li key={line.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
+                          <li key={line.id} className="flex items-start justify-between gap-3 px-4 py-2.5 text-[13px]">
                             <div className="min-w-0">
-                              <p className="truncate font-semibold text-slate-900">{reqItem?.productName ?? 'Producto'}</p>
-                              <p className="text-[11px] text-slate-400">
-                                {qty
-                                  ? `${qty} u. × ${formatCurrency(line.unitPrice, quote.currency)}`
-                                  : `${formatCurrency(line.unitPrice, quote.currency)}/u`}
-                              </p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="truncate font-semibold text-slate-900">{reqItem?.productName ?? 'Producto'}</p>
+                                {unavailable ? (
+                                  <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600">
+                                    No disponible
+                                  </span>
+                                ) : alternative ? (
+                                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
+                                    Alternativa
+                                  </span>
+                                ) : null}
+                              </div>
+                              {!unavailable && line.unitPrice != null ? (
+                                <p className="text-[11px] text-slate-400">
+                                  {qty
+                                    ? `${qty} u. × ${formatCurrency(line.unitPrice, quote.currency)}`
+                                    : `${formatCurrency(line.unitPrice, quote.currency)}/u`}
+                                </p>
+                              ) : null}
+                              {line.note ? (
+                                <p className="mt-0.5 text-[11px] leading-5 text-slate-500">{line.note}</p>
+                              ) : null}
                             </div>
                             <span className="shrink-0 font-semibold text-slate-900">
                               {subtotal != null ? formatCurrency(subtotal, quote.currency) : '—'}

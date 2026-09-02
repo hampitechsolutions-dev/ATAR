@@ -100,10 +100,14 @@ export type RequestItemRecord = {
   referenceUnitPrice: number | null;
 };
 
+export type QuoteItemAvailability = 'QUOTED' | 'UNAVAILABLE' | 'ALTERNATIVE';
+
 export type QuoteItemRecord = {
   id: string;
   requestItemId: string;
-  unitPrice: number;
+  unitPrice: number | null;
+  availability: QuoteItemAvailability;
+  note: string | null;
   requestItem?: RequestItemRecord;
 };
 
@@ -430,8 +434,14 @@ export type CreateQuotePayload = {
   leadTimeDays?: number;
   paymentTerms?: string;
   technicalComment?: string;
-  /** Precio unitario por producto. Si viene, el total se calcula en el backend. */
-  items?: { requestItemId: string; unitPrice: number }[];
+  /** Respuesta por producto: precio unitario, disponibilidad y nota. El total
+   *  se calcula en el backend (solo suma lo que tiene precio). */
+  items?: {
+    requestItemId: string;
+    unitPrice?: number;
+    availability?: QuoteItemAvailability;
+    note?: string;
+  }[];
 };
 
 export type AwardQuotePayload = {

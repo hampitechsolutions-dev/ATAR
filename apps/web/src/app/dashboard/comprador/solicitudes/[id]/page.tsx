@@ -845,16 +845,40 @@ export default function BuyerRequestDetailPage() {
                                 {quote.items.map((line) => {
                                   const reqItem = request?.items?.find((item) => item.id === line.requestItemId);
                                   const qty = reqItem?.quantity ?? null;
-                                  const subtotal = qty ? line.unitPrice * qty : null;
+                                  const unavailable = line.availability === 'UNAVAILABLE';
+                                  const alternative = line.availability === 'ALTERNATIVE';
+                                  const subtotal =
+                                    !unavailable && qty != null && line.unitPrice != null
+                                      ? line.unitPrice * qty
+                                      : null;
                                   return (
-                                    <li key={line.id} className="flex items-center justify-between gap-3 text-[12px]">
-                                      <span className="min-w-0 truncate text-slate-700">
-                                        {reqItem?.productName ?? 'Producto'}
-                                        {qty ? ` · ${qty} u.` : ''}
+                                    <li key={line.id} className="flex items-start justify-between gap-3 text-[12px]">
+                                      <span className="min-w-0">
+                                        <span className="flex flex-wrap items-center gap-1.5">
+                                          <span className="truncate text-slate-700">
+                                            {reqItem?.productName ?? 'Producto'}
+                                            {qty ? ` · ${qty} u.` : ''}
+                                          </span>
+                                          {unavailable ? (
+                                            <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[9px] font-semibold text-rose-600">
+                                              No disp.
+                                            </span>
+                                          ) : alternative ? (
+                                            <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">
+                                              Alternativa
+                                            </span>
+                                          ) : null}
+                                        </span>
+                                        {line.note ? (
+                                          <span className="mt-0.5 block text-[11px] leading-5 text-slate-500">{line.note}</span>
+                                        ) : null}
                                       </span>
-                                      <span className="shrink-0 font-semibold text-slate-900">
-                                        {formatCurrency(line.unitPrice, quote.currency)}/u
-                                        {subtotal != null ? ` · ${formatCurrency(subtotal, quote.currency)}` : ''}
+                                      <span className="shrink-0 text-right font-semibold text-slate-900">
+                                        {unavailable || line.unitPrice == null
+                                          ? '—'
+                                          : `${formatCurrency(line.unitPrice, quote.currency)}/u${
+                                              subtotal != null ? ` · ${formatCurrency(subtotal, quote.currency)}` : ''
+                                            }`}
                                       </span>
                                     </li>
                                   );
