@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -529,6 +529,9 @@ export default function BuyerRequestDetailPage() {
   const [savingOrder, setSavingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const actionsRef = useRef<HTMLDivElement | null>(null);
   const [orderForm, setOrderForm] = useState({
     orderNumber: '',
     promisedDate: '',
@@ -630,6 +633,30 @@ export default function BuyerRequestDetailPage() {
       setError(awardError instanceof Error ? awardError.message : 'No se pudo adjudicar la cotizacion.');
     } finally {
       setAwardingQuoteId(null);
+    }
+  }
+
+  async function handleDeleteRequest() {
+    if (!session?.accessToken || !request) {
+      return;
+    }
+    const confirmed = window.confirm(
+      'Vas a eliminar esta solicitud. Esta acción no se puede deshacer.\n\n¿Confirmás?',
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      setDeleting(true);
+      setError(null);
+      await atarApi.deleteRequest(request.id, session.accessToken);
+      router.push('/dashboard/comprador/solicitudes');
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error ? deleteError.message : 'No se pudo eliminar la solicitud.',
+      );
+      setDeleting(false);
+      setActionsOpen(false);
     }
   }
 
@@ -822,39 +849,136 @@ export default function BuyerRequestDetailPage() {
     return uniqueItems;
   }, [parsedDescription, request?.category]);
   const supplierCards = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; city: string; tag: string }>();
+    type Card = { id: string; name: string; city: string; tag: string; quoted: boolean };
+    const norm = (value: string) => value.trim().toLowerCase();
+    const tag = `Especialista en ${request?.category ?? 'solicitudes industriales'}`;
+    const byName = new Map<string, Card>();
 
-    for (const quote of sortedQuotes) {
-      const company = quote.supplierCompany;
-      if (!company) continue;
-
-      if (!map.has(company.id)) {
-        map.set(company.id, {
-          id: company.id,
-          name: company.name,
-          city: [company.city, company.country].filter(Boolean).join(', '),
-          tag: `Especialista en ${request?.category ?? 'solicitudes industriales'}`,
-        });
-      }
+    // 1) Proveedores elegidos al crear la solicitud (nombres, unidos por "|").
+    //    Se muestran aunque todavia no hayan cotizado.
+    for (const raw of (request?.preferredSupplierName ?? '').split('|')) {
+      const name = raw.trim();
+      if (!name) continue;
+      byName.set(norm(name), { id: `pref-${norm(name)}`, name, city: '', tag, quoted: false });
     }
 
-    if (request?.awardedQuote?.supplierCompany && !map.has(request.awardedQuote.supplierCompany.id)) {
-      map.set(request.awardedQuote.supplierCompany.id, {
-        id: request.awardedQuote.supplierCompany.id,
-        name: request.awardedQuote.supplierCompany.name,
-        city: [request.awardedQuote.supplierCompany.city, request.awardedQuote.supplierCompany.country].filter(Boolean).join(', '),
-        tag: `Especialista en ${request.category}`,
+    // 2) Enriquecer / agregar con las empresas que efectivamente cotizaron.
+    const applyCompany = (company?: { id: string; name: string; city: string | null; country: string }) => {
+      if (!company) return;
+      const key = norm(company.name);
+      byName.set(key, {
+        id: company.id,
+        name: company.name,
+        city: [company.city, company.country].filter(Boolean).join(', '),
+        tag: byName.get(key)?.tag ?? tag,
+        quoted: true,
       });
-    }
+    };
+    for (const quote of sortedQuotes) applyCompany(quote.supplierCompany);
+    applyCompany(request?.awardedQuote?.supplierCompany);
 
-    return Array.from(map.values()).slice(0, 3);
-  }, [request?.awardedQuote?.supplierCompany, request?.category, sortedQuotes]);
+    return Array.from(byName.values());
+  }, [request?.preferredSupplierName, request?.awardedQuote?.supplierCompany, request?.category, sortedQuotes]);
   const requestTimeline = useMemo(() => (request?.events ?? []).slice(0, 4), [request?.events]);
   const requestCreatedLabel = request ? formatDateTime(request.createdAt) : '-';
   const fileCardName =
     attachmentItems[0]?.value.split(',').map((item) => item.trim()).filter(Boolean)[0] ||
     `especificaciones_${(request?.category ?? 'solicitud').toLowerCase().replace(/\s+/g, '_')}.pdf`;
   const fileCardMeta = bestPrice ? `${formatCurrency(bestPrice.amount)} · Mejor oferta registrada` : 'PDF · Archivo adjunto';
+
+  // El comprador puede editar/eliminar mientras la solicitud siga abierta y sin
+  // cotizaciones (después el backend igual lo rechaza).
+  const canEditRequest =
+    Boolean(request) &&
+    (request?.status === 'DRAFT' || request?.status === 'PUBLISHED') &&
+    (request?.quotes?.length ?? 0) === 0;
+
+  useEffect(() => {
+    if (!actionsOpen) {
+      return;
+    }
+    function onPointerDown(event: MouseEvent) {
+      if (!actionsRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false);
+      }
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setActionsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [actionsOpen]);
+
+  /** Abre el diálogo de impresión con las especificaciones (Guardar como PDF). */
+  function handleDownloadSpecs() {
+    if (!request) {
+      return;
+    }
+    const esc = (value: string) =>
+      value.replace(/[&<>]/g, (c) => (c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;'));
+    const items = request.items ?? [];
+    const productsHtml = items.length
+      ? items
+          .map((item, index) => {
+            const specs = (item.specifications ?? '')
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line) => `<li>${esc(line)}</li>`)
+              .join('');
+            const qty = item.quantity ? `${item.quantity} ${esc(item.unit ?? 'u.')}` : 'Cantidad a definir';
+            return `<section class="prod"><h3>${index + 1}. ${esc(item.productName)}</h3>
+              <p class="muted">${esc(item.category ?? request.category ?? '')} · ${qty}</p>
+              ${specs ? `<ul>${specs}</ul>` : '<p class="muted">Sin especificaciones adicionales.</p>'}</section>`;
+          })
+          .join('')
+      : `<p>${esc(request.description ?? 'Sin especificaciones.')}</p>`;
+
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8" />
+      <title>${esc(request.title ?? 'Solicitud')}</title>
+      <style>
+        body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f172a;margin:40px;line-height:1.5}
+        h1{font-size:22px;margin:0 0 4px} h3{font-size:15px;margin:0 0 2px}
+        .muted{color:#64748b;font-size:12px;margin:2px 0 8px}
+        .prod{border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin:12px 0}
+        ul{margin:6px 0 0;padding-left:18px} li{font-size:13px;margin:2px 0}
+        .head{border-bottom:2px solid #1847ff;padding-bottom:10px;margin-bottom:16px}
+      </style></head><body>
+      <div class="head"><h1>${esc(request.title ?? 'Solicitud de cotización')}</h1>
+      <p class="muted">Solicitud #${esc(request.id)} · ${esc(request.category ?? '')}</p></div>
+      ${productsHtml}
+      <script>window.onload=function(){window.print();}</script>
+      </body></html>`;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      document.body.removeChild(iframe);
+      return;
+    }
+    doc.open();
+    doc.write(html);
+    doc.close();
+    // Limpieza tras dar tiempo al diálogo de impresión.
+    window.setTimeout(() => {
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    }, 60_000);
+  }
 
   if (loading) {
     return (
@@ -900,15 +1024,69 @@ export default function BuyerRequestDetailPage() {
                   ) : null}
                 </div>
               </div>
-              <button
-                className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                type="button"
-              >
-                Acciones
-                <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
-                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                </svg>
-              </button>
+              <div className="relative shrink-0" ref={actionsRef}>
+                <button
+                  aria-expanded={actionsOpen}
+                  className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  onClick={() => setActionsOpen((current) => !current)}
+                  type="button"
+                >
+                  Acciones
+                  <svg aria-hidden="true" className={`h-4 w-4 text-slate-400 transition ${actionsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24">
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
+                </button>
+
+                {actionsOpen ? (
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[16px] border border-slate-200 bg-white p-1.5 shadow-[0_20px_50px_rgba(15,23,42,0.14)]">
+                    <button
+                      className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={!canEditRequest}
+                      onClick={() => {
+                        setActionsOpen(false);
+                        router.push(`/dashboard/comprador/solicitudes/nueva?edit=${request?.id}`);
+                      }}
+                      type="button"
+                    >
+                      <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                        <path d="M12 20h9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        <path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                      Editar solicitud
+                    </button>
+                    <button
+                      className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-medium text-slate-700 transition hover:bg-slate-50"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        handleDownloadSpecs();
+                      }}
+                      type="button"
+                    >
+                      <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                        <path d="M12 3v12M7 10l5 5 5-5M5 21h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                      Descargar especificaciones
+                    </button>
+                    <div className="my-1 h-px bg-slate-100" />
+                    <button
+                      className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={!canEditRequest || deleting}
+                      onClick={() => void handleDeleteRequest()}
+                      type="button"
+                    >
+                      <svg aria-hidden="true" className="h-4 w-4 text-rose-500" fill="none" viewBox="0 0 24 24">
+                        <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                      {deleting ? 'Eliminando...' : 'Eliminar solicitud'}
+                    </button>
+                    {!canEditRequest ? (
+                      <p className="px-3 pb-1.5 pt-1 text-[11px] leading-4 text-slate-400">
+                        Editar y eliminar están disponibles solo mientras la solicitud no tenga cotizaciones.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <div className="space-y-6 pt-6">
@@ -1414,10 +1592,16 @@ export default function BuyerRequestDetailPage() {
                         <p className="mt-1 text-[12px] text-slate-500">{fileCardMeta}</p>
                       </div>
                     </div>
-                    <button className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-slate-200 text-slate-500 transition hover:bg-slate-50" type="button">
+                    <button
+                      aria-label="Descargar especificaciones"
+                      className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-slate-200 px-3 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                      onClick={handleDownloadSpecs}
+                      type="button"
+                    >
                       <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                         <path d="M12 3v12M7 10l5 5 5-5M5 21h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                       </svg>
+                      Descargar
                     </button>
                   </div>
                 </div>
@@ -1441,84 +1625,75 @@ export default function BuyerRequestDetailPage() {
           </section>
 
           <aside className="space-y-5">
-            <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)] sm:p-5">
+            <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-950 sm:text-[28px] sm:tracking-[-0.04em]">Proveedores seleccionados</h2>
-                  <p className="mt-1 text-[12px] leading-5 text-slate-500">Estos proveedores recibirán tu solicitud y podrán enviarte propuestas.</p>
-                </div>
+                <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-slate-950">Proveedores seleccionados</h2>
+                {supplierCards.length ? (
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                    {supplierCards.length}
+                  </span>
+                ) : null}
               </div>
 
-              <div className="mt-5 space-y-3">
+              <div className="mt-3 space-y-2">
                 {supplierCards.length ? (
                   supplierCards.map((provider) => (
-                    <article key={provider.id} className="rounded-[18px] border border-slate-200 bg-white p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 gap-3">
-                          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px] bg-[#eef2ff] text-xl font-bold text-[#4f46ff]">
-                            {provider.name.slice(0, 1)}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="truncate text-[15px] font-semibold text-slate-950">{provider.name}</p>
-                            <p className="mt-1 truncate text-[12px] text-slate-500">{provider.city}</p>
-                            <span className="mt-2 inline-flex rounded-full bg-[#eef2ff] px-2.5 py-1 text-[10px] font-semibold text-[#4f46ff]">
-                              {provider.tag}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-600">
-                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100">
-                            <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
-                              <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                            </svg>
-                          </span>
-                          Verificado
+                    <article key={provider.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#eef2ff] text-sm font-bold text-[#4f46ff]">
+                          {provider.name.slice(0, 1).toUpperCase()}
                         </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-[13px] font-semibold text-slate-950">{provider.name}</p>
+                          <p className="truncate text-[11px] text-slate-500">{provider.city || provider.tag}</p>
+                        </div>
                       </div>
+                      {provider.quoted ? (
+                        <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">Cotizó</span>
+                      ) : (
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Invitado</span>
+                      )}
                     </article>
                   ))
                 ) : (
-                  <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                  <div className="rounded-[14px] border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-[13px] text-slate-500">
                     Todavía no hay proveedores vinculados a esta solicitud.
                   </div>
                 )}
 
                 <button
-                  className="flex w-full items-center justify-center gap-3 rounded-[16px] bg-slate-50 px-4 py-4 text-[13px] font-semibold text-[#4f46ff] transition hover:bg-[#f5f7ff]"
+                  className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-slate-50 px-4 py-2.5 text-[12px] font-semibold text-[#4f46ff] transition hover:bg-[#f5f7ff]"
                   onClick={() => router.push(`/dashboard/comprador/solicitudes/nueva?category=${encodeURIComponent(request?.category ?? '')}&step=4`)}
                   type="button"
                 >
-                  <span className="text-lg leading-none">+</span>
+                  <span className="text-base leading-none">+</span>
                   Agregar más proveedores
                 </button>
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)] sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-950 sm:text-[28px] sm:tracking-[-0.04em]">Timeline</h2>
-                  <p className="mt-1 text-[12px] leading-5 text-slate-500">Historial comercial de la solicitud en orden cronológico inverso.</p>
-                </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-slate-950">Timeline</h2>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
                   {requestTimeline.length} evento{requestTimeline.length === 1 ? '' : 's'}
                 </span>
               </div>
 
-              <div className="mt-5">
+              <div className="mt-3">
                 {requestTimeline.length ? (
-                  <div className="relative space-y-4 pl-6 before:absolute before:left-[9px] before:top-2 before:h-[calc(100%-18px)] before:w-px before:bg-slate-200">
+                  <div className="relative space-y-2.5 pl-5 before:absolute before:left-[7px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-slate-200">
                     {requestTimeline.map((event) => (
                       <div key={event.id} className="relative">
-                        <span className="absolute -left-6 top-4 h-[10px] w-[10px] rounded-full bg-[#4f46ff] ring-4 ring-white" />
-                        <article className="rounded-[18px] border border-slate-200 bg-white p-4">
-                          <div className="flex items-start justify-between gap-4">
+                        <span className="absolute -left-5 top-2.5 h-[8px] w-[8px] rounded-full bg-[#4f46ff] ring-4 ring-white" />
+                        <article className="rounded-[12px] border border-slate-200 bg-white px-3 py-2.5">
+                          <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <h3 className="text-[15px] font-semibold text-slate-950">{event.title}</h3>
-                              <p className="mt-1 text-[13px] leading-6 text-slate-500">{event.detail ?? 'La solicitud registró un cambio operativo.'}</p>
-                              <p className="mt-3 text-[12px] font-semibold text-slate-500">{event.actorCompanyName ?? request?.buyerCompany?.name ?? 'Comprador'}</p>
+                              <h3 className="text-[13px] font-semibold text-slate-950">{event.title}</h3>
+                              <p className="mt-0.5 text-[12px] leading-5 text-slate-500">{event.detail ?? 'La solicitud registró un cambio operativo.'}</p>
+                              <p className="mt-1.5 text-[11px] font-semibold text-slate-500">{event.actorCompanyName ?? request?.buyerCompany?.name ?? 'Comprador'}</p>
                             </div>
-                            <span className="shrink-0 text-right text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
+                            <span className="shrink-0 text-right text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400">
                               {formatDateTime(event.createdAt)}
                             </span>
                           </div>
@@ -1527,7 +1702,7 @@ export default function BuyerRequestDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                  <div className="rounded-[12px] border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-[13px] text-slate-500">
                     Todavía no hay eventos registrados para esta solicitud.
                   </div>
                 )}

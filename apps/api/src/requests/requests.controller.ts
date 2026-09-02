@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '../auth/auth-user.interface';
 import { ActiveCompanyId } from '../auth/decorators/active-company.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -38,6 +38,15 @@ export class RequestsController {
     @ActiveCompanyId() activeCompanyId?: string,
   ) {
     return this.requestsService.update(user, id, dto, activeCompanyId);
+  }
+
+  @Delete(':id')
+  remove(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @ActiveCompanyId() activeCompanyId?: string,
+  ) {
+    return this.requestsService.remove(user, id, activeCompanyId);
   }
 
   @Post(':id/award')

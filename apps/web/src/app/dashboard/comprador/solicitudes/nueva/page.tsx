@@ -574,7 +574,10 @@ export default function BuyerNewRequestWizardPage() {
             .filter(Boolean),
         );
         setEditRequestId(editId);
-        setStep(2);
+        // Al editar se abre en el Resumen: así el comprador ve de una todos los
+        // productos que ya había cargado (con su cantidad) y puede editarlos,
+        // agregar o quitar, en vez de una pantalla de specs en blanco.
+        setStep(5);
       } catch {
         if (!cancelled) {
           setError('No se pudo cargar la solicitud para editar.');
@@ -1054,9 +1057,12 @@ export default function BuyerNewRequestWizardPage() {
         items,
       };
 
-      // Editar = actualizar la solicitud existente (no crear otra).
-      const created = editRequestId
-        ? await atarApi.updateRequest(editRequestId, payload, session.accessToken)
+      // Editar = actualizar la existente (no crear otra). Se usa el id de la
+      // URL como fuente de verdad para no crear una solicitud vacía si el
+      // estado de prefill todavía no terminó de setearse.
+      const targetEditId = editRequestId ?? editId;
+      const created = targetEditId
+        ? await atarApi.updateRequest(targetEditId, payload, session.accessToken)
         : await atarApi.createRequest(payload, session.accessToken);
 
       if (typeof window !== 'undefined') {
@@ -1921,8 +1927,13 @@ export default function BuyerNewRequestWizardPage() {
                             <div className="min-w-0">
                               <p className="truncate text-[13px] font-semibold text-slate-900">{getProductDisplayName(line)}</p>
                               <p className="text-[11px] text-slate-500">
-                                {line.quantity ? `${line.quantity} u.` : 'Cant. a definir'}
+                                {line.quantity ? `${line.quantity} ${line.unit || 'u.'}` : 'Cant. a definir'}
                               </p>
+                              {line.specifications?.trim() ? (
+                                <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-400">
+                                  {line.specifications.split('\n').map((s) => s.trim()).filter(Boolean).join(' · ')}
+                                </p>
+                              ) : null}
                             </div>
                             <div className="flex shrink-0 items-center gap-3">
                               <button
