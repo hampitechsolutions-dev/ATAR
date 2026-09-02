@@ -32,16 +32,19 @@ const BY_CATEGORY: Record<string, UnitConfig> = {
   'A medida': { units: ['unidades', 'kg', 'metros', 'rollos'], default: 'unidades' },
 };
 
+// Unidad neutra: nunca tergiversa el pedido. Es el default para toda categoría
+// y siempre está disponible como opción, aunque no figure en el mapa del rubro.
+const NEUTRAL_UNIT = 'unidades';
+
 export function getCategoryUnits(category: string | null | undefined): string[] {
-  if (!category) {
-    return GENERIC.units;
-  }
-  return (BY_CATEGORY[category] ?? GENERIC).units;
+  const units = category ? (BY_CATEGORY[category] ?? GENERIC).units : GENERIC.units;
+  // Garantiza que "unidades" siempre esté (primero), sin duplicar.
+  return [NEUTRAL_UNIT, ...units.filter((unit) => unit !== NEUTRAL_UNIT)];
 }
 
-export function getDefaultUnit(category: string | null | undefined): string {
-  if (!category) {
-    return GENERIC.default;
-  }
-  return (BY_CATEGORY[category] ?? GENERIC).default;
+// El default es SIEMPRE la unidad neutra: la unidad del rubro (metro lineal,
+// kg, rollo…) es una elección explícita del comprador, no una suposición que
+// cambie el significado de la cantidad que cargó.
+export function getDefaultUnit(_category: string | null | undefined): string {
+  return NEUTRAL_UNIT;
 }

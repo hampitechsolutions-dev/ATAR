@@ -885,6 +885,11 @@ export const atarApi = {
   getRequestDetail(requestId: string, token: string) {
     return request<RequestRecord>(`/requests/${requestId}`, undefined, token);
   },
+  deleteRequest(requestId: string, token: string) {
+    return request<{ id: string; deleted: boolean }>(`/requests/${requestId}`, {
+      method: 'DELETE',
+    }, token);
+  },
   getRequestQuotes(requestId: string, token: string) {
     return request<QuoteRecord[]>(`/requests/${requestId}/quotes`, undefined, token);
   },

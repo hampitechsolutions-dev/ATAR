@@ -199,6 +199,37 @@ export class RequestsService {
     return this.findOne(user, id, activeCompanyId);
   }
 
+  /**
+   * Elimina una solicitud del comprador. Solo el dueño (o admin) y solo si no
+   * recibió cotizaciones: si ya tiene propuestas, se corta para no borrar el
+   * trabajo de los proveedores (ahí conviene cancelar, no eliminar).
+   */
+  async remove(user: AuthUser, id: string, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
+
+    const request = await this.prisma.request.findUnique({
+      where: { id },
+      include: { _count: { select: { quotes: true } } },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Pedido no encontrado.');
+    }
+    if (request.buyerCompanyId !== buyerCompanyId && !this.isAdmin(user)) {
+      throw new ForbiddenException('No tenes acceso para eliminar este pedido.');
+    }
+    if (request._count.quotes > 0) {
+      throw new BadRequestException(
+        'No se puede eliminar una solicitud que ya recibio cotizaciones. Cancelala en su lugar.',
+      );
+    }
+
+    // RequestItem / RequestEvent / RequestAssignment se borran en cascada.
+    await this.prisma.request.delete({ where: { id } });
+
+    return { id, deleted: true };
+  }
+
   async findMine(user: AuthUser, activeCompanyId?: string) {
     const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
 
