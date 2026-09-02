@@ -110,6 +110,13 @@ function QuoteComparison({
               </th>
               {quotes.map((quote) => {
                 const awarded = quote.id === awardedQuoteId;
+                const covered = multiProduct
+                  ? items.filter((it) => {
+                      const l = quote.items?.find((x) => x.requestItemId === it.id);
+                      return l && l.availability !== 'UNAVAILABLE' && l.unitPrice != null;
+                    }).length
+                  : null;
+                const partial = covered != null && covered < items.length;
                 return (
                   <th
                     key={quote.id}
@@ -121,6 +128,11 @@ function QuoteComparison({
                     {quote.supplierCompany?.supplierProfile?.supplierRole ? (
                       <p className="mt-0.5 text-[10px] font-medium text-slate-400">
                         {SUPPLIER_ROLE_LABELS[quote.supplierCompany.supplierProfile.supplierRole]}
+                      </p>
+                    ) : null}
+                    {covered != null ? (
+                      <p className={`mt-0.5 text-[10px] font-semibold ${partial ? 'text-amber-600' : 'text-emerald-600'}`}>
+                        {covered}/{items.length} productos
                       </p>
                     ) : null}
                     <div className="mt-1 flex flex-wrap gap-1">
@@ -731,6 +743,44 @@ export default function BuyerRequestDetailPage() {
     [quotes, request?.awardedQuoteId],
   );
   const canAward = Boolean(request) && !request?.awardedQuoteId && request?.status !== 'CANCELLED';
+
+  // Ayuda de decisión (no una matriz ponderada): surge los ejes en lenguaje
+  // simple para no abrumar a compradores inexpertos. Precio y plazo se
+  // resaltan; se avisa si alguna cotización no cubre todos los productos.
+  const decisionHints = useMemo(() => {
+    if (comparableQuotes.length < 2) {
+      return [];
+    }
+    const hints: string[] = [];
+    const cheapestName = bestPrice?.supplierCompany?.name ?? 'un proveedor';
+    const fastestName = fastest?.supplierCompany?.name ?? 'un proveedor';
+    if (bestPrice && fastest && bestPrice.id === fastest.id) {
+      hints.push(`${cheapestName} ofrece el mejor precio y la entrega más rápida.`);
+    } else {
+      if (bestPrice) {
+        hints.push(`Mejor precio: ${cheapestName} (${formatCurrency(bestPrice.amount, bestPrice.currency)}).`);
+      }
+      if (fastest && typeof fastest.leadTimeDays === 'number') {
+        hints.push(`Entrega más rápida: ${fastestName} (${fastest.leadTimeDays} días).`);
+      }
+    }
+    const total = request?.items?.length ?? 0;
+    if (total > 1) {
+      const partial = comparableQuotes.filter((quote) => {
+        const covered = (request?.items ?? []).filter((it) => {
+          const l = quote.items?.find((x) => x.requestItemId === it.id);
+          return l && l.availability !== 'UNAVAILABLE' && l.unitPrice != null;
+        }).length;
+        return covered < total;
+      }).length;
+      if (partial > 0) {
+        hints.push(
+          `${partial} de ${comparableQuotes.length} cotizaciones no cubren todos los productos: revisá la cobertura antes de elegir.`,
+        );
+      }
+    }
+    return hints;
+  }, [comparableQuotes, bestPrice, fastest, request?.items]);
   const fulfillmentIndex = request?.order ? FULFILLMENT_STEPS.indexOf(request.order.fulfillmentStatus) : -1;
   const parsedDescription = useMemo(() => parseRequestDescription(request?.description ?? ''), [request?.description]);
   const attachmentItems = useMemo(
@@ -950,6 +1000,23 @@ export default function BuyerRequestDetailPage() {
                     Compará las propuestas y asignale la compra al proveedor que elijas. Al confirmar, el resto de las
                     cotizaciones quedan rechazadas y la solicitud se cierra.
                   </p>
+                ) : null}
+
+                {/* Ayuda de decisión: los ejes en lenguaje simple */}
+                {decisionHints.length > 0 ? (
+                  <div className="mt-4 rounded-[16px] border border-indigo-100 bg-indigo-50/60 px-4 py-3">
+                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-indigo-600">
+                      <DetailIcon type="scale" />
+                      Para ayudarte a decidir
+                    </p>
+                    <ul className="mt-1.5 space-y-1">
+                      {decisionHints.map((hint) => (
+                        <li key={hint} className="text-[12px] leading-5 text-slate-700">
+                          {hint}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : null}
 
                 {/* Comparación lado a lado (manzanas con manzanas) */}
