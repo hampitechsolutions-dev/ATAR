@@ -1121,6 +1121,51 @@ export default function BuyerNewRequestWizardPage() {
                 </div>
               </div>
 
+              {/* Multi-producto: barra visible para descubrir que se pueden
+                  pedir varios productos en una misma solicitud. */}
+              <div className="mt-4 rounded-[16px] border border-[#e0e4ff] bg-[#f6f7ff] p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#4f46ff]">Productos</span>
+                  {draft.products.map((line, index) => (
+                    <span
+                      key={line.id}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-semibold text-slate-700"
+                    >
+                      {index + 1}. {getProductDisplayName(line)}
+                      <button
+                        aria-label="Editar producto"
+                        className="text-slate-400 transition hover:text-[#4f46ff]"
+                        onClick={() => editProduct(line.id)}
+                        type="button"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        aria-label="Quitar producto"
+                        className="text-slate-400 transition hover:text-rose-500"
+                        onClick={() => removeProduct(line.id)}
+                        type="button"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4f46ff] px-2.5 py-1 text-[12px] font-semibold text-white">
+                    {draft.products.length + 1}. {draft.category.trim() ? getProductDisplayName({ category: draft.category }) : 'Producto actual'}
+                  </span>
+                  <button
+                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#a9b0ff] bg-white px-3 py-1 text-[12px] font-semibold text-[#4f46ff] transition hover:bg-[#eef0ff]"
+                    onClick={addAnotherProduct}
+                    type="button"
+                  >
+                    + Agregar producto
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] leading-4 text-slate-500">
+                  Podés pedir varios productos en una misma solicitud (por ejemplo: telas, hilos y tintas). Completá este y tocá &quot;Agregar producto&quot; para sumar otro.
+                </p>
+              </div>
+
               <div className="mt-4 grid grid-cols-1 gap-3 pb-1 sm:grid-cols-2 2xl:grid-cols-3">
                 {currentProductModules.map((module) => {
                   const value = getModuleValue(draft, module.id);
@@ -1308,56 +1353,6 @@ export default function BuyerNewRequestWizardPage() {
                 })}
               </div>
 
-              {/* Multi-producto: agregar otro producto y ver los ya agregados. */}
-              <div className="mt-5 space-y-3">
-                <button
-                  className="inline-flex items-center gap-2 rounded-[14px] border border-dashed border-[#c7cbff] bg-[#f5f6ff] px-4 py-2.5 text-[13px] font-semibold text-[#4f46ff] transition hover:bg-[#eef0ff]"
-                  onClick={addAnotherProduct}
-                  type="button"
-                >
-                  <span className="text-base leading-none">+</span>
-                  Agregar otro producto
-                </button>
-
-                {draft.products.length > 0 ? (
-                  <div className="rounded-[16px] border border-slate-200 bg-white p-3">
-                    <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                      Productos agregados ({draft.products.length})
-                    </p>
-                    <ul className="space-y-2">
-                      {draft.products.map((line) => (
-                        <li
-                          key={line.id}
-                          className="flex items-center justify-between gap-3 rounded-[12px] border border-slate-100 bg-slate-50 px-3 py-2"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-[13px] font-semibold text-slate-900">{getProductDisplayName(line)}</p>
-                            <p className="truncate text-[11px] text-slate-500">
-                              {line.quantity ? `${line.quantity} u.` : 'Cantidad a definir'}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-3">
-                            <button
-                              className="text-[12px] font-semibold text-[#4f46ff] hover:underline"
-                              onClick={() => editProduct(line.id)}
-                              type="button"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              className="text-[12px] font-semibold text-rose-500 hover:underline"
-                              onClick={() => removeProduct(line.id)}
-                              type="button"
-                            >
-                              Quitar
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
             </div>
           ) : null}
 
