@@ -1205,17 +1205,19 @@ export default function BuyerRequestDetailPage() {
               </svg>
               Guardar borrador
             </button>
-            <button
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-[#1847ff] px-5 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(24,71,255,0.24)] transition hover:bg-[#0f3ff5]"
-              onClick={() => router.push(`/dashboard/comprador/solicitudes/nueva?category=${encodeURIComponent(request?.category ?? '')}`)}
-              type="button"
-            >
-              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <path d="M12 20h9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                <path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-              </svg>
-              Editar solicitud
-            </button>
+            {request && (request.status === 'DRAFT' || request.status === 'PUBLISHED') && (request.quotes?.length ?? 0) === 0 ? (
+              <button
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-[#1847ff] px-5 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(24,71,255,0.24)] transition hover:bg-[#0f3ff5]"
+                onClick={() => router.push(`/dashboard/comprador/solicitudes/nueva?edit=${request.id}`)}
+                type="button"
+              >
+                <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <path d="M12 20h9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  <path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+                Editar solicitud
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
