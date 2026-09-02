@@ -240,6 +240,16 @@ export default function BuyerMarketplaceHeader({
           <WorkspaceSwitcher className="hidden lg:inline-flex" />
 
           <Link
+            className="inline-flex h-9 items-center gap-2 rounded-xl bg-[#1847ff] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#0f3ff5]"
+            href="/dashboard/comprador/solicitudes/nueva"
+          >
+            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+            </svg>
+            Nueva solicitud
+          </Link>
+
+          <Link
             className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700"
             href="/dashboard/comprador/mensajes"
           >

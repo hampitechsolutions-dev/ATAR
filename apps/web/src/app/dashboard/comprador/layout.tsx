@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/auth-provider';
 import AssistantFab from '@/components/dashboard/assistant-fab';
 import BuyerBottomNav from '@/components/dashboard/buyer-bottom-nav';
 import BuyerMarketplaceHeader from '@/components/dashboard/buyer-marketplace-header';
+import BuyerNewRequestCta from '@/components/dashboard/buyer-new-request-cta';
 
 export default function BuyerDashboardLayout({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
@@ -54,6 +55,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
           </main>
         )}
         {showBottomNav ? <BuyerBottomNav /> : null}
+        {!isBuyerWizard && !isBuyerMessages ? <BuyerNewRequestCta /> : null}
         {!isBuyerWizard ? <AssistantFab /> : null}
       </div>
     </AuthGuard>
