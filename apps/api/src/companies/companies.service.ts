@@ -159,6 +159,7 @@ export class CompaniesService {
     setIf('logisticsSummary', text);
     setIf('financingSummary', text);
 
+    setIf('supplierRole', (value) => value);
     setIf('leadTimeDays', (value) => value);
     setIf('minimumOrder', (value) => value);
     setIf('foundedYear', (value) => value);

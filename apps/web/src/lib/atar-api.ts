@@ -1,5 +1,23 @@
 export type MembershipRole = 'ADMIN' | 'BUYER' | 'SUPPLIER' | 'SELLER';
 export type CompanyType = 'BUYER' | 'SUPPLIER' | 'HYBRID';
+
+// Rol comercial del proveedor. Fija expectativas de mínimos y flexibilidad.
+export type SupplierRole = 'MANUFACTURER' | 'DISTRIBUTOR' | 'INTEGRATOR' | 'REPRESENTATIVE';
+
+export const SUPPLIER_ROLE_LABELS: Record<SupplierRole, string> = {
+  MANUFACTURER: 'Fabricante',
+  DISTRIBUTOR: 'Distribuidor',
+  INTEGRATOR: 'Integrador',
+  REPRESENTATIVE: 'Representante',
+};
+
+/** Qué implica cada rol para el comprador (mínimos, flexibilidad, stock). */
+export const SUPPLIER_ROLE_HINTS: Record<SupplierRole, string> = {
+  MANUFACTURER: 'Produce a medida; más flexibilidad técnica, suele pedir cantidades mínimas mayores.',
+  DISTRIBUTOR: 'Vende stock de terceros; entrega rápida, menos margen para modificar especificaciones.',
+  INTEGRATOR: 'Arma soluciones completas; puede depender de subproveedores.',
+  REPRESENTATIVE: 'Comercializa marcas de terceros; consultá plazos y mínimos del fabricante.',
+};
 export type RequestStatus =
   | 'DRAFT'
   | 'PUBLISHED'
@@ -162,6 +180,7 @@ export type QuoteRecord = {
     type: CompanyType;
     country: string;
     city: string | null;
+    supplierProfile?: { supplierRole: SupplierRole | null } | null;
   };
   request?: RequestRecord;
   createdAt: string;
@@ -608,6 +627,7 @@ export type SupplierDirectoryRecord = {
   companyType: CompanyType;
   description: string | null;
   genericCode: string | null;
+  supplierRole: SupplierRole | null;
   leadTimeDays: number | null;
   minimumOrder: number | null;
   tags: string[];
@@ -638,6 +658,7 @@ export type SupplierProfileRecord = {
   logoUrl: string | null;
   supplierProfile: {
     genericCode: string | null;
+    supplierRole: SupplierRole | null;
     leadTimeDays: number | null;
     minimumOrder: number | null;
     about: string | null;
@@ -655,6 +676,7 @@ export type SupplierProfileRecord = {
 
 export type UpdateSupplierProfileInput = Partial<{
   genericCode: string;
+  supplierRole: SupplierRole;
   leadTimeDays: number;
   minimumOrder: number;
   about: string;

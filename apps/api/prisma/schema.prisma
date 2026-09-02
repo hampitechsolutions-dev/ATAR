@@ -27,6 +27,16 @@ enum CompanyType {
   HYBRID
 }
 
+// Rol comercial del proveedor: fija expectativas de minimos y flexibilidad
+// tecnica (fabricante = adapta pero pide mas cantidad; distribuidor = stock
+// rapido; representante = comercializa marcas de terceros).
+enum SupplierRole {
+  MANUFACTURER
+  DISTRIBUTOR
+  INTEGRATOR
+  REPRESENTATIVE
+}
+
 enum RequestStatus {
   DRAFT
   PUBLISHED
@@ -243,6 +253,7 @@ model SupplierProfile {
   id               String   @id @default(cuid())
   companyId        String   @unique
   genericCode      String?
+  supplierRole     SupplierRole?
   leadTimeDays     Int?
   minimumOrder     Float?
   logisticsSummary String?

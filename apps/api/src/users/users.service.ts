@@ -79,6 +79,7 @@ export class UsersService {
         supplierProfile: {
           select: {
             genericCode: true,
+            supplierRole: true,
             leadTimeDays: true,
             minimumOrder: true,
             logisticsSummary: true,
@@ -124,6 +125,7 @@ export class UsersService {
           company.supplierProfile?.financingSummary ??
           null,
         genericCode: company.supplierProfile?.genericCode ?? null,
+        supplierRole: company.supplierProfile?.supplierRole ?? null,
         leadTimeDays: company.supplierProfile?.leadTimeDays ?? null,
         minimumOrder: company.supplierProfile?.minimumOrder ?? null,
         // Ficha ampliada. Todo opcional: la pantalla oculta lo que no este

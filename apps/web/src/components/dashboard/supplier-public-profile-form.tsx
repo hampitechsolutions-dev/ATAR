@@ -7,11 +7,14 @@ import { useWorkspace } from '@/components/auth/workspace-provider';
 import {
   atarApi,
   type RequestCatalogCategoryRecord,
+  SUPPLIER_ROLE_LABELS,
+  type SupplierRole,
   type UpdateSupplierProfileInput,
 } from '@/lib/atar-api';
 
 type FormState = {
   genericCode: string;
+  supplierRole: string;
   leadTimeDays: string;
   minimumOrder: string;
   about: string;
@@ -28,6 +31,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   genericCode: '',
+  supplierRole: '',
   leadTimeDays: '',
   minimumOrder: '',
   about: '',
@@ -162,6 +166,7 @@ export default function SupplierPublicProfileForm({
 
         setForm({
           genericCode: profile?.genericCode ?? '',
+          supplierRole: profile?.supplierRole ?? '',
           leadTimeDays: profile?.leadTimeDays?.toString() ?? '',
           minimumOrder: profile?.minimumOrder?.toString() ?? '',
           about: profile?.about ?? '',
@@ -295,6 +300,7 @@ export default function SupplierPublicProfileForm({
 
     const payload: UpdateSupplierProfileInput = {
       genericCode: form.genericCode.trim(),
+      supplierRole: (form.supplierRole || undefined) as SupplierRole | undefined,
       leadTimeDays: num(form.leadTimeDays),
       minimumOrder: num(form.minimumOrder),
       about: form.about.trim(),
@@ -371,6 +377,32 @@ export default function SupplierPublicProfileForm({
           {message}
         </div>
       ) : null}
+
+      <div className="mt-4">
+        <span className="text-[12px] font-medium text-slate-700">Rol comercial</span>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {(Object.keys(SUPPLIER_ROLE_LABELS) as SupplierRole[]).map((role) => {
+            const active = form.supplierRole === role;
+            return (
+              <button
+                key={role}
+                type="button"
+                onClick={() => set('supplierRole', active ? '' : role)}
+                className={`inline-flex h-9 items-center justify-center rounded-xl border px-3 text-[12px] font-semibold transition ${
+                  active
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                {SUPPLIER_ROLE_LABELS[role]}
+              </button>
+            );
+          })}
+        </div>
+        <span className="mt-1 block text-[11px] text-slate-500">
+          Ayuda al comprador a entender tus mínimos y tu flexibilidad. Tocá de nuevo para quitarlo.
+        </span>
+      </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <Field label="Código genérico">

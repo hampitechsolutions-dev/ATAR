@@ -10,6 +10,7 @@ import {
   type QuoteItemRecord,
   type QuoteRecord,
   type QuoteStatus,
+  SUPPLIER_ROLE_LABELS,
   type RequestEventRecord,
   type RequestItemRecord,
   type RequestRecord,
@@ -117,6 +118,11 @@ function QuoteComparison({
                     <p className="truncate text-[13px] font-semibold text-slate-950">
                       {quote.supplierCompany?.name ?? 'Proveedor'}
                     </p>
+                    {quote.supplierCompany?.supplierProfile?.supplierRole ? (
+                      <p className="mt-0.5 text-[10px] font-medium text-slate-400">
+                        {SUPPLIER_ROLE_LABELS[quote.supplierCompany.supplierProfile.supplierRole]}
+                      </p>
+                    ) : null}
                     <div className="mt-1 flex flex-wrap gap-1">
                       {bestPriceId === quote.id ? (
                         <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[9px] font-semibold text-[#4f46ff]">Mejor precio</span>
@@ -996,6 +1002,9 @@ export default function BuyerRequestDetailPage() {
                                 <p className="truncate text-[15px] font-semibold text-slate-950">{supplierName}</p>
                                 <p className="mt-0.5 truncate text-[12px] text-slate-500">
                                   {supplierCity || 'Ubicación no informada'}
+                                  {quote.supplierCompany?.supplierProfile?.supplierRole
+                                    ? ` · ${SUPPLIER_ROLE_LABELS[quote.supplierCompany.supplierProfile.supplierRole]}`
+                                    : ''}
                                 </p>
                                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                   {isAwarded ? (

@@ -8,6 +8,8 @@ import ConversationPanel from '@/components/chat/conversation-panel';
 import {
   atarApi,
   type RequestCatalogCategoryRecord,
+  SUPPLIER_ROLE_HINTS,
+  SUPPLIER_ROLE_LABELS,
   type SupplierDirectoryRecord,
 } from '@/lib/atar-api';
 import { getSupplierCategoryLabel, getSupplierLocation } from '@/lib/provider-directory';
@@ -544,6 +546,18 @@ export default function SupplierDetail({
                   </p>
                 </div>
               </div>
+
+              {supplier.supplierRole ? (
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4">
+                  <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-indigo-600">
+                    <Icon name="shield" className="h-3.5 w-3.5" />
+                    {SUPPLIER_ROLE_LABELS[supplier.supplierRole]}
+                  </p>
+                  <p className="mt-1.5 text-[12px] leading-5 text-slate-600">
+                    {SUPPLIER_ROLE_HINTS[supplier.supplierRole]}
+                  </p>
+                </div>
+              ) : null}
 
               {supplier.tags.length > 0 ? (
                 <div className="flex flex-wrap gap-2">

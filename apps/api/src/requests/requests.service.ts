@@ -764,7 +764,7 @@ export class RequestsService {
         items: { orderBy: { position: 'asc' } },
         awardedQuote: {
           include: {
-            supplierCompany: true,
+            supplierCompany: { include: { supplierProfile: { select: { supplierRole: true } } } },
             items: true,
           },
         },
@@ -772,7 +772,7 @@ export class RequestsService {
         buyerCompany: true,
         quotes: {
           include: {
-            supplierCompany: true,
+            supplierCompany: { include: { supplierProfile: { select: { supplierRole: true } } } },
             items: true,
           },
         },
