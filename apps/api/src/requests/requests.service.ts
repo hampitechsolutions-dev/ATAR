@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  CompanyType,
   MembershipRole,
   NotificationType,
   OpportunityStatus,
@@ -143,9 +144,56 @@ export class RequestsService {
           }),
         ),
       );
+    } else if (status === RequestStatus.PUBLISHED && !dto.privateRequest) {
+      // Mercado abierto: se avisa a las proveedoras cuyo rubro (categorias de su
+      // ficha) coincide con las categorias pedidas, para que no dependan de
+      // entrar a mirar. Se acota el alcance para no hacer spam.
+      const categories = [
+        dto.category,
+        ...itemsInput.map((item) => item.category ?? undefined),
+      ].filter((value): value is string => Boolean(value && value.trim()));
+      await this.notifyMatchingSuppliers(created.id, created.title, categories, buyerCompanyName, user.userId);
     }
 
     return created;
+  }
+
+  /** Avisa a proveedoras cuyo rubro coincide con las categorias de la solicitud. */
+  private async notifyMatchingSuppliers(
+    requestId: string,
+    requestTitle: string,
+    categories: string[],
+    buyerCompanyName: string | null,
+    excludeUserId: string,
+  ) {
+    const unique = [...new Set(categories.map((c) => c.trim()).filter(Boolean))];
+    if (unique.length === 0) {
+      return;
+    }
+
+    const companies = await this.prisma.company.findMany({
+      where: {
+        type: { in: [CompanyType.SUPPLIER, CompanyType.HYBRID] },
+        supplierProfile: { categories: { hasSome: unique } },
+      },
+      select: { id: true },
+      take: 40,
+    });
+
+    await Promise.allSettled(
+      companies.map((company) =>
+        this.notificationsService.createForCompany({
+          companyId: company.id,
+          roles: [MembershipRole.SUPPLIER],
+          excludeUserId,
+          type: NotificationType.REQUEST_RECEIVED,
+          title: 'Solicitud que coincide con tu rubro',
+          detail: `${buyerCompanyName ?? 'Un comprador'} publico "${requestTitle}" en una categoria que ofreces.`,
+          href: `/dashboard/proveedor/solicitudes/${requestId}`,
+          metadata: { requestId },
+        }),
+      ),
+    );
   }
 
   // Edicion de una solicitud existente. Solo el comprador dueño, en borrador o
