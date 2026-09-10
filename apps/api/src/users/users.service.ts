@@ -71,6 +71,9 @@ export class UsersService {
       select: {
         id: true,
         name: true,
+        legalName: true,
+        taxId: true,
+        taxCondition: true,
         city: true,
         country: true,
         type: true,
@@ -124,6 +127,9 @@ export class UsersService {
           company.supplierProfile?.logisticsSummary ??
           company.supplierProfile?.financingSummary ??
           null,
+        legalName: company.legalName ?? null,
+        taxId: company.taxId ?? null,
+        taxCondition: company.taxCondition ?? null,
         genericCode: company.supplierProfile?.genericCode ?? null,
         supplierRole: company.supplierProfile?.supplierRole ?? null,
         leadTimeDays: company.supplierProfile?.leadTimeDays ?? null,

@@ -602,6 +602,18 @@ export default function SupplierDetail({
                 </div>
               ) : null}
 
+              {supplier.taxId || supplier.legalName || supplier.taxCondition ? (
+                <div className="grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-3">
+                  {supplier.legalName ? (
+                    <InfoTile icon="shield" label="Razón social" value={supplier.legalName} />
+                  ) : null}
+                  {supplier.taxId ? <InfoTile icon="file" label="CUIT" value={supplier.taxId} /> : null}
+                  {supplier.taxCondition ? (
+                    <InfoTile icon="file" label="Condición IVA" value={supplier.taxCondition} />
+                  ) : null}
+                </div>
+              ) : null}
+
               {supplier.logisticsSummary || supplier.financingSummary ? (
                 <div className="border-t border-slate-200 pt-4">
                   <SectionTitle icon="truck">Cobertura y condiciones</SectionTitle>

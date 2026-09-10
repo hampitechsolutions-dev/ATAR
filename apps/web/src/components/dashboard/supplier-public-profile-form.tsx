@@ -16,6 +16,9 @@ import {
 type FormState = {
   genericCode: string;
   supplierRole: string;
+  legalName: string;
+  taxId: string;
+  taxCondition: string;
   leadTimeDays: string;
   minimumOrder: string;
   about: string;
@@ -33,6 +36,9 @@ type FormState = {
 const EMPTY: FormState = {
   genericCode: '',
   supplierRole: '',
+  legalName: '',
+  taxId: '',
+  taxCondition: '',
   leadTimeDays: '',
   minimumOrder: '',
   about: '',
@@ -168,6 +174,9 @@ export default function SupplierPublicProfileForm({
         setForm({
           genericCode: profile?.genericCode ?? '',
           supplierRole: profile?.supplierRole ?? '',
+          legalName: result.legalName ?? '',
+          taxId: result.taxId ?? '',
+          taxCondition: result.taxCondition ?? '',
           leadTimeDays: profile?.leadTimeDays?.toString() ?? '',
           minimumOrder: profile?.minimumOrder?.toString() ?? '',
           about: profile?.about ?? '',
@@ -302,6 +311,9 @@ export default function SupplierPublicProfileForm({
     const payload: UpdateSupplierProfileInput = {
       genericCode: form.genericCode.trim(),
       supplierRole: (form.supplierRole || undefined) as SupplierRole | undefined,
+      legalName: form.legalName.trim(),
+      taxId: form.taxId.trim(),
+      taxCondition: form.taxCondition.trim(),
       leadTimeDays: num(form.leadTimeDays),
       minimumOrder: num(form.minimumOrder),
       about: form.about.trim(),
@@ -406,6 +418,37 @@ export default function SupplierPublicProfileForm({
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <Field label="Razón social">
+          <input
+            className={inputClass}
+            onChange={(event) => set('legalName', event.target.value)}
+            placeholder="Proveedor Metal Demo SRL"
+            value={form.legalName}
+          />
+        </Field>
+        <Field label="CUIT" helper="Lo ven los compradores como dato de confianza.">
+          <input
+            className={inputClass}
+            onChange={(event) => set('taxId', event.target.value)}
+            placeholder="30-12345678-9"
+            value={form.taxId}
+          />
+        </Field>
+        <Field label="Condición IVA">
+          <select
+            className={inputClass}
+            onChange={(event) => set('taxCondition', event.target.value)}
+            value={form.taxCondition}
+          >
+            <option value="">Sin especificar</option>
+            <option value="Responsable Inscripto">Responsable Inscripto</option>
+            <option value="Monotributo">Monotributo</option>
+            <option value="Exento">Exento</option>
+          </select>
+        </Field>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <Field label="Código genérico">
           <input
             className={inputClass}

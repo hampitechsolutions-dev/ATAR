@@ -264,13 +264,21 @@ Corto plazo: **desactivar los botones muertos** (o rutearlos a configuración). 
 
 *Typecheck API y web en 0. Schema aplicado con `db push`; requirió regenerar el cliente Prisma (la API debe reiniciarse para tomar el cliente nuevo).*
 
+### Tanda 2 — Valor de marketplace ✅ (hecha)
+- **P1-14 notificación por rubro**: al publicar una solicitud de mercado abierto se notifica a las proveedoras cuyas `categories` coinciden con las categorías pedidas (acotado a 40 para no spamear).
+- **P1-13 búsqueda con filtros**: el directorio del comprador filtra por categoría, rol comercial y verificación (además de texto), usando los campos ricos del registro.
+- **P1-7 negociación versionada**: nuevo modelo `QuoteRevision`; cada envío/edición del proveedor guarda un snapshot (monto/plazo/condiciones); el detalle de cotización del comprador muestra el **historial de versiones con los cambios resaltados**.
+- **P1-12 datos fiscales AR**: `Company.legalName/taxId/taxCondition`; editables en la ficha del proveedor (sección Datos fiscales) y visibles en la ficha pública (CUIT / condición IVA / razón social) como señal de confianza. *(Captura fiscal del lado comprador queda como follow-up.)*
+
+*Typecheck API y web en 0.*
+
 ## K. Pendientes / plan de implementación sugerido
 
 Orden recomendado (de mayor valor/menor riesgo a mayor alcance):
 
 1. ~~**Tanda 0 — Seguridad/confianza (P0 + quick wins P1)**~~ ✅ **HECHA** (ver J): IDOR, pedidos reales, adjuntos honestos, "Verificado" real, badge/identidad, `formatCurrency` único, borrado de `domain.enums.ts`. *Pendiente de esta tanda: adjuntos con storage real (se optó por quitar la promesa) y completar `formatCurrency` en las copias del lado proveedor.*
 2. **Tanda 1 — Integridad de flujo (P1)**: cancelación de RFQ (P1-4), destinatarios por ID (P1-1), scoping `quotes/mine` (P1-2), dashboard "qué hacer ahora" (P1-5), entrega estructurada + `dueDate` (P1-6).
-3. **Tanda 2 — Valor de marketplace (P1/P2)**: matching + notificación por rubro (P1-13/P1-14), negociación versionada (P1-7), datos fiscales AR mínimos/CUIT (P1-12).
+3. ~~**Tanda 2 — Valor de marketplace (P1/P2)**~~ ✅ **HECHA** (ver J): matching + notificación por rubro, negociación versionada, datos fiscales AR/CUIT.
 4. **Tanda 3 — Robustez operativa (P2)**: control de asignación al cotizar (P2-1), entrega parcial (P2-3), condiciones estructuradas (P2-12), modelo de producto (P2-2), rating (P2-19), desduplicar legacy (P2-4).
 5. **P3**: polish y jobs programados, cuando no generen ruido.
 

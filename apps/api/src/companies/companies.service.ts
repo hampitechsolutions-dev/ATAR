@@ -100,6 +100,9 @@ export class CompaniesService {
       select: {
         id: true,
         name: true,
+        legalName: true,
+        taxId: true,
+        taxCondition: true,
         city: true,
         country: true,
         type: true,
@@ -168,11 +171,17 @@ export class CompaniesService {
     setIf('capabilities', list);
     setIf('categories', list);
 
-    // El logo es de la empresa, no del perfil de proveedor.
-    if (dto.logoUrl !== undefined) {
+    // Logo y datos fiscales viven en la empresa, no en el perfil. Solo se
+    // tocan los campos que vinieron en el body (PATCH parcial).
+    const companyData: Prisma.CompanyUncheckedUpdateInput = {};
+    if (dto.logoUrl !== undefined) companyData.logoUrl = text(dto.logoUrl);
+    if (dto.legalName !== undefined) companyData.legalName = text(dto.legalName);
+    if (dto.taxId !== undefined) companyData.taxId = text(dto.taxId);
+    if (dto.taxCondition !== undefined) companyData.taxCondition = text(dto.taxCondition);
+    if (Object.keys(companyData).length > 0) {
       await this.prisma.company.update({
         where: { id: workspace.companyId },
-        data: { logoUrl: text(dto.logoUrl) },
+        data: companyData,
       });
     }
 

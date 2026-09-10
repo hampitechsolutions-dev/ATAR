@@ -177,6 +177,8 @@ export class QuotesService {
         user.userId,
       );
 
+      await this.recordQuoteRevision(updatedQuote);
+
       return updatedQuote;
     }
 
@@ -240,7 +242,32 @@ export class QuotesService {
       user.userId,
     );
 
+    await this.recordQuoteRevision(createdQuote);
+
     return createdQuote;
+  }
+
+  /** Guarda un snapshot de la cotizacion como nueva version (negociacion). */
+  private async recordQuoteRevision(quote: {
+    id: string;
+    amount: number | null;
+    currency: string;
+    leadTimeDays: number | null;
+    paymentTerms: string | null;
+    technicalComment: string | null;
+  }) {
+    const version = (await this.prisma.quoteRevision.count({ where: { quoteId: quote.id } })) + 1;
+    await this.prisma.quoteRevision.create({
+      data: {
+        quoteId: quote.id,
+        version,
+        amount: quote.amount,
+        currency: quote.currency,
+        leadTimeDays: quote.leadTimeDays,
+        paymentTerms: quote.paymentTerms,
+        technicalComment: quote.technicalComment,
+      },
+    });
   }
 
   async findMine(user: AuthUser, activeCompanyId?: string) {
@@ -315,6 +342,7 @@ export class QuotesService {
       include: {
         supplierCompany: true,
         items: { include: { requestItem: true } },
+        revisions: { orderBy: { version: 'asc' } },
         request: {
           include: {
             buyerCompany: true,

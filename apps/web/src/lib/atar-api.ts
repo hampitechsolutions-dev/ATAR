@@ -171,6 +171,17 @@ export type RequestRecord = {
   updatedAt: string;
 };
 
+export type QuoteRevisionRecord = {
+  id: string;
+  version: number;
+  amount: number | null;
+  currency: string;
+  leadTimeDays: number | null;
+  paymentTerms: string | null;
+  technicalComment: string | null;
+  createdAt: string;
+};
+
 export type QuoteRecord = {
   id: string;
   requestId: string;
@@ -182,6 +193,7 @@ export type QuoteRecord = {
   technicalComment: string | null;
   status: QuoteStatus;
   items?: QuoteItemRecord[];
+  revisions?: QuoteRevisionRecord[];
   supplierCompany?: {
     id: string;
     name: string;
@@ -642,6 +654,9 @@ export type SupplierDirectoryRecord = {
   country: string;
   companyType: CompanyType;
   description: string | null;
+  legalName: string | null;
+  taxId: string | null;
+  taxCondition: string | null;
   genericCode: string | null;
   supplierRole: SupplierRole | null;
   leadTimeDays: number | null;
@@ -668,6 +683,9 @@ export type SupplierProfileRecord = {
   /** Mismo slug que usa el directorio: arma el link "Ver mi ficha". */
   slug: string;
   name: string;
+  legalName: string | null;
+  taxId: string | null;
+  taxCondition: string | null;
   city: string | null;
   country: string;
   type: CompanyType;
@@ -693,6 +711,9 @@ export type SupplierProfileRecord = {
 export type UpdateSupplierProfileInput = Partial<{
   genericCode: string;
   supplierRole: SupplierRole;
+  legalName: string;
+  taxId: string;
+  taxCondition: string;
   leadTimeDays: number;
   minimumOrder: number;
   about: string;
