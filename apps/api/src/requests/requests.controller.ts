@@ -49,6 +49,15 @@ export class RequestsController {
     return this.requestsService.remove(user, id, activeCompanyId);
   }
 
+  @Post(':id/cancel')
+  cancel(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @ActiveCompanyId() activeCompanyId?: string,
+  ) {
+    return this.requestsService.cancel(user, id, activeCompanyId);
+  }
+
   @Post(':id/award')
   award(
     @CurrentUser() user: AuthUser,

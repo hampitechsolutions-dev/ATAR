@@ -255,8 +255,35 @@ Corto plazo: **desactivar los botones muertos** (o rutearlos a configuración). 
 
 *Typecheck API y web en 0. No se tocó el modelo de datos (salvo lectura). Sin romper funcionalidades existentes.*
 
-### Pendiente de las demás tandas
-Ver K.
+### Tanda 1 — Integridad de flujo ✅ (hecha)
+- **P1-2 scoping de vendedor**: `quotes/mine` ahora filtra por solicitudes asignadas al vendedor cuando no es gerente (`quotes.service.ts`).
+- **P1-5 dashboard "qué hacer ahora"**: bloque "Requieren tu atención" en el panel del comprador (cotizaciones para adjudicar, pedidos a confirmar, vencimientos a 7 días, solicitudes sin respuesta).
+- **P1-4 cancelación de RFQ**: acción `POST /requests/:id/cancel` (owner, estados abiertos) que marca `CANCELLED`, rechaza cotizaciones vigentes, marca oportunidades `LOST`, emite evento y notifica a quienes cotizaron (enum `REQUEST_CANCELLED`); ítem "Cancelar solicitud" en el menú Acciones.
+- **P1-1 destinatarios por ID**: nuevo modelo `RequestTargetSupplier`; `create`/`update` persisten los IDs elegidos; la visibilidad (inbox, `getAssignmentOrCreate`, `quotes.create`, `findOne`) usa el match por ID como autoritativo y deja el nombre exacto solo como fallback legacy (solicitudes sin destinatarios por ID).
+- **P1-6 entrega estructurada**: campos `deliveryMode/address/city/province/contactName/phone/schedule/notes` en `Request` (DTO + create/update); el wizard los envía y el detalle del comprador los lee (con fallback al texto de `description` para solicitudes viejas).
+
+*Typecheck API y web en 0. Schema aplicado con `db push`; requirió regenerar el cliente Prisma (la API debe reiniciarse para tomar el cliente nuevo).*
+
+### Tanda 2 — Valor de marketplace ✅ (hecha)
+- **P1-14 notificación por rubro**: al publicar una solicitud de mercado abierto se notifica a las proveedoras cuyas `categories` coinciden con las categorías pedidas (acotado a 40 para no spamear).
+- **P1-13 búsqueda con filtros**: el directorio del comprador filtra por categoría, rol comercial y verificación (además de texto), usando los campos ricos del registro.
+- **P1-7 negociación versionada**: nuevo modelo `QuoteRevision`; cada envío/edición del proveedor guarda un snapshot (monto/plazo/condiciones); el detalle de cotización del comprador muestra el **historial de versiones con los cambios resaltados**.
+- **P1-12 datos fiscales AR**: `Company.legalName/taxId/taxCondition`; editables en la ficha del proveedor (sección Datos fiscales) y visibles en la ficha pública (CUIT / condición IVA / razón social) como señal de confianza. *(Captura fiscal del lado comprador queda como follow-up.)*
+
+*Typecheck API y web en 0.*
+
+### Tanda 3 — Robustez ✅ (parcial; lo contenido hecho, lo grande documentado)
+- **P2-1 control de asignación al cotizar**: si la oportunidad está asignada a un vendedor concreto, solo ese vendedor (o gerente/admin) puede cotizar o sobrescribir la cotización de la empresa (`quotes.service.ts`). Evita que un vendedor pise el trabajo de otro.
+- **P2-12 condiciones estructuradas**: `Quote.validUntil` y `Quote.minimumOrder`; el form del proveedor los captura como campos (fecha + número) en lugar de texto libre; el comprador ve "Oferta válida hasta" (vigente/vencida) y "Pedido mínimo" en el detalle de cotización.
+- **P2-2 (mínimo) botones muertos del catálogo**: "Nuevo item"/"Ver detalle"/lápiz dejaron de ser affordances sin acción; ahora enlazan a configuración (gestionar productos/rubros) o a solicitudes. *El modelo `SupplierProduct` completo queda como feature mayor (ver pendientes).*
+
+**Deferidos de la Tanda 3 (features mayores / cleanup riesgoso):**
+- **P2-3 entrega parcial por línea**: requiere `PurchaseOrderItem` con estado propio + UI de cumplimiento por ítem. Feature grande.
+- **P2-19 rating/reputación**: requiere modelo `Review`, flujo de calificación al completar y agregado en la ficha. Feature grande.
+- **P2-2 (completo) modelo de producto del proveedor**: `SupplierProduct` (tipo/unidad/specs/precio/estado) + CRUD.
+- **P2-4 desduplicar campos legacy**: alto riesgo de regresión (muchos lugares usan `Request.category/quantityRequested` y `Quote.amount`); conviene abordarlo aislado con pruebas.
+
+*Typecheck API y web en 0.*
 
 ## K. Pendientes / plan de implementación sugerido
 
@@ -264,8 +291,8 @@ Orden recomendado (de mayor valor/menor riesgo a mayor alcance):
 
 1. ~~**Tanda 0 — Seguridad/confianza (P0 + quick wins P1)**~~ ✅ **HECHA** (ver J): IDOR, pedidos reales, adjuntos honestos, "Verificado" real, badge/identidad, `formatCurrency` único, borrado de `domain.enums.ts`. *Pendiente de esta tanda: adjuntos con storage real (se optó por quitar la promesa) y completar `formatCurrency` en las copias del lado proveedor.*
 2. **Tanda 1 — Integridad de flujo (P1)**: cancelación de RFQ (P1-4), destinatarios por ID (P1-1), scoping `quotes/mine` (P1-2), dashboard "qué hacer ahora" (P1-5), entrega estructurada + `dueDate` (P1-6).
-3. **Tanda 2 — Valor de marketplace (P1/P2)**: matching + notificación por rubro (P1-13/P1-14), negociación versionada (P1-7), datos fiscales AR mínimos/CUIT (P1-12).
-4. **Tanda 3 — Robustez operativa (P2)**: control de asignación al cotizar (P2-1), entrega parcial (P2-3), condiciones estructuradas (P2-12), modelo de producto (P2-2), rating (P2-19), desduplicar legacy (P2-4).
+3. ~~**Tanda 2 — Valor de marketplace (P1/P2)**~~ ✅ **HECHA** (ver J): matching + notificación por rubro, negociación versionada, datos fiscales AR/CUIT.
+4. **Tanda 3 — Robustez operativa (P2)**: ✅ control de asignación al cotizar (P2-1), condiciones estructuradas (P2-12), botones muertos del catálogo (P2-2 mínimo). ⏳ Pendientes mayores: entrega parcial (P2-3), modelo de producto completo (P2-2), rating (P2-19), desduplicar legacy (P2-4).
 5. **P3**: polish y jobs programados, cuando no generen ruido.
 
 > Regla rectora en cada cambio: *complejidad interna, simplicidad externa*; reutilizar lo que ya conoce el sistema; no romper lo que ya funciona (sección A).

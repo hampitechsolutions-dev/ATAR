@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import CompanyLogo from '@/components/dashboard/company-logo';
 import { useEffect, useMemo, useState } from 'react';
-import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
+import {
+  atarApi,
+  SUPPLIER_ROLE_LABELS,
+  type SupplierRole,
+  type SupplierDirectoryRecord,
+} from '@/lib/atar-api';
 import { loadBuyerFavorites, toggleBuyerFavorite } from '@/lib/dashboard-local';
 import { LoadingState } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
@@ -13,6 +18,9 @@ export default function BuyerProvidersPage() {
   const { session, loading: dashboardLoading } = useBuyerDashboardData();
   const [search, setSearch] = useState('');
   const [companyType, setCompanyType] = useState<string>('ALL');
+  const [category, setCategory] = useState<string>('ALL');
+  const [role, setRole] = useState<string>('ALL');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => loadBuyerFavorites());
   const [suppliers, setSuppliers] = useState<SupplierDirectoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,27 +62,54 @@ export default function BuyerProvidersPage() {
     };
   }, [session?.accessToken]);
 
-  const providerItems = useMemo(() => suppliers.map(mapSupplierToProviderDirectoryItem), [suppliers]);
-
   const companyTypeOptions = useMemo(() => {
-    return ['ALL', ...new Set(providerItems.map((item) => item.companyType))];
-  }, [providerItems]);
+    return ['ALL', ...new Set(suppliers.map((item) => item.companyType))];
+  }, [suppliers]);
 
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const supplier of suppliers) {
+      for (const cat of supplier.categories ?? []) {
+        if (cat.trim()) set.add(cat.trim());
+      }
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [suppliers]);
+
+  const roleOptions = useMemo(() => {
+    const set = new Set<SupplierRole>();
+    for (const supplier of suppliers) {
+      if (supplier.supplierRole) set.add(supplier.supplierRole);
+    }
+    return [...set];
+  }, [suppliers]);
+
+  // Se filtra sobre el registro completo del proveedor (tiene categorias,
+  // certificaciones, rol comercial, verificacion y lead time) y recien despues
+  // se mapea para la tarjeta. Antes solo se podia filtrar por nombre/ciudad.
   const filteredProviders = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return providerItems.filter((provider) => {
-      const matchesType = companyType === 'ALL' || provider.companyType === companyType;
-      const matchesSearch =
-        query.length === 0 ||
-        provider.name.toLowerCase().includes(query) ||
-        provider.city.toLowerCase().includes(query) ||
-        provider.description.toLowerCase().includes(query) ||
-        provider.tags.some((tag) => tag.toLowerCase().includes(query));
+    return suppliers
+      .filter((supplier) => {
+        const matchesType = companyType === 'ALL' || supplier.companyType === companyType;
+        const matchesCategory = category === 'ALL' || (supplier.categories ?? []).includes(category);
+        const matchesRole = role === 'ALL' || supplier.supplierRole === role;
+        const matchesVerified = !verifiedOnly || supplier.isVerified;
+        const matchesSearch =
+          query.length === 0 ||
+          supplier.name.toLowerCase().includes(query) ||
+          (supplier.city ?? '').toLowerCase().includes(query) ||
+          (supplier.description ?? '').toLowerCase().includes(query) ||
+          (supplier.tags ?? []).some((tag) => tag.toLowerCase().includes(query)) ||
+          (supplier.categories ?? []).some((cat) => cat.toLowerCase().includes(query)) ||
+          (supplier.mainProducts ?? []).some((p) => p.toLowerCase().includes(query)) ||
+          (supplier.certifications ?? []).some((c) => c.toLowerCase().includes(query));
 
-      return matchesType && matchesSearch;
-    });
-  }, [companyType, providerItems, search]);
+        return matchesType && matchesCategory && matchesRole && matchesVerified && matchesSearch;
+      })
+      .map(mapSupplierToProviderDirectoryItem);
+  }, [companyType, category, role, verifiedOnly, suppliers, search]);
 
   return (
     <div className="space-y-6">
@@ -110,6 +145,48 @@ export default function BuyerProvidersPage() {
                   </option>
                 ))}
             </select>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {categoryOptions.length > 0 ? (
+              <select
+                className="h-10 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-medium text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white"
+                onChange={(event) => setCategory(event.target.value)}
+                value={category}
+              >
+                <option value="ALL">Todas las categorías</option>
+                {categoryOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+
+            {roleOptions.length > 0 ? (
+              <select
+                className="h-10 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-medium text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white"
+                onChange={(event) => setRole(event.target.value)}
+                value={role}
+              >
+                <option value="ALL">Cualquier rol</option>
+                {roleOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {SUPPLIER_ROLE_LABELS[option]}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+
+            <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-medium text-slate-700 transition hover:border-slate-300">
+              <input
+                type="checkbox"
+                checked={verifiedOnly}
+                onChange={(event) => setVerifiedOnly(event.target.checked)}
+                className="h-4 w-4 accent-[#4f46ff]"
+              />
+              Solo verificados
+            </label>
           </div>
         </div>
       </section>

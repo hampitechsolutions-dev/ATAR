@@ -424,6 +424,23 @@ export default function BuyerQuoteDetailPage() {
                 <p className="mt-1 text-[11px] text-slate-400">{statusTone.helper}</p>
               </MetricCard>
 
+              {quote.validUntil ? (
+                <MetricCard icon="calendar" label="Oferta válida hasta">
+                  <p className="text-[18px] font-bold text-slate-950">{formatDate(quote.validUntil)}</p>
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {new Date(quote.validUntil).getTime() >= Date.now() ? 'Vigente' : 'Vencida'}
+                  </p>
+                </MetricCard>
+              ) : null}
+
+              {typeof quote.minimumOrder === 'number' ? (
+                <MetricCard icon="doc" label="Pedido mínimo">
+                  <p className="text-[18px] font-bold text-slate-950">
+                    {new Intl.NumberFormat('es-AR').format(quote.minimumOrder)}
+                  </p>
+                </MetricCard>
+              ) : null}
+
               <MetricCard highlight icon="calendar" label="Cierre de la solicitud">
                 <p className="text-[18px] font-bold text-slate-950">{formatDate(request?.dueDate)}</p>
                 <p className="mt-1 text-[11px] text-slate-400">
@@ -522,6 +539,63 @@ export default function BuyerQuoteDetailPage() {
                     {quote.technicalComment || 'El proveedor no dejó comentarios técnicos.'}
                   </p>
                 </div>
+
+                {(quote.revisions?.length ?? 0) > 1 ? (
+                  <div className="mt-4 rounded-xl border border-slate-200 px-4 py-3">
+                    <p className="text-[11px] font-semibold text-slate-500">Historial de la negociación</p>
+                    <ul className="mt-2 space-y-2">
+                      {[...(quote.revisions ?? [])]
+                        .sort((a, b) => b.version - a.version)
+                        .map((rev, idx, arr) => {
+                          const prev = arr[idx + 1]; // versión anterior (más vieja)
+                          const priceChanged = prev && prev.amount !== rev.amount;
+                          const leadChanged = prev && prev.leadTimeDays !== rev.leadTimeDays;
+                          const termsChanged = prev && (prev.paymentTerms ?? '') !== (rev.paymentTerms ?? '');
+                          const isCurrent = idx === 0;
+                          return (
+                            <li
+                              key={rev.id}
+                              className={`rounded-lg border px-3 py-2 text-[12px] ${
+                                isCurrent ? 'border-[#c7d2fe] bg-[#eef2ff]/50' : 'border-slate-100 bg-white'
+                              }`}
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="font-semibold text-slate-800">
+                                  Versión {rev.version}
+                                  {isCurrent ? ' · vigente' : ''}
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                  {new Intl.DateTimeFormat('es-AR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  }).format(new Date(rev.createdAt))}
+                                </span>
+                              </div>
+                              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-slate-600">
+                                <span className={priceChanged ? 'font-semibold text-[#4f46ff]' : ''}>
+                                  {formatCurrency(rev.amount, rev.currency)}
+                                  {priceChanged && prev ? ` (antes ${formatCurrency(prev.amount, prev.currency)})` : ''}
+                                </span>
+                                <span className={leadChanged ? 'font-semibold text-[#4f46ff]' : ''}>
+                                  Plazo: {typeof rev.leadTimeDays === 'number' ? `${rev.leadTimeDays} días` : 'a convenir'}
+                                </span>
+                                {rev.paymentTerms ? (
+                                  <span className={termsChanged ? 'font-semibold text-[#4f46ff]' : ''}>
+                                    Pago: {rev.paymentTerms}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </li>
+                          );
+                        })}
+                    </ul>
+                    <p className="mt-2 text-[10px] leading-4 text-slate-400">
+                      Cada vez que el proveedor actualiza su propuesta se guarda una versión. En violeta, lo que cambió respecto de la anterior.
+                    </p>
+                  </div>
+                ) : null}
 
                 <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
                   {quote.status === 'AWARDED' ? (

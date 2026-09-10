@@ -29,6 +29,23 @@ export class UpdateSupplierProfileDto {
   @IsEnum(SupplierRole)
   supplierRole?: SupplierRole;
 
+  // Datos fiscales (viven en Company, no en el perfil): razon social, CUIT y
+  // condicion frente al IVA. Necesarios para facturar y dar de alta al proveedor.
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  legalName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  taxId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  taxCondition?: string;
+
   @IsOptional()
   @IsInt()
   @Min(0)

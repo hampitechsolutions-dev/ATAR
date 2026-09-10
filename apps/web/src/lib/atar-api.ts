@@ -144,6 +144,14 @@ export type RequestRecord = {
   awardedQuoteId?: string | null;
   privateRequest: boolean;
   dueDate: string | null;
+  deliveryMode?: string | null;
+  deliveryAddress?: string | null;
+  deliveryCity?: string | null;
+  deliveryProvince?: string | null;
+  deliveryContactName?: string | null;
+  deliveryPhone?: string | null;
+  deliverySchedule?: string | null;
+  deliveryNotes?: string | null;
   buyerCompanyId: string;
   buyerCompany?: {
     id: string;
@@ -163,6 +171,17 @@ export type RequestRecord = {
   updatedAt: string;
 };
 
+export type QuoteRevisionRecord = {
+  id: string;
+  version: number;
+  amount: number | null;
+  currency: string;
+  leadTimeDays: number | null;
+  paymentTerms: string | null;
+  technicalComment: string | null;
+  createdAt: string;
+};
+
 export type QuoteRecord = {
   id: string;
   requestId: string;
@@ -171,9 +190,12 @@ export type QuoteRecord = {
   currency: string;
   leadTimeDays: number | null;
   paymentTerms: string | null;
+  validUntil: string | null;
+  minimumOrder: number | null;
   technicalComment: string | null;
   status: QuoteStatus;
   items?: QuoteItemRecord[];
+  revisions?: QuoteRevisionRecord[];
   supplierCompany?: {
     id: string;
     name: string;
@@ -442,6 +464,14 @@ export type CreateRequestPayload = {
   privateRequest?: boolean;
   targetSupplierCompanyIds?: string[];
   dueDate?: string;
+  deliveryMode?: string;
+  deliveryAddress?: string;
+  deliveryCity?: string;
+  deliveryProvince?: string;
+  deliveryContactName?: string;
+  deliveryPhone?: string;
+  deliverySchedule?: string;
+  deliveryNotes?: string;
   status?: Extract<RequestStatus, 'DRAFT' | 'PUBLISHED'>;
   /** Multi-producto: una línea por producto pedido. */
   items?: RequestItemPayload[];
@@ -452,6 +482,8 @@ export type CreateQuotePayload = {
   currency?: string;
   leadTimeDays?: number;
   paymentTerms?: string;
+  validUntil?: string;
+  minimumOrder?: number;
   technicalComment?: string;
   /** Respuesta por producto: precio unitario, disponibilidad y nota. El total
    *  se calcula en el backend (solo suma lo que tiene precio). */
@@ -626,6 +658,9 @@ export type SupplierDirectoryRecord = {
   country: string;
   companyType: CompanyType;
   description: string | null;
+  legalName: string | null;
+  taxId: string | null;
+  taxCondition: string | null;
   genericCode: string | null;
   supplierRole: SupplierRole | null;
   leadTimeDays: number | null;
@@ -652,6 +687,9 @@ export type SupplierProfileRecord = {
   /** Mismo slug que usa el directorio: arma el link "Ver mi ficha". */
   slug: string;
   name: string;
+  legalName: string | null;
+  taxId: string | null;
+  taxCondition: string | null;
   city: string | null;
   country: string;
   type: CompanyType;
@@ -677,6 +715,9 @@ export type SupplierProfileRecord = {
 export type UpdateSupplierProfileInput = Partial<{
   genericCode: string;
   supplierRole: SupplierRole;
+  legalName: string;
+  taxId: string;
+  taxCondition: string;
   leadTimeDays: number;
   minimumOrder: number;
   about: string;
@@ -888,6 +929,11 @@ export const atarApi = {
   deleteRequest(requestId: string, token: string) {
     return request<{ id: string; deleted: boolean }>(`/requests/${requestId}`, {
       method: 'DELETE',
+    }, token);
+  },
+  cancelRequest(requestId: string, token: string) {
+    return request<RequestRecord>(`/requests/${requestId}/cancel`, {
+      method: 'POST',
     }, token);
   },
   getRequestQuotes(requestId: string, token: string) {

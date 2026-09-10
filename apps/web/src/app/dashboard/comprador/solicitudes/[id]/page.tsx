@@ -533,6 +533,7 @@ export default function BuyerRequestDetailPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const [orderForm, setOrderForm] = useState({
     orderNumber: '',
@@ -659,6 +660,30 @@ export default function BuyerRequestDetailPage() {
       );
       setDeleting(false);
       setActionsOpen(false);
+    }
+  }
+
+  async function handleCancelRequest() {
+    if (!session?.accessToken || !request) {
+      return;
+    }
+    const confirmed = window.confirm(
+      'Vas a cancelar esta solicitud. Las cotizaciones recibidas quedarán rechazadas y la solicitud se cerrará (queda en el historial). ¿Confirmás?',
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      setCancelling(true);
+      setError(null);
+      await atarApi.cancelRequest(request.id, session.accessToken);
+      await syncRequestState(session.accessToken);
+      setActionsOpen(false);
+      setMessage('Solicitud cancelada. Los proveedores que cotizaron fueron notificados.');
+    } catch (cancelError) {
+      setError(cancelError instanceof Error ? cancelError.message : 'No se pudo cancelar la solicitud.');
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -812,20 +837,37 @@ export default function BuyerRequestDetailPage() {
   }, [comparableQuotes, bestPrice, fastest, request?.items]);
   const fulfillmentIndex = request?.order ? FULFILLMENT_STEPS.indexOf(request.order.fulfillmentStatus) : -1;
   const parsedDescription = useMemo(() => parseRequestDescription(request?.description ?? ''), [request?.description]);
-  const deliveryItems = useMemo(
-    () =>
-      parsedDescription.filter((item) => {
-        const label = item.label.toLowerCase();
-        return (
-          label.includes('entrega') ||
-          label.includes('fecha') ||
-          label.includes('horario') ||
-          label.includes('contacto') ||
-          label.includes('telefono')
-        );
-      }),
-    [parsedDescription],
-  );
+  const deliveryItems = useMemo(() => {
+    // Preferimos los campos estructurados (nuevos). Si la solicitud es vieja y
+    // no los tiene, caemos al parseo por texto de `description` (legacy).
+    const structured: { label: string; value: string }[] = [];
+    const dateLabel =
+      request?.deliveryMode === 'asap'
+        ? 'Lo antes posible'
+        : request?.dueDate
+          ? formatDate(request.dueDate)
+          : null;
+    if (request?.deliveryAddress) structured.push({ label: 'Ubicación de entrega', value: request.deliveryAddress });
+    if (request?.deliveryCity) structured.push({ label: 'Ciudad', value: request.deliveryCity });
+    if (dateLabel) structured.push({ label: 'Fecha de entrega', value: dateLabel });
+    if (request?.deliverySchedule) structured.push({ label: 'Horario de recepción', value: request.deliverySchedule });
+    if (request?.deliveryContactName) structured.push({ label: 'Contacto en planta', value: request.deliveryContactName });
+    if (request?.deliveryPhone) structured.push({ label: 'Teléfono de contacto', value: request.deliveryPhone });
+    if (request?.deliveryNotes) structured.push({ label: 'Observaciones', value: request.deliveryNotes });
+    if (structured.length > 0) {
+      return structured;
+    }
+    return parsedDescription.filter((item) => {
+      const label = item.label.toLowerCase();
+      return (
+        label.includes('entrega') ||
+        label.includes('fecha') ||
+        label.includes('horario') ||
+        label.includes('contacto') ||
+        label.includes('telefono')
+      );
+    });
+  }, [request, parsedDescription]);
   const detailItems = useMemo(() => {
     const items = [
       { label: 'Producto', value: request?.category ?? '-' },
@@ -886,6 +928,12 @@ export default function BuyerRequestDetailPage() {
     Boolean(request) &&
     (request?.status === 'DRAFT' || request?.status === 'PUBLISHED') &&
     (request?.quotes?.length ?? 0) === 0;
+
+  // Cancelar aplica a solicitudes abiertas (sin adjudicar), incluso si ya
+  // recibieron cotizaciones (a diferencia de eliminar, que exige 0 cotizaciones).
+  const canCancelRequest =
+    Boolean(request) &&
+    (request?.status === 'DRAFT' || request?.status === 'PUBLISHED' || request?.status === 'REVIEWING');
 
   useEffect(() => {
     if (!actionsOpen) {
@@ -1064,6 +1112,20 @@ export default function BuyerRequestDetailPage() {
                       Descargar especificaciones
                     </button>
                     <div className="my-1 h-px bg-slate-100" />
+                    {canCancelRequest ? (
+                      <button
+                        className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-medium text-amber-700 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={cancelling}
+                        onClick={() => void handleCancelRequest()}
+                        type="button"
+                      >
+                        <svg aria-hidden="true" className="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                          <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+                        </svg>
+                        {cancelling ? 'Cancelando...' : 'Cancelar solicitud'}
+                      </button>
+                    ) : null}
                     <button
                       className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={!canEditRequest || deleting}

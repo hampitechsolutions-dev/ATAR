@@ -5,8 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  CompanyType,
   MembershipRole,
   NotificationType,
+  OpportunityStatus,
   OrderFulfillmentStatus,
   QuoteStatus,
   RequestEventType,
@@ -69,6 +71,14 @@ export class RequestsService {
         preferredSupplierName: dto.preferredSupplierName,
         privateRequest: dto.privateRequest ?? false,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        deliveryMode: dto.deliveryMode ?? null,
+        deliveryAddress: dto.deliveryAddress ?? null,
+        deliveryCity: dto.deliveryCity ?? null,
+        deliveryProvince: dto.deliveryProvince ?? null,
+        deliveryContactName: dto.deliveryContactName ?? null,
+        deliveryPhone: dto.deliveryPhone ?? null,
+        deliverySchedule: dto.deliverySchedule ?? null,
+        deliveryNotes: dto.deliveryNotes ?? null,
         status,
         items: {
           create: itemsInput.map((item, index) => ({
@@ -105,6 +115,18 @@ export class RequestsService {
     // Solicitud dirigida: si el comprador eligio proveedores y la publica, se
     // les avisa. Sin proveedores elegidos sigue siendo mercado abierto (pull).
     const targetSupplierCompanyIds = [...new Set(dto.targetSupplierCompanyIds ?? [])];
+
+    // Persistimos los destinatarios por ID (fuente autoritativa de visibilidad
+    // de una solicitud privada, en lugar del match por nombre de empresa).
+    if (targetSupplierCompanyIds.length > 0) {
+      await this.prisma.requestTargetSupplier.createMany({
+        data: targetSupplierCompanyIds.map((supplierCompanyId) => ({
+          requestId: created.id,
+          supplierCompanyId,
+        })),
+        skipDuplicates: true,
+      });
+    }
     if (status === RequestStatus.PUBLISHED && targetSupplierCompanyIds.length > 0) {
       // Best-effort: una notificacion que falle no debe tumbar la creacion de
       // la solicitud (allSettled no rechaza). Push/email se manejan adentro.
@@ -122,9 +144,56 @@ export class RequestsService {
           }),
         ),
       );
+    } else if (status === RequestStatus.PUBLISHED && !dto.privateRequest) {
+      // Mercado abierto: se avisa a las proveedoras cuyo rubro (categorias de su
+      // ficha) coincide con las categorias pedidas, para que no dependan de
+      // entrar a mirar. Se acota el alcance para no hacer spam.
+      const categories = [
+        dto.category,
+        ...itemsInput.map((item) => item.category ?? undefined),
+      ].filter((value): value is string => Boolean(value && value.trim()));
+      await this.notifyMatchingSuppliers(created.id, created.title, categories, buyerCompanyName, user.userId);
     }
 
     return created;
+  }
+
+  /** Avisa a proveedoras cuyo rubro coincide con las categorias de la solicitud. */
+  private async notifyMatchingSuppliers(
+    requestId: string,
+    requestTitle: string,
+    categories: string[],
+    buyerCompanyName: string | null,
+    excludeUserId: string,
+  ) {
+    const unique = [...new Set(categories.map((c) => c.trim()).filter(Boolean))];
+    if (unique.length === 0) {
+      return;
+    }
+
+    const companies = await this.prisma.company.findMany({
+      where: {
+        type: { in: [CompanyType.SUPPLIER, CompanyType.HYBRID] },
+        supplierProfile: { categories: { hasSome: unique } },
+      },
+      select: { id: true },
+      take: 40,
+    });
+
+    await Promise.allSettled(
+      companies.map((company) =>
+        this.notificationsService.createForCompany({
+          companyId: company.id,
+          roles: [MembershipRole.SUPPLIER],
+          excludeUserId,
+          type: NotificationType.REQUEST_RECEIVED,
+          title: 'Solicitud que coincide con tu rubro',
+          detail: `${buyerCompanyName ?? 'Un comprador'} publico "${requestTitle}" en una categoria que ofreces.`,
+          href: `/dashboard/proveedor/solicitudes/${requestId}`,
+          metadata: { requestId },
+        }),
+      ),
+    );
   }
 
   // Edicion de una solicitud existente. Solo el comprador dueño, en borrador o
@@ -166,8 +235,11 @@ export class RequestsService {
             },
           ];
 
+    const targetSupplierCompanyIds = [...new Set(dto.targetSupplierCompanyIds ?? [])];
+
     await this.prisma.$transaction([
       this.prisma.requestItem.deleteMany({ where: { requestId: id } }),
+      this.prisma.requestTargetSupplier.deleteMany({ where: { requestId: id } }),
       this.prisma.request.update({
         where: { id },
         data: {
@@ -181,6 +253,14 @@ export class RequestsService {
           preferredSupplierName: dto.preferredSupplierName,
           privateRequest: dto.privateRequest ?? false,
           dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+          deliveryMode: dto.deliveryMode ?? null,
+          deliveryAddress: dto.deliveryAddress ?? null,
+          deliveryCity: dto.deliveryCity ?? null,
+          deliveryProvince: dto.deliveryProvince ?? null,
+          deliveryContactName: dto.deliveryContactName ?? null,
+          deliveryPhone: dto.deliveryPhone ?? null,
+          deliverySchedule: dto.deliverySchedule ?? null,
+          deliveryNotes: dto.deliveryNotes ?? null,
           items: {
             create: itemsInput.map((item, index) => ({
               position: index,
@@ -192,6 +272,13 @@ export class RequestsService {
               referenceUnitPrice: item.referenceUnitPrice ?? null,
             })),
           },
+          ...(targetSupplierCompanyIds.length > 0
+            ? {
+                targetSuppliers: {
+                  create: targetSupplierCompanyIds.map((supplierCompanyId) => ({ supplierCompanyId })),
+                },
+              }
+            : {}),
         },
       }),
     ]);
@@ -228,6 +315,87 @@ export class RequestsService {
     await this.prisma.request.delete({ where: { id } });
 
     return { id, deleted: true };
+  }
+
+  /**
+   * Cancela una solicitud abierta (con o sin cotizaciones). A diferencia de
+   * `remove()` (solo sin cotizaciones), cancelar deja la solicitud en el
+   * historial: rechaza las cotizaciones vigentes, marca las oportunidades de
+   * los proveedores como perdidas y notifica a quienes habian cotizado.
+   */
+  async cancel(user: AuthUser, id: string, activeCompanyId?: string) {
+    const buyerCompanyId = this.getCompanyIdForRole(user, MembershipRole.BUYER, activeCompanyId);
+    const buyerCompanyName = await this.getCompanyNameById(buyerCompanyId);
+
+    const request = await this.prisma.request.findUnique({
+      where: { id },
+      include: {
+        quotes: { include: { supplierCompany: true } },
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Pedido no encontrado.');
+    }
+    if (request.buyerCompanyId !== buyerCompanyId && !this.isAdmin(user)) {
+      throw new ForbiddenException('No tenes acceso para cancelar este pedido.');
+    }
+    const cancellable: RequestStatus[] = [
+      RequestStatus.DRAFT,
+      RequestStatus.PUBLISHED,
+      RequestStatus.REVIEWING,
+    ];
+    if (!cancellable.includes(request.status)) {
+      throw new BadRequestException(
+        'Solo se pueden cancelar solicitudes abiertas (sin adjudicar). Un pedido ya adjudicado se gestiona desde su orden.',
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.request.update({
+        where: { id },
+        data: { status: RequestStatus.CANCELLED },
+      }),
+      this.prisma.quote.updateMany({
+        where: { requestId: id, status: { in: [QuoteStatus.SUBMITTED, QuoteStatus.DRAFT] } },
+        data: { status: QuoteStatus.REJECTED },
+      }),
+      this.prisma.requestAssignment.updateMany({
+        where: { requestId: id },
+        data: { status: OpportunityStatus.LOST },
+      }),
+      this.prisma.requestEvent.create({
+        data: {
+          requestId: id,
+          type: RequestEventType.REQUEST_CANCELLED,
+          title: 'Solicitud cancelada',
+          detail: `${buyerCompanyName ?? 'El comprador'} cancelo la solicitud ${request.title}.`,
+          actorRole: MembershipRole.BUYER,
+          actorCompanyName: buyerCompanyName ?? undefined,
+        },
+      }),
+    ]);
+
+    // Avisa a los proveedores que habian cotizado que la solicitud se cerro.
+    const notifiedCompanies = new Set<string>();
+    for (const quote of request.quotes) {
+      if (notifiedCompanies.has(quote.supplierCompanyId)) {
+        continue;
+      }
+      notifiedCompanies.add(quote.supplierCompanyId);
+      await this.notificationsService.createForCompany({
+        companyId: quote.supplierCompanyId,
+        roles: [MembershipRole.SUPPLIER],
+        excludeUserId: user.userId,
+        type: NotificationType.REQUEST_CANCELLED,
+        title: 'Solicitud cancelada',
+        detail: `${buyerCompanyName ?? 'El comprador'} cancelo la solicitud ${request.title}.`,
+        href: `/dashboard/proveedor/solicitudes/${id}`,
+        metadata: { requestId: id },
+      });
+    }
+
+    return this.findOne(user, id, activeCompanyId);
   }
 
   async findMine(user: AuthUser, activeCompanyId?: string) {
@@ -829,8 +997,21 @@ export class RequestsService {
     }
 
     if (request.privateRequest) {
-      const supplierCompanyName = await this.getCompanyNameById(supplierCompanyId);
-      if (!this.matchesPreferredSupplier(request.preferredSupplierName, supplierCompanyName)) {
+      // Destinatario por ID (autoritativo); fallback legacy a nombre exacto solo
+      // si la solicitud no tiene destinatarios por ID cargados.
+      const target = await this.prisma.requestTargetSupplier.findUnique({
+        where: { requestId_supplierCompanyId: { requestId: id, supplierCompanyId } },
+        select: { id: true },
+      });
+      let allowed = Boolean(target);
+      if (!allowed) {
+        const targetCount = await this.prisma.requestTargetSupplier.count({ where: { requestId: id } });
+        if (targetCount === 0) {
+          const supplierCompanyName = await this.getCompanyNameById(supplierCompanyId);
+          allowed = this.matchesPreferredSupplier(request.preferredSupplierName, supplierCompanyName);
+        }
+      }
+      if (!allowed) {
         throw new ForbiddenException('El pedido es privado y no esta disponible para este proveedor.');
       }
     }

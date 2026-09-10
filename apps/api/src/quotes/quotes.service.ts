@@ -13,7 +13,7 @@ import {
   RequestStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
-import { resolveCompanyId, resolveOptionalCompanyId } from '../common/workspace.util';
+import { resolveCompanyId, resolveOptionalCompanyId, resolveSupplierWorkspace } from '../common/workspace.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssignmentsService } from '../requests/assignments.service';
@@ -47,8 +47,36 @@ export class QuotesService {
     }
 
     if (request.privateRequest) {
-      if (!this.matchesPreferredSupplier(request.preferredSupplierName, supplierCompanyName)) {
+      // Destinatario por ID (autoritativo); fallback legacy a nombre exacto solo
+      // si la solicitud no tiene destinatarios por ID cargados.
+      const target = await this.prisma.requestTargetSupplier.findUnique({
+        where: { requestId_supplierCompanyId: { requestId, supplierCompanyId } },
+        select: { id: true },
+      });
+      let allowed = Boolean(target);
+      if (!allowed) {
+        const targetCount = await this.prisma.requestTargetSupplier.count({ where: { requestId } });
+        allowed =
+          targetCount === 0 &&
+          this.matchesPreferredSupplier(request.preferredSupplierName, supplierCompanyName);
+      }
+      if (!allowed) {
         throw new ForbiddenException('El pedido es privado y no esta habilitado para tu empresa.');
+      }
+    }
+
+    // Control de asignación: si la oportunidad está asignada a un vendedor
+    // concreto, solo ese vendedor (o un gerente/admin) puede cotizar o
+    // sobrescribir la cotización de la empresa. Evita que un vendedor pise el
+    // trabajo de otro.
+    const workspace = resolveSupplierWorkspace(user, activeCompanyId);
+    if (!workspace.isManager) {
+      const assignment = await this.prisma.requestAssignment.findUnique({
+        where: { requestId_supplierCompanyId: { requestId, supplierCompanyId } },
+        select: { sellerUserId: true },
+      });
+      if (assignment?.sellerUserId && assignment.sellerUserId !== user.userId) {
+        throw new ForbiddenException('Esta oportunidad esta asignada a otro vendedor de tu empresa.');
       }
     }
 
@@ -119,6 +147,8 @@ export class QuotesService {
             currency: dto.currency ?? existingQuote.currency,
             leadTimeDays: dto.leadTimeDays,
             paymentTerms: dto.paymentTerms,
+            validUntil: dto.validUntil ? new Date(dto.validUntil) : null,
+            minimumOrder: dto.minimumOrder ?? null,
             technicalComment: dto.technicalComment,
             status: QuoteStatus.SUBMITTED,
             // Reemplaza las lineas por las nuevas (si se cotizo por producto).
@@ -164,6 +194,8 @@ export class QuotesService {
         user.userId,
       );
 
+      await this.recordQuoteRevision(updatedQuote);
+
       return updatedQuote;
     }
 
@@ -183,6 +215,8 @@ export class QuotesService {
           currency: dto.currency ?? 'ARS',
           leadTimeDays: dto.leadTimeDays,
           paymentTerms: dto.paymentTerms,
+          validUntil: dto.validUntil ? new Date(dto.validUntil) : null,
+          minimumOrder: dto.minimumOrder ?? null,
           technicalComment: dto.technicalComment,
           status: QuoteStatus.SUBMITTED,
           ...(quoteItemsData ? { items: { create: quoteItemsData } } : {}),
@@ -227,15 +261,56 @@ export class QuotesService {
       user.userId,
     );
 
+    await this.recordQuoteRevision(createdQuote);
+
     return createdQuote;
   }
 
+  /** Guarda un snapshot de la cotizacion como nueva version (negociacion). */
+  private async recordQuoteRevision(quote: {
+    id: string;
+    amount: number | null;
+    currency: string;
+    leadTimeDays: number | null;
+    paymentTerms: string | null;
+    technicalComment: string | null;
+  }) {
+    const version = (await this.prisma.quoteRevision.count({ where: { quoteId: quote.id } })) + 1;
+    await this.prisma.quoteRevision.create({
+      data: {
+        quoteId: quote.id,
+        version,
+        amount: quote.amount,
+        currency: quote.currency,
+        leadTimeDays: quote.leadTimeDays,
+        paymentTerms: quote.paymentTerms,
+        technicalComment: quote.technicalComment,
+      },
+    });
+  }
+
   async findMine(user: AuthUser, activeCompanyId?: string) {
-    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER, activeCompanyId);
+    const workspace = resolveSupplierWorkspace(user, activeCompanyId);
+    const supplierCompanyId = workspace.companyId;
+
+    // Un vendedor (no gerente) solo ve las cotizaciones de las solicitudes que
+    // tiene asignadas; el gerente/admin ve todas las de la empresa. Alinea el
+    // scoping con el de inbox/métricas/clientes.
+    const sellerScope =
+      workspace.isManager
+        ? {}
+        : {
+            request: {
+              assignments: {
+                some: { supplierCompanyId, sellerUserId: user.userId },
+              },
+            },
+          };
 
     return this.prisma.quote.findMany({
       where: {
         supplierCompanyId,
+        ...sellerScope,
       },
       include: {
         request: {
@@ -286,6 +361,7 @@ export class QuotesService {
       include: {
         supplierCompany: true,
         items: { include: { requestItem: true } },
+        revisions: { orderBy: { version: 'asc' } },
         request: {
           include: {
             buyerCompany: true,
