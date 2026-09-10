@@ -108,6 +108,47 @@ export class CreateRequestDto {
   @IsDateString()
   dueDate?: string;
 
+  // Entrega estructurada (antes se aplanaba dentro de `description`).
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  deliveryMode?: string; // asap | exact | range
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(250)
+  deliveryAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  deliveryCity?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  deliveryProvince?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  deliveryContactName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  deliveryPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  deliverySchedule?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  deliveryNotes?: string;
+
   @IsOptional()
   @IsEnum(RequestStatus)
   status?: RequestStatus;

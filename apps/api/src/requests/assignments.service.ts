@@ -52,10 +52,15 @@ export class AssignmentsService {
       status: { in: OPEN_REQUEST_STATUSES },
       OR: [
         { privateRequest: false },
+        // Destinatario explícito por ID (autoritativo).
+        { privateRequest: true, targetSuppliers: { some: { supplierCompanyId } } },
+        // Fallback legacy: solicitudes viejas sin fila de destinatario, por
+        // nombre exacto de la empresa en la lista separada por "|".
         ...(company?.name
           ? [
               {
                 privateRequest: true,
+                targetSuppliers: { none: {} },
                 preferredSupplierName: {
                   contains: company.name,
                   mode: 'insensitive' as const,
@@ -206,15 +211,32 @@ export class AssignmentsService {
     // Nunca materializar una oportunidad para una solicitud que esta empresa no
     // tiene permitido ver: evita enumerar IDs y leer/ensuciar con RFQ privadas
     // ajenas (IDOR). La visibilidad se evalua solo al crear la fila.
-    const company = await this.prisma.company.findUnique({
-      where: { id: workspace.companyId },
-      select: { name: true },
-    });
     const isOpen = (OPEN_REQUEST_STATUSES as readonly RequestStatus[]).includes(request.status);
-    const visible =
-      isOpen &&
-      (!request.privateRequest ||
-        this.matchesPreferredSupplier(request.preferredSupplierName, company?.name ?? null));
+    let visible = isOpen && !request.privateRequest;
+
+    if (isOpen && request.privateRequest) {
+      // Destinatario explícito por ID (autoritativo).
+      const target = await this.prisma.requestTargetSupplier.findUnique({
+        where: {
+          requestId_supplierCompanyId: { requestId, supplierCompanyId: workspace.companyId },
+        },
+        select: { id: true },
+      });
+      if (target) {
+        visible = true;
+      } else {
+        // Fallback legacy: solo si la solicitud no tiene destinatarios por ID,
+        // se admite el match exacto por nombre.
+        const targetCount = await this.prisma.requestTargetSupplier.count({ where: { requestId } });
+        if (targetCount === 0) {
+          const company = await this.prisma.company.findUnique({
+            where: { id: workspace.companyId },
+            select: { name: true },
+          });
+          visible = this.matchesPreferredSupplier(request.preferredSupplierName, company?.name ?? null);
+        }
+      }
+    }
 
     if (!visible) {
       throw new ForbiddenException('No tenes acceso a esta solicitud.');

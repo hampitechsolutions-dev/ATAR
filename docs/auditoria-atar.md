@@ -255,8 +255,14 @@ Corto plazo: **desactivar los botones muertos** (o rutearlos a configuración). 
 
 *Typecheck API y web en 0. No se tocó el modelo de datos (salvo lectura). Sin romper funcionalidades existentes.*
 
-### Pendiente de las demás tandas
-Ver K.
+### Tanda 1 — Integridad de flujo ✅ (hecha)
+- **P1-2 scoping de vendedor**: `quotes/mine` ahora filtra por solicitudes asignadas al vendedor cuando no es gerente (`quotes.service.ts`).
+- **P1-5 dashboard "qué hacer ahora"**: bloque "Requieren tu atención" en el panel del comprador (cotizaciones para adjudicar, pedidos a confirmar, vencimientos a 7 días, solicitudes sin respuesta).
+- **P1-4 cancelación de RFQ**: acción `POST /requests/:id/cancel` (owner, estados abiertos) que marca `CANCELLED`, rechaza cotizaciones vigentes, marca oportunidades `LOST`, emite evento y notifica a quienes cotizaron (enum `REQUEST_CANCELLED`); ítem "Cancelar solicitud" en el menú Acciones.
+- **P1-1 destinatarios por ID**: nuevo modelo `RequestTargetSupplier`; `create`/`update` persisten los IDs elegidos; la visibilidad (inbox, `getAssignmentOrCreate`, `quotes.create`, `findOne`) usa el match por ID como autoritativo y deja el nombre exacto solo como fallback legacy (solicitudes sin destinatarios por ID).
+- **P1-6 entrega estructurada**: campos `deliveryMode/address/city/province/contactName/phone/schedule/notes` en `Request` (DTO + create/update); el wizard los envía y el detalle del comprador los lee (con fallback al texto de `description` para solicitudes viejas).
+
+*Typecheck API y web en 0. Schema aplicado con `db push`; requirió regenerar el cliente Prisma (la API debe reiniciarse para tomar el cliente nuevo).*
 
 ## K. Pendientes / plan de implementación sugerido
 

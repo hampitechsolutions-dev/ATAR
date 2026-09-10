@@ -47,7 +47,20 @@ export class QuotesService {
     }
 
     if (request.privateRequest) {
-      if (!this.matchesPreferredSupplier(request.preferredSupplierName, supplierCompanyName)) {
+      // Destinatario por ID (autoritativo); fallback legacy a nombre exacto solo
+      // si la solicitud no tiene destinatarios por ID cargados.
+      const target = await this.prisma.requestTargetSupplier.findUnique({
+        where: { requestId_supplierCompanyId: { requestId, supplierCompanyId } },
+        select: { id: true },
+      });
+      let allowed = Boolean(target);
+      if (!allowed) {
+        const targetCount = await this.prisma.requestTargetSupplier.count({ where: { requestId } });
+        allowed =
+          targetCount === 0 &&
+          this.matchesPreferredSupplier(request.preferredSupplierName, supplierCompanyName);
+      }
+      if (!allowed) {
         throw new ForbiddenException('El pedido es privado y no esta habilitado para tu empresa.');
       }
     }

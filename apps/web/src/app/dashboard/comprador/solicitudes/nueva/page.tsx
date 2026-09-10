@@ -1049,6 +1049,12 @@ export default function BuyerNewRequestWizardPage() {
       const targetSupplierCompanyIds = selectedProviders.map((provider) => provider.id);
       const privateRequest = targetSupplierCompanyIds.length > 0;
 
+      // Entrega estructurada (además del texto en `description`, para que el
+      // detalle no dependa de re-parsear por regex).
+      const deliveryAddress =
+        [draft.deliveryAddressLine.trim(), draft.deliveryCountry.trim()].filter(Boolean).join(', ') ||
+        undefined;
+
       const payload = {
         title,
         description,
@@ -1058,6 +1064,13 @@ export default function BuyerNewRequestWizardPage() {
         privateRequest,
         preferredSupplierName,
         targetSupplierCompanyIds,
+        deliveryMode: draft.deliveryDateMode,
+        deliveryAddress,
+        deliveryCity: draft.deliveryCity.trim() || undefined,
+        deliveryContactName: draft.deliveryContactName.trim() || undefined,
+        deliveryPhone: draft.deliveryPhone.trim() || undefined,
+        deliverySchedule: draft.deliverySchedule.trim() || undefined,
+        deliveryNotes: draft.deliveryNotes.trim() || undefined,
         items,
       };
 

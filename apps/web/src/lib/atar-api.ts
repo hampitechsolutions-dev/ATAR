@@ -144,6 +144,14 @@ export type RequestRecord = {
   awardedQuoteId?: string | null;
   privateRequest: boolean;
   dueDate: string | null;
+  deliveryMode?: string | null;
+  deliveryAddress?: string | null;
+  deliveryCity?: string | null;
+  deliveryProvince?: string | null;
+  deliveryContactName?: string | null;
+  deliveryPhone?: string | null;
+  deliverySchedule?: string | null;
+  deliveryNotes?: string | null;
   buyerCompanyId: string;
   buyerCompany?: {
     id: string;
@@ -442,6 +450,14 @@ export type CreateRequestPayload = {
   privateRequest?: boolean;
   targetSupplierCompanyIds?: string[];
   dueDate?: string;
+  deliveryMode?: string;
+  deliveryAddress?: string;
+  deliveryCity?: string;
+  deliveryProvince?: string;
+  deliveryContactName?: string;
+  deliveryPhone?: string;
+  deliverySchedule?: string;
+  deliveryNotes?: string;
   status?: Extract<RequestStatus, 'DRAFT' | 'PUBLISHED'>;
   /** Multi-producto: una línea por producto pedido. */
   items?: RequestItemPayload[];
@@ -888,6 +904,11 @@ export const atarApi = {
   deleteRequest(requestId: string, token: string) {
     return request<{ id: string; deleted: boolean }>(`/requests/${requestId}`, {
       method: 'DELETE',
+    }, token);
+  },
+  cancelRequest(requestId: string, token: string) {
+    return request<RequestRecord>(`/requests/${requestId}/cancel`, {
+      method: 'POST',
     }, token);
   },
   getRequestQuotes(requestId: string, token: string) {
