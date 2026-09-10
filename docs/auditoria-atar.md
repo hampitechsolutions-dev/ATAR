@@ -241,15 +241,28 @@ Corto plazo: **desactivar los botones muertos** (o rutearlos a configuración). 
 | Falta documentación | Sin control | Requerir/pedir adjunto estructurado |
 | Comprador no confirma recepción | Orden colgada | Recordatorio + auto-cierre configurable |
 
-## J. Implementación (qué se modificó en este informe)
+## J. Implementación (qué se modificó)
 
-- **Nada de código todavía.** Este documento es el entregable de la fase de auditoría. La implementación se hará por tandas acordadas, empezando por P0 (ver K).
+### Tanda 0 — Seguridad + quick wins ✅ (hecha)
+- **P0-1 IDOR cerrado**: `getAssignmentOrCreate` ahora valida visibilidad (pública, o privada con match **exacto** de nombre, o asignación preexistente) antes de devolver/crear; un proveedor ya no puede leer ni materializar RFQ privadas ajenas (`assignments.service.ts`). De paso endurece el match substring (P2-6).
+- **P0-2 Pedidos con estado real**: la lista deriva el estado de `order.fulfillmentStatus` (no de `request.status`), con barra de progreso por % real, nº de orden honesto ("Sin orden emitida" si no hay), fecha prometida real y sin el "USD a 1040" inventado (`comprador/pedidos/page.tsx`).
+- **P0-3 Adjuntos honestos**: se quitaron las tarjetas de "archivos adjuntos" fabricadas (detalle de solicitud → "Hoja de especificaciones" real; detalle de cotización → removida); el wizard ya no filtra nombres de archivo como specs al proveedor y aclara que los documentos se comparten por el chat.
+- **P1-8 "Verificado" real**: se eliminó el sello hardcodeado siempre-true en pedidos, detalle de cotización y resumen del wizard (la ficha pública sigue usando el `isVerified` real).
+- **P1-9 badge de notificaciones**: contador real de no leídas (`useBuyerNotificationCount`) cableado al header y bottom-nav del comprador; se quitó el "1" fijo.
+- **P1-10 identidad fallback**: se quitaron "Martin Rodriguez"/"Textiles del Sur S.A."/"MR"; ahora usa datos reales de sesión o genéricos neutros.
+- **P1-11 formatCurrency**: helper único `lib/format.ts` que respeta `currency`; aplicado en Pedidos.
+- **P1-3 enums duplicados**: eliminado `common/enums/domain.enums.ts`; `catalog.controller` usa los enums de `@prisma/client`.
+
+*Typecheck API y web en 0. No se tocó el modelo de datos (salvo lectura). Sin romper funcionalidades existentes.*
+
+### Pendiente de las demás tandas
+Ver K.
 
 ## K. Pendientes / plan de implementación sugerido
 
 Orden recomendado (de mayor valor/menor riesgo a mayor alcance):
 
-1. **Tanda 0 — Seguridad/confianza (P0 + quick wins P1)**: fix IDOR (P0-1), pedidos con estado real (P0-2), adjuntos (decidir: implementar storage o quitar la promesa, P0-3), "Verificado" real (P1-8), badge/identidad del comprador (P1-9/P1-10), `formatCurrency` único (P1-11), eliminar `domain.enums.ts` (P1-3). *Bajo riesgo, alto impacto.*
+1. ~~**Tanda 0 — Seguridad/confianza (P0 + quick wins P1)**~~ ✅ **HECHA** (ver J): IDOR, pedidos reales, adjuntos honestos, "Verificado" real, badge/identidad, `formatCurrency` único, borrado de `domain.enums.ts`. *Pendiente de esta tanda: adjuntos con storage real (se optó por quitar la promesa) y completar `formatCurrency` en las copias del lado proveedor.*
 2. **Tanda 1 — Integridad de flujo (P1)**: cancelación de RFQ (P1-4), destinatarios por ID (P1-1), scoping `quotes/mine` (P1-2), dashboard "qué hacer ahora" (P1-5), entrega estructurada + `dueDate` (P1-6).
 3. **Tanda 2 — Valor de marketplace (P1/P2)**: matching + notificación por rubro (P1-13/P1-14), negociación versionada (P1-7), datos fiscales AR mínimos/CUIT (P1-12).
 4. **Tanda 3 — Robustez operativa (P2)**: control de asignación al cotizar (P2-1), entrega parcial (P2-3), condiciones estructuradas (P2-12), modelo de producto (P2-2), rating (P2-19), desduplicar legacy (P2-4).

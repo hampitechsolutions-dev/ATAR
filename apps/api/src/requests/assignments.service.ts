@@ -180,7 +180,7 @@ export class AssignmentsService {
   private async getAssignmentOrCreate(workspace: Workspace, requestId: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
-      select: { id: true },
+      select: { id: true, status: true, privateRequest: true, preferredSupplierName: true },
     });
 
     if (!request) {
@@ -197,8 +197,27 @@ export class AssignmentsService {
       include: this.assignmentInclude(workspace.companyId),
     });
 
+    // Si ya tiene la oportunidad en su bandeja, sigue siendo visible aunque la
+    // solicitud ya se haya cerrado o adjudicado a otro.
     if (existing) {
       return existing;
+    }
+
+    // Nunca materializar una oportunidad para una solicitud que esta empresa no
+    // tiene permitido ver: evita enumerar IDs y leer/ensuciar con RFQ privadas
+    // ajenas (IDOR). La visibilidad se evalua solo al crear la fila.
+    const company = await this.prisma.company.findUnique({
+      where: { id: workspace.companyId },
+      select: { name: true },
+    });
+    const isOpen = (OPEN_REQUEST_STATUSES as readonly RequestStatus[]).includes(request.status);
+    const visible =
+      isOpen &&
+      (!request.privateRequest ||
+        this.matchesPreferredSupplier(request.preferredSupplierName, company?.name ?? null));
+
+    if (!visible) {
+      throw new ForbiddenException('No tenes acceso a esta solicitud.');
     }
 
     return this.prisma.requestAssignment.create({
@@ -209,6 +228,21 @@ export class AssignmentsService {
       },
       include: this.assignmentInclude(workspace.companyId),
     });
+  }
+
+  /** Match EXACTO (no substring) contra la lista de invitados separada por "|". */
+  private matchesPreferredSupplier(
+    preferredSupplierName: string | null | undefined,
+    companyName: string | null,
+  ) {
+    if (!preferredSupplierName || !companyName) {
+      return false;
+    }
+    return preferredSupplierName
+      .split('|')
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean)
+      .includes(companyName.trim().toLowerCase());
   }
 
   private assignmentInclude(supplierCompanyId: string) {

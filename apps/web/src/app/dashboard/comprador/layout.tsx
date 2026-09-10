@@ -7,9 +7,11 @@ import AssistantFab from '@/components/dashboard/assistant-fab';
 import BuyerBottomNav from '@/components/dashboard/buyer-bottom-nav';
 import BuyerMarketplaceHeader from '@/components/dashboard/buyer-marketplace-header';
 import BuyerNewRequestCta from '@/components/dashboard/buyer-new-request-cta';
+import { useBuyerNotificationCount } from '@/lib/dashboard-hooks';
 
 export default function BuyerDashboardLayout({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
+  const notificationCount = useBuyerNotificationCount(session?.accessToken);
   const pathname = usePathname();
   const isBuyerHome = pathname === '/dashboard/comprador';
   const isBuyerPanel = pathname?.startsWith('/dashboard/comprador/panel');
@@ -36,7 +38,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
           isBuyerWizard ? 'bg-[linear-gradient(180deg,#f7f9ff_0%,#eef2fe_100%)]' : 'bg-[#f5f7fb]'
         } ${isBuyerMessages ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'}`}
       >
-        <BuyerMarketplaceHeader session={session} wide={isBuyerQuoteDetail} />
+        <BuyerMarketplaceHeader session={session} wide={isBuyerQuoteDetail} notificationCount={notificationCount} />
         {isFullBleed ? (
           <div className={showBottomNav ? 'pb-[76px] lg:pb-0' : undefined}>{children}</div>
         ) : isBuyerMessages ? (
@@ -54,7 +56,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
             {children}
           </main>
         )}
-        {showBottomNav ? <BuyerBottomNav /> : null}
+        {showBottomNav ? <BuyerBottomNav notificationCount={notificationCount} /> : null}
         {!isBuyerWizard && !isBuyerMessages ? <BuyerNewRequestCta /> : null}
         {!isBuyerWizard ? <AssistantFab /> : null}
       </div>

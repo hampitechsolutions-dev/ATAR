@@ -140,22 +140,6 @@ function parseDescription(description: string) {
   return { rows, notes, attachments };
 }
 
-function getFileTone(fileName: string) {
-  const extension = fileName.split('.').pop()?.toLowerCase() ?? '';
-
-  if (['xlsx', 'xls', 'csv'].includes(extension)) {
-    return { badge: 'bg-emerald-50 text-emerald-600', label: extension.toUpperCase() };
-  }
-  if (['doc', 'docx'].includes(extension)) {
-    return { badge: 'bg-sky-50 text-sky-600', label: extension.toUpperCase() };
-  }
-  if (['png', 'jpg', 'jpeg'].includes(extension)) {
-    return { badge: 'bg-violet-50 text-violet-600', label: extension.toUpperCase() };
-  }
-
-  return { badge: 'bg-rose-50 text-rose-500', label: extension ? extension.toUpperCase() : 'ARCHIVO' };
-}
-
 /* ============================ ICONOS ============================ */
 
 type IconName =
@@ -411,17 +395,18 @@ export default function BuyerQuoteDetailPage() {
             <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <MetricCard icon="users" label="Proveedor">
                 <p className="text-[17px] font-bold text-slate-950">{quote.supplierCompany?.name ?? 'Proveedor'}</p>
-                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
-                  <Icon className="h-3 w-3" name="check" />
-                  Verificado
-                </span>
+                {quote.supplierCompany?.city ? (
+                  <p className="mt-1.5 text-[11px] text-slate-400">
+                    {[quote.supplierCompany.city, quote.supplierCompany.country].filter(Boolean).join(', ')}
+                  </p>
+                ) : null}
               </MetricCard>
 
               <MetricCard icon="money" label="Monto total">
                 <p className="text-[20px] font-bold tracking-[-0.02em] text-slate-950">
                   {formatCurrency(quote.amount, quote.currency)}
                 </p>
-                <p className="mt-1 text-[11px] text-slate-400">{quote.currency} · IVA no discriminado</p>
+                <p className="mt-1 text-[11px] text-slate-400">{quote.currency}</p>
               </MetricCard>
 
               <MetricCard icon="truck" label="Plazo de entrega">
@@ -537,31 +522,6 @@ export default function BuyerQuoteDetailPage() {
                     {quote.technicalComment || 'El proveedor no dejó comentarios técnicos.'}
                   </p>
                 </div>
-
-                {parsed.attachments.length ? (
-                  <div className="mt-4">
-                    <p className="text-[11px] font-semibold text-slate-500">Documentos adjuntos</p>
-                    <div className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {parsed.attachments.map((fileName) => {
-                        const tone = getFileTone(fileName);
-                        return (
-                          <div
-                            key={fileName}
-                            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5"
-                          >
-                            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tone.badge}`}>
-                              <Icon name="file" />
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate text-[12px] font-semibold text-slate-900">{fileName}</p>
-                              <p className="text-[10px] text-slate-400">{tone.label} · informado en la solicitud</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
 
                 <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
                   {quote.status === 'AWARDED' ? (

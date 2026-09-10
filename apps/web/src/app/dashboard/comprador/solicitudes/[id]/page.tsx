@@ -812,10 +812,6 @@ export default function BuyerRequestDetailPage() {
   }, [comparableQuotes, bestPrice, fastest, request?.items]);
   const fulfillmentIndex = request?.order ? FULFILLMENT_STEPS.indexOf(request.order.fulfillmentStatus) : -1;
   const parsedDescription = useMemo(() => parseRequestDescription(request?.description ?? ''), [request?.description]);
-  const attachmentItems = useMemo(
-    () => parsedDescription.filter((item) => item.label.toLowerCase().includes('adjuntar') || item.label.toLowerCase().includes('archivo')),
-    [parsedDescription],
-  );
   const deliveryItems = useMemo(
     () =>
       parsedDescription.filter((item) => {
@@ -883,10 +879,6 @@ export default function BuyerRequestDetailPage() {
   }, [request?.preferredSupplierName, request?.awardedQuote?.supplierCompany, request?.category, sortedQuotes]);
   const requestTimeline = useMemo(() => (request?.events ?? []).slice(0, 4), [request?.events]);
   const requestCreatedLabel = request ? formatDateTime(request.createdAt) : '-';
-  const fileCardName =
-    attachmentItems[0]?.value.split(',').map((item) => item.trim()).filter(Boolean)[0] ||
-    `especificaciones_${(request?.category ?? 'solicitud').toLowerCase().replace(/\s+/g, '_')}.pdf`;
-  const fileCardMeta = bestPrice ? `${formatCurrency(bestPrice.amount)} · Mejor oferta registrada` : 'PDF · Archivo adjunto';
 
   // El comprador puede editar/eliminar mientras la solicitud siga abierta y sin
   // cotizaciones (después el backend igual lo rechaza).
@@ -1583,7 +1575,7 @@ export default function BuyerRequestDetailPage() {
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                     <DetailIcon type="file" />
                   </span>
-                  <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Archivos adjuntos</h2>
+                  <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Especificaciones</h2>
                 </div>
                 <div className="mt-4 rounded-[18px] border border-slate-200 bg-white p-4">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1592,8 +1584,8 @@ export default function BuyerRequestDetailPage() {
                         PDF
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-[14px] font-semibold text-slate-950">{fileCardName}</p>
-                        <p className="mt-1 text-[12px] text-slate-500">{fileCardMeta}</p>
+                        <p className="truncate text-[14px] font-semibold text-slate-950">Hoja de especificaciones</p>
+                        <p className="mt-1 text-[12px] text-slate-500">Se genera con los productos y datos de esta solicitud.</p>
                       </div>
                     </div>
                     <button
