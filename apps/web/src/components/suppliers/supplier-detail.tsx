@@ -12,6 +12,7 @@ import {
   SUPPLIER_ROLE_LABELS,
   type SupplierDirectoryRecord,
 } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { getSupplierCategoryLabel, getSupplierLocation } from '@/lib/provider-directory';
 import { getPrimaryMembershipRole, loadSession } from '@/lib/session';
 
@@ -311,8 +312,8 @@ export default function SupplierDetail({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm">
-        Cargando ficha del proveedor...
+      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 shadow-sm">
+        <LoadingState label="Cargando ficha del proveedor..." />
       </div>
     );
   }

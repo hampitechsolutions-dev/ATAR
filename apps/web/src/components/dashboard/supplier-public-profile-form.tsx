@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useWorkspace } from '@/components/auth/workspace-provider';
+import { Spinner } from '@/components/ui/spinner';
 import {
   atarApi,
   type RequestCatalogCategoryRecord,
@@ -533,7 +534,10 @@ export default function SupplierPublicProfileForm({
         </p>
 
         {categories.length === 0 ? (
-          <p className="mt-3 text-[11px] text-slate-500">Cargando catálogo...</p>
+          <span className="mt-3 flex items-center gap-2 text-[11px] text-slate-500">
+            <Spinner className="h-3.5 w-3.5" />
+            Cargando catálogo...
+          </span>
         ) : (
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
             {categories.map((category) => {

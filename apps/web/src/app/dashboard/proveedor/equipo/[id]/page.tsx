@@ -10,6 +10,7 @@ import {
   type RequestAssignmentRecord,
   type TeamMemberRecord,
 } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import {
   OPPORTUNITY_STATUS_LABEL,
   OPPORTUNITY_STATUS_TONE,
@@ -127,8 +128,8 @@ export default function SupplierTeamMemberPage() {
             {error}
           </div>
         ) : loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center text-sm text-slate-500">
-            Cargando vendedor...
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12">
+            <LoadingState label="Cargando vendedor..." />
           </div>
         ) : !member ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-slate-500">

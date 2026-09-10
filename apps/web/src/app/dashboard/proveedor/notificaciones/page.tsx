@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import PushOptIn from '@/components/notifications/push-opt-in';
 import { atarApi, type NotificationRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import {
   SUPPLIER_COUNTERS_REFRESH_EVENT,
   useSupplierDashboardData,
@@ -149,8 +150,8 @@ export default function SupplierNotificationsPage() {
 
         <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
           {dashboardLoading || loading ? (
-            <div className="rounded-[18px] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
-              Cargando notificaciones...
+            <div className="rounded-[18px] bg-[#fbfbff] px-4 py-8">
+              <LoadingState label="Cargando notificaciones..." />
             </div>
           ) : notifications.length === 0 ? (
             <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">

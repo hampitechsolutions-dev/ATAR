@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { type OrderFulfillmentStatus } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function formatDate(value: string | null) {
@@ -117,8 +118,8 @@ export default function SupplierProductionPage() {
 
         <div className="grid gap-3">
           {loading ? (
-            <div className="rounded-[18px] border border-[#dde5f2] bg-white px-4 py-8 text-sm text-[#8d95be]">
-              Cargando produccion...
+            <div className="rounded-[18px] border border-[#dde5f2] bg-white px-4 py-8">
+              <LoadingState label="Cargando producción..." />
             </div>
           ) : productionRows.length === 0 ? (
             <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-white px-4 py-8 text-sm text-[#8d95be]">

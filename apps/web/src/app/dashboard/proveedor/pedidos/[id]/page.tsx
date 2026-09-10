@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { atarApi, type OrderFulfillmentStatus } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function formatCurrency(value: number | null | undefined) {
@@ -147,8 +148,8 @@ export default function SupplierOrderDetailPage() {
         ) : null}
 
         {loading && !order ? (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
-            Cargando pedido...
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-10">
+            <LoadingState label="Cargando pedido..." />
           </div>
         ) : !order || !request ? (
           <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">

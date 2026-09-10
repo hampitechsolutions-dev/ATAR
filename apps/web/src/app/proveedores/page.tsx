@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { mapSupplierToProviderDirectoryItem, type ProviderDirectoryItem } from '@/lib/provider-directory';
 
 function getMonogram(name: string) {
@@ -383,8 +384,8 @@ export default function ProveedoresPage() {
 
           {/* Grid de tarjetas */}
           {loading ? (
-            <div className="mt-6 rounded-[1.5rem] border border-slate-200 bg-white px-5 py-14 text-center text-sm text-slate-500 shadow-sm">
-              Cargando proveedores...
+            <div className="mt-6 rounded-[1.5rem] border border-slate-200 bg-white px-5 py-14 shadow-sm">
+              <LoadingState label="Cargando proveedores..." />
             </div>
           ) : filteredSuppliers.length === 0 ? (
             <div className="mt-6 rounded-[1.5rem] border border-dashed border-slate-300 bg-white px-5 py-14 text-center text-sm text-slate-500 shadow-sm">
