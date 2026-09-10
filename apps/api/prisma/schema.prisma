@@ -69,6 +69,7 @@ enum RequestEventType {
   ORDER_DISPATCHED
   ORDER_DELIVERED
   REQUEST_COMPLETED
+  REQUEST_CANCELLED
 }
 
 enum OrderFulfillmentStatus {
@@ -133,6 +134,7 @@ enum NotificationType {
   REPRESENTATION_REJECTED
   REPRESENTATION_CANCELLED
   REQUEST_COMPLETED
+  REQUEST_CANCELLED
 }
 
 enum NotificationEmailStatus {
@@ -195,6 +197,7 @@ model Company {
   requests        Request[]       @relation("BuyerRequests")
   quotes          Quote[]         @relation("SupplierQuotes")
   requestAssignments RequestAssignment[] @relation("SupplierAssignments")
+  requestTargets  RequestTargetSupplier[] @relation("RequestTargets")
   representationRequests RepresentationRequest[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -326,6 +329,16 @@ model Request {
   status         RequestStatus @default(DRAFT)
   privateRequest Boolean       @default(false)
   dueDate        DateTime?
+  // Entrega estructurada (antes se aplanaba dentro de `description` y se
+  // re-parseaba por regex). Todo opcional: la UI muestra lo que este cargado.
+  deliveryMode        String?   // asap | exact | range
+  deliveryAddress     String?
+  deliveryCity        String?
+  deliveryProvince    String?
+  deliveryContactName String?
+  deliveryPhone       String?
+  deliverySchedule    String?
+  deliveryNotes       String?
   buyerCompany   Company       @relation("BuyerRequests", fields: [buyerCompanyId], references: [id], onDelete: Cascade)
   awardedQuote   Quote?        @relation("AwardedRequestQuote", fields: [awardedQuoteId], references: [id])
   conversations  Conversation[]
@@ -334,11 +347,28 @@ model Request {
   quotes         Quote[]       @relation("RequestQuotes")
   assignments    RequestAssignment[]
   items          RequestItem[]
+  targetSuppliers RequestTargetSupplier[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   @@index([buyerCompanyId])
   @@index([status])
+}
+
+// Destinatarios de una solicitud privada, por ID de empresa (no por nombre).
+// Reemplaza el match por string de `preferredSupplierName`, que era fragil y
+// permitia fugas entre empresas homonimas. `preferredSupplierName` se conserva
+// para compatibilidad/visualizacion y como fallback de solicitudes viejas.
+model RequestTargetSupplier {
+  id                String   @id @default(cuid())
+  requestId         String
+  supplierCompanyId String
+  request           Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  supplierCompany   Company  @relation("RequestTargets", fields: [supplierCompanyId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+
+  @@unique([requestId, supplierCompanyId])
+  @@index([supplierCompanyId])
 }
 
 // Bandeja comercial de una empresa proveedora sobre una solicitud concreta.

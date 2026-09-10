@@ -13,7 +13,7 @@ import {
   RequestStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
-import { resolveCompanyId, resolveOptionalCompanyId } from '../common/workspace.util';
+import { resolveCompanyId, resolveOptionalCompanyId, resolveSupplierWorkspace } from '../common/workspace.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssignmentsService } from '../requests/assignments.service';
@@ -231,11 +231,27 @@ export class QuotesService {
   }
 
   async findMine(user: AuthUser, activeCompanyId?: string) {
-    const supplierCompanyId = this.getCompanyIdForRole(user, MembershipRole.SUPPLIER, activeCompanyId);
+    const workspace = resolveSupplierWorkspace(user, activeCompanyId);
+    const supplierCompanyId = workspace.companyId;
+
+    // Un vendedor (no gerente) solo ve las cotizaciones de las solicitudes que
+    // tiene asignadas; el gerente/admin ve todas las de la empresa. Alinea el
+    // scoping con el de inbox/métricas/clientes.
+    const sellerScope =
+      workspace.isManager
+        ? {}
+        : {
+            request: {
+              assignments: {
+                some: { supplierCompanyId, sellerUserId: user.userId },
+              },
+            },
+          };
 
     return this.prisma.quote.findMany({
       where: {
         supplierCompanyId,
+        ...sellerScope,
       },
       include: {
         request: {

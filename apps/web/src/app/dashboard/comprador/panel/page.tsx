@@ -4,7 +4,7 @@ import Image from 'next/image';
 import CompanyLogo from '@/components/dashboard/company-logo';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { atarApi, type SupplierDirectoryRecord } from '@/lib/atar-api';
+import { atarApi, type RequestRecord, type SupplierDirectoryRecord } from '@/lib/atar-api';
 import { LoadingState } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 import { mapSupplierToProviderDirectoryItem } from '@/lib/provider-directory';
@@ -149,6 +149,73 @@ export default function DashboardCompradorPanelPage() {
       .slice(0, 5);
   }, [requests]);
 
+  // "Requieren tu atención": responde "¿qué tengo que hacer ahora?" surgiendo las
+  // acciones pendientes reales (comparar/adjudicar, confirmar recepción,
+  // vencimientos, solicitudes sin respuesta). Solo aparece lo que aplica.
+  const attention = useMemo(() => {
+    const items: { key: string; label: string; href: string; tone: 'indigo' | 'emerald' | 'amber' }[] = [];
+    const now = Date.now();
+    const open = (r: RequestRecord) => r.status === 'PUBLISHED' || r.status === 'REVIEWING';
+
+    const toReview = requests.filter((r) => (r._count?.quotes ?? 0) > 0 && open(r) && !r.awardedQuoteId);
+    if (toReview.length) {
+      items.push({
+        key: 'review',
+        label:
+          toReview.length === 1
+            ? '1 solicitud con cotizaciones para comparar y adjudicar'
+            : `${toReview.length} solicitudes con cotizaciones para comparar y adjudicar`,
+        href: '/dashboard/comprador/solicitudes',
+        tone: 'indigo',
+      });
+    }
+
+    const toConfirm = requests.filter((r) => r.order?.fulfillmentStatus === 'DELIVERED' && r.status !== 'COMPLETED');
+    if (toConfirm.length) {
+      items.push({
+        key: 'confirm',
+        label:
+          toConfirm.length === 1
+            ? '1 pedido entregado espera que confirmes la recepción'
+            : `${toConfirm.length} pedidos entregados esperan que confirmes la recepción`,
+        href: '/dashboard/comprador/pedidos',
+        tone: 'emerald',
+      });
+    }
+
+    const dueSoon = requests.filter((r) => {
+      if (!r.dueDate || !open(r) || r.awardedQuoteId) return false;
+      const t = new Date(r.dueDate).getTime();
+      return t >= now && t - now < 7 * 86_400_000;
+    });
+    if (dueSoon.length) {
+      items.push({
+        key: 'due',
+        label:
+          dueSoon.length === 1
+            ? '1 solicitud vence en los próximos 7 días'
+            : `${dueSoon.length} solicitudes vencen en los próximos 7 días`,
+        href: '/dashboard/comprador/solicitudes',
+        tone: 'amber',
+      });
+    }
+
+    const noQuotes = requests.filter((r) => (r._count?.quotes ?? 0) === 0 && open(r));
+    if (noQuotes.length) {
+      items.push({
+        key: 'noquotes',
+        label:
+          noQuotes.length === 1
+            ? '1 solicitud publicada todavía sin cotizaciones'
+            : `${noQuotes.length} solicitudes publicadas todavía sin cotizaciones`,
+        href: '/dashboard/comprador/solicitudes',
+        tone: 'amber',
+      });
+    }
+
+    return items;
+  }, [requests]);
+
   const quickActions = [
     { label: 'Nueva solicitud', href: '/dashboard/comprador/solicitudes/nueva', icon: 'plus' as const },
     { label: 'Mis solicitudes', href: '/dashboard/comprador/solicitudes', icon: 'file' as const },
@@ -228,6 +295,41 @@ export default function DashboardCompradorPanelPage() {
             </div>
           ))}
         </section>
+
+        {attention.length ? (
+          <section className="rounded-[22px] border border-[#c7d2fe] bg-[#eef2ff]/60 p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#4f46ff] text-white">
+                <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+              </span>
+              <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-slate-950">Requieren tu atención</h2>
+            </div>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+              {attention.map((item) => (
+                <li key={item.key}>
+                  <Link
+                    href={item.href}
+                    className="flex items-center justify-between gap-3 rounded-[14px] border border-white bg-white px-4 py-3 text-left shadow-sm transition hover:border-[#c7d2fe]"
+                  >
+                    <span className="flex items-center gap-2.5 text-[13px] font-medium text-slate-800">
+                      <span
+                        className={`h-2 w-2 shrink-0 rounded-full ${
+                          item.tone === 'emerald' ? 'bg-emerald-500' : item.tone === 'amber' ? 'bg-amber-500' : 'bg-[#4f46ff]'
+                        }`}
+                      />
+                      {item.label}
+                    </span>
+                    <svg aria-hidden="true" className="h-4 w-4 shrink-0 text-slate-300" fill="none" viewBox="0 0 24 24">
+                      <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    </svg>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
           {quickActions.map((action) => (
