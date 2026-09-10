@@ -424,6 +424,23 @@ export default function BuyerQuoteDetailPage() {
                 <p className="mt-1 text-[11px] text-slate-400">{statusTone.helper}</p>
               </MetricCard>
 
+              {quote.validUntil ? (
+                <MetricCard icon="calendar" label="Oferta válida hasta">
+                  <p className="text-[18px] font-bold text-slate-950">{formatDate(quote.validUntil)}</p>
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {new Date(quote.validUntil).getTime() >= Date.now() ? 'Vigente' : 'Vencida'}
+                  </p>
+                </MetricCard>
+              ) : null}
+
+              {typeof quote.minimumOrder === 'number' ? (
+                <MetricCard icon="doc" label="Pedido mínimo">
+                  <p className="text-[18px] font-bold text-slate-950">
+                    {new Intl.NumberFormat('es-AR').format(quote.minimumOrder)}
+                  </p>
+                </MetricCard>
+              ) : null}
+
               <MetricCard highlight icon="calendar" label="Cierre de la solicitud">
                 <p className="text-[18px] font-bold text-slate-950">{formatDate(request?.dueDate)}</p>
                 <p className="mt-1 text-[11px] text-slate-400">

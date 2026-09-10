@@ -65,6 +65,21 @@ export class QuotesService {
       }
     }
 
+    // Control de asignación: si la oportunidad está asignada a un vendedor
+    // concreto, solo ese vendedor (o un gerente/admin) puede cotizar o
+    // sobrescribir la cotización de la empresa. Evita que un vendedor pise el
+    // trabajo de otro.
+    const workspace = resolveSupplierWorkspace(user, activeCompanyId);
+    if (!workspace.isManager) {
+      const assignment = await this.prisma.requestAssignment.findUnique({
+        where: { requestId_supplierCompanyId: { requestId, supplierCompanyId } },
+        select: { sellerUserId: true },
+      });
+      if (assignment?.sellerUserId && assignment.sellerUserId !== user.userId) {
+        throw new ForbiddenException('Esta oportunidad esta asignada a otro vendedor de tu empresa.');
+      }
+    }
+
     const existingQuote = await this.prisma.quote.findFirst({
       where: {
         requestId,
@@ -132,6 +147,8 @@ export class QuotesService {
             currency: dto.currency ?? existingQuote.currency,
             leadTimeDays: dto.leadTimeDays,
             paymentTerms: dto.paymentTerms,
+            validUntil: dto.validUntil ? new Date(dto.validUntil) : null,
+            minimumOrder: dto.minimumOrder ?? null,
             technicalComment: dto.technicalComment,
             status: QuoteStatus.SUBMITTED,
             // Reemplaza las lineas por las nuevas (si se cotizo por producto).
@@ -198,6 +215,8 @@ export class QuotesService {
           currency: dto.currency ?? 'ARS',
           leadTimeDays: dto.leadTimeDays,
           paymentTerms: dto.paymentTerms,
+          validUntil: dto.validUntil ? new Date(dto.validUntil) : null,
+          minimumOrder: dto.minimumOrder ?? null,
           technicalComment: dto.technicalComment,
           status: QuoteStatus.SUBMITTED,
           ...(quoteItemsData ? { items: { create: quoteItemsData } } : {}),

@@ -92,10 +92,11 @@ function createDraft(quote?: QuoteRecord | null): QuoteDraft {
     availabilities,
     itemNotes,
     currency: quote?.currency ?? 'ARS',
-    minimumOrder: '',
+    minimumOrder: typeof quote?.minimumOrder === 'number' ? String(quote.minimumOrder) : '',
     leadTimeDays: typeof quote?.leadTimeDays === 'number' ? String(quote.leadTimeDays) : '',
     paymentTerms: quote?.paymentTerms ?? '',
-    validity: '',
+    // El input date espera YYYY-MM-DD.
+    validity: quote?.validUntil ? quote.validUntil.slice(0, 10) : '',
     technicalComment: quote?.technicalComment ?? '',
   };
 }
@@ -210,24 +211,28 @@ export default function SupplierRequestDetailPage() {
     setMessage(null);
 
     try {
-      const notes = [
-        draft.minimumOrder.trim() ? `Cantidad mínima: ${draft.minimumOrder.trim()}` : '',
-        draft.validity.trim() ? `Validez de la oferta: ${draft.validity.trim()}` : '',
-        draft.technicalComment.trim(),
-      ]
-        .filter(Boolean)
-        .join('\n');
-
       const leadTimeDays = draft.leadTimeDays.trim() ? Number(draft.leadTimeDays) : undefined;
       if (leadTimeDays !== undefined && Number.isNaN(leadTimeDays)) {
         throw new ApiError('El plazo debe ser numérico.', 400);
       }
 
+      // Pedido mínimo y validez ahora son campos estructurados (no texto dentro
+      // de las observaciones): así el comprador los compara y pueden vencer.
+      const minimumOrderNum = draft.minimumOrder.trim() ? Number(draft.minimumOrder) : undefined;
+      if (minimumOrderNum !== undefined && !Number.isFinite(minimumOrderNum)) {
+        throw new ApiError('El pedido mínimo debe ser numérico.', 400);
+      }
+      const validUntil = draft.validity.trim()
+        ? new Date(`${draft.validity.trim()}T00:00:00`).toISOString()
+        : undefined;
+
       const payload: CreateQuotePayload = {
         currency: draft.currency.trim() || 'ARS',
         leadTimeDays,
         paymentTerms: draft.paymentTerms.trim() || undefined,
-        technicalComment: notes || undefined,
+        validUntil,
+        minimumOrder: minimumOrderNum,
+        technicalComment: draft.technicalComment.trim() || undefined,
       };
 
       if (requestItems.length > 0) {
@@ -624,11 +629,12 @@ export default function SupplierRequestDetailPage() {
                       placeholder="30 días"
                     />
                   </Field>
-                  <Field label="Validez de la oferta">
-                    <Input
+                  <Field label="Válida hasta (opcional)">
+                    <input
+                      type="date"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none transition focus:border-indigo-400"
                       value={draft.validity}
-                      onChange={(value) => setDraft((current) => ({ ...current, validity: value }))}
-                      placeholder="15 días"
+                      onChange={(event) => setDraft((current) => ({ ...current, validity: event.target.value }))}
                     />
                   </Field>
                   <Field label="Observaciones (opcional)">

@@ -409,6 +409,10 @@ model Quote {
   currency          String      @default("ARS")
   leadTimeDays      Int?
   paymentTerms      String?
+  // Validez de la oferta y pedido mínimo, estructurados (antes iban como texto
+  // libre dentro de technicalComment y no se podían comparar ni vencer).
+  validUntil        DateTime?
+  minimumOrder      Float?
   technicalComment  String?
   status            QuoteStatus @default(DRAFT)
   awardedForRequest Request?    @relation("AwardedRequestQuote")

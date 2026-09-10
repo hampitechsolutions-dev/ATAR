@@ -197,11 +197,15 @@ export default function SupplierCatalogPage() {
                         </span>
                       </div>
 
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400">
+                      <Link
+                        aria-label="Editar rubros y productos"
+                        href="/dashboard/proveedor/configuracion"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:bg-slate-50 hover:text-[#5546ff]"
+                      >
                         <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                           <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                      </span>
+                      </Link>
                     </article>
                   );
                 })
@@ -320,12 +324,12 @@ export default function SupplierCatalogPage() {
                 Resumen comercial por rubro y performance actual.
               </p>
             </div>
-            <button
-              className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-semibold text-[#5546ff]"
-              type="button"
+            <Link
+              className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-semibold text-[#5546ff] transition hover:bg-[#eef0ff]"
+              href="/dashboard/proveedor/configuracion"
             >
-              Nuevo item
-            </button>
+              Gestionar productos
+            </Link>
           </div>
 
           <div className="mt-4 grid gap-3">
@@ -372,12 +376,12 @@ export default function SupplierCatalogPage() {
                     </p>
                   </div>
                   <div className="md:text-right">
-                    <button
-                      className="inline-flex h-9 items-center justify-center rounded-xl border border-[#c3d0e8] px-4 text-sm font-semibold text-[#5546ff]"
-                      type="button"
+                    <Link
+                      className="inline-flex h-9 items-center justify-center rounded-xl border border-[#c3d0e8] px-4 text-sm font-semibold text-[#5546ff] transition hover:bg-[#eef0ff]"
+                      href="/dashboard/proveedor/solicitudes"
                     >
-                      Ver detalle
-                    </button>
+                      Ver solicitudes
+                    </Link>
                   </div>
                 </article>
               ))

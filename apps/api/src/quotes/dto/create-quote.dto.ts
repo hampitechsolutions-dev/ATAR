@@ -3,6 +3,7 @@ import { QuoteItemAvailability } from '@prisma/client';
 import {
   ArrayMaxSize,
   IsArray,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNumber,
@@ -55,6 +56,16 @@ export class CreateQuoteDto {
   @IsString()
   @MaxLength(250)
   paymentTerms?: string;
+
+  // Validez de la oferta (fecha ISO) y pedido mínimo, estructurados.
+  @IsOptional()
+  @IsDateString()
+  validUntil?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minimumOrder?: number;
 
   @IsOptional()
   @IsString()

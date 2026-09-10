@@ -190,6 +190,8 @@ export type QuoteRecord = {
   currency: string;
   leadTimeDays: number | null;
   paymentTerms: string | null;
+  validUntil: string | null;
+  minimumOrder: number | null;
   technicalComment: string | null;
   status: QuoteStatus;
   items?: QuoteItemRecord[];
@@ -480,6 +482,8 @@ export type CreateQuotePayload = {
   currency?: string;
   leadTimeDays?: number;
   paymentTerms?: string;
+  validUntil?: string;
+  minimumOrder?: number;
   technicalComment?: string;
   /** Respuesta por producto: precio unitario, disponibilidad y nota. El total
    *  se calcula en el backend (solo suma lo que tiene precio). */
