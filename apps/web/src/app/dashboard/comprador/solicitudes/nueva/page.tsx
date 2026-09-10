@@ -168,8 +168,11 @@ function getSpecificationLines(
 ) {
   return getProductModules(categories, draft.category).flatMap((module) => {
     if (module.type === 'uploader') {
-      const fileNames = getModuleFiles(draft, module.id);
-      return fileNames.length > 0 ? [`${module.label}: ${fileNames.join(', ')}`] : [];
+      // Los archivos NO se transmiten todavía (solo se captan nombres en el
+      // navegador). No los incluimos en las specs para no prometerle al
+      // proveedor un adjunto que no va a recibir: los documentos se comparten
+      // por el chat de la solicitud.
+      return [];
     }
 
     const value = getModuleValue(draft, module.id).trim();
@@ -1528,6 +1531,9 @@ export default function BuyerNewRequestWizardPage() {
                               )}
                             </div>
                           </label>
+                          <p className="mt-1.5 text-[10px] leading-4 text-slate-400">
+                            Los documentos se comparten con el proveedor por el chat de la solicitud una vez publicada.
+                          </p>
                         </div>
                       ) : null}
                     </div>
@@ -2116,14 +2122,6 @@ export default function BuyerNewRequestWizardPage() {
                                 </span>
                               </div>
                             </div>
-                            <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-600">
-                              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100">
-                                <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
-                                  <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                                </svg>
-                              </span>
-                              Verificado
-                            </span>
                           </div>
                         </div>
                       ))

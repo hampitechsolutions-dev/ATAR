@@ -10,6 +10,7 @@ import {
   type RepresentationInboxRecord,
   type RepresentationRequestRecord,
 } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { isSellerAccount, loadSession, type WebSession } from '@/lib/session';
 
 const EMPTY_INBOX: RepresentationInboxRecord = { incoming: [], outgoing: [], history: [] };
@@ -323,7 +324,7 @@ export default function SellerCompaniesPage() {
           <p className="text-sm font-semibold text-slate-950">Empresas que representas</p>
 
           {loading ? (
-            <p className="mt-3 text-sm text-slate-500">Cargando...</p>
+            <LoadingState label="Cargando..." className="mt-3 justify-start" />
           ) : supplierWorkspaces.length === 0 ? (
             <p className="mt-3 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
               Todavia no representas a ninguna empresa. Pedi sumarte a una desde el buscador de

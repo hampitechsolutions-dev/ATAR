@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
+import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function formatCurrency(value: number) {
@@ -91,8 +92,8 @@ export default function SupplierReviewsPage() {
 
         <div className="mt-3 space-y-3">
           {loading ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
-              Cargando...
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10">
+              <LoadingState label="Cargando..." />
             </div>
           ) : awardedQuotes.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
@@ -180,8 +181,8 @@ export default function SupplierReviewsPage() {
 
         <div className="grid gap-3">
           {loading ? (
-            <div className="rounded-[18px] border border-[#dde5f2] bg-white px-4 py-8 text-sm text-[#8d95be]">
-              Cargando historial comercial...
+            <div className="rounded-[18px] border border-[#dde5f2] bg-white px-4 py-8">
+              <LoadingState label="Cargando historial comercial..." />
             </div>
           ) : awardedQuotes.length === 0 ? (
             <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-white px-4 py-8 text-sm text-[#8d95be]">

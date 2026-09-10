@@ -6,6 +6,7 @@ import { useWorkspace } from '@/components/auth/workspace-provider';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import TeamInvitationsPanel from '@/components/dashboard/team-invitations-panel';
 import { atarApi, type TeamMemberRecord } from '@/lib/atar-api';
+import { LoadingState } from '@/components/ui/spinner';
 import { loadSession, type WebSession } from '@/lib/session';
 
 function formatCurrency(value: number) {
@@ -146,8 +147,8 @@ export default function SupplierTeamPage() {
             {error}
           </div>
         ) : loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center text-sm text-slate-500">
-            Cargando equipo...
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12">
+            <LoadingState label="Cargando equipo..." />
           </div>
         ) : team.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-slate-500">

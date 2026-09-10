@@ -53,7 +53,7 @@ function Icon({
 
 export default function BuyerMarketplaceHeader({
   session,
-  notificationCount = 1,
+  notificationCount = 0,
   wide = false,
 }: {
   session: WebSession | null;
@@ -127,11 +127,12 @@ export default function BuyerMarketplaceHeader({
   }, [isProductsOpen]);
 
   const profileName = useMemo(() => {
-    return `${session?.user.firstName ?? 'Martin'} ${session?.user.lastName ?? 'Rodriguez'}`.trim();
+    const full = `${session?.user.firstName ?? ''} ${session?.user.lastName ?? ''}`.trim();
+    return full || session?.user.email || 'Tu cuenta';
   }, [session]);
 
   const profileCompany = useMemo(() => {
-    return session?.user.memberships?.[0]?.company?.name ?? 'Textiles del Sur S.A.';
+    return session?.user.memberships?.[0]?.company?.name ?? 'Tu empresa';
   }, [session]);
 
   const profileInitials = useMemo(() => {
@@ -141,7 +142,7 @@ export default function BuyerMarketplaceHeader({
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase())
       .join('');
-    return initials || 'MR';
+    return initials || '·';
   }, [profileName]);
 
   const navItems: NavItem[] = useMemo(() => {

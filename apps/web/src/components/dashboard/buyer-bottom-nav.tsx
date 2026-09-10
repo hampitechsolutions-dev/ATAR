@@ -108,7 +108,7 @@ const DRAWER_ITEMS: { label: string; href: string; icon: IconName }[] = [
   { label: 'Configuración', href: '/dashboard/comprador/configuracion', icon: 'gear' },
 ];
 
-export default function BuyerBottomNav({ notificationCount = 1 }: { notificationCount?: number }) {
+export default function BuyerBottomNav({ notificationCount = 0 }: { notificationCount?: number }) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useAuth();

@@ -1,5 +1,5 @@
 import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
-import { CompanyType, MembershipRole, QuoteStatus, RequestStatus } from '../common/enums/domain.enums';
+import { CompanyType, MembershipRole, QuoteStatus, RequestStatus } from '@prisma/client';
 import { CatalogService } from './catalog.service';
 import { UsersService } from '../users/users.service';
 

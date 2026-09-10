@@ -3,28 +3,9 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { LoadingState } from '@/components/ui/spinner';
+import { formatCurrency } from '@/lib/format';
 import { formatRequestCode } from '@/lib/request-code';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
-
-function formatCurrency(value: number | null | undefined) {
-  if (typeof value !== 'number') {
-    return '$0';
-  }
-
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatUsd(value: number | null | undefined) {
-  if (typeof value !== 'number') {
-    return 'USD 0';
-  }
-
-  return `USD ${Math.round(value / 1040)}`;
-}
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -38,48 +19,68 @@ function formatDate(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
-function getOrderMeta(status: string) {
-  if (status === 'NEGOTIATING') {
+type OrderMeta = {
+  label: string;
+  pill: string;
+  progressText: string;
+  pct: number;
+  progressColor: string;
+  iconTone: string;
+};
+
+// Estado REAL del pedido: se deriva del cumplimiento de la orden
+// (order.fulfillmentStatus), no de una suposición sobre request.status.
+function getOrderMeta(request: {
+  status: string;
+  order?: { fulfillmentStatus?: string | null } | null;
+}): OrderMeta {
+  if (request.status === 'CANCELLED') {
     return {
-      label: 'En producción',
-      pill: 'bg-indigo-100 text-indigo-700',
-      progressText: '60% completado',
-      progress: 'w-3/5',
-      progressColor: 'bg-indigo-600',
+      label: 'Cancelada',
+      pill: 'bg-rose-100 text-rose-700',
+      progressText: 'Operación cancelada',
+      pct: 0,
+      progressColor: 'bg-rose-500',
+      iconTone: 'bg-slate-100 text-slate-500',
+    };
+  }
+
+  const fulfillment = request.order?.fulfillmentStatus ?? null;
+
+  // Adjudicada o en negociación pero sin orden emitida todavía.
+  if (!fulfillment) {
+    const negotiating = request.status === 'NEGOTIATING';
+    return {
+      label: negotiating ? 'En negociación' : 'Adjudicada',
+      pill: negotiating ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700',
+      progressText: 'Pendiente de emitir la orden',
+      pct: 10,
+      progressColor: negotiating ? 'bg-amber-500' : 'bg-indigo-600',
       iconTone: 'bg-amber-50 text-amber-600',
     };
   }
 
-  if (status === 'AWARDED') {
-    return {
-      label: 'En camino',
-      pill: 'bg-violet-100 text-violet-700',
-      progressText: 'En tránsito',
-      progress: 'w-4/5',
-      progressColor: 'bg-violet-600',
-      iconTone: 'bg-violet-50 text-violet-600',
-    };
-  }
-
-  if (status === 'ORDER_ISSUED') {
-    return {
-      label: 'Entregado',
-      pill: 'bg-emerald-100 text-emerald-700',
-      progressText: 'Completado',
-      progress: 'w-full',
-      progressColor: 'bg-emerald-500',
-      iconTone: 'bg-emerald-50 text-emerald-600',
-    };
-  }
-
-  return {
-    label: 'Cancelado',
-    pill: 'bg-rose-100 text-rose-700',
-    progressText: 'Cancelado por el proveedor',
-    progress: 'w-1/4',
-    progressColor: 'bg-rose-500',
-    iconTone: 'bg-slate-100 text-slate-500',
+  const byFulfillment: Record<string, OrderMeta> = {
+    ISSUED: { label: 'Orden emitida', pill: 'bg-indigo-100 text-indigo-700', progressText: 'Esperando confirmación del proveedor', pct: 20, progressColor: 'bg-indigo-600', iconTone: 'bg-indigo-50 text-indigo-600' },
+    CONFIRMED: { label: 'Confirmada', pill: 'bg-violet-100 text-violet-700', progressText: 'Confirmada por el proveedor', pct: 40, progressColor: 'bg-violet-600', iconTone: 'bg-violet-50 text-violet-600' },
+    IN_PRODUCTION: { label: 'En producción', pill: 'bg-amber-100 text-amber-700', progressText: 'En producción', pct: 60, progressColor: 'bg-amber-500', iconTone: 'bg-amber-50 text-amber-600' },
+    DISPATCHED: { label: 'Despachado', pill: 'bg-sky-100 text-sky-700', progressText: 'En tránsito', pct: 80, progressColor: 'bg-sky-500', iconTone: 'bg-sky-50 text-sky-600' },
+    DELIVERED:
+      request.status === 'COMPLETED'
+        ? { label: 'Entregado', pill: 'bg-emerald-100 text-emerald-700', progressText: 'Recepción confirmada', pct: 100, progressColor: 'bg-emerald-500', iconTone: 'bg-emerald-50 text-emerald-600' }
+        : { label: 'Entregado', pill: 'bg-emerald-100 text-emerald-700', progressText: 'Confirmá la recepción', pct: 90, progressColor: 'bg-emerald-500', iconTone: 'bg-emerald-50 text-emerald-600' },
   };
+
+  return (
+    byFulfillment[fulfillment] ?? {
+      label: 'En curso',
+      pill: 'bg-slate-100 text-slate-600',
+      progressText: 'Seguimiento del pedido',
+      pct: 30,
+      progressColor: 'bg-slate-500',
+      iconTone: 'bg-slate-100 text-slate-500',
+    }
+  );
 }
 
 function OrderIcon() {
@@ -289,12 +290,12 @@ export default function BuyerOrdersPage() {
           ) : visibleOrders.length === 0 ? (
             <div className="px-6 py-10 text-sm text-slate-500">No hay pedidos para mostrar.</div>
           ) : (
-            visibleOrders.map((request, index) => {
+            visibleOrders.map((request) => {
               const providerName = request.awardedQuote?.supplierCompany?.name ?? 'Proveedor asignado';
-              const orderMeta = getOrderMeta(request.status);
-              const orderNumber = request.order?.orderNumber ?? `Pedido #${5678 - ((safePage - 1) * pageSize + index)}`;
+              const orderMeta = getOrderMeta(request);
+              const orderNumber = request.order?.orderNumber ?? 'Sin orden emitida';
               const requestCode = formatRequestCode(request.id);
-              const deliveredLabel = request.status === 'ORDER_ISSUED' ? 'Entregado' : `${Math.max(3, index + 3)} días hábiles`;
+              const promised = request.order?.promisedDate ?? null;
 
               return (
                 <div key={request.id} className="px-4 py-4 sm:px-6">
@@ -329,10 +330,7 @@ export default function BuyerOrdersPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-slate-950">{providerName}</p>
-                        <p className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-600">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          Verificado
-                        </p>
+                        <p className="mt-1 truncate text-[11px] text-slate-500">Proveedor adjudicado</p>
                       </div>
                     </div>
 
@@ -342,18 +340,18 @@ export default function BuyerOrdersPage() {
                       </span>
                       <p className="mt-2 text-[11px] text-slate-500">{orderMeta.progressText}</p>
                       <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100">
-                        <div className={`h-1.5 rounded-full ${orderMeta.progress} ${orderMeta.progressColor}`} />
+                        <div className={`h-1.5 rounded-full ${orderMeta.progressColor}`} style={{ width: `${orderMeta.pct}%` }} />
                       </div>
                     </div>
 
                     <div className="text-xs text-slate-600">
-                      <p className="font-semibold text-slate-900">{formatDate(request.order?.promisedDate ?? request.dueDate ?? request.updatedAt)}</p>
-                      <p className="mt-1 text-slate-500">{deliveredLabel}</p>
+                      <p className="font-semibold text-slate-900">{promised ? formatDate(promised) : 'A convenir'}</p>
+                      <p className="mt-1 text-slate-500">{promised ? 'Entrega prometida' : 'Sin fecha prometida'}</p>
                     </div>
 
                     <div className="text-xs text-slate-600">
-                      <p className="font-semibold text-slate-900">{formatCurrency(request.awardedQuote?.amount)}</p>
-                      <p className="mt-1 text-slate-500">{formatUsd(request.awardedQuote?.amount)}</p>
+                      <p className="font-semibold text-slate-900">{formatCurrency(request.awardedQuote?.amount, request.awardedQuote?.currency)}</p>
+                      <p className="mt-1 text-slate-500">{request.awardedQuote?.currency ?? 'ARS'}</p>
                     </div>
 
                     <div className="flex justify-start gap-2 lg:justify-end">

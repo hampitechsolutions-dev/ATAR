@@ -369,3 +369,38 @@ export function useSupplierWorkspaceCounters({
 function sumUnreadMessages(conversations: ConversationRecord[]) {
   return conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
 }
+
+/**
+ * Contador real de notificaciones sin leer del comprador (antes el badge
+ * mostraba un "1" fijo). Se refresca al montar y cuando otra parte de la app
+ * dispara el evento de refresco de contadores.
+ */
+export function useBuyerNotificationCount(accessToken?: string | null) {
+  const [count, setCount] = useState(0);
+
+  const refresh = useCallback(async () => {
+    if (!accessToken) {
+      return;
+    }
+    try {
+      const res = await atarApi.getNotifications({ limit: 1 }, accessToken);
+      setCount(res.unreadCount ?? 0);
+    } catch {
+      // Silencioso: el badge simplemente no se actualiza.
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    function handleRefresh() {
+      void refresh();
+    }
+    window.addEventListener(SUPPLIER_COUNTERS_REFRESH_EVENT, handleRefresh);
+    return () => window.removeEventListener(SUPPLIER_COUNTERS_REFRESH_EVENT, handleRefresh);
+  }, [refresh]);
+
+  return count;
+}
