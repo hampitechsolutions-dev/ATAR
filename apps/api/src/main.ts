@@ -36,6 +36,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Company-Id'],
   });
   app.setGlobalPrefix('api');
+  // Cierra conexiones de Prisma al apagar/recargar (libera el pooler de la DB).
+  app.enableShutdownHooks();
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
