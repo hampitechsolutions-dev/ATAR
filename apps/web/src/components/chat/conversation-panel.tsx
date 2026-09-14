@@ -585,10 +585,10 @@ export default function ConversationPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-2.5 sm:px-5 sm:py-4">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <CompanyLogo
-            className="h-11 w-11"
+            className="h-9 w-9 sm:h-11 sm:w-11"
             logoUrl={counterpartLogo}
             name={counterpartLabel ?? title}
             rounded="rounded-2xl"
@@ -619,8 +619,8 @@ export default function ConversationPanel({
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)] px-4 py-4 sm:px-5">
-        <div className="mx-auto w-full max-w-[880px] space-y-4">
+      <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto bg-white px-3 py-3 sm:bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)] sm:px-5 sm:py-4">
+        <div className="mx-auto w-full max-w-[880px] space-y-1.5 sm:space-y-4">
           {loading ? (
             <LoadingState label="Cargando conversación..." className="py-8" />
           ) : !conversation || (conversation.messages?.length ?? 0) === 0 ? (
@@ -639,7 +639,7 @@ export default function ConversationPanel({
                 <div key={item.id} className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                   {!isOwn ? (
                     <CompanyLogo
-                      className="h-8 w-8"
+                      className="hidden h-8 w-8 sm:block"
                       logoUrl={counterpartLogo}
                       name={item.senderCompanyName ?? counterpartLabel ?? title}
                       textClassName="text-[10px]"
@@ -647,10 +647,10 @@ export default function ConversationPanel({
                     />
                   ) : null}
                   <div
-                    className={`max-w-[80%] rounded-[1.35rem] px-4 py-2.5 text-sm ${
+                    className={`max-w-[82%] rounded-[1.35rem] px-4 py-2 text-sm sm:max-w-[80%] sm:py-2.5 ${
                       isOwn
-                        ? 'rounded-br-md bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-[0_10px_26px_rgba(79,70,229,0.22)]'
-                        : 'rounded-bl-md border border-slate-200 bg-white text-slate-700 shadow-[0_6px_18px_rgba(15,23,42,0.05)]'
+                        ? 'rounded-br-md bg-indigo-600 text-white sm:bg-gradient-to-br sm:from-indigo-600 sm:to-indigo-500 sm:shadow-[0_10px_26px_rgba(79,70,229,0.22)]'
+                        : 'rounded-bl-md bg-slate-100 text-slate-800 sm:border sm:border-slate-200 sm:bg-white sm:text-slate-700 sm:shadow-[0_6px_18px_rgba(15,23,42,0.05)]'
                     }`}
                   >
                     {item.body ? <p className="whitespace-pre-wrap leading-6">{item.body}</p> : null}
@@ -686,8 +686,8 @@ export default function ConversationPanel({
       <div className="border-t border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
         {error ? <div className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}
         <div className="mx-auto w-full max-w-[880px]">
-          <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
-            <label className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50">
+          <div className="flex items-end gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 sm:rounded-2xl sm:bg-white sm:py-2 sm:shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <label className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 sm:rounded-xl sm:border sm:border-slate-200">
               <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                 <path d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l8.49-8.49a4 4 0 115.66 5.66L9.41 17.4a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
               </svg>
@@ -710,7 +710,7 @@ export default function ConversationPanel({
             />
             <button
               aria-label="Enviar"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-[0_10px_26px_rgba(79,70,229,0.25)] transition hover:bg-indigo-500 disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white transition hover:bg-indigo-500 disabled:opacity-40 sm:rounded-xl sm:shadow-[0_10px_26px_rgba(79,70,229,0.25)]"
               disabled={sending || !canSend}
               onClick={() => void handleSend()}
               type="button"

@@ -282,23 +282,57 @@ function parseDeliveryFromDescription(description: string): Partial<RequestDraft
   return out;
 }
 
+// Reconstruye specSelections a partir del texto "Label: value" que guardamos
+// en specifications, matcheando contra las etiquetas de los modulos del
+// catalogo de esa categoria. Asi, al editar un producto, los campos aparecen
+// completos (antes quedaban en blanco).
+function specSelectionsFromText(
+  categories: RequestCatalogCategoryRecord[],
+  category: string,
+  specsText: string,
+): Record<string, string> {
+  const modules = getProductModules(categories, category);
+  if (modules.length === 0 || !specsText.trim()) {
+    return {};
+  }
+  const byLabel = new Map(modules.map((m) => [m.label.trim().toLowerCase(), m]));
+  const out: Record<string, string> = {};
+  for (const raw of specsText.split('\n')) {
+    const idx = raw.indexOf(':');
+    if (idx === -1) continue;
+    const label = raw.slice(0, idx).trim().toLowerCase();
+    const value = raw.slice(idx + 1).trim();
+    const mod = byLabel.get(label);
+    if (mod && mod.type !== 'uploader' && value) {
+      out[mod.id] = value;
+    }
+  }
+  return out;
+}
+
 // Convierte las lineas (RequestItem) de una solicitud en ProductLine[] para
-// pre-cargar el wizard al editar. Preserva las specs guardadas como texto.
-function productLinesFromRequest(request: RequestRecord): ProductLine[] {
-  return (request.items ?? []).map((item, index) => ({
-    id: `edit-${item.id ?? index}`,
-    category: item.category ?? request.category ?? '',
-    description: '',
-    quantity: item.quantity != null ? String(item.quantity) : '',
-    unit: item.unit ?? '',
-    material: '',
-    capacityOption: '',
-    handleType: '',
-    printType: '',
-    specSelections: {},
-    uploadedFiles: {},
-    specifications: item.specifications ?? '',
-  }));
+// pre-cargar el wizard al editar. Reconstruye las specs estructuradas.
+function productLinesFromRequest(
+  request: RequestRecord,
+  categories: RequestCatalogCategoryRecord[] = [],
+): ProductLine[] {
+  return (request.items ?? []).map((item, index) => {
+    const category = item.category ?? request.category ?? '';
+    return {
+      id: `edit-${item.id ?? index}`,
+      category,
+      description: '',
+      quantity: item.quantity != null ? String(item.quantity) : '',
+      unit: item.unit ?? '',
+      material: '',
+      capacityOption: '',
+      handleType: '',
+      printType: '',
+      specSelections: specSelectionsFromText(categories, category, item.specifications ?? ''),
+      uploadedFiles: {},
+      specifications: item.specifications ?? '',
+    };
+  });
 }
 
 function loadDraft(): RequestDraft {
@@ -503,6 +537,9 @@ export default function BuyerNewRequestWizardPage() {
   }, [searchParams]);
 
   const [step, setStep] = useState<StepKey>(initialStep);
+  // Cuando se edita un producto puntual desde el Resumen, al guardar se vuelve
+  // directo al Resumen (no se re-recorren los pasos de entrega/proveedores).
+  const [editReturnToResumen, setEditReturnToResumen] = useState(false);
   const [draft, setDraft] = useState<RequestDraft>(() => loadDraft());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -568,7 +605,10 @@ export default function BuyerNewRequestWizardPage() {
           ...current,
           ...blankProductFields(),
           title: req.title ?? '',
-          products: productLinesFromRequest(req),
+          products: productLinesFromRequest(
+            req,
+            requestCategories.length ? requestCategories : FALLBACK_REQUEST_CATEGORIES,
+          ),
           ...parseDeliveryFromDescription(req.description ?? ''),
         }));
         setPrefillProviderNames(
@@ -919,6 +959,7 @@ export default function BuyerNewRequestWizardPage() {
       const kept = current.category.trim() ? [...others, snapshotProduct(current)] : others;
       return { ...withProductLine(current, line), products: kept };
     });
+    setEditReturnToResumen(true);
     setStep(2);
   }
 
@@ -927,6 +968,18 @@ export default function BuyerNewRequestWizardPage() {
       ...current,
       products: current.products.filter((product) => product.id !== id),
     }));
+  }
+
+  // Quita el producto que está en edición (el "actual") promoviendo a otro de
+  // la lista como actual. Solo tiene sentido si hay más de un producto.
+  function removeCurrentProduct() {
+    setDraft((current) => {
+      if (current.products.length === 0) {
+        return current;
+      }
+      const [first, ...rest] = current.products;
+      return { ...withProductLine(current, first), products: rest };
+    });
   }
 
   function goNext() {
@@ -945,6 +998,13 @@ export default function BuyerNewRequestWizardPage() {
 
       if (missingModule) {
         setError(`Completá "${missingModule.label}" para continuar.`);
+        return;
+      }
+      // Si estábamos editando un producto puntual desde el Resumen, al terminar
+      // de editar volvemos directo al Resumen (no re-recorremos entrega/proveedores).
+      if (editReturnToResumen) {
+        setEditReturnToResumen(false);
+        setStep(5);
         return;
       }
     }
@@ -1958,15 +2018,22 @@ export default function BuyerNewRequestWizardPage() {
                             <div className="flex shrink-0 items-center gap-3">
                               <button
                                 className="text-[12px] font-semibold text-[#4f46ff] hover:underline"
-                                onClick={() => (line.id === 'current' ? setStep(2) : editProduct(line.id))}
+                                onClick={() => {
+                                  if (line.id === 'current') {
+                                    setEditReturnToResumen(true);
+                                    setStep(2);
+                                  } else {
+                                    editProduct(line.id);
+                                  }
+                                }}
                                 type="button"
                               >
                                 Editar
                               </button>
-                              {allProductLines.length > 1 && line.id !== 'current' ? (
+                              {allProductLines.length > 1 ? (
                                 <button
                                   className="text-[12px] font-semibold text-rose-500 hover:underline"
-                                  onClick={() => removeProduct(line.id)}
+                                  onClick={() => (line.id === 'current' ? removeCurrentProduct() : removeProduct(line.id))}
                                   type="button"
                                 >
                                   Quitar
@@ -2217,7 +2284,7 @@ export default function BuyerNewRequestWizardPage() {
                   onClick={goNext}
                   type="button"
                 >
-                  Continuar →
+                  {step === 2 && editReturnToResumen ? 'Guardar y volver al resumen' : 'Continuar →'}
                 </button>
               ) : step === 5 ? (
                 <button
@@ -2257,7 +2324,7 @@ export default function BuyerNewRequestWizardPage() {
               onClick={goNext}
               type="button"
             >
-              Continuar
+              {step === 2 && editReturnToResumen ? 'Guardar y volver' : 'Continuar'}
             </button>
           ) : (
             <button

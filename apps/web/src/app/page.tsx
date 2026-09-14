@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import LandingAuthRedirect from '@/components/layout/landing-auth-redirect';
 
 /* ============================ ICONOS ============================ */
 
@@ -158,6 +159,7 @@ const HERO_STATS: { icon: IconName; v: string; l: string }[] = [
 export default function Home() {
   return (
     <main className="bg-white text-slate-950">
+      <LandingAuthRedirect />
       {/* ==================== HERO ==================== */}
       <section className="relative isolate flex min-h-[calc(100vh-72px)] items-center overflow-hidden bg-[#070b17] text-white">
         <Image alt="" className="object-cover object-center" fill priority sizes="100vw" src="/hero-industria.png" />
