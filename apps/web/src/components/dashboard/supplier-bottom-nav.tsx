@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
+import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
 
 type IconName =
   | 'home'
@@ -225,6 +226,11 @@ export default function SupplierBottomNav() {
               >
                 <Icon name="close" className="h-4 w-4" />
               </button>
+            </div>
+
+            {/* Perfil híbrido: alternar Compro/Vendo desde mobile (null si no es híbrido). */}
+            <div className="px-4 pt-3 empty:hidden">
+              <WorkspaceSwitcher className="w-full justify-center" />
             </div>
 
             <div className="p-2">
