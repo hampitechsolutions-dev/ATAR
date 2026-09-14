@@ -46,6 +46,8 @@ export default function SupplierMessagesPage() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Chat estilo Instagram en mobile: lista -> tocar -> conversación a pantalla completa.
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
   useEffect(() => {
     if (!session?.accessToken) {
@@ -111,6 +113,7 @@ export default function SupplierMessagesPage() {
     const target = new URLSearchParams(window.location.search).get('c');
     if (target) {
       setSelectedId(target);
+      setMobileChatOpen(true);
     }
   }, []);
 
@@ -151,7 +154,7 @@ export default function SupplierMessagesPage() {
         ) : null}
 
         <div className="grid min-h-0 flex-1 gap-0 overflow-hidden border-t border-slate-200 bg-white xl:grid-cols-[340px_minmax(0,1fr)]">
-          <section className="flex min-h-0 flex-col border-b border-slate-200 bg-white p-4 xl:border-b-0 xl:border-r">
+          <section className={`min-h-0 flex-col border-b border-slate-200 bg-white p-4 xl:flex xl:border-b-0 xl:border-r ${mobileChatOpen ? 'hidden' : 'flex'}`}>
             <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
               <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                 <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -204,7 +207,10 @@ export default function SupplierMessagesPage() {
                       className={`flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
                         isActive ? 'border-indigo-200 bg-indigo-50/60 shadow-sm' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
                       }`}
-                      onClick={() => setSelectedId(conversation.id)}
+                      onClick={() => {
+                        setSelectedId(conversation.id);
+                        setMobileChatOpen(true);
+                      }}
                       type="button"
                     >
                       <CompanyLogo
@@ -242,11 +248,11 @@ export default function SupplierMessagesPage() {
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-col overflow-hidden bg-white">
+          <section className={`min-h-0 flex-col overflow-hidden bg-white xl:flex ${mobileChatOpen ? 'flex' : 'hidden'}`}>
             {selectedId ? (
               <>
                 {detailLink ? (
-                  <div className="flex shrink-0 items-center justify-end border-b border-slate-200 bg-white px-4 py-2">
+                  <div className="hidden shrink-0 items-center justify-end border-b border-slate-200 bg-white px-4 py-2 xl:flex">
                     <Link
                       className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
                       href={detailLink.href}
@@ -265,6 +271,7 @@ export default function SupplierMessagesPage() {
                     mode="existing"
                     session={session}
                     title={activeConversation?.contextTitle ?? 'Conversación'}
+                    onBack={() => setMobileChatOpen(false)}
                   />
                 </div>
               </>
