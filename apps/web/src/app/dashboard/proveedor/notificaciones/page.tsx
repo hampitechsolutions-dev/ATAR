@@ -122,7 +122,7 @@ export default function SupplierNotificationsPage() {
               <div className="rounded-full bg-[#f4f6ff] px-4 py-2 text-sm font-semibold text-[#33407a]">
                 {summary.total} recientes
               </div>
-              <div className="rounded-full bg-[#ede9ff] px-4 py-2 text-sm font-semibold text-[#5b4bff]">
+              <div className="rounded-full bg-[#ede9ff] px-4 py-2 text-sm font-semibold text-[#6440e8]">
                 {summary.unread} sin leer
               </div>
               <div className="rounded-full bg-[#ecfdf3] px-4 py-2 text-sm font-semibold text-[#0f9f6e]">
@@ -168,7 +168,7 @@ export default function SupplierNotificationsPage() {
                       : 'border-[#dcd7ff] bg-[#f5f3ff]'
                   }`}
                 >
-                  <div className="mt-1 h-3 w-3 rounded-full bg-[#5b4bff]" />
+                  <div className="mt-1 h-3 w-3 rounded-full bg-[#6440e8]" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-[#33407a]">{notification.title}</p>
@@ -185,7 +185,7 @@ export default function SupplierNotificationsPage() {
                           Leida
                         </span>
                       ) : (
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5b4bff]">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6440e8]">
                           Nueva
                         </span>
                       )}

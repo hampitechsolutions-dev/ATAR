@@ -143,7 +143,7 @@ export default function SupplierProductionPage() {
                   <div>
                     <div className="h-2 overflow-hidden rounded-full bg-[#edf0fb]">
                       <div
-                        className="h-full rounded-full bg-[#5b4bff]"
+                        className="h-full rounded-full bg-[#6440e8]"
                         style={{ width: `${row.progress}%` }}
                       />
                     </div>

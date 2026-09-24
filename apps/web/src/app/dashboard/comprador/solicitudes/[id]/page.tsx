@@ -1034,7 +1034,7 @@ export default function BuyerRequestDetailPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-950">
-      <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-6 xl:px-8">
+      <div className="flex w-full flex-col gap-5 py-2 sm:py-3">
         <Link
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
           href="/dashboard/comprador/solicitudes"

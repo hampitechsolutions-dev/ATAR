@@ -1,749 +1,622 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
-import { type QuoteRecord } from '@/lib/atar-api';
+import { type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
 import { LoadingState } from '@/components/ui/spinner';
 import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
+import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 
-type QuoteTab = 'all' | 'draft' | 'submitted' | 'awarded' | 'rejected' | 'expired';
+type QuoteTab = 'all' | 'pending' | 'submitted' | 'awarded' | 'expired';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 5;
+const HOUR = 3600 * 1000;
+const DAY = 24 * HOUR;
 
-function formatCurrency(value: number | null | undefined) {
+/**
+ * Una fila de la tabla. "Por responder" junta lo que todavía espera acción del
+ * vendedor: solicitudes abiertas sin cotizar y cotizaciones en borrador.
+ */
+type Row = {
+  id: string;
+  request: RequestRecord | null;
+  quote: QuoteRecord | null;
+  title: string;
+  buyer: string;
+  amount: number | null;
+  currency: string;
+  updatedAt: string;
+  /** Vencimiento relevante: cierre de la solicitud o validez de la oferta. */
+  deadline: string | null;
+  kind: 'pending' | 'submitted' | 'awarded' | 'rejected' | 'withdrawn';
+  expired: boolean;
+};
+
+/* Formatos ----------------------------------------------------------------- */
+
+function formatAmount(value: number | null, currency: string) {
   if (typeof value !== 'number') {
-    return 'A consultar';
+    return null;
   }
-
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(value);
+  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: currency || 'ARS', maximumFractionDigits: 0 }).format(value);
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+/** "Hoy, 10:24", "Ayer, 16:03" o "19/09/2026". */
+function formatDayTime(value: string) {
+  const date = new Date(value);
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diff = Math.round((startOf(new Date()) - startOf(date)) / DAY);
+  const time = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
+  if (diff === 0) return `Hoy, ${time}`;
+  if (diff === 1) return `Ayer, ${time}`;
+  return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
-function formatDate(value: string | null) {
-  if (!value) {
-    return '-';
-  }
-
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(value));
+/** "Vence en 23 h" / "Vence en 2 días" / "Venció". */
+function formatDue(deadline: string | null, nowMs: number) {
+  if (!deadline) return null;
+  const diff = new Date(deadline).getTime() - nowMs;
+  if (Number.isNaN(diff)) return null;
+  if (diff <= 0) return 'Venció';
+  if (diff < DAY) return `Vence en ${Math.max(1, Math.round(diff / HOUR))} h`;
+  const days = Math.round(diff / DAY);
+  return `Vence en ${days} ${days === 1 ? 'día' : 'días'}`;
 }
 
-function truncateText(value: string, maxLength: number) {
-  if (value.length <= maxLength) {
-    return value;
-  }
-
-  return `${value.slice(0, maxLength - 1)}...`;
-}
-
-function getStatusMeta(status: QuoteRecord['status']) {
-  if (status === 'AWARDED') {
-    return {
-      label: 'Aceptada',
-      className: 'bg-emerald-50 text-emerald-600',
-    };
-  }
-
-  if (status === 'SUBMITTED') {
-    return {
-      label: 'Enviada',
-      className: 'bg-emerald-50 text-emerald-600',
-    };
-  }
-
-  if (status === 'REJECTED') {
-    return {
-      label: 'Rechazada',
-      className: 'bg-rose-50 text-rose-600',
-    };
-  }
-
-  if (status === 'DRAFT') {
-    return {
-      label: 'Borrador',
-      className: 'bg-slate-100 text-slate-500',
-    };
-  }
-
-  return {
-    label: 'Vencida',
-    className: 'bg-amber-50 text-amber-600',
-  };
-}
-
-function getCompanyShort(name: string) {
-  const words = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase())
-    .join('');
-
-  return words || 'AT';
-}
-
-function isExpired(quote: QuoteRecord) {
-  const dueDate = quote.request?.dueDate;
-  if (!dueDate) {
-    return false;
-  }
-
-  return new Date(dueDate).getTime() < Date.now() && quote.status !== 'AWARDED';
-}
-
-function SearchIcon() {
+function initials(name: string) {
   return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase())
+      .join('') || 'AT'
+  );
+}
+
+function requestImage(request: RequestRecord | null) {
+  const labels = [request?.items?.[0]?.category, request?.category].filter(Boolean);
+  for (const label of labels) {
+    const match = FALLBACK_REQUEST_CATEGORIES.find((category) => category.label === label);
+    if (match?.imageSrc) return match.imageSrc;
+  }
+  return '/logoatar.png';
+}
+
+function requestQuantity(request: RequestRecord | null) {
+  if (!request) return null;
+  const item = request.items?.[0];
+  const quantity = item?.quantity ?? request.quantityRequested ?? null;
+  if (typeof quantity === 'number') {
+    return `${quantity.toLocaleString('es-AR')} ${item?.unit ?? 'unidades'}`;
+  }
+  const line = (request.description ?? '').split('\n').find((raw) => /^cantidad/i.test(raw.trim()));
+  const value = line?.split(':')[1]?.trim();
+  if (!value) return null;
+  return /^\d+$/.test(value) ? `${Number(value).toLocaleString('es-AR')} unidades` : value;
+}
+
+const STATUS_META: Record<Row['kind'] | 'expired', { label: string; tone: string; dot: string }> = {
+  pending: { label: 'Por responder', tone: 'bg-rose-50 text-rose-600', dot: 'bg-rose-500' },
+  submitted: { label: 'Enviada', tone: 'bg-indigo-50 text-indigo-600', dot: 'bg-indigo-500' },
+  awarded: { label: 'Aceptada', tone: 'bg-emerald-50 text-emerald-600', dot: 'bg-emerald-500' },
+  rejected: { label: 'Rechazada', tone: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
+  withdrawn: { label: 'Retirada', tone: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
+  expired: { label: 'Vencida', tone: 'bg-amber-50 text-amber-600', dot: 'bg-amber-500' },
+};
+
+/* Íconos ------------------------------------------------------------------- */
+
+type IconName = 'send' | 'check' | 'clock' | 'arrow' | 'plus' | 'search' | 'chev-left' | 'chev-right';
+
+const ICON_PATHS: Record<IconName, ReactNode> = {
+  send: <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
+  check: <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM8 12.5l2.7 2.7L16 9.8" />,
+  clock: <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM12 7v5l3 2" />,
+  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  search: <path d="M21 21l-4.3-4.3M11 19a8 8 0 100-16 8 8 0 000 16z" />,
+  'chev-left': <path d="M15 18l-6-6 6-6" />,
+  'chev-right': <path d="M9 6l6 6-6 6" />,
+};
+
+function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: string }) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+      {ICON_PATHS[name]}
     </svg>
   );
 }
 
-function FilterIcon() {
+function DotsIcon() {
   return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M4 6h16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M7 12h10" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M10 18h4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    <svg aria-hidden="true" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="5" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="12" cy="19" r="1.8" />
     </svg>
   );
 }
 
-function LockIcon() {
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
-      <path d="M8 11V8a4 4 0 118 0v3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
+const card = 'rounded-[18px] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.05)]';
 
-function ShieldIcon() {
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z" stroke="currentColor" strokeWidth="2" />
-      <path d="M9.5 12.5l1.5 1.5 3.5-3.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
-
-function MailIcon() {
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
-      <path d="M3 8l9 6 9-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
-
-function QuoteMetricIcon({ kind }: { kind: 'all' | 'draft' | 'submitted' | 'awarded' | 'rejected' }) {
-  const baseClass =
-    kind === 'all'
-      ? 'text-[#6a58ff]'
-      : kind === 'draft'
-        ? 'text-[#8b94c7]'
-        : kind === 'submitted'
-          ? 'text-[#2d8fff]'
-          : kind === 'awarded'
-            ? 'text-[#45b97a]'
-            : 'text-[#ff6f7d]';
-
-  return (
-    <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-[#f7f7ff] ${baseClass}`}>
-      {kind === 'all' ? <ShieldIcon /> : kind === 'draft' ? <LockIcon /> : kind === 'submitted' ? <MailIcon /> : kind === 'awarded' ? <ShieldIcon /> : <MailIcon />}
-    </div>
-  );
-}
-
-function DonutChart({
-  value,
-  accepted,
-  rejected,
-  drafts,
-}: {
-  value: number;
-  accepted: number;
-  rejected: number;
-  drafts: number;
-}) {
-  const radius = 38;
-  const circumference = 2 * Math.PI * radius;
-  const sentShare = Math.max(0, Math.min(100, value));
-  const acceptedShare = Math.max(0, Math.min(100, accepted));
-  const rejectedShare = Math.max(0, Math.min(100, rejected));
-  const draftsShare = Math.max(0, Math.min(100, drafts));
-
-  return (
-    <div className="relative flex h-[112px] w-[112px] items-center justify-center">
-      <svg className="-rotate-90" height="112" viewBox="0 0 112 112" width="112">
-        <circle cx="56" cy="56" fill="none" r={radius} stroke="#edf0fb" strokeWidth="12" />
-        <circle
-          cx="56"
-          cy="56"
-          fill="none"
-          r={radius}
-          stroke="#5d51ff"
-          strokeDasharray={`${(sentShare / 100) * circumference} ${circumference}`}
-          strokeLinecap="round"
-          strokeWidth="12"
-        />
-        <circle
-          cx="56"
-          cy="56"
-          fill="none"
-          r={radius}
-          stroke="#43c67a"
-          strokeDasharray={`${(acceptedShare / 100) * circumference} ${circumference}`}
-          strokeDashoffset={-((sentShare / 100) * circumference)}
-          strokeLinecap="round"
-          strokeWidth="12"
-        />
-        <circle
-          cx="56"
-          cy="56"
-          fill="none"
-          r={radius}
-          stroke="#ff7080"
-          strokeDasharray={`${(rejectedShare / 100) * circumference} ${circumference}`}
-          strokeDashoffset={-(((sentShare + acceptedShare) / 100) * circumference)}
-          strokeLinecap="round"
-          strokeWidth="12"
-        />
-        <circle
-          cx="56"
-          cy="56"
-          fill="none"
-          r={radius}
-          stroke="#9aa3cf"
-          strokeDasharray={`${(draftsShare / 100) * circumference} ${circumference}`}
-          strokeDashoffset={-(((sentShare + acceptedShare + rejectedShare) / 100) * circumference)}
-          strokeLinecap="round"
-          strokeWidth="12"
-        />
-      </svg>
-      <div className="absolute text-center">
-        <p className="text-[24px] font-semibold text-[#242c63]">{value}%</p>
-        <p className="text-[11px] text-[#8d95be]">Conversion</p>
-      </div>
-    </div>
-  );
-}
-
-function MiniChart() {
-  return (
-    <svg aria-hidden="true" className="h-24 w-full" fill="none" viewBox="0 0 220 96">
-      <path d="M8 76H212" stroke="#e7eaf7" strokeLinecap="round" strokeWidth="1.5" />
-      <path d="M8 18V78" stroke="#eef1fb" strokeLinecap="round" strokeWidth="1.5" />
-      <path d="M8 58C18 60 24 44 36 48C48 52 52 34 64 40C76 46 82 38 92 50C102 62 112 42 124 48C136 54 146 40 158 52C170 64 186 38 200 50C204 54 208 56 212 52" stroke="#5d51ff" strokeLinecap="round" strokeWidth="3" />
-      <circle cx="36" cy="48" r="3.5" fill="white" stroke="#5d51ff" strokeWidth="2" />
-      <circle cx="92" cy="50" r="3.5" fill="white" stroke="#5d51ff" strokeWidth="2" />
-      <circle cx="158" cy="52" r="3.5" fill="white" stroke="#5d51ff" strokeWidth="2" />
-    </svg>
-  );
-}
+/* Página ------------------------------------------------------------------- */
 
 export default function SupplierQuotesPage() {
-  const { session, myQuotes, loading, error } = useSupplierDashboardData();
+  const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<QuoteTab>('all');
   const [page, setPage] = useState(1);
+  const [menuRow, setMenuRow] = useState<string | null>(null);
+  // Hora de referencia fija para que los cálculos del render sean puros.
+  const [nowMs] = useState(() => Date.now());
 
-  const metrics = useMemo(() => {
-    const total = myQuotes.length;
-    const draft = myQuotes.filter((quote) => quote.status === 'DRAFT').length;
-    const submitted = myQuotes.filter((quote) => quote.status === 'SUBMITTED').length;
-    const awarded = myQuotes.filter((quote) => quote.status === 'AWARDED').length;
-    const rejected = myQuotes.filter((quote) => quote.status === 'REJECTED').length;
-    const expired = myQuotes.filter((quote) => isExpired(quote)).length;
-    const conversion = submitted + awarded === 0 ? 0 : Math.round((awarded / (submitted + awarded)) * 100);
+  const rows = useMemo<Row[]>(() => {
+    const quotedRequestIds = new Set(myQuotes.filter((quote) => quote.status !== 'DRAFT').map((quote) => quote.requestId));
 
-    return { total, draft, submitted, awarded, rejected, expired, conversion };
-  }, [myQuotes]);
+    const quoteRows: Row[] = myQuotes.map((quote) => {
+      const kind: Row['kind'] =
+        quote.status === 'DRAFT'
+          ? 'pending'
+          : quote.status === 'AWARDED'
+            ? 'awarded'
+            : quote.status === 'REJECTED'
+              ? 'rejected'
+              : quote.status === 'WITHDRAWN'
+                ? 'withdrawn'
+                : 'submitted';
+      const deadline = kind === 'pending' ? quote.request?.dueDate ?? null : quote.validUntil ?? quote.request?.dueDate ?? null;
+      return {
+        id: `quote-${quote.id}`,
+        request: quote.request ?? null,
+        quote,
+        title: quote.request?.productName || quote.request?.title || 'Cotización',
+        buyer: quote.request?.buyerCompany?.name ?? 'Comprador',
+        amount: quote.amount,
+        currency: quote.currency,
+        updatedAt: quote.updatedAt,
+        deadline,
+        kind,
+        expired: (kind === 'submitted' || kind === 'pending') && Boolean(deadline) && new Date(deadline as string).getTime() < nowMs,
+      };
+    });
 
-  const filteredQuotes = useMemo(() => {
+    const draftRequestIds = new Set(myQuotes.filter((quote) => quote.status === 'DRAFT').map((quote) => quote.requestId));
+    const pendingRequestRows: Row[] = openRequests
+      .filter((request) => !quotedRequestIds.has(request.id) && !draftRequestIds.has(request.id))
+      .map((request) => ({
+        id: `request-${request.id}`,
+        request,
+        quote: null,
+        title: request.productName || request.title,
+        buyer: request.buyerCompany?.name ?? 'Comprador',
+        amount: null,
+        currency: 'ARS',
+        updatedAt: request.updatedAt,
+        deadline: request.dueDate,
+        kind: 'pending' as const,
+        expired: Boolean(request.dueDate) && new Date(request.dueDate as string).getTime() < nowMs,
+      }));
+
+    return [...pendingRequestRows, ...quoteRows].sort(
+      (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+    );
+  }, [myQuotes, nowMs, openRequests]);
+
+  const matchesTab = (tab: QuoteTab, row: Row) => {
+    if (tab === 'pending') return row.kind === 'pending' && !row.expired;
+    if (tab === 'submitted') return row.kind === 'submitted' && !row.expired;
+    if (tab === 'awarded') return row.kind === 'awarded';
+    if (tab === 'expired') return row.expired;
+    return true;
+  };
+
+  const searchedRows = useMemo(() => {
     const query = search.trim().toLowerCase();
+    if (!query) return rows;
+    return rows.filter((row) =>
+      [row.title, row.buyer, row.request?.category ?? '', row.request?.title ?? ''].join(' ').toLowerCase().includes(query),
+    );
+  }, [rows, search]);
 
-    return myQuotes
-      .filter((quote) => {
-        if (activeTab === 'all') {
-          return true;
-        }
-
-        if (activeTab === 'expired') {
-          return isExpired(quote);
-        }
-
-        if (activeTab === 'draft') {
-          return quote.status === 'DRAFT';
-        }
-
-        if (activeTab === 'submitted') {
-          return quote.status === 'SUBMITTED';
-        }
-
-        if (activeTab === 'awarded') {
-          return quote.status === 'AWARDED';
-        }
-
-        if (activeTab === 'rejected') {
-          return quote.status === 'REJECTED';
-        }
-
-        return true;
-      })
-      .filter((quote) => {
-        if (!query) {
-          return true;
-        }
-
-        return (
-          quote.id.toLowerCase().includes(query) ||
-          (quote.request?.title ?? '').toLowerCase().includes(query) ||
-          (quote.request?.buyerCompany?.name ?? '').toLowerCase().includes(query) ||
-          (quote.request?.category ?? '').toLowerCase().includes(query)
-        );
-      })
-      .sort(
-        (left, right) =>
-          new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
-      );
-  }, [activeTab, myQuotes, search]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredQuotes.length / PAGE_SIZE));
-  const visibleQuotes = filteredQuotes.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  const avgResponseHours = useMemo(() => {
-    const withLeadTime = myQuotes.filter((quote) => typeof quote.leadTimeDays === 'number');
-    if (withLeadTime.length === 0) {
-      return '4h 32m';
-    }
-
-    const avgDays =
-      withLeadTime.reduce((acc, quote) => acc + (quote.leadTimeDays ?? 0), 0) /
-      withLeadTime.length;
-    const avgHours = Math.max(1, Math.round(avgDays * 2.5));
-    const hours = Math.floor(avgHours);
-    const minutes = (avgHours % 1) * 60;
-    return `${hours}h ${Math.round(minutes)}m`;
-  }, [myQuotes]);
-
-  const upcomingQuotes = useMemo(() => {
-    return [...myQuotes]
-      .filter((quote) => quote.request?.dueDate)
-      .sort(
-        (left, right) =>
-          new Date(left.request!.dueDate!).getTime() - new Date(right.request!.dueDate!).getTime(),
-      )
-      .slice(0, 3);
-  }, [myQuotes]);
-
-  const tabs: Array<{ key: QuoteTab; label: string; count: number }> = [
-    { key: 'all', label: 'Todas', count: metrics.total },
-    { key: 'draft', label: 'Borradores', count: metrics.draft },
-    { key: 'submitted', label: 'Enviadas', count: metrics.submitted },
-    { key: 'awarded', label: 'Aceptadas', count: metrics.awarded },
-    { key: 'rejected', label: 'Rechazadas', count: metrics.rejected },
-    { key: 'expired', label: 'Vencidas', count: metrics.expired },
+  const tabs: { key: QuoteTab; label: string }[] = [
+    { key: 'all', label: 'Todas' },
+    { key: 'pending', label: 'Por responder' },
+    { key: 'submitted', label: 'Enviadas' },
+    { key: 'awarded', label: 'Aceptadas' },
+    { key: 'expired', label: 'Vencidas' },
   ];
+  const tabCounts = Object.fromEntries(
+    tabs.map((tab) => [tab.key, searchedRows.filter((row) => matchesTab(tab.key, row)).length]),
+  ) as Record<QuoteTab, number>;
+
+  const tabRows = searchedRows.filter((row) => matchesTab(activeTab, row));
+  const totalPages = Math.max(1, Math.ceil(tabRows.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = tabRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Contadores superiores.
+  const sentRows = rows.filter((row) => row.kind === 'submitted' || row.kind === 'awarded' || row.kind === 'rejected');
+  const awardedRows = rows.filter((row) => row.kind === 'awarded');
+  const pendingRows = rows.filter((row) => row.kind === 'pending' && !row.expired);
+  const inLastWeek = (value: string) => nowMs - new Date(value).getTime() <= 7 * DAY;
+  const sentThisWeek = sentRows.filter((row) => inLastWeek(row.quote?.createdAt ?? row.updatedAt)).length;
+  const awardedThisWeek = awardedRows.filter((row) => inLastWeek(row.updatedAt)).length;
+  const pendingOld = pendingRows.filter((row) => nowMs - new Date(row.request?.createdAt ?? row.updatedAt).getTime() > 48 * HOUR).length;
+
+  const summaryCards = [
+    {
+      label: 'Enviadas',
+      value: sentRows.length,
+      note: sentThisWeek > 0 ? `↑ +${sentThisWeek} esta semana` : 'Sin envíos esta semana',
+      noteTone: sentThisWeek > 0 ? 'text-emerald-600' : 'text-slate-400',
+      icon: 'send' as const,
+      tone: 'bg-indigo-50 text-indigo-600',
+      tab: 'submitted' as const,
+    },
+    {
+      label: 'Aceptadas',
+      value: awardedRows.length,
+      note: awardedThisWeek > 0 ? `+${awardedThisWeek} esta semana` : 'Sin novedades esta semana',
+      noteTone: awardedThisWeek > 0 ? 'text-emerald-600' : 'text-slate-400',
+      icon: 'check' as const,
+      tone: 'bg-emerald-50 text-emerald-600',
+      tab: 'awarded' as const,
+    },
+    {
+      label: 'Por responder',
+      value: pendingRows.length,
+      note: pendingOld > 0 ? `+${pendingOld} con más de 48 h` : 'Todas al día',
+      noteTone: pendingOld > 0 ? 'text-rose-500' : 'text-slate-400',
+      icon: 'clock' as const,
+      tone: 'bg-rose-50 text-rose-500',
+      tab: 'pending' as const,
+    },
+  ];
+
+  // Lo que vence en los próximos 7 días y todavía espera algo del vendedor o del comprador.
+  const upcoming = rows
+    .filter((row) => (row.kind === 'pending' || row.kind === 'submitted') && row.deadline && !row.expired)
+    .filter((row) => new Date(row.deadline as string).getTime() - nowMs <= 7 * DAY)
+    .sort((left, right) => new Date(left.deadline as string).getTime() - new Date(right.deadline as string).getTime());
+
+  function selectTab(tab: QuoteTab) {
+    setActiveTab(tab);
+    setPage(1);
+  }
+
+  function updateSearch(value: string) {
+    setSearch(value);
+    setPage(1);
+  }
+
+  function rowHref(row: Row) {
+    return row.quote && row.kind !== 'pending'
+      ? `/dashboard/proveedor/cotizaciones/${row.quote.id}`
+      : `/dashboard/proveedor/solicitudes/${row.request?.id ?? ''}`;
+  }
+
+  function urgency(row: Row) {
+    if (row.kind !== 'pending' || !row.deadline || row.expired) return null;
+    const diff = new Date(row.deadline).getTime() - nowMs;
+    if (diff < DAY) return { bg: 'bg-rose-50/70', text: 'text-rose-500' };
+    if (diff < 3 * DAY) return { bg: 'bg-amber-50/70', text: 'text-amber-600' };
+    return null;
+  }
 
   return (
     <SupplierDashboardShell
-      searchPlaceholder="Buscar solicitudes, pedidos, clientes..."
+      onSearchChange={updateSearch}
+      searchPlaceholder="Buscar solicitudes, productos o clientes..."
+      searchValue={search}
       session={session}
     >
-      <section className="space-y-4">
-        <div className="space-y-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
-                Cotizaciones
-              </h1>
-              <p className="mt-1 text-sm text-[#7e85b2]">
-                Gestiona y hace seguimiento de todas tus cotizaciones.
-              </p>
-            </div>
+      {/* Encabezado */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[32px] font-bold leading-tight tracking-[-0.035em] text-[#16123a] sm:text-[36px]">Cotizaciones</h1>
+          <p className="mt-0.5 text-[16px] text-slate-500">Gestioná y seguí tus propuestas.</p>
+        </div>
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+          <label className="relative min-w-[220px] flex-1 sm:w-[320px] sm:flex-none">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+              <Icon name="search" />
+            </span>
+            <input
+              className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-[14px] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+              onChange={(event) => updateSearch(event.target.value)}
+              placeholder="Buscar cotizaciones..."
+              type="search"
+              value={search}
+            />
+          </label>
+          <Link
+            className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-indigo-600 px-5 text-[15px] font-semibold shadow-[0_10px_24px_rgba(100,64,232,0.28)] transition hover:bg-indigo-700"
+            href="/dashboard/proveedor/solicitudes"
+          >
+            {/* globals.css fija `a { color: inherit }`: el color va en el hijo. */}
+            <span className="inline-flex items-center gap-2 text-white">
+              <Icon name="plus" />
+              Nueva cotización
+            </span>
+          </Link>
+        </div>
+      </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row">
+      {error ? (
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+      ) : null}
+
+      {/* Contadores */}
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
+        {summaryCards.map((summary) => (
+          <button
+            key={summary.label}
+            className={`${card} group flex items-center gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(40,28,110,0.09)]`}
+            onClick={() => selectTab(summary.tab)}
+            type="button"
+          >
+            <span className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full ${summary.tone}`}>
+              <Icon className="h-7 w-7" name={summary.icon} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[30px] font-bold leading-none text-[#16123a]">{loading ? '—' : summary.value}</span>
+              <span className="mt-1 block text-[16px] text-slate-700">{summary.label}</span>
+              <span className={`mt-0.5 block text-[13px] ${summary.noteTone}`}>{summary.note}</span>
+            </span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition group-hover:translate-x-0.5">
+              <Icon name="arrow" />
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tabla */}
+      <section className={`${card} mt-5 p-5`}>
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 [scrollbar-width:none]">
+          {tabs.map((tab) => {
+            const active = activeTab === tab.key;
+            return (
               <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-4 text-sm font-semibold text-[#6d739d] transition hover:bg-[#f8f9fe]"
+                key={tab.key}
+                className={`relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-3.5 pb-3 pt-1 text-[15px] transition ${
+                  active ? 'border-indigo-600 font-semibold text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+                onClick={() => selectTab(tab.key)}
                 type="button"
               >
-                <FilterIcon />
-                Filtros
-              </button>
-              <label className="flex h-10 min-w-[240px] items-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-3 text-sm text-[#7f86ad]">
-                <SearchIcon />
-                <input
-                  className="w-full bg-transparent outline-none placeholder:text-[#a4aac9]"
-                  onChange={(event) => {
-                    setSearch(event.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Buscar cotizaciones..."
-                  value={search}
-                />
-              </label>
-              <Link
-                className="inline-flex h-10 items-center justify-center rounded-xl bg-[#5546ff] px-4 text-sm font-semibold text-white transition hover:bg-[#4739ea]"
-                href="/dashboard/proveedor/solicitudes"
-              >
-                + Nueva cotizacion
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-              <div className="flex items-start gap-3">
-                <QuoteMetricIcon kind="all" />
-                <div>
-                  <p className="text-xs font-semibold text-[#8b92bc]">Todas</p>
-                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.total}</p>
-                  <p className="mt-1 text-[11px] text-[#8d95be]">vs semana pasada</p>
-                </div>
-              </div>
-            </article>
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-              <div className="flex items-start gap-3">
-                <QuoteMetricIcon kind="draft" />
-                <div>
-                  <p className="text-xs font-semibold text-[#8b92bc]">Borradores</p>
-                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.draft}</p>
-                </div>
-              </div>
-            </article>
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-              <div className="flex items-start gap-3">
-                <QuoteMetricIcon kind="submitted" />
-                <div>
-                  <p className="text-xs font-semibold text-[#8b92bc]">Enviadas</p>
-                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.submitted}</p>
-                  <p className="mt-1 text-[11px] text-[#45b97a]">+2 vs semana pasada</p>
-                </div>
-              </div>
-            </article>
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-              <div className="flex items-start gap-3">
-                <QuoteMetricIcon kind="awarded" />
-                <div>
-                  <p className="text-xs font-semibold text-[#8b92bc]">Aceptadas</p>
-                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.awarded}</p>
-                  <p className="mt-1 text-[11px] text-[#45b97a]">+1 vs semana pasada</p>
-                </div>
-              </div>
-            </article>
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-              <div className="flex items-start gap-3">
-                <QuoteMetricIcon kind="rejected" />
-                <div>
-                  <p className="text-xs font-semibold text-[#8b92bc]">Rechazadas</p>
-                  <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.rejected}</p>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          {error ? (
-            <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-              {error}
-            </div>
-          ) : null}
-
-          <div className="overflow-hidden rounded-[24px] border border-[#c3d0e8] bg-white shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-            <div className="flex flex-wrap gap-5 border-b border-[#dde5f2] px-5 pt-4">
-              {tabs.map((tab) => {
-                const isActive = tab.key === activeTab;
-                return (
-                  <button
-                    key={tab.key}
-                    className={`relative pb-3 text-sm font-semibold ${
-                      isActive ? 'text-[#5546ff]' : 'text-[#727ba9]'
-                    }`}
-                    onClick={() => {
-                      setActiveTab(tab.key);
-                      setPage(1);
-                    }}
-                    type="button"
-                  >
-                    {tab.label}
-                    <span className="ml-2 text-xs text-[#9aa1c8]">{tab.count}</span>
-                    {isActive ? (
-                      <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#5546ff]" />
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-
-            {loading ? (
-              <div className="px-6 py-10"><LoadingState label="Cargando cotizaciones..." /></div>
-            ) : visibleQuotes.length === 0 ? (
-              <div className="px-6 py-10 text-sm text-[#7e85b2]">
-                No hay cotizaciones para este filtro.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[680px] table-fixed">
-                  <thead>
-                    <tr className="border-b border-[#dde5f2] text-left text-[11px] uppercase tracking-[0.16em] text-[#9aa1c8]">
-                      <th className="w-[22%] px-5 py-4 font-semibold">Solicitud</th>
-                      <th className="w-[18%] px-4 py-4 font-semibold">Cliente</th>
-                      <th className="w-[15%] px-4 py-4 font-semibold">Producto</th>
-                      <th className="w-[12%] px-4 py-4 font-semibold">Monto</th>
-                      <th className="w-[11%] px-4 py-4 font-semibold">Estado</th>
-                      <th className="w-[9%] px-4 py-4 font-semibold">Vence</th>
-                      <th className="w-[13%] px-5 py-4 font-semibold" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#dde5f2]">
-                    {visibleQuotes.map((quote) => {
-                      const statusMeta = getStatusMeta(isExpired(quote) ? 'WITHDRAWN' : quote.status);
-                      const clientName = quote.request?.buyerCompany?.name ?? 'Cliente no informado';
-
-                      return (
-                        <tr key={quote.id} className="text-sm text-[#2c3567]">
-                          <td className="px-5 py-4">
-                            <p className="line-clamp-2 font-semibold text-[#33407a]">
-                              {truncateText(quote.request?.title ?? 'Sin solicitud', 44)}
-                            </p>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4f6ff] text-[10px] font-bold text-[#4652a7]">
-                                {getCompanyShort(clientName)}
-                              </div>
-                              <p className="truncate font-semibold text-[#33407a]">
-                                {truncateText(clientName, 18)}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <p className="truncate font-semibold text-[#33407a]">
-                              {truncateText(quote.request?.category ?? '-', 16)}
-                            </p>
-                            <p className="mt-1 text-xs text-[#8d95be]">
-                              {quote.leadTimeDays ? `${quote.leadTimeDays} dias` : 'A coord.'}
-                            </p>
-                          </td>
-                          <td className="px-4 py-4">
-                            <p className="font-semibold text-[#1f2373]">{formatCurrency(quote.amount)}</p>
-                            <p className="mt-1 text-xs text-[#8d95be]">{quote.currency}</p>
-                          </td>
-                          <td className="px-4 py-4">
-                            <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusMeta.className}`}>
-                              {statusMeta.label}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-[#6f77a7]">{formatDate(quote.request?.dueDate ?? null)}</td>
-                          <td className="px-5 py-4 text-right">
-                            <Link
-                              className="whitespace-nowrap text-xs font-semibold text-[#5546ff] transition hover:text-[#3d31d6]"
-                              href={`/dashboard/proveedor/cotizaciones/${quote.id}`}
-                            >
-                              Ver detalle
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3 border-t border-[#dde5f2] px-5 py-4 text-sm text-[#8d95be] md:flex-row md:items-center md:justify-between">
-              <p>
-                Mostrando {filteredQuotes.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} a{' '}
-                {Math.min(page * PAGE_SIZE, filteredQuotes.length)} de {filteredQuotes.length}{' '}
-                cotizaciones
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-medium text-[#9aa1c8] disabled:opacity-50"
-                  disabled={page === 1}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  type="button"
-                >
-                  Anterior
-                </button>
-                <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-xl bg-[#5546ff] px-3 text-sm font-semibold text-white">
-                  {page}
+                {tab.label}
+                <span className={`rounded-md px-2 py-0.5 text-[12px] ${active ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                  {tabCounts[tab.key]}
                 </span>
-                <button
-                  className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-medium text-[#6b73a6] disabled:opacity-50"
-                  disabled={page === totalPages}
-                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                  type="button"
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
-          </div>
+                {tab.key === 'pending' && tabCounts.pending > 0 ? (
+                  <span className="absolute right-1 top-0.5 h-1.5 w-1.5 rounded-full bg-rose-500" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
 
-        <aside className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[#27305f]">Rendimiento</h2>
-              <span className="rounded-full bg-[#f6f7ff] px-3 py-1 text-[11px] font-semibold text-[#7c84af]">
-                Ultimos 30 dias
-              </span>
-            </div>
-            <div className="mt-5 flex items-center gap-4">
-              <DonutChart
-                accepted={metrics.awarded}
-                drafts={metrics.draft}
-                rejected={metrics.rejected}
-                value={metrics.conversion}
-              />
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="flex items-center gap-2 text-[#7f86ad]">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#5d51ff]" />
-                    Enviadas
-                  </span>
-                  <span className="font-semibold text-[#2c3567]">{metrics.submitted}</span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="flex items-center gap-2 text-[#7f86ad]">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#43c67a]" />
-                    Aceptadas
-                  </span>
-                  <span className="font-semibold text-[#2c3567]">{metrics.awarded}</span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="flex items-center gap-2 text-[#7f86ad]">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff7080]" />
-                    Rechazadas
-                  </span>
-                  <span className="font-semibold text-[#2c3567]">{metrics.rejected}</span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="flex items-center gap-2 text-[#7f86ad]">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#9aa3cf]" />
-                    Borradores
-                  </span>
-                  <span className="font-semibold text-[#2c3567]">{metrics.draft}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-            <h2 className="text-sm font-semibold text-[#27305f]">Tiempo de respuesta</h2>
-            <div className="mt-4 flex items-end justify-between">
-              <div>
-                <p className="text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{avgResponseHours}</p>
-                <p className="mt-1 text-[11px] text-[#45b97a]">-18% vs 30 dias anteriores</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <MiniChart />
-            </div>
-          </div>
-
-          <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-            <h2 className="text-sm font-semibold text-[#27305f]">Proximas a vencer</h2>
-            <div className="mt-4 space-y-3">
-              {upcomingQuotes.map((quote) => {
-                const clientName = quote.request?.buyerCompany?.name ?? 'Cliente';
-                const daysLeft = quote.request?.dueDate
-                  ? Math.max(
-                      0,
-                      Math.ceil(
-                        (new Date(quote.request.dueDate).getTime() - Date.now()) /
-                          (1000 * 60 * 60 * 24),
-                      ),
-                    )
-                  : 0;
-
-                return (
-                  <article
-                    key={quote.id}
-                    className="rounded-[18px] border border-[#dde5f2] bg-[#fbfbff] px-4 py-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f1f4ff] text-[10px] font-bold text-[#4652a7]">
-                          {getCompanyShort(clientName)}
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[900px] text-left text-[14px]">
+            <thead>
+              <tr className="bg-[#f6f4fd] text-[13px] text-slate-600">
+                <th className="rounded-l-lg px-3 py-2.5 font-medium">Solicitud / Producto</th>
+                <th className="px-3 py-2.5 font-medium">Comprador</th>
+                <th className="px-3 py-2.5 font-medium">Monto</th>
+                <th className="px-3 py-2.5 font-medium">Estado</th>
+                <th className="px-3 py-2.5 font-medium">Fecha</th>
+                <th className="rounded-r-lg px-3 py-2.5 text-center font-medium">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td className="px-3 py-10" colSpan={6}>
+                    <LoadingState label="Cargando cotizaciones..." />
+                  </td>
+                </tr>
+              ) : pageRows.length === 0 ? (
+                <tr>
+                  <td className="px-3 py-10 text-center text-slate-500" colSpan={6}>
+                    No hay cotizaciones para este filtro.
+                  </td>
+                </tr>
+              ) : (
+                pageRows.map((row) => {
+                  const status = STATUS_META[row.expired ? 'expired' : row.kind];
+                  const amount = formatAmount(row.amount, row.currency);
+                  const quantity = requestQuantity(row.request);
+                  const highlight = urgency(row);
+                  const due = row.kind === 'pending' || row.kind === 'submitted' ? formatDue(row.deadline, nowMs) : null;
+                  return (
+                    <tr key={row.id} className={`border-b border-slate-100 last:border-b-0 ${highlight?.bg ?? ''}`}>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
+                            <Image alt="" className="object-cover" fill sizes="48px" src={requestImage(row.request)} />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block max-w-[280px] truncate font-semibold text-slate-900">{row.title}</span>
+                            {quantity ? <span className="block text-[13px] text-slate-500">{quantity}</span> : null}
+                          </span>
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-semibold text-[#33407a]">
-                            {truncateText(clientName, 16)}
-                          </p>
-                          <p className="mt-1 truncate text-xs text-[#7e85b2]">
-                            {truncateText(quote.request?.title ?? 'Sin solicitud', 20)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span className="rounded-full bg-[#fff2d8] px-2 py-1 text-[10px] font-semibold text-[#e0911c]">
-                          Vence en {daysLeft} dias
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="flex items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] font-bold text-indigo-600">
+                            {initials(row.buyer)}
+                          </span>
+                          <span className="truncate text-slate-700">{row.buyer}</span>
                         </span>
-                        <Link
-                          className="text-[11px] font-semibold text-[#4a3df0] hover:text-[#3d31d6]"
-                          href={`/dashboard/proveedor/cotizaciones/${quote.id}`}
-                        >
-                          Ver detalle
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-            <button
-              className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff]"
-              type="button"
-            >
-              Ver todas ({myQuotes.length})
-            </button>
-          </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        {amount ? (
+                          <>
+                            <span className="block font-semibold text-slate-900">{amount}</span>
+                            <span className="block text-[12px] text-slate-400">{row.currency || 'ARS'}</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-400">A cotizar</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[12px] font-medium ${status.tone}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="block whitespace-nowrap text-slate-700">{formatDayTime(row.updatedAt)}</span>
+                        {due ? <span className={`block text-[12px] ${highlight?.text ?? 'text-slate-400'}`}>{due}</span> : null}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <Link
+                            className="inline-flex h-9 min-w-[112px] items-center justify-center whitespace-nowrap rounded-[10px] border border-indigo-200 bg-white px-4 text-[13px] font-semibold transition hover:bg-indigo-50"
+                            href={rowHref(row)}
+                          >
+                            <span className="text-indigo-600">{row.kind === 'pending' ? 'Cotizar' : 'Ver detalle'}</span>
+                          </Link>
+                          <div className="relative">
+                            <button
+                              aria-label="Más acciones"
+                              className="flex h-9 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                              onClick={() => setMenuRow(menuRow === row.id ? null : row.id)}
+                              type="button"
+                            >
+                              <DotsIcon />
+                            </button>
+                            {menuRow === row.id ? (
+                              <>
+                                <button aria-label="Cerrar menú" className="fixed inset-0 z-20 cursor-default" onClick={() => setMenuRow(null)} type="button" />
+                                <div className="absolute right-0 top-10 z-30 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
+                                  {row.request ? (
+                                    <Link className="block px-3 py-2 text-slate-700 hover:bg-slate-50" href={`/dashboard/proveedor/solicitudes/${row.request.id}`}>
+                                      Ver solicitud
+                                    </Link>
+                                  ) : null}
+                                  {row.quote ? (
+                                    <Link className="block px-3 py-2 text-slate-700 hover:bg-slate-50" href={`/dashboard/proveedor/cotizaciones/${row.quote.id}`}>
+                                      Ver cotización
+                                    </Link>
+                                  ) : null}
+                                </div>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          <div className="rounded-[24px] border border-[#eceafb] bg-[linear-gradient(180deg,#fbfaff_0%,#f5f2ff_100%)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#5d51ff] shadow-sm">
-                <ShieldIcon />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-[#27305f]">Mejora tu conversion</p>
-                <p className="mt-2 text-sm leading-6 text-[#6c729f]">
-                  El Asistente ATAR puede revisar tus cotizaciones y darte sugerencias.
-                </p>
-              </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[13px] text-slate-500">
+          <p>
+            {tabRows.length === 0
+              ? 'Sin resultados'
+              : `Mostrando ${(currentPage - 1) * PAGE_SIZE + 1} a ${Math.min(currentPage * PAGE_SIZE, tabRows.length)} de ${tabRows.length} cotizaciones`}
+          </p>
+          {totalPages > 1 ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                aria-label="Página anterior"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"
+                disabled={currentPage === 1}
+                onClick={() => setPage(currentPage - 1)}
+                type="button"
+              >
+                <Icon name="chev-left" />
+              </button>
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
+                <button
+                  key={number}
+                  className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-[13px] font-semibold ${
+                    number === currentPage ? 'bg-indigo-600 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  }`}
+                  onClick={() => setPage(number)}
+                  type="button"
+                >
+                  {number}
+                </button>
+              ))}
+              <button
+                aria-label="Página siguiente"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"
+                disabled={currentPage === totalPages}
+                onClick={() => setPage(currentPage + 1)}
+                type="button"
+              >
+                <Icon name="chev-right" />
+              </button>
             </div>
-            <button
-              className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#d8d3ff] bg-white px-4 text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff]"
-              type="button"
-            >
-              Analizar mis cotizaciones
-            </button>
+          ) : null}
+        </div>
+      </section>
+
+      {/* Próximas a vencer */}
+      <section className={`${card} mt-5 p-5`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+              <Icon name="clock" />
+            </span>
+            <div>
+              <h2 className="text-[17px] font-bold text-[#16123a]">Próximas a vencer</h2>
+              <p className="text-[13px] text-slate-500">
+                {upcoming.length === 0
+                  ? 'No hay cotizaciones que venzan en los próximos 7 días.'
+                  : `${upcoming.length} ${upcoming.length === 1 ? 'cotización requiere' : 'cotizaciones requieren'} tu atención en los próximos días.`}
+              </p>
+            </div>
           </div>
-        </aside>
+          {upcoming.length > 2 ? (
+            <button className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-indigo-600" onClick={() => selectTab('pending')} type="button">
+              Ver todas
+              <Icon name="arrow" />
+            </button>
+          ) : null}
+        </div>
+        {upcoming.length > 0 ? (
+          <div className="mt-4 grid gap-4 lg:grid-cols-2 lg:divide-x lg:divide-slate-100">
+            {upcoming.slice(0, 2).map((row, index) => {
+              const diff = new Date(row.deadline as string).getTime() - nowMs;
+              const tone = diff < DAY ? 'bg-rose-50 text-rose-500' : 'bg-amber-50 text-amber-600';
+              const amount = formatAmount(row.amount, row.currency);
+              return (
+                <div key={row.id} className={`flex flex-wrap items-center gap-4 ${index === 1 ? 'lg:pl-5' : ''}`}>
+                  <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
+                    <Image alt="" className="object-cover" fill sizes="48px" src={requestImage(row.request)} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-slate-900">{row.title}</span>
+                    <span className="block text-[13px] text-slate-500">{row.buyer}</span>
+                  </span>
+                  <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium ${tone}`}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {formatDue(row.deadline, nowMs)}
+                  </span>
+                  <span className="w-[110px]">
+                    <span className="block font-semibold text-slate-900">{amount ?? 'A cotizar'}</span>
+                    {amount ? <span className="block text-[12px] text-slate-400">{row.currency}</span> : null}
+                  </span>
+                  <Link
+                    className="inline-flex h-10 items-center rounded-[10px] border border-indigo-200 px-5 text-[13px] font-semibold transition hover:bg-indigo-50"
+                    href={rowHref(row)}
+                  >
+                    <span className="text-indigo-600">{row.kind === 'pending' ? 'Cotizar' : 'Ver detalle'}</span>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
       </section>
     </SupplierDashboardShell>
   );
