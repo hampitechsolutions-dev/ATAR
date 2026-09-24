@@ -17,6 +17,9 @@ type SupplierDashboardShellProps = {
   searchPlaceholder?: string;
   // Sin padding y a alto completo (para vistas que llenan todo, como el chat).
   fullBleed?: boolean;
+  /** Si la página lo pasa, el buscador del header filtra su contenido. */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 };
 
 function HeaderActionIcon({ kind }: { kind: 'chat' | 'bell' }) {
@@ -59,13 +62,15 @@ export default function SupplierDashboardShell({
   session,
   searchPlaceholder = 'Buscar solicitudes, clientes, productos...',
   fullBleed = false,
+  searchValue,
+  onSearchChange,
 }: SupplierDashboardShellProps) {
   const counters = useSupplierWorkspaceCounters({
     accessToken: session?.accessToken,
   });
 
   return (
-    <main className="h-screen overflow-hidden bg-[#f5f7fb] text-slate-950">
+    <main className="h-screen overflow-hidden bg-[#f4f2fd] text-slate-950">
       <div className="flex h-full">
         <div className="hidden h-full w-[264px] shrink-0 lg:block">
           <DashboardSidebar
@@ -85,7 +90,7 @@ export default function SupplierDashboardShell({
                   <span className="text-base font-bold text-slate-950">ATAR</span>
                 </Link>
 
-                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm md:flex md:max-w-[460px] xl:max-w-[520px]">
+                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-[#f1eefb] px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
                   <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                     <path
                       d="M21 21l-4.35-4.35"
@@ -103,8 +108,12 @@ export default function SupplierDashboardShell({
                     />
                   </svg>
                   <input
+                    aria-label={searchPlaceholder}
                     className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                    onChange={onSearchChange ? (event) => onSearchChange(event.target.value) : undefined}
                     placeholder={searchPlaceholder}
+                    type="search"
+                    value={onSearchChange ? searchValue ?? '' : undefined}
                   />
                 </div>
               </div>

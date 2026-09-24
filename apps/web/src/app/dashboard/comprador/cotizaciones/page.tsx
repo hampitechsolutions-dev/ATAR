@@ -101,13 +101,14 @@ export default function BuyerQuotesPage() {
         ))}
       </div>
 
-      <section className="space-y-4">
+      {/* Con el ancho completo, las solicitudes cotizadas van en 2 columnas. */}
+      <section className="grid gap-4 xl:grid-cols-2">
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm">
+          <div className="col-span-full rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm">
             <LoadingState label="Cargando cotizaciones..." />
           </div>
         ) : quotedRequests.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-sm text-slate-500 shadow-sm">
+          <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-sm text-slate-500 shadow-sm">
             Todavía no tenés cotizaciones para mostrar.
           </div>
         ) : (

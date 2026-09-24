@@ -200,7 +200,7 @@ export default function SupplierCatalogPage() {
                       <Link
                         aria-label="Editar rubros y productos"
                         href="/dashboard/proveedor/configuracion"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:bg-slate-50 hover:text-[#5546ff]"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:bg-slate-50 hover:text-[#6440e8]"
                       >
                         <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                           <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -325,7 +325,7 @@ export default function SupplierCatalogPage() {
               </p>
             </div>
             <Link
-              className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-semibold text-[#5546ff] transition hover:bg-[#eef0ff]"
+              className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] px-3 text-sm font-semibold text-[#6440e8] transition hover:bg-[#eef0ff]"
               href="/dashboard/proveedor/configuracion"
             >
               Gestionar productos
@@ -377,7 +377,7 @@ export default function SupplierCatalogPage() {
                   </div>
                   <div className="md:text-right">
                     <Link
-                      className="inline-flex h-9 items-center justify-center rounded-xl border border-[#c3d0e8] px-4 text-sm font-semibold text-[#5546ff] transition hover:bg-[#eef0ff]"
+                      className="inline-flex h-9 items-center justify-center rounded-xl border border-[#c3d0e8] px-4 text-sm font-semibold text-[#6440e8] transition hover:bg-[#eef0ff]"
                       href="/dashboard/proveedor/solicitudes"
                     >
                       Ver solicitudes

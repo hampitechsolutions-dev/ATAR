@@ -75,8 +75,6 @@ const supplierItems: ReadonlyArray<SidebarItem> = [
   { section: 'Mi trabajo', label: 'Clientes', href: '/dashboard/proveedor/clientes', icon: 'users' },
   { section: 'Mi trabajo', label: 'Mensajes', href: '/dashboard/proveedor/mensajes', icon: 'mail' },
 
-  { section: 'Empresa', label: 'Catalogo', href: '/dashboard/proveedor/catalogo', icon: 'grid' },
-  { section: 'Empresa', label: 'Produccion', href: '/dashboard/proveedor/produccion', icon: 'factory', managerOnly: true },
   { section: 'Empresa', label: 'Equipo', href: '/dashboard/proveedor/equipo', icon: 'users', managerOnly: true },
   { section: 'Empresa', label: 'Resenas', href: '/dashboard/proveedor/resenas', icon: 'star', managerOnly: true },
   { section: 'Empresa', label: 'Configuracion', href: '/dashboard/proveedor/configuracion', icon: 'gear', managerOnly: true },
@@ -399,17 +397,21 @@ export default function DashboardSidebar({
     router.push('/acceso');
   }
 
+  // El vendedor usa un sidebar oscuro con acento violeta: a primera vista se
+  // distingue del panel del comprador (claro y azul).
   if (role !== 'buyer') {
     return (
-      <aside className={`flex h-full flex-col border-r border-slate-200 bg-white ${className ?? ''}`}>
-        <div className="px-5 pb-4 pt-4">
+      <aside
+        className={`flex h-full flex-col bg-[linear-gradient(180deg,#1b1745_0%,#16123a_55%,#120f2e_100%)] text-white ${className ?? ''}`}
+      >
+        <div className="px-5 pb-4 pt-5">
           <div className="flex items-center gap-3">
-            <Image alt="ATAR" height={28} src="/logoatar.png" width={28} />
-            <p className="text-lg font-semibold tracking-tight text-slate-950">ATAR</p>
+            <Image alt="ATAR" height={30} src="/logoatarblanco.png" width={30} />
+            <p className="text-xl font-bold tracking-tight text-white">ATAR</p>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-3 text-[13px]">
+        <nav className="flex-1 overflow-y-auto px-3 pb-3 text-[13px] [scrollbar-color:rgba(255,255,255,0.15)_transparent] [scrollbar-width:thin]">
           {items.map((item, index) => {
             // El encabezado se dibuja al abrir cada grupo, no en cada item.
             const startsSection = item.section && item.section !== items[index - 1]?.section;
@@ -422,29 +424,33 @@ export default function DashboardSidebar({
             const content = (
               <>
                 <span className="flex items-center gap-3">
-                  <span className={`${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-500'}`}>
+                  <span className={`${isActive ? 'text-white' : 'text-white/55 group-hover:text-white/85'}`}>
                     <SidebarIcon name={item.icon} />
                   </span>
                   <span className={`${isActive ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>
                 </span>
                 {typeof item.badge === 'number' && item.badge > 0 ? (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                  <span
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold text-white ${
+                      isActive ? 'bg-white/25' : 'bg-[#7a55f7]'
+                    }`}
+                  >
                     {item.badge}
                   </span>
                 ) : null}
               </>
             );
 
-            const classes = `group flex w-full items-center justify-between rounded-xl px-3 py-2 transition ${
+            const classes = `group flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition ${
               isActive
-                ? 'bg-[linear-gradient(90deg,rgba(79,70,229,0.18)_0%,rgba(99,102,241,0.10)_60%,rgba(255,255,255,0)_100%)] text-indigo-700'
+                ? 'bg-[linear-gradient(90deg,#6d45f0_0%,#7a55f7_100%)] text-white shadow-[0_8px_20px_rgba(109,69,240,0.35)]'
                 : item.href
-                  ? 'text-slate-600 hover:bg-slate-50'
-                  : 'cursor-default text-slate-400'
+                  ? 'text-white/75 hover:bg-white/[0.06] hover:text-white'
+                  : 'cursor-default text-white/35'
             }`;
 
             const heading = startsSection ? (
-              <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              <p className="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
                 {item.section}
               </p>
             ) : null;
@@ -472,17 +478,17 @@ export default function DashboardSidebar({
         </nav>
 
         <div className="px-3 pb-4">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-2xl bg-[linear-gradient(160deg,rgba(122,85,247,0.28)_0%,rgba(122,85,247,0.08)_100%)] p-3.5 ring-1 ring-white/10">
             <div className="flex items-center gap-3">
               <div className="relative h-10 w-10 overflow-hidden rounded-2xl bg-white">
                 <Image alt="Asistente ATAR" fill sizes="40px" src="/botatar.png" className="object-contain p-1" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-950">¿Necesitás ayuda?</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">Hablá con el Asistente ATAR</p>
+                <p className="text-xs font-semibold text-white">¿Necesitás ayuda?</p>
+                <p className="mt-0.5 text-[11px] text-white/60">Hablá con el Asistente ATAR</p>
               </div>
             </div>
-            <button className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-xs font-semibold text-indigo-700 hover:bg-indigo-100" type="button">
+            <button className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#7a55f7] text-xs font-semibold text-white transition hover:bg-[#6d45f0]" type="button">
               Iniciar chat
             </button>
           </div>

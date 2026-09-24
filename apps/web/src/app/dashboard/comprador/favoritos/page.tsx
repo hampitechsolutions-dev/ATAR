@@ -64,7 +64,7 @@ export default function BuyerFavoritesPage() {
           .
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {favoriteProviders.map((provider) => (
             <article key={provider.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-3">

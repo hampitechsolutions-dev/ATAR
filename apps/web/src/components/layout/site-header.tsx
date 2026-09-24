@@ -26,6 +26,14 @@ function AtarMark() {
   );
 }
 
+function ArrowIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
+      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
 function MenuIcon({ className = 'h-6 w-6' }: { className?: string }) {
   return (
     <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
@@ -64,19 +72,19 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
+      <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-12">
         <Link href="/" className="shrink-0">
           <AtarMark />
         </Link>
 
         {/* Navegación desktop */}
-        <nav className="hidden items-center gap-8 text-sm text-slate-600 lg:flex">
+        <nav className="hidden items-center gap-7 text-sm font-medium text-slate-700 lg:flex">
           {marketingNav.map((item) => (
             <Link
               key={item.label}
               className={`inline-flex items-center gap-1 border-b-2 pb-1 transition ${
                 isActiveLink(item.href)
-                  ? 'border-indigo-600 text-slate-950'
+                  ? 'border-[#1f5bff] text-slate-950'
                   : 'border-transparent hover:border-slate-200 hover:text-slate-950'
               }`}
               href={item.href}
@@ -118,16 +126,21 @@ export default function SiteHeader() {
           ) : (
             <>
               <Link
-                className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 lg:inline-flex"
+                className="hidden h-10 items-center rounded-[10px] border border-slate-200 px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 lg:inline-flex"
                 href="/acceso"
               >
                 Iniciar sesión
               </Link>
+              {/* globals.css fija `a { color: inherit }` fuera de las capas de
+                  Tailwind: el color del texto va en un hijo. */}
               <Link
-                className="hidden rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 sm:inline-flex"
+                className="hidden h-10 items-center rounded-[10px] bg-[#1f5bff] px-4 text-sm font-semibold transition hover:bg-[#194ee6] sm:inline-flex"
                 href="/acceso"
               >
-                Crear cuenta gratis
+                <span className="inline-flex items-center gap-2 text-white">
+                  Crear cuenta
+                  <ArrowIcon />
+                </span>
               </Link>
             </>
           )}

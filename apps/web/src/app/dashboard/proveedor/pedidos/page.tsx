@@ -560,7 +560,7 @@ export default function SupplierOrdersPage() {
             </label>
 
             <button
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-[#5546ff] px-4 text-sm font-semibold text-white transition hover:bg-[#4739ea]"
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-[#6440e8] px-4 text-sm font-semibold text-white transition hover:bg-[#4739ea]"
               type="button"
             >
               + Nuevo pedido manual
@@ -733,7 +733,7 @@ export default function SupplierOrdersPage() {
 
                               {column.key !== 'delivered' ? (
                                 <button
-                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff] disabled:opacity-60"
+                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#6440e8] transition hover:bg-[#f7f6ff] disabled:opacity-60"
                                   disabled={
                                     !nextAction || updatingFulfillmentId === item.quote.requestId
                                   }
@@ -761,7 +761,7 @@ export default function SupplierOrdersPage() {
                 </div>
 
                 <button
-                  className="mt-4 text-sm font-semibold text-[#5546ff] transition hover:text-[#4336dc]"
+                  className="mt-4 text-sm font-semibold text-[#6440e8] transition hover:text-[#4336dc]"
                   type="button"
                 >
                   + {column.moreLabel}
@@ -788,7 +788,7 @@ export default function SupplierOrdersPage() {
           </div>
 
           <button
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-[#ddd8ff] bg-[#fbfaff] px-4 text-sm font-semibold text-[#5546ff] transition hover:bg-[#f5f2ff]"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-[#ddd8ff] bg-[#fbfaff] px-4 text-sm font-semibold text-[#6440e8] transition hover:bg-[#f5f2ff]"
             type="button"
           >
             Hablar con el Asistente

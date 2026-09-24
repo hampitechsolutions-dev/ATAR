@@ -38,19 +38,19 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
           isBuyerWizard ? 'bg-[linear-gradient(180deg,#f7f9ff_0%,#eef2fe_100%)]' : 'bg-[#f5f7fb]'
         } ${isBuyerMessages ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'}`}
       >
-        <BuyerMarketplaceHeader session={session} wide={isBuyerQuoteDetail} notificationCount={notificationCount} />
+        <BuyerMarketplaceHeader session={session} wide notificationCount={notificationCount} />
         {isFullBleed ? (
           <div className={showBottomNav ? 'pb-[76px] lg:pb-0' : undefined}>{children}</div>
         ) : isBuyerMessages ? (
           <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
         ) : (
           <main
+            // Todas las secciones usan el ancho completo de la pantalla, con el
+            // mismo margen lateral que el header.
             className={
-              isBuyerQuoteDetail
-                ? 'w-full px-3 py-3 pb-24 lg:px-4 lg:pb-4 xl:px-6'
-                : isBuyerWizard || isBuyerRequestDetail || isBuyerSupplierDetail
-                  ? 'mx-auto max-w-[1760px] px-3 py-3 lg:px-4 xl:px-6'
-                  : 'mx-auto max-w-[1320px] px-4 pt-4 pb-24 lg:pb-4'
+              isBuyerWizard || isBuyerRequestDetail || isBuyerSupplierDetail || isBuyerQuoteDetail
+                ? 'w-full px-3 py-3 lg:px-4 xl:px-6'
+                : 'w-full px-4 pt-4 pb-24 lg:pb-4 xl:px-6'
             }
           >
             {children}

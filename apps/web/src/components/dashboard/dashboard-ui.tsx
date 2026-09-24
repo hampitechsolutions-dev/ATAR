@@ -26,7 +26,13 @@ export function DashboardShell({
   session: WebSession | null;
 }) {
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_18%,#eef2ff_100%)] text-slate-950">
+    <main
+      className={`min-h-screen text-slate-950 ${
+        role === 'supplier'
+          ? 'bg-[linear-gradient(180deg,#f7f5ff_0%,#ffffff_18%,#f0ecff_100%)]'
+          : 'bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_18%,#eef2ff_100%)]'
+      }`}
+    >
       <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-10 lg:py-8">
         <div className="self-start lg:sticky lg:top-6">
           <DashboardSidebar role={role} session={session} />

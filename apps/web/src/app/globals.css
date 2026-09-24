@@ -95,3 +95,189 @@ a:focus-visible,
   outline-offset: 2px;
   border-radius: inherit;
 }
+
+/* ---------------------------------------------------------------------------
+ * Animaciones del sitio público.
+ * Todas se apagan si el sistema pide reducir el movimiento.
+ * ------------------------------------------------------------------------- */
+
+/* Aparición al hacer scroll (ver components/ui/reveal.tsx). */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.reveal[data-visible='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Entrada del hero, escalonada con animation-delay. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Zoom lento de la foto del hero al cargar. */
+@keyframes hero-zoom {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-hero-zoom {
+  animation: hero-zoom 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Flotación suave para elementos decorativos. */
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-6deg);
+  }
+}
+
+.animate-float-soft {
+  animation:
+    fade-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.6s both,
+    float-soft 6s ease-in-out 1.5s infinite;
+}
+
+/* Trazo que se dibuja (subrayado de la frase manuscrita). */
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 220;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-line {
+  stroke-dasharray: 220;
+  animation: draw-line 1.2s ease-out 1.2s both;
+}
+
+/* Pulso de los puntos del mapa. */
+@keyframes map-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.animate-map-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: map-pulse 2.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .animate-fade-up,
+  .animate-hero-zoom,
+  .animate-float-soft,
+  .animate-draw-line,
+  .animate-map-pulse {
+    animation: none;
+  }
+}
+
+/* Cinta de empresas: desplazamiento continuo, se pausa al pasar el mouse. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 32s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+    flex-wrap: wrap;
+    width: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Tema del perfil vendedor / empresa proveedora.
+ *
+ * Los mismos componentes que usa el comprador, con la identidad violeta del
+ * panel de ventas: dentro de `.theme-supplier` la escala `indigo` (el acento de
+ * toda la UI) se corre a violeta, así el vendedor se distingue del comprador
+ * (azul) sin duplicar pantallas. Se aplica en app/dashboard/proveedor/layout.
+ * ------------------------------------------------------------------------- */
+.theme-supplier {
+  --color-indigo-50: #f3f0ff;
+  --color-indigo-100: #e8e2ff;
+  --color-indigo-200: #d4c9ff;
+  --color-indigo-300: #b6a4ff;
+  --color-indigo-400: #9477ff;
+  --color-indigo-500: #7a55f7;
+  --color-indigo-600: #6440e8;
+  --color-indigo-700: #5332c7;
+  --color-indigo-800: #432aa0;
+  --color-indigo-900: #2e1f6e;
+}
+
+/* Badge flotante: entra desde abajo y después flota suave. */
+@keyframes badge-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-badge-in {
+  animation:
+    fade-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.9s both,
+    badge-float 5s ease-in-out 2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-badge-in {
+    animation: none;
+  }
+}

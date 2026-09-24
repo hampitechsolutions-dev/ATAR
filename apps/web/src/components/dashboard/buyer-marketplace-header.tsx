@@ -63,8 +63,6 @@ export default function BuyerMarketplaceHeader({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isProductsOpen, setIsProductsOpen] = useState(false);
-  const productsRef = useRef<HTMLDivElement | null>(null);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement | null>(null);
 
@@ -99,32 +97,6 @@ export default function BuyerMarketplaceHeader({
     setIsAccountOpen(false);
     router.push('/acceso');
   }
-
-  useEffect(() => {
-    if (!isProductsOpen) {
-      return;
-    }
-
-    function handlePointerDown(event: MouseEvent) {
-      if (!productsRef.current?.contains(event.target as Node)) {
-        setIsProductsOpen(false);
-      }
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsProductsOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isProductsOpen]);
 
   const profileName = useMemo(() => {
     const full = `${session?.user.firstName ?? ''} ${session?.user.lastName ?? ''}`.trim();
@@ -192,40 +164,6 @@ export default function BuyerMarketplaceHeader({
               <span className="absolute -bottom-[11px] left-0 h-[2px] w-full rounded-full bg-[#4f46ff]" />
             ) : null}
           </Link>
-
-          <div className="relative" ref={productsRef}>
-            <button
-              className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-950"
-              onClick={() => setIsProductsOpen((current) => !current)}
-              type="button"
-            >
-              Productos
-              <span className={`transition ${isProductsOpen ? 'rotate-180' : ''}`}>
-                <Icon name="chev-down" />
-              </span>
-            </button>
-
-            {isProductsOpen ? (
-              <div className="absolute left-0 top-[calc(100%+14px)] z-50 w-[320px] rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-                <Link
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  href="/dashboard/comprador/solicitudes/nueva"
-                  onClick={() => setIsProductsOpen(false)}
-                >
-                  Cotizar por categoria
-                  <Icon name="chev-right" />
-                </Link>
-                <Link
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  href="/dashboard/comprador/proveedores"
-                  onClick={() => setIsProductsOpen(false)}
-                >
-                  Buscar proveedores
-                  <Icon name="chev-right" />
-                </Link>
-              </div>
-            ) : null}
-          </div>
 
           {navItems.slice(1).map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);

@@ -382,7 +382,7 @@ export default function DashboardCompradorPage() {
     <div className="hidden lg:block">
       {/* HERO */}
       <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#f7f9ff_0%,#ffffff_100%)]">
-        <div className="mx-auto grid max-w-[1320px] grid-cols-2 items-center gap-8 px-8 py-12 xl:px-10">
+        <div className="grid w-full grid-cols-2 items-center gap-8 px-8 py-12 xl:px-6">
           <div>
             <h1 className="text-[2.6rem] font-extrabold leading-[1.05] tracking-tight text-slate-950">
               ¡{greeting}, <span className="text-blue-600">{firstName || 'de nuevo'}</span>!
@@ -439,7 +439,7 @@ export default function DashboardCompradorPage() {
 
       {/* CATEGORÍAS */}
       <section className="bg-[#f6f8fc]">
-        <div className="mx-auto max-w-[1320px] px-8 py-10 xl:px-10">
+        <div className="w-full px-8 py-10 xl:px-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold tracking-tight text-slate-950">Elegí una categoría</h2>
             <Link
@@ -501,7 +501,7 @@ export default function DashboardCompradorPage() {
 
       {/* FEATURES */}
       <section className="bg-[#f6f8fc] pb-12">
-        <div className="mx-auto max-w-[1320px] px-8 xl:px-10">
+        <div className="w-full px-8 xl:px-6">
           <div className="grid grid-cols-4 gap-6 rounded-2xl border border-slate-200 bg-white px-8 py-6 shadow-sm">
             {DESKTOP_FEATURES.map((feature) => (
               <div key={feature.title} className="flex items-center gap-3">

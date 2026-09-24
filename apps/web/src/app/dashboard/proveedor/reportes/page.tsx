@@ -15,7 +15,7 @@ type MonthlyRow = {
   newClients: number;
 };
 
-const CATEGORY_COLORS = ['#5b4bff', '#62c68f', '#4ea5ff', '#f4a340', '#f26565'];
+const CATEGORY_COLORS = ['#6440e8', '#62c68f', '#4ea5ff', '#f4a340', '#f26565'];
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('es-AR', {
@@ -194,8 +194,8 @@ function TrendLineChart({
     <svg aria-hidden="true" className="h-[220px] w-full" viewBox={`0 0 ${width} ${height}`}>
       <defs>
         <linearGradient id="sales-area" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#5b4bff" stopOpacity="0.26" />
-          <stop offset="100%" stopColor="#5b4bff" stopOpacity="0.02" />
+          <stop offset="0%" stopColor="#6440e8" stopOpacity="0.26" />
+          <stop offset="100%" stopColor="#6440e8" stopOpacity="0.02" />
         </linearGradient>
       </defs>
 
@@ -215,15 +215,15 @@ function TrendLineChart({
       ))}
 
       <path d={areaPath} fill="url(#sales-area)" />
-      <path d={path} fill="none" stroke="#5b4bff" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+      <path d={path} fill="none" stroke="#6440e8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
 
       {points.map((point) => (
-        <circle key={point.label} cx={point.x} cy={point.y} fill="#ffffff" r="4" stroke="#5b4bff" strokeWidth="2" />
+        <circle key={point.label} cx={point.x} cy={point.y} fill="#ffffff" r="4" stroke="#6440e8" strokeWidth="2" />
       ))}
 
       {activePoint ? (
         <>
-          <circle cx={activePoint.x} cy={activePoint.y} fill="#5b4bff" r="5" />
+          <circle cx={activePoint.x} cy={activePoint.y} fill="#6440e8" r="5" />
           <rect x={activePoint.x - 38} y={activePoint.y - 56} width="96" height="36" rx="10" fill="#ffffff" stroke="#eaedf8" />
           <text x={activePoint.x - 26} y={activePoint.y - 40} fill="#69729f" fontSize="8">
             {activePoint.label}
@@ -261,7 +261,7 @@ function ComparisonBarChart({
     <div className="space-y-3">
       <div className="flex flex-wrap gap-4 text-[11px] text-[#7b84b1]">
         <span className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#5b4bff]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#6440e8]" />
           Cotizaciones enviadas
         </span>
         <span className="flex items-center gap-2">
@@ -275,7 +275,7 @@ function ComparisonBarChart({
           <div key={item.label} className="flex h-full flex-col justify-end">
             <div className="flex flex-1 items-end justify-center gap-2">
               <div
-                className="w-4 rounded-t-[8px] bg-[#5b4bff]"
+                className="w-4 rounded-t-[8px] bg-[#6440e8]"
                 style={{ height: `${(item.quotes / max) * 150}px` }}
               />
               <div
@@ -476,7 +476,7 @@ export default function SupplierReportsPage() {
       {
         label: 'Perdidas',
         total: quotes.filter((quote) => quote.status === 'REJECTED').length,
-        color: '#5b4bff',
+        color: '#6440e8',
       },
       {
         label: 'Canceladas',
@@ -578,7 +578,7 @@ export default function SupplierReportsPage() {
               Ultimos {analytics.periodDays} dias
             </button>
             <button
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d9dbff] bg-white px-4 text-sm font-semibold text-[#5546ff]"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d9dbff] bg-white px-4 text-sm font-semibold text-[#6440e8]"
               type="button"
             >
               <HeaderIcon kind="download" />
@@ -631,7 +631,7 @@ export default function SupplierReportsPage() {
               className="rounded-[22px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]"
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f7f7ff] text-[#5b4bff]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f7f7ff] text-[#6440e8]">
                   <StatIcon kind={card.icon} />
                 </div>
                 <div>
@@ -775,7 +775,7 @@ export default function SupplierReportsPage() {
               </div>
 
               <button
-                className="mt-4 text-sm font-semibold text-[#5546ff] transition hover:text-[#4336dc]"
+                className="mt-4 text-sm font-semibold text-[#6440e8] transition hover:text-[#4336dc]"
                 type="button"
               >
                 Ver informe completo
@@ -837,7 +837,7 @@ export default function SupplierReportsPage() {
                 </div>
 
                 <button
-                  className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff]"
+                  className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#6440e8] transition hover:bg-[#f7f6ff]"
                   type="button"
                 >
                   Ver detalle de categorias
@@ -863,7 +863,7 @@ export default function SupplierReportsPage() {
               </div>
 
               <button
-                className="mt-5 text-sm font-semibold text-[#5546ff] transition hover:text-[#4336dc]"
+                className="mt-5 text-sm font-semibold text-[#6440e8] transition hover:text-[#4336dc]"
                 type="button"
               >
                 Ver toda la actividad

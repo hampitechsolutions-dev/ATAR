@@ -274,7 +274,7 @@ export default function BuyerOrdersPage() {
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="hidden lg:grid grid-cols-[0.22fr_0.22fr_0.2fr_0.2fr_0.12fr_0.12fr_0.12fr] gap-4 border-b border-slate-200 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <div className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)] border-b border-slate-200 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
           <p>Pedido</p>
           <p>Producto</p>
           <p>Proveedor</p>
@@ -298,8 +298,8 @@ export default function BuyerOrdersPage() {
               const promised = request.order?.promisedDate ?? null;
 
               return (
-                <div key={request.id} className="px-4 py-4 sm:px-6">
-                  <div className="grid gap-4 lg:grid-cols-[0.22fr_0.22fr_0.2fr_0.2fr_0.12fr_0.12fr_0.12fr] lg:items-center">
+                <div key={request.id} className="px-4 py-4 sm:px-6 lg:px-6">
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)] lg:items-center">
                     <div className="flex items-start gap-4">
                       <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${orderMeta.iconTone}`}>
                         <OrderIcon />
@@ -356,7 +356,7 @@ export default function BuyerOrdersPage() {
 
                     <div className="flex justify-start gap-2 lg:justify-end">
                       <Link
-                        className="inline-flex h-9 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
                         href={`/dashboard/comprador/solicitudes/${request.id}`}
                       >
                         Ver detalle
