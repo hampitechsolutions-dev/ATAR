@@ -180,8 +180,8 @@ export default function BuyerOrdersPage() {
           <p className="mt-1 text-sm text-slate-500">Gestioná y hacé seguimiento de todos tus pedidos</p>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm sm:w-[320px]">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row">
+          <div className="col-span-2 flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm sm:w-[320px]">
             <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
               <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
               <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -217,7 +217,7 @@ export default function BuyerOrdersPage() {
         </div>
       </div>
 
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:px-0">
         <div className="flex min-w-max items-center gap-6 border-b border-slate-200 pb-3 text-sm">
           {[
             { key: 'ALL' as const, label: 'Todos', count: counts.total },
@@ -254,7 +254,8 @@ export default function BuyerOrdersPage() {
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {/* En mobile las métricas van en una fila deslizable para no ocupar toda la pantalla. */}
+      <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-5">
         {[
           { label: 'Total pedidos', value: counts.total, sub: 'Todos los pedidos', tone: 'bg-indigo-50 text-indigo-600', icon: 'bag' as const },
           { label: 'En producción', value: counts.inProduction, sub: 'Actualmente en proceso', tone: 'bg-amber-50 text-amber-600', icon: 'box' as const },
@@ -262,11 +263,13 @@ export default function BuyerOrdersPage() {
           { label: 'Entregados', value: counts.delivered, sub: 'Completados', tone: 'bg-emerald-50 text-emerald-600', icon: 'check' as const },
           { label: 'Cancelados', value: counts.cancelled, sub: 'No completados', tone: 'bg-rose-50 text-rose-600', icon: 'x' as const },
         ].map((card) => (
-          <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
-              <StatIcon name={card.icon} />
+          <article key={card.label} className="min-w-[150px] shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:min-w-0">
+            <div className="flex items-center justify-between gap-3 sm:block">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
+                <StatIcon name={card.icon} />
+              </div>
+              <p className="text-2xl font-semibold text-slate-950 sm:mt-4">{card.value}</p>
             </div>
-            <p className="mt-4 text-2xl font-semibold text-slate-950">{card.value}</p>
             <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
             <p className="mt-1 text-xs text-slate-500">{card.sub}</p>
           </article>

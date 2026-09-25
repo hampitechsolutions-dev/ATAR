@@ -382,7 +382,74 @@ export default function SupplierClientsPage() {
           </label>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
+        {/* Mobile: tarjetas. Desde md, la tabla completa. */}
+        <ul className="mt-4 space-y-3 md:hidden">
+          {loading ? (
+            <li className="py-10">
+              <LoadingState label="Cargando clientes..." />
+            </li>
+          ) : pageCustomers.length === 0 ? (
+            <li className="py-10 text-center text-[13px] text-slate-500">
+              {customers.length === 0
+                ? 'Todavía no hay clientes. Aparecen cuando cotizás a un comprador.'
+                : 'No hay clientes que coincidan con los filtros.'}
+            </li>
+          ) : (
+            pageCustomers.map((customer) => {
+              const activity = lastActivity(customer);
+              const meta = STATUS_META[statusOf(customer)];
+              const product = customer.lastProduct ?? customer.lastQuotedProduct;
+              return (
+                <li key={customer.companyId} className="rounded-[14px] border border-slate-100 p-3.5">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600">
+                      {initials(customer.name)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="truncate text-[14px] font-semibold text-slate-900">{customer.name}</p>
+                        <span className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium ${meta.tone}`}>{meta.label}</span>
+                      </div>
+                      {product ? <p className="truncate text-[12px] text-slate-500">{product}</p> : null}
+                      <p className="mt-0.5 flex items-center gap-1 text-[12px] text-slate-500">
+                        <Icon className="h-3.5 w-3.5 text-slate-400" name="pin" />
+                        {customer.location || '—'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-100 rounded-[10px] bg-[#f7f6fd] py-2 text-center">
+                    <span>
+                      <span className="block text-[10px] text-slate-500">Cotizaciones</span>
+                      <span className="block text-[13px] font-semibold text-slate-900">{customer.quotesCount}</span>
+                    </span>
+                    <span>
+                      <span className="block text-[10px] text-slate-500">Pedidos</span>
+                      <span className="block text-[13px] font-semibold text-slate-900">{customer.ordersCount}</span>
+                    </span>
+                    <span>
+                      <span className="block text-[10px] text-slate-500">Volumen</span>
+                      <span className="block truncate px-1 text-[13px] font-semibold text-slate-900">{formatCurrency(customer.purchasedAmount)}</span>
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="min-w-0 truncate text-[12px] text-slate-500">
+                      {activity ? `${activity.label} · ${formatDayTime(activity.at)}` : 'Sin actividad'}
+                    </p>
+                    <button
+                      className="inline-flex h-9 shrink-0 items-center rounded-[10px] bg-indigo-50 px-4 text-[13px] font-semibold text-indigo-600"
+                      onClick={() => void openHistory(customer)}
+                      type="button"
+                    >
+                      Ver historial
+                    </button>
+                  </div>
+                </li>
+              );
+            })
+          )}
+        </ul>
+
+        <div className="mt-4 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1000px] text-left text-[14px]">
             <thead>
               <tr className="bg-[#f6f4fd] text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">

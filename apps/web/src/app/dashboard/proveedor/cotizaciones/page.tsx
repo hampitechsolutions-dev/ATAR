@@ -399,7 +399,58 @@ export default function SupplierQuotesPage() {
           })}
         </div>
 
-        <div className="mt-3 overflow-x-auto">
+        {/* Mobile: tarjetas. Desde md, la tabla completa. */}
+        <ul className="mt-3 space-y-3 md:hidden">
+          {loading ? (
+            <li className="py-10">
+              <LoadingState label="Cargando cotizaciones..." />
+            </li>
+          ) : pageRows.length === 0 ? (
+            <li className="py-10 text-center text-[13px] text-slate-500">No hay cotizaciones para este filtro.</li>
+          ) : (
+            pageRows.map((row) => {
+              const status = STATUS_META[row.expired ? 'expired' : row.kind];
+              const amount = formatAmount(row.amount, row.currency);
+              const quantity = requestQuantity(row.request);
+              const highlight = urgency(row);
+              const due = row.kind === 'pending' || row.kind === 'submitted' ? formatDue(row.deadline, nowMs) : null;
+              return (
+                <li key={row.id}>
+                  <Link className={`block rounded-[14px] border border-slate-100 p-3.5 ${highlight?.bg ?? ''}`} href={rowHref(row)}>
+                    <div className="flex items-start gap-3">
+                      <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
+                        <Image alt="" className="object-cover" fill sizes="48px" src={requestImage(row.request)} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14px] font-semibold text-slate-900">{row.title}</p>
+                        <p className="truncate text-[12px] text-slate-500">
+                          {row.buyer}
+                          {quantity ? ` · ${quantity}` : ''}
+                        </p>
+                        <span className={`mt-1.5 inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium ${status.tone}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
+                          {status.label}
+                        </span>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-[14px] font-semibold text-slate-900">{amount ?? 'A cotizar'}</p>
+                        <p className="text-[11px] text-slate-400">{formatDayTime(row.updatedAt)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className={`text-[12px] ${highlight?.text ?? 'text-slate-500'}`}>{due ?? ''}</span>
+                      <span className="inline-flex h-9 items-center rounded-[10px] border border-indigo-200 bg-white px-4 text-[13px] font-semibold text-indigo-600">
+                        {row.kind === 'pending' ? 'Cotizar' : 'Ver detalle'}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })
+          )}
+        </ul>
+
+        <div className="mt-3 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[900px] text-left text-[14px]">
             <thead>
               <tr className="bg-[#f6f4fd] text-[13px] text-slate-600">

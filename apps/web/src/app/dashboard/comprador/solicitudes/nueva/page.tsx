@@ -1104,6 +1104,13 @@ export default function BuyerNewRequestWizardPage() {
         ? current
         : { ...current, ...blankProductFields(), category: label, unit: getDefaultUnit(label) },
     );
+    // En mobile el formulario del producto queda debajo de la grilla: se baja
+    // hasta él para que se vea qué completar después de elegir la categoría.
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+      window.setTimeout(() => {
+        document.getElementById('wizard-composer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    }
   }
 
   function clearComposer() {
@@ -1513,7 +1520,7 @@ export default function BuyerNewRequestWizardPage() {
   );
 
   const mobileProgress = (
-    <div className="flex h-11 items-center gap-3 sm:hidden">
+    <div className="flex h-12 items-center gap-3 sm:hidden">
       <button
         aria-label="Volver"
         className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100"
@@ -1525,7 +1532,8 @@ export default function BuyerNewRequestWizardPage() {
       <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-200">
         <div className="h-full rounded-full bg-[#3f3df5] transition-all" style={{ width: `${(step / steps.length) * 100}%` }} />
       </div>
-      <span className="shrink-0 text-xs font-semibold text-slate-500">
+      <span className="shrink-0 text-right text-xs leading-4 text-slate-500">
+        <span className="block font-semibold text-slate-900">{steps[step - 1]?.label}</span>
         Paso {step} de {steps.length}
       </span>
     </div>
@@ -1742,7 +1750,9 @@ export default function BuyerNewRequestWizardPage() {
   const cardHeader = 'shrink-0 px-5 pt-5 sm:px-6';
   const scrollArea =
     'lg:min-h-0 lg:flex-1 lg:overflow-y-auto [scrollbar-color:#d5dbeb_transparent] [scrollbar-width:thin]';
-  const cardFooter = 'flex shrink-0 items-center justify-between gap-3 border-t border-[#edf0f7] px-5 py-3.5 sm:px-6';
+  // En mobile las acciones quedan pegadas al borde inferior mientras se scrollea.
+  const cardFooter =
+    'flex shrink-0 items-center justify-between gap-3 rounded-b-[16px] border-t border-[#edf0f7] bg-white px-5 py-3.5 sm:px-6 max-lg:sticky max-lg:bottom-0 max-lg:z-20 max-lg:shadow-[0_-8px_20px_rgba(32,48,90,0.06)]';
   const stepTitle = 'mt-0.5 text-[24px] font-bold leading-tight tracking-[-0.035em] text-slate-950 xl:text-[28px]';
   const stepSubtitle = 'mt-1 text-[14px] leading-5 text-slate-500';
 
@@ -1784,12 +1794,12 @@ export default function BuyerNewRequestWizardPage() {
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#6a78ff] to-[#3f3df5] text-white shadow-[0_8px_18px_rgba(63,61,245,0.25)]">
             <Icon className="h-5 w-5" name="box" />
           </span>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 basis-[200px]">
             <p className="text-[14px] font-semibold text-slate-950">Podés agregar varios productos en una misma solicitud.</p>
             <p className="text-[12px] text-slate-500">Esto te permite recibir cotizaciones integradas y ahorrar tiempo.</p>
           </div>
           <button
-            className="inline-flex h-9 items-center gap-2 rounded-[10px] bg-white px-3.5 text-[13px] font-semibold text-[#3f3df5] shadow-[0_4px_12px_rgba(32,48,90,0.06)]"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-white px-3.5 text-[13px] font-semibold text-[#3f3df5] shadow-[0_4px_12px_rgba(32,48,90,0.06)] max-sm:w-full"
             onClick={() => setShowHowItWorks((current) => !current)}
             type="button"
           >
@@ -1832,7 +1842,7 @@ export default function BuyerNewRequestWizardPage() {
 
         <div className="grid gap-4 p-5 sm:px-6 lg:min-h-0 lg:flex-1 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className={`${scrollArea} -mr-2 pr-2`}>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:h-full lg:auto-rows-fr lg:grid-cols-4 2xl:grid-cols-5">
+            <div className="grid grid-cols-3 gap-2 sm:gap-2.5 lg:h-full lg:auto-rows-fr lg:grid-cols-4 2xl:grid-cols-5">
               {visibleCategories.length === 0 ? (
                 <div className="col-span-full rounded-[12px] border border-dashed border-slate-300 px-5 py-8 text-sm text-slate-500">
                   {requestCategories.length === 0 ? 'Cargando categorías…' : 'No hay productos para este filtro.'}
@@ -1867,7 +1877,7 @@ export default function BuyerNewRequestWizardPage() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="shrink-0 truncate px-1 pb-0.5 pt-2 text-[12px] font-semibold text-slate-900">{option.label}</p>
+                      <p className="shrink-0 truncate px-0.5 pb-0.5 pt-1.5 text-[11px] font-semibold text-slate-900 sm:px-1 sm:pt-2 sm:text-[12px]">{option.label}</p>
                     </button>
                   );
                 })
@@ -1875,7 +1885,7 @@ export default function BuyerNewRequestWizardPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 lg:min-h-0 lg:overflow-y-auto [scrollbar-width:none]">
+          <div className="flex scroll-mt-4 flex-col gap-3 lg:min-h-0 lg:overflow-y-auto [scrollbar-width:none]" id="wizard-composer">
             <div className="flex flex-1 flex-col rounded-[12px] border border-[#e3e8f3] bg-white p-4 lg:min-h-fit">
               {composerCategory ? (
                 <>
@@ -2213,7 +2223,7 @@ export default function BuyerNewRequestWizardPage() {
               return (
                 <button
                   key={module.id}
-                  className={`flex min-w-0 flex-1 items-center gap-2 rounded-[10px] border px-3 py-2 text-left transition ${
+                  className={`flex shrink-0 items-center gap-2 rounded-[10px] border px-3 py-2 text-left transition sm:min-w-0 sm:flex-1 sm:shrink ${
                     active
                       ? 'border-[#3f3df5] bg-[#f3f2ff]'
                       : done
@@ -2230,7 +2240,7 @@ export default function BuyerNewRequestWizardPage() {
                   >
                     {done ? <Icon className="h-3.5 w-3.5" name="check" /> : index + 1}
                   </span>
-                  <span className={`truncate text-[13px] ${active ? 'font-semibold text-[#3f3df5]' : 'text-slate-600'}`}>
+                  <span className={`whitespace-nowrap text-[13px] sm:truncate ${active ? 'font-semibold text-[#3f3df5]' : 'text-slate-600'}`}>
                     {canonicalModuleKey(module.id) === 'observaciones' ? 'Notas' : module.label}
                   </span>
                 </button>
@@ -2663,9 +2673,9 @@ export default function BuyerNewRequestWizardPage() {
 
       <div className={`${scrollArea} mt-4 space-y-3 px-5 pb-5 sm:px-6`}>
       <div className="rounded-[12px] border border-[#e6eaf3]">
-        <div className="flex shrink-0 items-center justify-between border-b border-[#e6eaf3] px-4 py-3">
-          <p className="text-[15px] font-semibold text-slate-950">Productos ({productCount})</p>
-          <div className="flex items-center gap-4">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#e6eaf3] px-4 py-3">
+          <p className="whitespace-nowrap text-[15px] font-semibold text-slate-950">Productos ({productCount})</p>
+          <div className="flex items-center gap-4 whitespace-nowrap">
             <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#3f3df5]" onClick={addAnotherProduct} type="button">
               <Icon className="h-3.5 w-3.5" name="plus" />
               Agregar producto
@@ -2835,7 +2845,7 @@ export default function BuyerNewRequestWizardPage() {
 
         <div className="mt-4 shrink-0">{quickSummary}</div>
 
-        <button className={`${primaryButton} mt-4 h-11 w-full shrink-0 text-[14px]`} onClick={continueToSpecs} type="button">
+        <button className={`${primaryButton} mt-4 h-11 w-full shrink-0 text-[14px] max-lg:hidden`} onClick={continueToSpecs} type="button">
           Continuar a especificaciones
           <Icon name="arrow-right" />
         </button>
@@ -3046,7 +3056,7 @@ export default function BuyerNewRequestWizardPage() {
         </div>
 
         <button
-          className={`${primaryButton} mt-auto h-12 w-full shrink-0 text-[16px]`}
+          className={`${primaryButton} mt-auto h-12 w-full shrink-0 text-[16px] max-lg:hidden`}
           disabled={submitting || productCount === 0 || selectedProviders.length === 0}
           onClick={handleSubmit}
           type="button"
@@ -3067,9 +3077,36 @@ export default function BuyerNewRequestWizardPage() {
   const stepContent =
     step === 2 ? stepTwo : step === 3 ? stepThree : step === 4 ? stepFour : step === 5 ? stepFive : null;
 
+  // Pasos 1 y 5: su acción principal vive en la barra lateral, que en mobile
+  // queda al final de la página. Se repite en una barra fija inferior.
+  const mobileActionBar =
+    step === 1 || step === 5 ? (
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#e3e8f3] bg-white/95 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(32,48,90,0.08)] backdrop-blur lg:hidden">
+        {step === 1 ? (
+          <button className={`${primaryButton} h-12 w-full text-[15px]`} onClick={continueToSpecs} type="button">
+            {productCount > 0 || draft.category ? `Continuar con ${productCount + (draft.category ? 1 : 0)} producto${productCount + (draft.category ? 1 : 0) === 1 ? '' : 's'}` : 'Continuar a especificaciones'}
+            <Icon name="arrow-right" />
+          </button>
+        ) : (
+          <button
+            className={`${primaryButton} h-12 w-full text-[15px]`}
+            disabled={submitting || productCount === 0 || selectedProviders.length === 0}
+            onClick={handleSubmit}
+            type="button"
+          >
+            {submitting ? 'Publicando…' : editRequestId ? 'Guardar cambios' : 'Publicar solicitud'}
+            {submitting ? null : <Icon name="arrow-right" />}
+          </button>
+        )}
+      </div>
+    ) : null;
+
   return (
-    <div className="flex w-full flex-col gap-3 pb-6 lg:h-[calc(100dvh-85px)] lg:overflow-hidden lg:pb-0">
+    <div
+      className={`flex w-full flex-col gap-3 lg:h-[calc(100dvh-85px)] lg:overflow-hidden lg:pb-0 ${mobileActionBar ? 'pb-28' : 'pb-6'}`}
+    >
       {mobileProgress}
+      {mobileActionBar}
 
       {step > 1 ? (
         <div className="hidden shrink-0 items-start gap-6 sm:flex">

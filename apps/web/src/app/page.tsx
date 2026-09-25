@@ -296,10 +296,10 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="animate-fade-up mt-12 grid max-w-lg grid-cols-3 gap-6 [animation-delay:450ms]">
+            <div className="animate-fade-up mt-10 grid max-w-lg gap-3 [animation-delay:450ms] sm:mt-12 sm:grid-cols-3 sm:gap-6">
               {HERO_FEATURES.map((item) => (
                 <div key={item.text} className="flex items-center gap-3">
-                  <Icon name={item.icon} className="h-7 w-7 shrink-0 text-[#5b8dff]" />
+                  <Icon name={item.icon} className="h-6 w-6 shrink-0 text-[#5b8dff] sm:h-7 sm:w-7" />
                   <p className="text-[13px] leading-5 text-white/85">{item.text}</p>
                 </div>
               ))}
@@ -375,10 +375,10 @@ export default function Home() {
             <p className="text-[15px] text-slate-600">Simple. Rápido. Enfocado en tu industria.</p>
           </Reveal>
 
-          <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:mt-12 sm:gap-10 lg:grid-cols-4 lg:gap-6">
             {STEPS.map((step, index) => (
-              <Reveal key={step.label} className="group relative flex items-start gap-4" delay={index * 140}>
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e3eaff] text-lg font-semibold text-[#1f5bff] transition duration-300 group-hover:bg-[#1f5bff] group-hover:text-white">
+              <Reveal key={step.label} className="group relative flex flex-col items-start gap-3 sm:flex-row sm:gap-4" delay={index * 140}>
+                <span className="flex h-10 w-10 shrink-0 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#e3eaff] text-lg font-semibold text-[#1f5bff] transition duration-300 group-hover:bg-[#1f5bff] group-hover:text-white">
                   {index + 1}
                 </span>
                 <div className="min-w-0">

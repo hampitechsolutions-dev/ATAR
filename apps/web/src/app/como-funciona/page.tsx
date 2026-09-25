@@ -277,9 +277,10 @@ export default function ComoFuncionaPage() {
             </p>
           </Reveal>
 
-          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          {/* En mobile los pasos son un carrusel deslizable; desde sm, grilla. */}
+          <div className="-mx-6 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-8 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-6">
             {STEPS.map((step, index) => (
-              <Reveal key={step.n} className="group relative flex flex-col" delay={index * 120}>
+              <Reveal key={step.n} className="group relative flex w-[78%] shrink-0 snap-start flex-col sm:w-auto" delay={index * 120}>
                 <div className="flex items-end gap-3">
                   <span className="text-[64px] font-bold leading-[0.8] tracking-[-0.04em] text-[#dfe8ff] transition duration-300 group-hover:text-[#b9cbff]">
                     {step.n}
