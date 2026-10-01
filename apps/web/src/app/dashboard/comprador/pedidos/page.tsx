@@ -1,11 +1,14 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { LoadingState } from '@/components/ui/spinner';
 import { formatCurrency } from '@/lib/format';
 import { formatRequestCode } from '@/lib/request-code';
+import { type RequestRecord } from '@/lib/atar-api';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
+import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -127,6 +130,16 @@ function StatIcon({ name }: { name: 'bag' | 'box' | 'truck' | 'check' | 'x' }) {
   );
 }
 
+// Imagen de la categoría de la solicitud, para las tarjetas mobile.
+function requestImage(request: RequestRecord) {
+  const labels = [request.items?.[0]?.category, request.category].filter(Boolean);
+  for (const label of labels) {
+    const match = FALLBACK_REQUEST_CATEGORIES.find((category) => category.label === label);
+    if (match?.imageSrc) return match.imageSrc;
+  }
+  return '/logoatar.png';
+}
+
 export default function BuyerOrdersPage() {
   const { requests, loading, error } = useBuyerDashboardData();
   const [activeTab, setActiveTab] = useState<'ALL' | 'NEGOTIATING' | 'AWARDED' | 'ORDER_ISSUED' | 'CANCELLED'>('ALL');
@@ -173,7 +186,155 @@ export default function BuyerOrdersPage() {
   const visibleOrders = filteredOrders.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
-    <div className="space-y-6">
+    <div>
+      {/* ==================== VISTA MOBILE ==================== */}
+      <div className="pb-4 lg:hidden">
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-950">Mis pedidos</h1>
+        <p className="mt-1 text-[13px] text-slate-500">Seguí el estado de cada compra, de la orden a la entrega.</p>
+
+        <div className="relative mt-4">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            </svg>
+          </span>
+          <input
+            className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Buscar pedido, producto o proveedor..."
+            value={search}
+          />
+        </div>
+
+        <div className="-mx-3 mt-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+          {[
+            { key: 'ALL' as const, label: 'Todos', count: counts.total },
+            { key: 'NEGOTIATING' as const, label: 'En producción', count: counts.inProduction },
+            { key: 'AWARDED' as const, label: 'En camino', count: counts.onWay },
+            { key: 'ORDER_ISSUED' as const, label: 'Entregados', count: counts.delivered },
+            { key: 'CANCELLED' as const, label: 'Cancelados', count: counts.cancelled },
+          ].map((tab) => {
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold transition ${
+                  active ? 'bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.28)]' : 'bg-white text-slate-600 ring-1 ring-slate-200'
+                }`}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setPage(1);
+                }}
+                type="button"
+              >
+                {tab.label}
+                <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] ${active ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+
+        <div className="mt-4 space-y-3">
+          {loading ? (
+            <div className="rounded-[18px] bg-white px-4 py-10 shadow-sm">
+              <LoadingState label="Cargando pedidos..." />
+            </div>
+          ) : visibleOrders.length === 0 ? (
+            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
+              No hay pedidos para mostrar.
+            </div>
+          ) : (
+            visibleOrders.map((request) => {
+              const providerName = request.awardedQuote?.supplierCompany?.name ?? 'Proveedor asignado';
+              const orderMeta = getOrderMeta(request);
+              const promised = request.order?.promisedDate ?? null;
+              return (
+                <Link
+                  key={request.id}
+                  className="block rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/70 transition active:scale-[0.99]"
+                  href={`/dashboard/comprador/solicitudes/${request.id}`}
+                >
+                  <div className="flex gap-3">
+                    <span className="relative h-[76px] w-[76px] shrink-0 overflow-hidden rounded-[12px] bg-slate-100">
+                      <Image alt="" className="object-cover" fill sizes="76px" src={requestImage(request)} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${orderMeta.pill}`}>{orderMeta.label}</span>
+                        <span className="text-[11px] text-slate-400">{request.order?.orderNumber ?? formatRequestCode(request.id)}</span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-[15px] font-bold leading-5 tracking-[-0.01em] text-slate-950">{request.title}</p>
+                      <p className="mt-0.5 truncate text-[12px] text-slate-500">{providerName}</p>
+                    </div>
+                    <span className="self-center text-slate-400">
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                    </span>
+                  </div>
+
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">{orderMeta.progressText}</span>
+                      <span className="font-semibold text-slate-700">{orderMeta.pct}%</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div className={`h-full rounded-full ${orderMeta.progressColor}`} style={{ width: `${orderMeta.pct}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 divide-x divide-slate-200/70 rounded-[12px] bg-[#f5f7fc] py-2 text-center">
+                    <span className="px-1">
+                      <span className="block text-[10px] text-slate-500">Entrega prometida</span>
+                      <span className="block truncate text-[12px] font-semibold text-slate-900">{promised ? formatDate(promised) : 'A convenir'}</span>
+                    </span>
+                    <span className="px-1">
+                      <span className="block text-[10px] text-slate-500">Total</span>
+                      <span className="block truncate text-[12px] font-semibold text-slate-900">
+                        {formatCurrency(request.awardedQuote?.amount, request.awardedQuote?.currency)}
+                      </span>
+                    </span>
+                  </div>
+                </Link>
+              );
+            })
+          )}
+
+          {totalPages > 1 ? (
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <button
+                className="inline-flex h-10 items-center rounded-[10px] bg-white px-4 text-[13px] font-semibold text-slate-700 ring-1 ring-slate-200 disabled:opacity-40"
+                disabled={safePage <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                type="button"
+              >
+                Anterior
+              </button>
+              <span className="text-[12px] text-slate-500">
+                Página {safePage} de {totalPages}
+              </span>
+              <button
+                className="inline-flex h-10 items-center rounded-[10px] bg-white px-4 text-[13px] font-semibold text-slate-700 ring-1 ring-slate-200 disabled:opacity-40"
+                disabled={safePage >= totalPages}
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                type="button"
+              >
+                Siguiente
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ==================== VISTA DESKTOP ==================== */}
+      <div className="hidden space-y-6 lg:block">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Pedidos</h1>
@@ -421,6 +582,7 @@ export default function BuyerOrdersPage() {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }

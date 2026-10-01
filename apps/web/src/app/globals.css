@@ -58,9 +58,14 @@ body {
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* En la capa base: así las utilidades de Tailwind (text-white, text-indigo-600…)
+   ganan sobre este reset. Fuera de una capa, pisaba el color de todo <a> y los
+   botones-enlace con fondo oscuro quedaban con texto negro. */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 /**
@@ -278,6 +283,42 @@ a:focus-visible,
 
 @media (prefers-reduced-motion: reduce) {
   .animate-badge-in {
+    animation: none;
+  }
+}
+
+/* Pantalla de carga al entrar al panel (components/ui/spinner.tsx). */
+@keyframes loader-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+@keyframes loader-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.loader-ring {
+  animation: loader-ring 1.6s ease-out infinite;
+}
+
+.loader-bar {
+  animation: loader-bar 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-ring,
+  .loader-bar {
     animation: none;
   }
 }

@@ -516,7 +516,10 @@ export default function SupplierReportsPage() {
         return {
           id: quote.id,
           title: tone.label,
-          detail: `${quote.id} · ${quote.request?.buyerCompany?.name ?? 'Cliente'}`,
+          // El ID interno no le dice nada al usuario: se muestra la solicitud.
+          detail: [quote.request?.productName ?? quote.request?.title, quote.request?.buyerCompany?.name ?? 'Cliente']
+            .filter(Boolean)
+            .join(' · '),
           time: formatShortDate(quote.updatedAt),
           dot: tone.dot,
           icon: tone.icon,

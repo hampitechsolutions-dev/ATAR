@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import CompanyLogo from '@/components/dashboard/company-logo';
+import ArgentinaMap from '@/components/home/argentina-map';
 import Reveal from '@/components/ui/reveal';
 import { atarApi, SUPPLIER_ROLE_LABELS, type SupplierDirectoryRecord, type SupplierRole } from '@/lib/atar-api';
 
@@ -121,52 +122,6 @@ function VerifiedBadge() {
       </svg>
       Proveedor verificado
     </span>
-  );
-}
-
-/* Mapa -------------------------------------------------------------------- */
-
-// Posiciones aproximadas (en el viewBox del mapa) de las ciudades conocidas.
-const CITY_POINTS: Record<string, { x: number; y: number }> = {
-  'buenos aires': { x: 86, y: 118 },
-  caba: { x: 86, y: 118 },
-  rosario: { x: 76, y: 104 },
-  'santa fe': { x: 74, y: 92 },
-  cordoba: { x: 58, y: 96 },
-  mendoza: { x: 34, y: 108 },
-  'san luis': { x: 47, y: 108 },
-  tucuman: { x: 50, y: 58 },
-  salta: { x: 44, y: 42 },
-  neuquen: { x: 38, y: 152 },
-  'mar del plata': { x: 90, y: 136 },
-  'bahia blanca': { x: 70, y: 146 },
-  parana: { x: 78, y: 94 },
-  'entre rios': { x: 82, y: 92 },
-};
-
-function ArgentinaMap({ cities, onSelect }: { cities: { name: string; count: number }[]; onSelect: (city: string) => void }) {
-  return (
-    <svg aria-label="Mapa de proveedores en Argentina" className="h-full w-full" role="img" viewBox="0 0 130 270">
-      <path
-        d="M36 8 L60 6 L84 12 L100 30 L104 44 L92 52 L88 70 L84 88 L92 104 L100 116 L92 128 L80 136 L74 146 L64 156 L62 172 L56 188 L52 204 L48 222 L44 240 L46 256 L34 262 L30 246 L30 226 L28 204 L26 182 L24 160 L22 138 L22 116 L24 94 L26 72 L28 50 L30 30 Z"
-        fill="#dfe8ff"
-        stroke="#b9cbff"
-        strokeWidth="1.5"
-      />
-      {cities.map((city) => {
-        const point = CITY_POINTS[normalize(city.name)];
-        if (!point) {
-          return null;
-        }
-        return (
-          <g key={city.name} className="cursor-pointer" onClick={() => onSelect(city.name)}>
-            <title>{`${city.name} (${city.count})`}</title>
-            <circle className="animate-map-pulse" cx={point.x} cy={point.y} fill="#1f5bff" r="6" />
-            <circle cx={point.x} cy={point.y} fill="#1f5bff" r="3.4" />
-          </g>
-        );
-      })}
-    </svg>
   );
 }
 
@@ -638,9 +593,9 @@ export default function ProveedoresPage() {
           <Reveal>
             <h2 className="text-2xl font-bold tracking-[-0.03em] text-slate-950 sm:text-[1.9rem]">Proveedores por ubicación</h2>
             <p className="mt-1.5 text-sm text-slate-500">Encontrá empresas en tu región.</p>
-            <div className="mt-6 grid grid-cols-[150px_minmax(0,1fr)] items-center gap-6 sm:grid-cols-[190px_minmax(0,1fr)]">
-              <div className="h-[280px] sm:h-[340px]">
-                <ArgentinaMap cities={cities} onSelect={selectCity} />
+            <div className="mt-6 grid grid-cols-1 items-center gap-6 sm:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
+              <div className="mx-auto h-[360px] w-full max-w-[300px] sm:h-[400px]">
+                <ArgentinaMap className="h-full w-full" cities={cities} onSelect={selectCity} selected={location === 'all' ? undefined : location} />
               </div>
               <div className="rounded-[14px] border border-slate-200 bg-white p-2">
                 {cities.length === 0 ? (

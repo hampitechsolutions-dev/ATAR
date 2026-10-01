@@ -1,9 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { LoadingState } from '@/components/ui/spinner';
+import { type RequestRecord } from '@/lib/atar-api';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
+import { formatRequestCode } from '@/lib/request-code';
+import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 
 function formatCurrency(value: number | null | undefined) {
   if (typeof value !== 'number') {
@@ -29,9 +33,28 @@ function formatDate(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
+// Imagen de la categoría de la solicitud, para las tarjetas mobile.
+function requestImage(request: RequestRecord) {
+  const labels = [request.items?.[0]?.category, request.category].filter(Boolean);
+  for (const label of labels) {
+    const match = FALLBACK_REQUEST_CATEGORIES.find((category) => category.label === label);
+    if (match?.imageSrc) return match.imageSrc;
+  }
+  return '/logoatar.png';
+}
+
+/** Menor monto entre las cotizaciones recibidas (las que informan precio). */
+function bestOffer(request: RequestRecord) {
+  const amounts = (request.quotes ?? []).map((quote) => quote.amount).filter((amount): amount is number => typeof amount === 'number');
+  return amounts.length > 0 ? Math.min(...amounts) : null;
+}
+
+type MobileTab = 'ALL' | 'PENDING' | 'AWARDED';
+
 export default function BuyerQuotesPage() {
   const { requests, loading, error } = useBuyerDashboardData();
   const [search, setSearch] = useState('');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('ALL');
 
   const quotedRequests = useMemo(() => {
     return requests
@@ -54,8 +77,136 @@ export default function BuyerQuotesPage() {
   const awardedCount = quotedRequests.filter((request) => request.awardedQuoteId).length;
   const totalQuotes = quotedRequests.reduce((acc, request) => acc + (request._count?.quotes ?? 0), 0);
 
+  const mobileRequests = quotedRequests.filter((request) =>
+    mobileTab === 'ALL' ? true : mobileTab === 'AWARDED' ? Boolean(request.awardedQuoteId) : !request.awardedQuoteId,
+  );
+
   return (
-    <div className="space-y-6">
+    <div>
+      {/* ==================== VISTA MOBILE ==================== */}
+      <div className="pb-4 lg:hidden">
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-950">Cotizaciones</h1>
+        <p className="mt-1 text-[13px] text-slate-500">Compará propuestas y seguí cada respuesta de proveedor.</p>
+
+        <div className="relative mt-4">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            </svg>
+          </span>
+          <input
+            className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar por solicitud o proveedor..."
+            value={search}
+          />
+        </div>
+
+        <div className="-mx-3 mt-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+          {[
+            { key: 'ALL' as const, label: 'Todas', count: quotedRequests.length },
+            { key: 'PENDING' as const, label: 'Por decidir', count: quotedRequests.length - awardedCount },
+            { key: 'AWARDED' as const, label: 'Adjudicadas', count: awardedCount },
+          ].map((tab) => {
+            const active = mobileTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold transition ${
+                  active ? 'bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.28)]' : 'bg-white text-slate-600 ring-1 ring-slate-200'
+                }`}
+                onClick={() => setMobileTab(tab.key)}
+                type="button"
+              >
+                {tab.label}
+                <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] ${active ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+
+        <div className="mt-4 space-y-3">
+          {loading ? (
+            <div className="rounded-[18px] bg-white px-4 py-10 shadow-sm">
+              <LoadingState label="Cargando cotizaciones..." />
+            </div>
+          ) : mobileRequests.length === 0 ? (
+            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
+              {quotedRequests.length === 0 ? 'Todavía no tenés cotizaciones para mostrar.' : 'No hay cotizaciones en este filtro.'}
+            </div>
+          ) : (
+            mobileRequests.map((request) => {
+              const quotes = request._count?.quotes ?? 0;
+              const awarded = Boolean(request.awardedQuoteId);
+              const supplier = request.awardedQuote?.supplierCompany?.name;
+              return (
+                <Link
+                  key={request.id}
+                  className="block rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/70 transition active:scale-[0.99]"
+                  href={`/dashboard/comprador/solicitudes/${request.id}`}
+                >
+                  <div className="flex gap-3">
+                    <span className="relative h-[76px] w-[76px] shrink-0 overflow-hidden rounded-[12px] bg-slate-100">
+                      <Image alt="" className="object-cover" fill sizes="76px" src={requestImage(request)} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
+                          {request.category}
+                        </span>
+                        <span
+                          className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${
+                            awarded ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                          }`}
+                        >
+                          {awarded ? 'Adjudicada' : 'Por decidir'}
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-[15px] font-bold leading-5 tracking-[-0.01em] text-slate-950">{request.title}</p>
+                      <p className="mt-0.5 truncate text-[12px] text-slate-500">
+                        {awarded && supplier ? supplier : formatRequestCode(request.id)}
+                      </p>
+                    </div>
+                    <span className="self-center text-slate-400">
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200/70 rounded-[12px] bg-[#f5f7fc] py-2 text-center">
+                    <span className="px-1">
+                      <span className="block text-[10px] text-slate-500">Propuestas</span>
+                      <span className="block truncate text-[12px] font-semibold text-slate-900">{quotes}</span>
+                    </span>
+                    <span className="px-1">
+                      <span className="block text-[10px] text-slate-500">{awarded ? 'Monto adjudicado' : 'Mejor oferta'}</span>
+                      <span className="block truncate text-[12px] font-semibold text-slate-900">
+                        {formatCurrency(awarded ? request.awardedQuote?.amount : bestOffer(request))}
+                      </span>
+                    </span>
+                    <span className="px-1">
+                      <span className="block text-[10px] text-slate-500">Actualizada</span>
+                      <span className="block truncate text-[12px] font-semibold text-slate-900">
+                        {new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(request.updatedAt))}
+                      </span>
+                    </span>
+                  </div>
+                  <span className="mt-3 flex h-9 items-center justify-center rounded-[10px] bg-indigo-50 text-[13px] font-semibold text-indigo-700">
+                    {awarded ? 'Ver detalle' : 'Comparar propuestas'}
+                  </span>
+                </Link>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* ==================== VISTA DESKTOP ==================== */}
+      <div className="hidden space-y-6 lg:block">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Cotizaciones</h1>
@@ -119,14 +270,17 @@ export default function BuyerQuotesPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{request.category}</p>
                   <h2 className="mt-2 text-lg font-semibold text-slate-950">{request.title}</h2>
                   <p className="mt-2 text-sm text-slate-500">
-                    {request._count?.quotes ?? 0} propuestas recibidas
+                    {request._count?.quotes ?? 0} {(request._count?.quotes ?? 0) === 1 ? 'propuesta recibida' : 'propuestas recibidas'}
+                    {request.awardedQuote?.supplierCompany?.name ? ` · Adjudicada a ${request.awardedQuote.supplierCompany.name}` : ''}
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                   <p>
-                    Mejor oferta:{' '}
-                    <span className="font-semibold text-slate-950">{formatCurrency(request.awardedQuote?.amount)}</span>
+                    {request.awardedQuoteId ? 'Monto adjudicado' : 'Mejor oferta'}:{' '}
+                    <span className="font-semibold text-slate-950">
+                      {formatCurrency(request.awardedQuoteId ? request.awardedQuote?.amount : bestOffer(request))}
+                    </span>
                   </p>
                   <p className="mt-1">
                     Actualizado:{' '}
@@ -153,6 +307,7 @@ export default function BuyerQuotesPage() {
           ))
         )}
       </section>
+      </div>
     </div>
   );
 }

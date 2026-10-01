@@ -31,3 +31,31 @@ export function LoadingState({
     </div>
   );
 }
+
+/**
+ * Pantalla completa de carga al entrar al panel: el logo de ATAR con un pulso
+ * y una barra de progreso. Reemplaza al spinner chico dentro de una tarjeta.
+ */
+export function DashboardLoader({ label = 'Preparando tu panel…' }: { label?: string }) {
+  return (
+    <main
+      aria-busy="true"
+      aria-live="polite"
+      className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[linear-gradient(180deg,#f7f9ff_0%,#eef1fe_100%)] px-6 text-slate-950"
+      role="status"
+    >
+      <span className="relative flex h-20 w-20 items-center justify-center">
+        <span className="loader-ring absolute inset-0 rounded-full bg-[#1f5bff]/25" />
+        <span className="loader-ring absolute inset-0 rounded-full bg-[#1f5bff]/20 [animation-delay:0.8s]" />
+        <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_14px_36px_rgba(31,91,255,0.18)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="ATAR" className="h-9 w-9" src="/logoatar.png" />
+        </span>
+      </span>
+      <span className="h-1 w-40 overflow-hidden rounded-full bg-[#dfe6ff]">
+        <span className="loader-bar block h-full w-2/5 rounded-full bg-[#1f5bff]" />
+      </span>
+      <p className="text-sm font-medium text-slate-500">{label}</p>
+    </main>
+  );
+}

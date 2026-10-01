@@ -420,77 +420,17 @@ export default function SupplierTeamPage() {
                 </label>
               </div>
 
-              {/* Mobile: tarjetas. Desde md, la tabla completa. */}
-              <ul className="mt-4 space-y-3 md:hidden">
-                {loading ? (
-                  <li className="py-10">
-                    <LoadingState label="Cargando equipo..." />
-                  </li>
-                ) : pageTeam.length === 0 ? (
-                  <li className="py-10 text-center text-[13px] text-slate-500">
-                    {team.length === 0 ? 'Todavía no hay vendedores en el equipo. Invitá al primero.' : 'No hay vendedores que coincidan con los filtros.'}
-                  </li>
-                ) : (
-                  pageTeam.map((member) => {
-                    const invited = member.status === 'INVITED';
-                    const last = lastActivityBySeller.get(member.id);
-                    const highlight = member.pending >= 3 && !invited;
-                    return (
-                      <li key={member.id}>
-                        <Link
-                          className={`block rounded-[14px] border p-3.5 ${highlight ? 'border-amber-200 bg-[#fffaf0]' : 'border-slate-100'}`}
-                          href={`/dashboard/proveedor/equipo/${member.id}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600">
-                              {initials(member.name)}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-[14px] font-semibold text-slate-900">{member.name}</p>
-                              <p className="truncate text-[12px] text-slate-500">{member.email}</p>
-                              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                                <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-600">
-                                  {member.isManager ? 'Gerente' : 'Vendedor'}
-                                </span>
-                                <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${invited ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                  {invited ? 'Por aprobar' : 'Activo'}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="text-slate-400">
-                              <Icon name="chev-right" />
-                            </span>
-                          </div>
-                          <div className="mt-3 grid grid-cols-5 divide-x divide-slate-100 rounded-[10px] bg-[#f7f6fd] py-2 text-center">
-                            {[
-                              { label: 'Oport.', value: member.assigned },
-                              { label: 'Pend.', value: member.pending },
-                              { label: 'Cotiz.', value: member.quoted },
-                              { label: 'Ganadas', value: member.won },
-                              { label: 'Conv.', value: `${member.conversionRate}%` },
-                            ].map((stat) => (
-                              <span key={stat.label}>
-                                <span className="block text-[10px] text-slate-500">{stat.label}</span>
-                                <span className="block text-[13px] font-semibold text-slate-900">{stat.value}</span>
-                              </span>
-                            ))}
-                          </div>
-                          <p className="mt-2.5 flex items-center justify-between text-[12px] text-slate-500">
-                            <span>{highlight ? `${member.pending} solicitudes pendientes` : last ? `Última actividad ${formatAgo(last, nowMs)}` : 'Sin actividad registrada'}</span>
-                            <span className="font-semibold text-slate-900">{formatCurrency(member.wonAmount)}</span>
-                          </p>
-                        </Link>
-                      </li>
-                    );
-                  })
-                )}
-              </ul>
-
-              <div className="mt-4 hidden overflow-x-auto md:block">
+              {/* La tabla se desliza de costado en pantallas chicas: la primera
+                  columna queda fija para no perder de vista al vendedor. */}
+              <p className="mt-3 flex items-center gap-1.5 text-[12px] text-slate-400 md:hidden">
+                <Icon className="h-3.5 w-3.5" name="chev-right" />
+                Deslizá la tabla hacia el costado para ver todos los datos.
+              </p>
+              <div className="mt-2 overflow-x-auto md:mt-4">
                 <table className="w-full min-w-[860px] text-left text-[14px]">
                   <thead>
                     <tr className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      <th className="px-2.5 py-3">Vendedor</th>
+                      <th className="sticky left-0 z-10 bg-white px-2.5 py-3">Vendedor</th>
                       <th className="px-2.5 py-3">Rol</th>
                       <th className="px-2.5 py-3">Estado</th>
                       <th className="px-2.5 py-3 text-center" title="Solicitudes asignadas">Oportunidades</th>
@@ -522,22 +462,22 @@ export default function SupplierTeamPage() {
                         const stale = !last || nowMs - new Date(last).getTime() > 7 * DAY;
                         const highlight = member.pending >= 3 && !invited;
                         return (
-                          <tr key={member.id} className={`border-t border-slate-100 ${highlight ? 'bg-[#f7f5ff]' : ''}`}>
-                            <td className="px-2.5 py-3">
+                          <tr key={member.id} className={`border-t border-slate-100 ${highlight ? 'bg-[#f7f5ff]' : 'bg-white'}`}>
+                            <td className="sticky left-0 z-10 max-w-[150px] bg-inherit px-2.5 py-3 shadow-[6px_0_10px_-8px_rgba(40,28,110,0.25)] md:max-w-none md:shadow-none">
                               <Link className="flex items-center gap-3" href={`/dashboard/proveedor/equipo/${member.id}`}>
-                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600">
+                                <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600 md:flex">
                                   {initials(member.name)}
                                 </span>
                                 <span className="min-w-0">
                                   <span className="block truncate font-semibold text-slate-900 hover:underline">{member.name}</span>
-                                  <span className="block truncate text-[13px] text-slate-500">{member.email}</span>
+                                  <span className="hidden truncate text-[13px] text-slate-500 md:block">{member.email}</span>
                                   {highlight ? (
-                                    <span className="mt-0.5 flex items-center gap-1 text-[12px] text-amber-600">
+                                    <span className="mt-0.5 hidden items-center gap-1 text-[12px] text-amber-600 md:flex">
                                       <Icon className="h-3.5 w-3.5" name="alert" />
                                       {member.pending} solicitudes pendientes
                                     </span>
                                   ) : invited ? null : (
-                                    <span className="mt-0.5 flex items-center gap-1.5 text-[12px] text-slate-500">
+                                    <span className="mt-0.5 hidden items-center gap-1.5 text-[12px] text-slate-500 md:flex">
                                       <span className={`h-1.5 w-1.5 rounded-full ${stale ? 'bg-slate-300' : 'bg-emerald-500'}`} />
                                       {last ? `Última actividad ${formatAgo(last, nowMs)}` : 'Sin actividad registrada'}
                                     </span>

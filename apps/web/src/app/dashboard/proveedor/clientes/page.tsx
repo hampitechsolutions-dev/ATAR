@@ -296,9 +296,9 @@ export default function SupplierClientsPage() {
     >
       {/* Encabezado */}
       <div>
-        <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-slate-500">Clientes</p>
-        <h1 className="mt-1 text-[32px] font-bold leading-tight tracking-[-0.035em] text-[#16123a] sm:text-[36px]">Clientes</h1>
-        <p className="mt-0.5 text-[15px] text-slate-500">Todo lo que cotizaste y vendiste, por cliente, con las señales de recompra.</p>
+        <p className="hidden text-[12px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:block">Clientes</p>
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-[#16123a] sm:mt-1 sm:text-[36px]">Clientes</h1>
+        <p className="mt-1 text-[13px] text-slate-500 sm:mt-0.5 sm:text-[15px]">Todo lo que cotizaste y vendiste, por cliente, con las señales de recompra.</p>
       </div>
 
       {error ? (
@@ -306,35 +306,36 @@ export default function SupplierClientsPage() {
       ) : null}
 
       {/* Contadores */}
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4 xl:grid-cols-4">
         {kpis.map((kpi) => (
           <button
             key={kpi.label}
-            className={`${card} group flex items-start gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(40,28,110,0.09)]`}
+            className={`${card} group flex flex-col items-start gap-2.5 p-3.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(40,28,110,0.09)] sm:flex-row sm:gap-4 sm:p-5`}
             onClick={kpi.action}
             type="button"
           >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-              <Icon className="h-6 w-6" name={kpi.icon} />
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 sm:h-14 sm:w-14">
+              <Icon className="h-5 w-5 sm:h-6 sm:w-6" name={kpi.icon} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[28px] font-bold leading-none text-[#16123a]">{loading ? '—' : kpi.value}</span>
-              <span className="mt-1.5 block text-[15px] text-slate-600">{kpi.label}</span>
-              <span className={`mt-2 block text-[12px] font-medium ${kpi.note.startsWith('Sin') ? 'text-slate-400' : 'text-emerald-600'}`}>
+              <span className="block whitespace-nowrap text-[20px] font-bold leading-none text-[#16123a] sm:text-[22px] 2xl:text-[28px]">{loading ? '—' : kpi.value}</span>
+              <span className="mt-1.5 block text-[13px] leading-4 text-slate-600 sm:text-[15px]">{kpi.label}</span>
+              <span className={`mt-1.5 block text-[11px] font-medium sm:mt-2 sm:text-[12px] ${kpi.note.startsWith('Sin') ? 'text-slate-400' : 'text-emerald-600'}`}>
                 {loading ? '' : kpi.note}
               </span>
             </span>
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition group-hover:translate-x-0.5">
+            <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition group-hover:translate-x-0.5 sm:flex">
               <Icon name="arrow" />
             </span>
           </button>
         ))}
       </div>
 
-      {/* Tabla */}
-      <section className={`${card} mt-5 p-4`}>
-        <div className="flex flex-wrap gap-3">
-          <label className="relative min-w-[240px] flex-1">
+      {/* Tabla. En mobile no es una tarjeta: los filtros y las tarjetas de
+          cliente van directo sobre el fondo, sin "tarjeta dentro de tarjeta". */}
+      <section className="mt-5 md:rounded-[18px] md:bg-white md:p-4 md:shadow-[0_10px_30px_rgba(40,28,110,0.05)]">
+        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
+          <label className="relative col-span-2 md:min-w-[240px] md:flex-1">
             <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
               <Icon name="search" />
             </span>
@@ -347,7 +348,7 @@ export default function SupplierClientsPage() {
             />
           </label>
           <label className="relative">
-            <select aria-label="Ubicación" className={`${selectClass} min-w-[200px]`} onChange={(event) => updateFilters(() => setLocation(event.target.value))} value={location}>
+            <select aria-label="Ubicación" className={`${selectClass} w-full md:min-w-[200px]`} onChange={(event) => updateFilters(() => setLocation(event.target.value))} value={location}>
               <option value="all">Todas las ubicaciones</option>
               {locations.map((option) => (
                 <option key={option} value={option}>
@@ -358,7 +359,7 @@ export default function SupplierClientsPage() {
             <SelectChevron />
           </label>
           <label className="relative">
-            <select aria-label="Estado" className={`${selectClass} min-w-[200px]`} onChange={(event) => updateFilters(() => setStatus(event.target.value as StatusKey | 'all'))} value={status}>
+            <select aria-label="Estado" className={`${selectClass} w-full md:min-w-[200px]`} onChange={(event) => updateFilters(() => setStatus(event.target.value as StatusKey | 'all'))} value={status}>
               <option value="all">Todos los estados</option>
               {(Object.keys(STATUS_META) as StatusKey[]).map((key) => (
                 <option key={key} value={key}>
@@ -368,11 +369,11 @@ export default function SupplierClientsPage() {
             </select>
             <SelectChevron />
           </label>
-          <label className="relative">
+          <label className="relative col-span-2 md:col-auto">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
               <Icon name="sort" />
             </span>
-            <select aria-label="Ordenar por" className={`${selectClass} min-w-[190px] pl-9`} onChange={(event) => updateFilters(() => setSort(event.target.value as SortKey))} value={sort}>
+            <select aria-label="Ordenar por" className={`${selectClass} w-full pl-9 md:min-w-[190px]`} onChange={(event) => updateFilters(() => setSort(event.target.value as SortKey))} value={sort}>
               <option value="activity">Actividad reciente</option>
               <option value="volume">Mayor volumen</option>
               <option value="quotes">Más cotizaciones</option>
@@ -400,7 +401,7 @@ export default function SupplierClientsPage() {
               const meta = STATUS_META[statusOf(customer)];
               const product = customer.lastProduct ?? customer.lastQuotedProduct;
               return (
-                <li key={customer.companyId} className="rounded-[14px] border border-slate-100 p-3.5">
+                <li key={customer.companyId} className="rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(40,28,110,0.05)]">
                   <div className="flex items-start gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600">
                       {initials(customer.name)}
@@ -602,13 +603,13 @@ export default function SupplierClientsPage() {
       {topCustomers.length > 0 ? (
         <section className={`${card} mt-5 p-4`}>
           <div className="flex items-center justify-between gap-3 px-1">
-            <h2 className="flex items-center gap-2 text-[16px] font-bold text-[#16123a]">
+            <h2 className="flex items-center gap-2 text-[15px] font-bold leading-5 text-[#16123a] sm:text-[16px]">
               <span className="text-indigo-600">
                 <Icon name="chart" />
               </span>
               Clientes con mayor actividad
             </h2>
-            <button className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-indigo-600" onClick={() => updateFilters(() => setSort('volume'))} type="button">
+            <button className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold text-indigo-600 sm:text-[14px]" onClick={() => updateFilters(() => setSort('volume'))} type="button">
               Ver todos
               <Icon name="arrow" />
             </button>
@@ -617,7 +618,7 @@ export default function SupplierClientsPage() {
             {topCustomers.map((customer) => (
               <button
                 key={customer.companyId}
-                className="flex items-center gap-3 rounded-[14px] border border-slate-100 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-[#fbfaff]"
+                className="flex items-center gap-3 rounded-[14px] border border-slate-100 px-3 py-3 text-left transition sm:px-4 hover:border-indigo-200 hover:bg-[#fbfaff]"
                 onClick={() => void openHistory(customer)}
                 type="button"
               >
@@ -626,12 +627,12 @@ export default function SupplierClientsPage() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold text-slate-900">{customer.name}</span>
-                  <span className="block text-[13px] text-slate-500">
+                  <span className="block truncate text-[13px] text-slate-500">
                     {customer.quotesCount} {customer.quotesCount === 1 ? 'cotización' : 'cotizaciones'} · {customer.ordersCount}{' '}
                     {customer.ordersCount === 1 ? 'pedido' : 'pedidos'}
                   </span>
                 </span>
-                <span className="font-semibold text-slate-900">{formatCurrency(customer.purchasedAmount)}</span>
+                <span className="shrink-0 text-[14px] font-semibold text-slate-900">{formatCurrency(customer.purchasedAmount)}</span>
               </button>
             ))}
           </div>

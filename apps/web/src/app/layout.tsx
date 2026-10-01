@@ -24,8 +24,9 @@ export const metadata: Metadata = {
     title: "ATAR",
     statusBarStyle: "default",
   },
+  // El favicon sale de app/favicon.ico y app/icon.png (el logo de ATAR
+  // centrado en un cuadrado); acá solo se declara el ícono de iOS.
   icons: {
-    icon: "/logoatar.png",
     apple: "/icons/apple-touch-icon.png",
   },
 };

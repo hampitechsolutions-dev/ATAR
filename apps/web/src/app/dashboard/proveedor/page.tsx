@@ -8,7 +8,7 @@ import SupplierAccountMenu from '@/components/dashboard/supplier-account-menu';
 import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
 import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
 import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
-import { LoadingState } from '@/components/ui/spinner';
+import { DashboardLoader } from '@/components/ui/spinner';
 import { useWorkspace } from '@/components/auth/workspace-provider';
 import { type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
 import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
@@ -436,13 +436,7 @@ export default function DashboardProveedorPage() {
   })();
 
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f4f2fd] text-slate-950">
-        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-          <LoadingState label="Cargando dashboard proveedor..." className="gap-3" />
-        </div>
-      </main>
-    );
+    return <DashboardLoader />;
   }
 
   // Mismo contenido en mobile y escritorio; cambia solo el marco (header,
@@ -801,27 +795,6 @@ export default function DashboardProveedorPage() {
     <main className="bg-[#f4f2fd] text-slate-950 lg:h-screen lg:overflow-hidden">
       {/* ==================== VISTA MOBILE ==================== */}
       <div className="lg:hidden">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
-          <Link href="/dashboard/proveedor" className="flex items-center gap-2">
-            <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
-            <span className="text-base font-bold tracking-tight text-slate-950">ATAR</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700"
-              href="/dashboard/proveedor/notificaciones"
-            >
-              <HeaderActionIcon kind="bell" />
-              {counters.unreadNotificationsCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-semibold text-white">
-                  {counters.unreadNotificationsCount}
-                </span>
-              ) : null}
-            </Link>
-            <SupplierAccountMenu session={session} />
-          </div>
-        </header>
-
         {error ? (
           <div className="mx-4 mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
