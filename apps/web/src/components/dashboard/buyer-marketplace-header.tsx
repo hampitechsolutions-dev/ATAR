@@ -10,6 +10,8 @@ import WorkspaceSwitcher from './workspace-switcher';
 type NavItem = {
   label: string;
   href: string;
+  /** Solo entra en la barra desde 1280 px; antes queda en el menú de la cuenta. */
+  wideOnly?: boolean;
 };
 
 function Icon({
@@ -122,7 +124,9 @@ export default function BuyerMarketplaceHeader({
       { label: 'Inicio', href: '/dashboard/comprador' },
       { label: 'Proveedores', href: '/dashboard/comprador/proveedores' },
       { label: 'Mis solicitudes', href: '/dashboard/comprador/solicitudes' },
+      { label: 'Cotizaciones', href: '/dashboard/comprador/cotizaciones', wideOnly: true },
       { label: 'Mis pedidos', href: '/dashboard/comprador/pedidos' },
+      { label: 'Favoritos', href: '/dashboard/comprador/favoritos', wideOnly: true },
     ];
   }, []);
 
@@ -167,9 +171,15 @@ export default function BuyerMarketplaceHeader({
 
           {navItems.slice(1).map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            // Entre 1024 y 1280 px no entran todos: los `wideOnly` quedan en el menú de la cuenta.
             return (
-              <Link key={item.href} className={isActive ? 'text-slate-950' : 'hover:text-slate-950'} href={item.href}>
+              <Link
+                key={item.href}
+                className={`relative ${isActive ? 'text-slate-950' : 'hover:text-slate-950'} ${item.wideOnly ? 'hidden xl:inline' : ''}`}
+                href={item.href}
+              >
                 {item.label}
+                {isActive ? <span className="absolute -bottom-[11px] left-0 h-[2px] w-full rounded-full bg-[#4f46ff]" /> : null}
               </Link>
             );
           })}
@@ -239,6 +249,22 @@ export default function BuyerMarketplaceHeader({
                 </div>
 
                 <div className="mt-2 space-y-1">
+                  {[
+                    { href: '/dashboard/comprador/cotizaciones', label: 'Cotizaciones', path: 'M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L2 12V2h10l8.6 8.6a2 2 0 010 2.8zM7 7h.01' },
+                    { href: '/dashboard/comprador/favoritos', label: 'Favoritos', path: 'M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21.3l7.8-7.8 1-1.1a5.5 5.5 0 000-7.8z' },
+                  ].map((item) => (
+                    <Link
+                      key={item.href}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                      href={item.href}
+                      onClick={() => setIsAccountOpen(false)}
+                    >
+                      <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                        <path d={item.path} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                      {item.label}
+                    </Link>
+                  ))}
                   <Link
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     href="/dashboard/comprador/configuracion"

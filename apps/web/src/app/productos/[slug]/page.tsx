@@ -9,8 +9,8 @@ export default function ProductDetailPage() {
   const slug = typeof params.slug === 'string' ? params.slug : '';
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] px-4 py-8 text-slate-950 lg:px-8">
-      <div className="mx-auto w-full max-w-[1400px]">
+    <main className="min-h-screen bg-[#f5f7fb] px-4 py-4 text-slate-950 lg:px-6">
+      <div className="mx-auto w-full max-w-[1760px]">
         <SupplierDetail slug={slug} variant="public" />
       </div>
     </main>

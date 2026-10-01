@@ -597,7 +597,7 @@ export default function SupplierRequestsPage() {
           />
         </div>
 
-        <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        <div className="-mx-4 mt-1.5 flex gap-2 overflow-x-auto px-4 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {STAGE_TABS.map((tab) => {
             const active = stage === tab.key;
             return (

@@ -441,7 +441,10 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
 
   const companyName = record?.name ?? activeWorkspace?.company.name ?? 'Tu empresa';
   const location = [record?.city, record?.country].filter(Boolean).join(', ');
-  const publicHref = record?.slug ? `/productos/${record.slug}` : null;
+  // Dentro de la app la ficha se ve en el panel; el link del sitio abierto se
+  // usa solo para compartir hacia afuera.
+  const publicHref = record?.slug ? `/dashboard/proveedor/perfil/${record.slug}` : null;
+  const shareHref = record?.slug ? `/productos/${record.slug}` : null;
   const dirty =
     JSON.stringify(form) !== JSON.stringify(savedForm) ||
     JSON.stringify(prefs) !== JSON.stringify(savedPrefs) ||
@@ -553,8 +556,8 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
   }
 
   async function sharePublicProfile() {
-    if (!publicHref) return;
-    const url = `${window.location.origin}${publicHref}`;
+    if (!shareHref) return;
+    const url = `${window.location.origin}${shareHref}`;
     try {
       if (navigator.share) await navigator.share({ title: companyName, url });
       else {
@@ -619,10 +622,10 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
             Compartir perfil
           </button>
           {publicHref ? (
-            <Link className="inline-flex h-10 items-center justify-center rounded-[10px] bg-indigo-600 text-[13px] font-semibold hover:bg-indigo-700" href={publicHref} target="_blank">
+            <Link className="inline-flex h-10 items-center justify-center rounded-[10px] bg-indigo-600 text-[13px] font-semibold hover:bg-indigo-700" href={publicHref}>
               <span className="inline-flex items-center gap-2 text-white">
                 Ver perfil público
-                <Icon name="external" />
+                <Icon name="arrow" />
               </span>
             </Link>
           ) : null}
@@ -653,10 +656,10 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
             </div>
           </div>
           {publicHref ? (
-            <Link className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-indigo-200 px-4 text-[13px] font-semibold hover:bg-indigo-50 sm:w-auto" href={publicHref} target="_blank">
+            <Link className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-indigo-200 px-4 text-[13px] font-semibold hover:bg-indigo-50 sm:w-auto" href={publicHref}>
               <span className="inline-flex items-center gap-2 text-indigo-600">
                 Ver mi perfil público
-                <Icon name="external" />
+                <Icon name="arrow" />
               </span>
             </Link>
           ) : null}
@@ -701,7 +704,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                   <SectionHead
                     action={
                       publicHref ? (
-                        <Link className="inline-flex h-10 items-center rounded-[10px] border border-indigo-200 px-4 text-[13px] font-semibold hover:bg-indigo-50" href={publicHref} target="_blank">
+                        <Link className="inline-flex h-10 items-center rounded-[10px] border border-indigo-200 px-4 text-[13px] font-semibold hover:bg-indigo-50" href={publicHref}>
                           <span className="inline-flex items-center gap-2 text-indigo-600">
                             <Icon name="eye" />
                             Vista previa

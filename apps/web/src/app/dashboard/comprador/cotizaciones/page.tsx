@@ -102,7 +102,7 @@ export default function BuyerQuotesPage() {
           />
         </div>
 
-        <div className="-mx-3 mt-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+        <div className="-mx-3 mt-1.5 flex gap-2 overflow-x-auto px-3 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             { key: 'ALL' as const, label: 'Todas', count: quotedRequests.length },
             { key: 'PENDING' as const, label: 'Por decidir', count: quotedRequests.length - awardedCount },
@@ -233,78 +233,66 @@ export default function BuyerQuotesPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          { label: 'Solicitudes cotizadas', value: quotedRequests.length, tone: 'bg-indigo-50 text-indigo-600' },
-          { label: 'Cotizaciones recibidas', value: totalQuotes, tone: 'bg-violet-50 text-violet-600' },
-          { label: 'Propuestas adjudicadas', value: awardedCount, tone: 'bg-emerald-50 text-emerald-600' },
-        ].map((card) => (
-          <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
-              <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                <path d="M14 2v6h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-              </svg>
-            </div>
-            <p className="mt-4 text-2xl font-semibold text-slate-950">{card.value}</p>
-            <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
-          </article>
-        ))}
-      </div>
+      {/* Una sola lista: sin tarjetas de métricas ni recuadros dentro de cada fila. */}
+      <p className="text-sm text-slate-500">
+        {quotedRequests.length} {quotedRequests.length === 1 ? 'solicitud cotizada' : 'solicitudes cotizadas'} · {totalQuotes}{' '}
+        {totalQuotes === 1 ? 'cotización recibida' : 'cotizaciones recibidas'} · {awardedCount}{' '}
+        {awardedCount === 1 ? 'adjudicada' : 'adjudicadas'}
+      </p>
 
-      {/* Con el ancho completo, las solicitudes cotizadas van en 2 columnas. */}
-      <section className="grid gap-4 xl:grid-cols-2">
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
-          <div className="col-span-full rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm">
+          <div className="px-5 py-8">
             <LoadingState label="Cargando cotizaciones..." />
           </div>
         ) : quotedRequests.length === 0 ? (
-          <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-sm text-slate-500 shadow-sm">
-            Todavía no tenés cotizaciones para mostrar.
-          </div>
+          <p className="px-5 py-10 text-sm text-slate-500">Todavía no tenés cotizaciones para mostrar.</p>
         ) : (
-          quotedRequests.map((request) => (
-            <article key={request.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{request.category}</p>
-                  <h2 className="mt-2 text-lg font-semibold text-slate-950">{request.title}</h2>
-                  <p className="mt-2 text-sm text-slate-500">
-                    {request._count?.quotes ?? 0} {(request._count?.quotes ?? 0) === 1 ? 'propuesta recibida' : 'propuestas recibidas'}
-                    {request.awardedQuote?.supplierCompany?.name ? ` · Adjudicada a ${request.awardedQuote.supplierCompany.name}` : ''}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  <p>
-                    {request.awardedQuoteId ? 'Monto adjudicado' : 'Mejor oferta'}:{' '}
-                    <span className="font-semibold text-slate-950">
-                      {formatCurrency(request.awardedQuoteId ? request.awardedQuote?.amount : bestOffer(request))}
+          <ul className="divide-y divide-slate-200">
+            {quotedRequests.map((request) => {
+              const quotes = request._count?.quotes ?? 0;
+              const awarded = Boolean(request.awardedQuoteId);
+              return (
+                <li key={request.id} className="grid grid-cols-[56px_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_210px] items-center gap-5 px-5 py-4">
+                  <span className="relative h-14 w-14 overflow-hidden rounded-xl bg-slate-100">
+                    <Image alt="" className="object-cover" fill sizes="56px" src={requestImage(request)} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-semibold text-slate-950">{request.title}</p>
+                    <p className="mt-0.5 truncate text-[13px] text-slate-500">
+                      {request.category}
+                      {request.awardedQuote?.supplierCompany?.name ? ` · Adjudicada a ${request.awardedQuote.supplierCompany.name}` : ''}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-slate-500">Propuestas</p>
+                    <p className="text-[14px] font-semibold text-slate-950">{quotes}</p>
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-slate-500">{awarded ? 'Monto adjudicado' : 'Mejor oferta'}</p>
+                    <p className="text-[14px] font-semibold text-slate-950">
+                      {formatCurrency(awarded ? request.awardedQuote?.amount : bestOffer(request))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-slate-500">Actualizada</p>
+                    <p className="text-[14px] font-semibold text-slate-950">{formatDate(request.updatedAt)}</p>
+                  </div>
+                  <div className="flex items-center justify-end gap-3">
+                    <span className={`rounded-md px-2 py-1 text-[11px] font-semibold ${awarded ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {awarded ? 'Adjudicada' : 'Por decidir'}
                     </span>
-                  </p>
-                  <p className="mt-1">
-                    Actualizado:{' '}
-                    <span className="font-semibold text-slate-950">{formatDate(request.updatedAt)}</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Link
-                  className="inline-flex h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
-                  href={`/dashboard/comprador/solicitudes/${request.id}`}
-                >
-                  Ver comparativa
-                </Link>
-                <Link
-                  className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  href="/dashboard/comprador/pedidos"
-                >
-                  Ir a pedidos
-                </Link>
-              </div>
-            </article>
-          ))
+                    <Link
+                      className="inline-flex h-9 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-[13px] font-semibold text-indigo-700 hover:bg-indigo-100"
+                      href={`/dashboard/comprador/solicitudes/${request.id}`}
+                    >
+                      {awarded ? 'Ver detalle' : 'Comparar'}
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
       </div>

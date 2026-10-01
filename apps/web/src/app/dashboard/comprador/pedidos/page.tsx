@@ -95,41 +95,6 @@ function OrderIcon() {
   );
 }
 
-function StatIcon({ name }: { name: 'bag' | 'box' | 'truck' | 'check' | 'x' }) {
-  if (name === 'bag') {
-    return <OrderIcon />;
-  }
-  if (name === 'box') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M3.3 7.3L12 12l8.7-4.7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-  if (name === 'truck') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M1 3h14v13H1V3z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M15 8h4l4 4v4h-8V8z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-  if (name === 'check') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M18 6L6 18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M6 6l12 12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
-
 // Imagen de la categoría de la solicitud, para las tarjetas mobile.
 function requestImage(request: RequestRecord) {
   const labels = [request.items?.[0]?.category, request.category].filter(Boolean);
@@ -209,7 +174,7 @@ export default function BuyerOrdersPage() {
           />
         </div>
 
-        <div className="-mx-3 mt-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+        <div className="-mx-3 mt-1.5 flex gap-2 overflow-x-auto px-3 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             { key: 'ALL' as const, label: 'Todos', count: counts.total },
             { key: 'NEGOTIATING' as const, label: 'En producción', count: counts.inProduction },
@@ -414,28 +379,6 @@ export default function BuyerOrdersPage() {
       {error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
       ) : null}
-
-      {/* En mobile las métricas van en una fila deslizable para no ocupar toda la pantalla. */}
-      <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-5">
-        {[
-          { label: 'Total pedidos', value: counts.total, sub: 'Todos los pedidos', tone: 'bg-indigo-50 text-indigo-600', icon: 'bag' as const },
-          { label: 'En producción', value: counts.inProduction, sub: 'Actualmente en proceso', tone: 'bg-amber-50 text-amber-600', icon: 'box' as const },
-          { label: 'En camino', value: counts.onWay, sub: 'En tránsito', tone: 'bg-violet-50 text-violet-600', icon: 'truck' as const },
-          { label: 'Entregados', value: counts.delivered, sub: 'Completados', tone: 'bg-emerald-50 text-emerald-600', icon: 'check' as const },
-          { label: 'Cancelados', value: counts.cancelled, sub: 'No completados', tone: 'bg-rose-50 text-rose-600', icon: 'x' as const },
-        ].map((card) => (
-          <article key={card.label} className="min-w-[150px] shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:min-w-0">
-            <div className="flex items-center justify-between gap-3 sm:block">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
-                <StatIcon name={card.icon} />
-              </div>
-              <p className="text-2xl font-semibold text-slate-950 sm:mt-4">{card.value}</p>
-            </div>
-            <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
-            <p className="mt-1 text-xs text-slate-500">{card.sub}</p>
-          </article>
-        ))}
-      </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)] border-b border-slate-200 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
