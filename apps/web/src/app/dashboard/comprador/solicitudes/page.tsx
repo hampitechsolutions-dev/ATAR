@@ -1,11 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { atarApi, type RequestRecord } from '@/lib/atar-api';
 import { LoadingState } from '@/components/ui/spinner';
 import { formatRequestCode } from '@/lib/request-code';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
+import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -19,14 +21,18 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value));
+}
+
+function initialsOf(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 }
 
 function getRequestStatusStyles(status: RequestRecord['status']) {
@@ -51,6 +57,35 @@ function getRequestStatusStyles(status: RequestRecord['status']) {
   }
 
   return 'bg-indigo-100 text-indigo-700';
+}
+
+// Imagen de la categoría de la solicitud, para las tarjetas mobile.
+function requestImage(request: RequestRecord) {
+  const labels = [request.items?.[0]?.category, request.category].filter(Boolean);
+  for (const label of labels) {
+    const match = FALLBACK_REQUEST_CATEGORIES.find((category) => category.label === label);
+    if (match?.imageSrc) return match.imageSrc;
+  }
+  return '/logoatar.png';
+}
+
+function requestQuantity(request: RequestRecord) {
+  const items = request.items ?? [];
+  if (items.length > 1) {
+    return `${items.length} productos`;
+  }
+  const item = items[0];
+  const quantity = item?.quantity ?? request.quantityRequested ?? null;
+  return quantity !== null ? `${quantity.toLocaleString('es-AR')} ${item?.unit ?? 'un.'}` : 'A definir';
+}
+
+function requestStatusLabel(status: RequestRecord['status']) {
+  if (status === 'REVIEWING') return 'En evaluación';
+  if (status === 'CANCELLED') return 'Cancelada';
+  if (status === 'AWARDED') return 'Aceptada';
+  if (status === 'NEGOTIATING') return 'En producción';
+  if (status === 'ORDER_ISSUED') return 'Completada';
+  return 'Activa';
 }
 
 export default function BuyerRequestsPage() {
@@ -140,7 +175,154 @@ export default function BuyerRequestsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
+      {/* ==================== VISTA MOBILE ==================== */}
+      {/* Tarjetas, como en el panel del proveedor. Crear una solicitud va por
+          el botón flotante "Nueva solicitud" del layout. */}
+      <div className="pb-4 lg:hidden">
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-950">Mis solicitudes</h1>
+        <p className="mt-1 text-[13px] text-slate-500">Seguí tus pedidos de cotización y las respuestas de los proveedores.</p>
+
+        <div className="relative mt-4">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            </svg>
+          </span>
+          <input
+            className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Buscar solicitud..."
+            value={search}
+          />
+        </div>
+
+        <div className="-mx-3 mt-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+          {[
+            { key: 'ALL' as const, label: 'Todas', count: counts.total },
+            { key: 'WITH_QUOTES' as const, label: 'Con cotizaciones', count: counts.withQuotes },
+            { key: 'REVIEWING' as const, label: 'En evaluación', count: counts.reviewing },
+            { key: 'AWARDED' as const, label: 'Aceptadas', count: counts.awarded },
+            { key: 'NEGOTIATING' as const, label: 'En producción', count: counts.inProduction },
+            { key: 'ORDER_ISSUED' as const, label: 'Completadas', count: counts.completed },
+            { key: 'CANCELLED' as const, label: 'Canceladas', count: counts.cancelled },
+          ].map((tab) => {
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold transition ${
+                  active ? 'bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.28)]' : 'bg-white text-slate-600 ring-1 ring-slate-200'
+                }`}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setPage(1);
+                }}
+                type="button"
+              >
+                {tab.label}
+                <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] ${active ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+
+        <div className="mt-4 space-y-3">
+          {loading ? (
+            <div className="rounded-[18px] bg-white px-4 py-10 shadow-sm">
+              <LoadingState label="Cargando solicitudes..." />
+            </div>
+          ) : filteredRequests.length === 0 ? (
+            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
+              No hay solicitudes con ese criterio.
+            </div>
+          ) : (
+            pageItems.map((request) => {
+              const replies = request._count?.quotes ?? 0;
+              return (
+                <Link
+                  key={request.id}
+                  className="block rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/70 transition active:scale-[0.99]"
+                  href={`/dashboard/comprador/solicitudes/${request.id}`}
+                >
+                  <div className="flex gap-3">
+                    <span className="relative h-[76px] w-[76px] shrink-0 overflow-hidden rounded-[12px] bg-slate-100">
+                      <Image alt="" className="object-cover" fill sizes="76px" src={requestImage(request)} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
+                          {request.category}
+                        </span>
+                        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${getRequestStatusStyles(request.status)}`}>
+                          {requestStatusLabel(request.status)}
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-[15px] font-bold leading-5 tracking-[-0.01em] text-slate-950">{request.title}</p>
+                      <p className="mt-0.5 text-[12px] text-slate-500">{formatRequestCode(request.id)}</p>
+                    </div>
+                    <span className="self-center text-slate-400">
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200/70 rounded-[12px] bg-[#f5f7fc] py-2 text-center">
+                    <span className="px-1">
+                      <span className="block text-[10px] text-slate-500">Cantidad</span>
+                      <span className="block truncate text-[12px] font-semibold text-slate-900">{requestQuantity(request)}</span>
+                    </span>
+                    <span className="px-1">
+                      <span className="block text-[10px] text-slate-500">Creada</span>
+                      <span className="block truncate text-[12px] font-semibold text-slate-900">{formatDate(request.createdAt)}</span>
+                    </span>
+                    <span className="px-1">
+                      <span className="block text-[10px] text-slate-500">Cotizaciones</span>
+                      <span className={`block truncate text-[12px] font-semibold ${replies > 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                        {replies > 0 ? `${replies} recibida${replies === 1 ? '' : 's'}` : 'Sin respuestas'}
+                      </span>
+                    </span>
+                  </div>
+                </Link>
+              );
+            })
+          )}
+
+          {totalPages > 1 ? (
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <button
+                className="inline-flex h-10 items-center rounded-[10px] bg-white px-4 text-[13px] font-semibold text-slate-700 ring-1 ring-slate-200 disabled:opacity-40"
+                disabled={safePage <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                type="button"
+              >
+                Anterior
+              </button>
+              <span className="text-[12px] text-slate-500">
+                Página {safePage} de {totalPages}
+              </span>
+              <button
+                className="inline-flex h-10 items-center rounded-[10px] bg-white px-4 text-[13px] font-semibold text-slate-700 ring-1 ring-slate-200 disabled:opacity-40"
+                disabled={safePage >= totalPages}
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                type="button"
+              >
+                Siguiente
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ==================== VISTA DESKTOP ==================== */}
+      <div className="hidden space-y-6 lg:block">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Mis solicitudes</h1>
@@ -340,6 +522,9 @@ export default function BuyerRequestsPage() {
             pageItems.map((request) => {
               const code = formatRequestCode(request.id);
               const replies = request._count?.quotes ?? 0;
+              const suppliers = Array.from(
+                new Set((request.quotes ?? []).map((quote) => quote.supplierCompany?.name).filter((name): name is string => Boolean(name))),
+              );
               return (
                 <div key={request.id} className="px-4 py-4 sm:px-6">
                   <div className="grid gap-4 lg:grid-cols-[0.26fr_0.16fr_0.16fr_0.18fr_0.16fr_0.14fr_0.14fr] lg:items-center">
@@ -360,49 +545,48 @@ export default function BuyerRequestsPage() {
                     </div>
 
                     <div className="text-xs text-slate-600">
-                      <p className="font-semibold text-slate-700">{request.title}</p>
-                      <p className="mt-1 text-slate-500">-</p>
+                      <p className="font-semibold text-slate-700">{request.items?.[0]?.productName ?? request.title}</p>
+                      {(request.items?.length ?? 0) > 1 ? (
+                        <p className="mt-1 text-slate-500">+{(request.items?.length ?? 0) - 1} más</p>
+                      ) : null}
                     </div>
 
                     <div className="text-xs text-slate-600">
-                      <p className="font-semibold text-slate-700">{Math.max(1, replies * 100)} unidades</p>
-                      <p className="mt-1 text-slate-500">-</p>
+                      <p className="font-semibold text-slate-700">{requestQuantity(request)}</p>
                     </div>
 
                     <div className="text-xs text-slate-600">
                       <p className="font-semibold text-slate-700">{formatDate(request.createdAt)}</p>
-                      <p className="mt-1 text-slate-500">{formatDateTime(request.createdAt).split(' ').slice(-1)[0]}</p>
+                      <p className="mt-1 text-slate-500">{formatTime(request.createdAt)}</p>
                     </div>
 
                     <div className="text-xs">
                       <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${getRequestStatusStyles(request.status)}`}>
-                        {request.status === 'REVIEWING'
-                          ? 'En evaluación'
-                          : request.status === 'CANCELLED'
-                            ? 'Cancelada'
-                            : request.status === 'AWARDED'
-                              ? 'Aceptada'
-                              : request.status === 'NEGOTIATING'
-                                ? 'En producción'
-                                : request.status === 'ORDER_ISSUED'
-                                  ? 'Completada'
-                                  : 'Activa'}
+                        {requestStatusLabel(request.status)}
                       </span>
-                      <p className="mt-2 text-xs text-slate-500">{replies} proveedores</p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        {replies} {replies === 1 ? 'cotización' : 'cotizaciones'}
+                      </p>
                     </div>
 
+                    {/* Proveedores que realmente cotizaron esta solicitud. */}
                     <div className="flex items-center gap-2">
-                      <div className="flex -space-x-2">
-                        {['PB', 'BL', 'AR'].slice(0, Math.min(3, Math.max(1, replies))).map((initials) => (
-                          <span
-                            key={`${request.id}-${initials}`}
-                            className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-950 text-[10px] font-semibold text-white"
-                          >
-                            {initials}
-                          </span>
-                        ))}
-                      </div>
-                      {replies > 3 ? <span className="text-xs text-slate-500">+{replies - 3}</span> : null}
+                      {suppliers.length === 0 ? (
+                        <span className="text-xs text-slate-400">Sin respuestas</span>
+                      ) : (
+                        <div className="flex -space-x-2">
+                          {suppliers.slice(0, 3).map((name) => (
+                            <span
+                              key={`${request.id}-${name}`}
+                              className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-indigo-600 text-[10px] font-semibold text-white"
+                              title={name}
+                            >
+                              {initialsOf(name)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {suppliers.length > 3 ? <span className="text-xs text-slate-500">+{suppliers.length - 3}</span> : null}
                     </div>
 
                     <div className="flex justify-start lg:justify-end">
@@ -465,6 +649,8 @@ export default function BuyerRequestsPage() {
           </div>
         </div>
       </section>
+
+      </div>
 
       {isCreateOpen ? (
         <div className="fixed inset-0 z-50">

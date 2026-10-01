@@ -286,7 +286,7 @@ export default function DashboardCompradorPanelPage() {
       ) : null}
 
       {/* ==================== CABECERA ==================== */}
-      <section className={`${panelCard} grid gap-6 p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] lg:items-center lg:p-7`}>
+      <section className={`${panelCard} grid grid-cols-1 gap-6 p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] lg:items-center lg:p-7`}>
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-500">Panel comprador</p>
           <h1 className="mt-2 text-[34px] font-bold leading-tight tracking-[-0.04em] text-slate-950 sm:text-[40px]">
@@ -355,24 +355,24 @@ export default function DashboardCompradorPanelPage() {
       </section>
 
       {/* ==================== CONTADORES ==================== */}
-      <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {statCards.map((card) => (
-          <Link key={card.label} className={`${panelCard} group flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]`} href={card.href}>
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-[#eef3ff] text-[#1f5bff]">
+          <Link key={card.label} className={`${panelCard} group relative flex flex-col items-start gap-3 p-4 transition sm:flex-row sm:items-center sm:gap-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]`} href={card.href}>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#eef3ff] text-[#1f5bff] sm:h-14 sm:w-14">
               <Icon name={card.icon} size="h-6 w-6" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[30px] font-bold leading-none tracking-tight text-slate-950">{card.value}</span>
-              <span className="mt-1.5 block truncate text-[14px] text-slate-600">{card.label}</span>
+              <span className="mt-1.5 block text-[13px] leading-4 text-slate-600 sm:truncate sm:text-[14px]">{card.label}</span>
             </span>
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef3ff] text-[#1f5bff] transition group-hover:translate-x-0.5">
+            <span className="absolute right-3 top-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef3ff] text-[#1f5bff] transition group-hover:translate-x-0.5 sm:static sm:h-9 sm:w-9">
               <Icon name="arrow" />
             </span>
           </Link>
         ))}
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         {/* ==================== TAREAS PENDIENTES ==================== */}
         <section className={`${panelCard} p-5`}>
           <div className="flex items-center justify-between gap-3">
@@ -429,7 +429,39 @@ export default function DashboardCompradorPanelPage() {
             </div>
             <PanelSeeAll href="/dashboard/comprador/solicitudes" />
           </div>
-          <div className="mt-4 overflow-x-auto rounded-[12px] border border-slate-100">
+          {/* Mobile: lista. Desde md, la tabla completa. */}
+          <ul className="mt-3 divide-y divide-slate-100 md:hidden">
+            {recentRequests.length === 0 ? (
+              <li className="py-6 text-center text-[13px] text-slate-500">Todavía no creaste solicitudes.</li>
+            ) : (
+              recentRequests.map((request) => {
+                const item = request.items?.[0];
+                const quantity = item?.quantity ?? request.quantityRequested ?? null;
+                const status = buyerRequestStatus(request);
+                const quotes = request._count?.quotes ?? 0;
+                return (
+                  <li key={request.id}>
+                    <Link className="flex items-center gap-3 py-3" href={`/dashboard/comprador/solicitudes/${request.id}`}>
+                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                        <Image alt="" className="object-cover" fill sizes="44px" src={requestImage(request)} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-semibold text-slate-900">{item?.productName ?? request.title}</span>
+                        <span className="block truncate text-[12px] text-slate-500">
+                          {quantity !== null ? `${quantity.toLocaleString('es-AR')} ${item?.unit ?? 'un.'}` : 'A definir'} · {quotes} cotizaci{quotes === 1 ? 'ón' : 'ones'}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${status.tone}`}>{status.label}</span>
+                        <span className="mt-0.5 block text-[11px] text-slate-400">{formatDayTime(request.updatedAt)}</span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+          <div className="mt-4 hidden overflow-x-auto rounded-[12px] border border-slate-100 md:block">
             <table className="w-full min-w-[600px] text-left text-[13px]">
               <thead>
                 <tr className="bg-[#f5f7fc] text-[12px] text-slate-500">
@@ -492,7 +524,7 @@ export default function DashboardCompradorPanelPage() {
       {/* ==================== ACCESOS RÁPIDOS ==================== */}
       <section>
         <h2 className="text-[18px] font-bold text-slate-950">Accesos rápidos</h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {QUICK_ACCESS.map((access, index) => (
             <Link
               key={access.label}

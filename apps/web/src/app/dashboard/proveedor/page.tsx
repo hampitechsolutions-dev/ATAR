@@ -3,13 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import CommercialPanel from '@/components/dashboard/commercial-panel';
 import CompanySwitcher from '@/components/dashboard/company-switcher';
 import SupplierAccountMenu from '@/components/dashboard/supplier-account-menu';
 import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
 import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
 import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
-import { LoadingState } from '@/components/ui/spinner';
+import { DashboardLoader } from '@/components/ui/spinner';
 import { useWorkspace } from '@/components/auth/workspace-provider';
 import { type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
 import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
@@ -86,46 +85,6 @@ function getRequestTagClass(status: RequestRecord['status']) {
   }
 
   return 'bg-slate-100 text-slate-600';
-}
-
-function ProviderStatIcon({ kind }: { kind: 'requests' | 'quotes' | 'money' | 'sales' }) {
-  if (kind === 'requests') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M14 2v6h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-
-  if (kind === 'quotes') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M14 2v6h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M9 13h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M9 17h4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-
-  if (kind === 'money') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M15 9.5c0-1.4-1.34-2.5-3-2.5s-3 1.1-3 2.5 1.34 2.5 3 2.5 3 1.1 3 2.5S13.66 17 12 17s-3-1.1-3-2.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M18 20V10" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M12 20V4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M6 20v-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M3 20h18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
 }
 
 function HeaderActionIcon({ kind }: { kind: 'chat' | 'bell' }) {
@@ -359,9 +318,6 @@ export default function DashboardProveedorPage() {
     };
   }, [myQuotes, openRequests]);
 
-  const acceptanceRate =
-    myQuotes.length === 0 ? 0 : Math.round((dashboardData.awardedQuotes.length / myQuotes.length) * 100);
-
   // --- Inicio de escritorio: tareas, resumen y listados ----------------------
   // Hora de referencia fija por render de la página (no se recalcula en cada
   // render para que los cálculos sean puros).
@@ -479,287 +435,21 @@ export default function DashboardProveedorPage() {
     return [...map.values()].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 4);
   })();
 
-  // Nivel derivado de la actividad real (no hay tier en el API).
-  const tier =
-    acceptanceRate >= 75 || dashboardData.awardedQuotes.length >= 10
-      ? 'Platino'
-      : acceptanceRate >= 50 || dashboardData.awardedQuotes.length >= 5
-        ? 'Oro'
-        : acceptanceRate >= 25
-          ? 'Plata'
-          : 'Inicial';
-
-  const monthLabel = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(new Date());
-
-  const levelMetrics = [
-    { value: `${acceptanceRate}%`, label: 'Aceptación' },
-    { value: dashboardData.clientsCount, label: 'Clientes' },
-  ];
-
-  const summaryCards = [
-    {
-      label: 'Solicitudes recibidas',
-      value: openRequests.length,
-      delta: dashboardData.requestsThisMonth > 0 ? `+${dashboardData.requestsThisMonth} este mes` : null,
-      icon: 'requests' as const,
-      tone: 'bg-indigo-50 text-indigo-600',
-    },
-    {
-      label: 'Cotizaciones enviadas',
-      value: myQuotes.length,
-      delta: dashboardData.quotesThisMonth > 0 ? `+${dashboardData.quotesThisMonth} este mes` : null,
-      icon: 'quotes' as const,
-      tone: 'bg-emerald-50 text-emerald-600',
-    },
-    {
-      label: 'Pedidos en curso',
-      value: dashboardData.activeOrders.length,
-      delta: dashboardData.ordersThisMonth > 0 ? `+${dashboardData.ordersThisMonth} este mes` : null,
-      icon: 'money' as const,
-      tone: 'bg-amber-50 text-amber-600',
-    },
-    {
-      label: 'Ventas',
-      value: formatCurrency(dashboardData.totalSales),
-      delta: dashboardData.salesThisMonth > 0 ? `+${formatCurrency(dashboardData.salesThisMonth)} este mes` : null,
-      icon: 'sales' as const,
-      tone: 'bg-sky-50 text-sky-600',
-    },
-  ];
-
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f4f2fd] text-slate-950">
-        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-          <LoadingState label="Cargando dashboard proveedor..." className="gap-3" />
-        </div>
-      </main>
-    );
+    return <DashboardLoader />;
   }
 
-  return (
-    <main className="bg-[#f4f2fd] text-slate-950 lg:h-screen lg:overflow-hidden">
-      {/* ==================== VISTA MOBILE ==================== */}
-      <div className="lg:hidden">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
-          <Link href="/dashboard/proveedor" className="flex items-center gap-2">
-            <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
-            <span className="text-base font-bold tracking-tight text-slate-950">ATAR</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700"
-              href="/dashboard/proveedor/notificaciones"
-            >
-              <HeaderActionIcon kind="bell" />
-              {counters.unreadNotificationsCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-semibold text-white">
-                  {counters.unreadNotificationsCount}
-                </span>
-              ) : null}
-            </Link>
-            <SupplierAccountMenu session={session} />
-          </div>
-        </header>
-
-        {error ? (
-          <div className="mx-4 mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {error}
-          </div>
-        ) : null}
-
-        <div className="px-4 pb-28 pt-5">
-          <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-slate-950">
-            Hola, {sellerName} 👋
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Panel de vendedor · {companyName}
-          </p>
-
-          {/* En mobile el selector va debajo del saludo: no entra en el header. */}
-          {hasMultipleWorkspaces ? <CompanySwitcher className="mt-3" /> : null}
-
-          {/* Nivel */}
-          <section className="mt-5 overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#4f46e5_0%,#6d5cf5_52%,#7c3aed_100%)] p-5 text-white shadow-lg shadow-indigo-600/25">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                <svg aria-hidden="true" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 7.1-1.01L12 2z" />
-                </svg>
-                Nivel {tier}
-              </span>
-              <Link
-                className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/95"
-                href="/dashboard/proveedor/reportes"
-              >
-                Ver beneficios
-                <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                </svg>
-              </Link>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              {levelMetrics.map((metric) => (
-                <div key={metric.label} className="text-center">
-                  <p className="text-xl font-bold tracking-tight">{metric.value}</p>
-                  <p className="mt-0.5 text-[11px] text-white/70">{metric.label}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Resumen del mes */}
-          <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-950">Resumen del mes</h2>
-            <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold capitalize text-slate-600">
-              {monthLabel}
-              <svg aria-hidden="true" className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-              </svg>
-            </span>
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            {summaryCards.map((card) => (
-              <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.tone}`}>
-                  <ProviderStatIcon kind={card.icon} />
-                </span>
-                <p className="mt-3 text-lg font-bold tracking-tight text-slate-950">{card.value}</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">{card.label}</p>
-                {card.delta ? (
-                  <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                    <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
-                      <path d="M6 15l6-6 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                    </svg>
-                    {card.delta}
-                  </p>
-                ) : null}
-              </article>
-            ))}
-          </div>
-
-          {/* Stats comerciales: consolidado de todas las empresas + filtro. */}
-          <h2 className="mt-6 text-base font-bold text-slate-950">Tus estadísticas</h2>
-          <CommercialPanel className="mt-3" />
-
-          {/* Actividad reciente */}
-          <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-950">Actividad reciente</h2>
-            <Link className="text-xs font-semibold text-indigo-600" href="/dashboard/proveedor/reportes">
-              Ver todas
-            </Link>
-          </div>
-
-          <div className="mt-3 space-y-2">
-            {dashboardData.recentActivity.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
-                Todavía no hay actividad para mostrar.
-              </div>
-            ) : (
-              dashboardData.recentActivity.slice(0, 4).map((item) => (
-                <article key={item.id} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                  <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm ${item.tone}`}>
-                    {item.glyph === 'check' ? '✓' : item.glyph === 'quote' ? '✦' : '★'}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold leading-5 text-slate-950">{item.title}</p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">{item.detail}</p>
-                  </div>
-                  <span className="shrink-0 text-[11px] text-slate-400">{item.time}</span>
-                </article>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ==================== VISTA DESKTOP ==================== */}
-      <div className="hidden h-full lg:flex">
-        <div className="hidden h-full w-[264px] shrink-0 lg:block">
-          <DashboardSidebar
-            className="sticky top-0 h-screen"
-            role="supplier"
-            session={session}
-            supplierCounters={counters}
-          />
-        </div>
-
-        <section className="min-w-0 flex-1 overflow-hidden">
-          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
-            <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
-              <div className="flex min-w-0 items-center gap-3">
-                <Link href="/dashboard/proveedor" className="flex shrink-0 items-center gap-2 lg:hidden">
-                  <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
-                  <span className="text-base font-bold text-slate-950">ATAR</span>
-                </Link>
-
-                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-[#f1eefb] px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
-                  <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
-                    <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  </svg>
-                  <input className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="Buscar solicitudes, clientes, productos..." />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <CompanySwitcher className="hidden lg:block" />
-                <WorkspaceSwitcher className="hidden sm:inline-flex" />
-                <button className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
-                  Invitar a un miembro
-                </button>
-                <Link
-                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
-                  href="/dashboard/proveedor/mensajes"
-                >
-                  <HeaderActionIcon kind="chat" />
-                  {counters.unreadMessagesCount > 0 ? (
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
-                      {counters.unreadMessagesCount}
-                    </span>
-                  ) : null}
-                </Link>
-                <Link
-                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
-                  href="/dashboard/proveedor/notificaciones"
-                >
-                  <HeaderActionIcon kind="bell" />
-                  {counters.unreadNotificationsCount > 0 ? (
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
-                      {counters.unreadNotificationsCount}
-                    </span>
-                  ) : null}
-                </Link>
-                <SupplierAccountMenu session={session} />
-              </div>
-            </div>
-
-            <div className="px-4 pb-3 md:hidden">
-              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
-                <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
-                  <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                </svg>
-                <input className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="Buscar solicitudes, clientes, productos..." />
-              </div>
-            </div>
-          </header>
-
-          <div className="h-[calc(100dvh-121px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-5 md:h-[calc(100dvh-73px)] lg:px-8 lg:pb-8">
-            {error ? (
-              <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {error}
-              </div>
-            ) : null}
-
+  // Mismo contenido en mobile y escritorio; cambia solo el marco (header,
+  // sidebar) y, en mobile, las tablas se muestran como tarjetas.
+  const homeBody = (
+    <>
             {/* Saludo */}
             <div>
               <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-indigo-600">{greeting},</p>
-              <h1 className="mt-0.5 text-[2.3rem] font-bold leading-tight tracking-[-0.03em] text-[#16123a]">
+              <h1 className="mt-0.5 text-[1.9rem] font-bold lg:text-[2.3rem] leading-tight tracking-[-0.03em] text-[#16123a]">
                 {sellerName} 👋
               </h1>
-              <p className="mt-0.5 text-[15px] text-slate-500">Estas son las tareas y oportunidades de hoy en {companyName}.</p>
+              <p className="mt-0.5 text-[14px] text-slate-500 lg:text-[15px]">Estas son las tareas y oportunidades de hoy en {companyName}.</p>
             </div>
 
             <div className="mt-6 grid gap-5 xl:grid-cols-[1.15fr_1fr]">
@@ -784,7 +474,7 @@ export default function DashboardProveedorPage() {
                         <HomeIcon name={task.icon} tone={task.tone} />
                         <span className="w-8 text-center text-[22px] font-bold text-[#16123a]">{task.count}</span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[14px] font-semibold text-slate-900">{task.label}</span>
+                          <span className="block text-[14px] font-semibold leading-5 text-slate-900 sm:truncate">{task.label}</span>
                           <span className="block truncate text-[12px] text-slate-500">{task.detail}</span>
                         </span>
                         <span className="text-indigo-600 transition group-hover:translate-x-0.5">
@@ -806,14 +496,14 @@ export default function DashboardProveedorPage() {
                   {activityTiles.map((tile) => (
                     <Link
                       key={tile.label}
-                      className="group flex items-center rounded-2xl border border-slate-100 bg-[#fbfaff] p-4 transition hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(100,64,232,0.08)]"
+                      className="group flex items-center rounded-2xl border border-slate-100 bg-[#fbfaff] p-3.5 transition sm:p-4 hover:border-indigo-200 hover:shadow-[0_10px_24px_rgba(100,64,232,0.08)]"
                       href={tile.href}
                     >
-                      <div className="flex w-full items-start gap-3">
+                      <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
                         <HomeIcon name={tile.icon} tone="bg-indigo-50 text-indigo-600" />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="truncate text-[22px] font-bold leading-7 text-[#16123a]">{tile.value}</p>
+                            <p className="text-[20px] font-bold leading-7 text-[#16123a] sm:truncate sm:text-[22px]">{tile.value}</p>
                             {tile.trend ? (
                               <span className="shrink-0 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">
                                 ↑ {tile.trend}
@@ -839,7 +529,46 @@ export default function DashboardProveedorPage() {
                 </div>
                 <HomeSeeAll href="/dashboard/proveedor/solicitudes" />
               </div>
-              <div className="mt-4 overflow-x-auto px-3 pb-3">
+              {/* En mobile, tarjetas; desde md, la tabla completa. */}
+              <ul className="mt-3 divide-y divide-slate-100 px-5 pb-3 md:hidden">
+                {recentOpportunities.length === 0 ? (
+                  <li className="py-6 text-center text-[13px] text-slate-500">Todavía no hay oportunidades para {companyName}.</li>
+                ) : (
+                  recentOpportunities.map((request) => {
+                    const item = request.items?.[0];
+                    const quantity = item?.quantity ?? request.quantityRequested ?? null;
+                    const location = request.deliveryCity ?? request.buyerCompany?.city ?? '—';
+                    const isNew = dashboardData.openOpportunities.some((open) => open.id === request.id);
+                    return (
+                      <li key={request.id}>
+                        <Link className="flex items-center gap-3 py-3" href={`/dashboard/proveedor/solicitudes/${request.id}`}>
+                          <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                            <Image alt="" className="object-cover" fill sizes="48px" src={requestImage(request)} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2">
+                              <span className="truncate text-[14px] font-semibold text-slate-900">{item?.productName ?? request.title}</span>
+                              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${isNew ? 'bg-indigo-50 text-indigo-600' : 'bg-sky-50 text-sky-600'}`}>
+                                {isNew ? 'Nueva' : 'Cotizada'}
+                              </span>
+                            </span>
+                            <span className="block truncate text-[12px] text-slate-500">
+                              {request.buyerCompany?.name ?? 'Comprador'} · {quantity !== null ? `${quantity.toLocaleString('es-AR')} ${item?.unit ?? 'un.'}` : 'A definir'}
+                            </span>
+                            <span className="block truncate text-[11px] text-slate-400">
+                              {location} · {formatDayTime(request.updatedAt)}
+                            </span>
+                          </span>
+                          <span className="text-indigo-600">
+                            <HomeArrow />
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+              <div className="mt-4 hidden overflow-x-auto px-3 pb-3 md:block">
                 <table className="w-full min-w-[860px] text-left text-[13px]">
                   <thead>
                     <tr className="bg-[#f6f4fd] text-[12px] text-slate-500">
@@ -927,7 +656,34 @@ export default function DashboardProveedorPage() {
                   </div>
                   <HomeSeeAll href="/dashboard/proveedor/cotizaciones" />
                 </div>
-                <div className="mt-4 px-3 pb-3">
+                <ul className="mt-3 divide-y divide-slate-100 px-5 pb-3 md:hidden">
+                  {recentQuotes.length === 0 ? (
+                    <li className="py-6 text-center text-[13px] text-slate-500">Todavía no enviaste cotizaciones.</li>
+                  ) : (
+                    recentQuotes.map((quote) => {
+                      const status = quoteStatusMeta(quote.status);
+                      return (
+                        <li key={quote.id}>
+                          <Link className="flex items-center justify-between gap-3 py-3" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
+                            <span className="min-w-0">
+                              <span className="block truncate text-[14px] font-semibold text-slate-900">{quote.request?.buyerCompany?.name ?? 'Cliente'}</span>
+                              <span className="block truncate text-[12px] text-slate-500">{quote.request?.title ?? '—'}</span>
+                            </span>
+                            <span className="shrink-0 text-right">
+                              <span className="block text-[13px] font-semibold text-slate-900">
+                                {typeof quote.amount === 'number'
+                                  ? `${quote.currency === 'USD' ? 'US$' : '$'} ${quote.amount.toLocaleString('es-AR')}`
+                                  : 'A convenir'}
+                              </span>
+                              <span className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${status.tone}`}>{status.label}</span>
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+                <div className="mt-4 hidden px-3 pb-3 md:block">
                   <table className="w-full text-left text-[13px]">
                     <thead>
                       <tr className="bg-[#f6f4fd] text-[12px] text-slate-500">
@@ -981,7 +737,24 @@ export default function DashboardProveedorPage() {
                   </div>
                   <HomeSeeAll href="/dashboard/proveedor/clientes" />
                 </div>
-                <div className="mt-4 px-3 pb-3">
+                <ul className="mt-3 divide-y divide-slate-100 px-5 pb-3 md:hidden">
+                  {recentClients.length === 0 ? (
+                    <li className="py-6 text-center text-[13px] text-slate-500">Todavía no hay clientes con actividad.</li>
+                  ) : (
+                    recentClients.map((client) => (
+                      <li key={client.name} className="flex items-center justify-between gap-3 py-3">
+                        <span className="min-w-0">
+                          <span className="block truncate text-[14px] font-semibold text-slate-900">{client.name}</span>
+                          <span className="block truncate text-[12px] text-slate-500">
+                            {client.activity} · {formatDayTime(client.at)}
+                          </span>
+                        </span>
+                        <span className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium ${client.tone}`}>{client.status}</span>
+                      </li>
+                    ))
+                  )}
+                </ul>
+                <div className="mt-4 hidden px-3 pb-3 md:block">
                   <table className="w-full text-left text-[13px]">
                     <thead>
                       <tr className="bg-[#f6f4fd] text-[12px] text-slate-500">
@@ -1015,6 +788,106 @@ export default function DashboardProveedorPage() {
                 </div>
               </section>
             </div>
+    </>
+  );
+
+  return (
+    <main className="bg-[#f4f2fd] text-slate-950 lg:h-screen lg:overflow-hidden">
+      {/* ==================== VISTA MOBILE ==================== */}
+      <div className="lg:hidden">
+        {error ? (
+          <div className="mx-4 mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="px-4 pb-28 pt-5">
+          {/* En mobile el selector de empresa va arriba: no entra en el header. */}
+          {hasMultipleWorkspaces ? <CompanySwitcher className="mb-4" /> : null}
+          {homeBody}
+        </div>
+      </div>
+
+      {/* ==================== VISTA DESKTOP ==================== */}
+      <div className="hidden h-full lg:flex">
+        <div className="hidden h-full w-[264px] shrink-0 lg:block">
+          <DashboardSidebar
+            className="sticky top-0 h-screen"
+            role="supplier"
+            session={session}
+            supplierCounters={counters}
+          />
+        </div>
+
+        <section className="min-w-0 flex-1 overflow-hidden">
+          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <Link href="/dashboard/proveedor" className="flex shrink-0 items-center gap-2 lg:hidden">
+                  <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
+                  <span className="text-base font-bold text-slate-950">ATAR</span>
+                </Link>
+
+                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-[#f1eefb] px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
+                  <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                    <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
+                  <input className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="Buscar solicitudes, clientes, productos..." />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <CompanySwitcher className="hidden lg:block" />
+                <WorkspaceSwitcher className="hidden sm:inline-flex" />
+                <button className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
+                  Invitar a un miembro
+                </button>
+                <Link
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  href="/dashboard/proveedor/mensajes"
+                >
+                  <HeaderActionIcon kind="chat" />
+                  {counters.unreadMessagesCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                      {counters.unreadMessagesCount}
+                    </span>
+                  ) : null}
+                </Link>
+                <Link
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  href="/dashboard/proveedor/notificaciones"
+                >
+                  <HeaderActionIcon kind="bell" />
+                  {counters.unreadNotificationsCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                      {counters.unreadNotificationsCount}
+                    </span>
+                  ) : null}
+                </Link>
+                <SupplierAccountMenu session={session} />
+              </div>
+            </div>
+
+            <div className="px-4 pb-3 md:hidden">
+              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
+                <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                  <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+                <input className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="Buscar solicitudes, clientes, productos..." />
+              </div>
+            </div>
+          </header>
+
+          <div className="h-[calc(100dvh-121px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-5 md:h-[calc(100dvh-73px)] lg:px-8 lg:pb-8">
+            {error ? (
+              <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {error}
+              </div>
+            ) : null}
+
+            {homeBody}
           </div>
         </section>
       </div>

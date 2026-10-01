@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
+import { useWorkspace } from '@/components/auth/workspace-provider';
+import CompanyLogo from '@/components/dashboard/company-logo';
+import { getPrimaryCompanyName, getUserFullName, isSellerAccount } from '@/lib/session';
 import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
 
 type IconName =
@@ -122,8 +125,13 @@ const DRAWER_ITEMS: { label: string; href: string; icon: IconName }[] = [
 export default function SupplierBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, session } = useAuth();
   const [open, setOpen] = useState(false);
+  // En mobile no hay header: la cuenta y el cambio de empresa viven en este menú.
+  const { activeWorkspace, workspaces, hasMultipleWorkspaces, selectWorkspace } = useWorkspace();
+  const userName = session ? getUserFullName(session.user) : 'Mi cuenta';
+  const companyName = activeWorkspace?.company.name ?? (session ? getPrimaryCompanyName(session.user) : 'Mi empresa');
+  const showMyCompanies = session ? isSellerAccount(session.user) : false;
 
   useEffect(() => {
     setOpen(false);
@@ -228,13 +236,64 @@ export default function SupplierBottomNav() {
               </button>
             </div>
 
+            <div className="flex items-center gap-3 px-5 pt-4">
+              <CompanyLogo
+                className="h-11 w-11"
+                logoUrl={activeWorkspace?.company.logoUrl}
+                name={companyName}
+                rounded="rounded-full"
+                textClassName="text-[13px]"
+                tone="bg-indigo-50 text-indigo-600"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-semibold text-slate-950">{userName}</p>
+                <p className="truncate text-[12px] text-slate-500">{companyName}</p>
+              </div>
+            </div>
+
+            {hasMultipleWorkspaces ? (
+              <div className="mx-4 mt-3 rounded-2xl border border-slate-200 p-1.5">
+                <p className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Representás a</p>
+                {workspaces.map((workspace) => {
+                  const current = workspace.companyId === activeWorkspace?.companyId;
+                  return (
+                    <button
+                      key={workspace.companyId}
+                      aria-pressed={current}
+                      className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left ${current ? 'bg-indigo-50' : 'active:bg-slate-50'}`}
+                      onClick={() => {
+                        setOpen(false);
+                        if (!current) {
+                          selectWorkspace(workspace.companyId);
+                        }
+                      }}
+                      type="button"
+                    >
+                      <CompanyLogo
+                        className="h-7 w-7"
+                        logoUrl={workspace.company.logoUrl}
+                        name={workspace.company.name}
+                        rounded="rounded-lg"
+                        textClassName="text-[10px]"
+                        tone={current ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-semibold text-slate-950">{workspace.company.name}</span>
+                        <span className="block text-[11px] text-slate-500">{workspace.isManager ? 'Administrador' : 'Vendedor'}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
             {/* Perfil híbrido: alternar Compro/Vendo desde mobile (null si no es híbrido). */}
             <div className="px-4 pt-3 empty:hidden">
               <WorkspaceSwitcher className="w-full justify-center" />
             </div>
 
             <div className="p-2">
-              {DRAWER_ITEMS.map((item) => {
+              {[...DRAWER_ITEMS, ...(showMyCompanies ? [{ label: 'Mis empresas', href: '/dashboard/proveedor/empresas', icon: 'users' as IconName }] : [])].map((item) => {
                 const active = isActive(item.href);
                 return (
                   <Link

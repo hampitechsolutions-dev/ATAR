@@ -82,7 +82,9 @@ export default function SupplierDashboardShell({
         </div>
 
         <section className="min-w-0 flex-1 overflow-hidden">
-          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+          {/* Solo escritorio. En mobile no hay header: la navegación, las
+              notificaciones y la cuenta viven en la barra inferior ("Más"). */}
+          <header className="sticky top-0 z-30 hidden border-b border-slate-200 bg-white/90 backdrop-blur lg:block">
             <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
               <div className="flex min-w-0 items-center gap-3">
                 <Link href="/dashboard/proveedor" className="flex shrink-0 items-center gap-2 lg:hidden">
@@ -155,11 +157,11 @@ export default function SupplierDashboardShell({
           </header>
 
           {fullBleed ? (
-            <div className="h-[calc(100dvh-73px-68px)] overflow-hidden lg:h-[calc(100dvh-73px)]">
+            <div className="h-[calc(100dvh-68px)] overflow-hidden lg:h-[calc(100dvh-73px)]">
               {children}
             </div>
           ) : (
-            <div className="h-[calc(100dvh-73px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-4 lg:px-6 lg:pb-6">
+            <div className="h-[100dvh] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-5 lg:h-[calc(100dvh-73px)] lg:px-6 lg:pb-6 lg:pt-4">
               {children}
             </div>
           )}

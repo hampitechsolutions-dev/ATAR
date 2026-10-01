@@ -377,11 +377,11 @@ export default function SupplierTeamPage() {
             })}
           </div>
 
-          <div className="mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="mt-5 grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
             {/* Tabla */}
-            <section className={`${card} p-4`}>
+            <section className={`${card} min-w-0 p-4`}>
               <div className="flex flex-wrap gap-3">
-                <label className="relative min-w-[220px] flex-1">
+                <label className="relative basis-full sm:min-w-[220px] sm:flex-1 sm:basis-auto">
                   <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                     <Icon name="search" />
                   </span>
@@ -393,24 +393,24 @@ export default function SupplierTeamPage() {
                     value={search}
                   />
                 </label>
-                <label className="relative">
-                  <select aria-label="Estado" className={`${selectClass} min-w-[170px]`} onChange={(event) => updateFilters(() => setStatusFilter(event.target.value as typeof statusFilter))} value={statusFilter}>
+                <label className="relative min-w-0 flex-1 sm:flex-none">
+                  <select aria-label="Estado" className={`${selectClass} w-full sm:min-w-[170px]`} onChange={(event) => updateFilters(() => setStatusFilter(event.target.value as typeof statusFilter))} value={statusFilter}>
                     <option value="all">Todos los estados</option>
                     <option value="ACTIVE">Activos</option>
                     <option value="INVITED">Pendientes de aprobación</option>
                   </select>
                   <SelectChevron />
                 </label>
-                <label className="relative">
-                  <select aria-label="Rol" className={`${selectClass} min-w-[150px]`} onChange={(event) => updateFilters(() => setRoleFilter(event.target.value as typeof roleFilter))} value={roleFilter}>
+                <label className="relative min-w-0 flex-1 sm:flex-none">
+                  <select aria-label="Rol" className={`${selectClass} w-full sm:min-w-[150px]`} onChange={(event) => updateFilters(() => setRoleFilter(event.target.value as typeof roleFilter))} value={roleFilter}>
                     <option value="all">Todos los roles</option>
                     <option value="manager">Gerentes</option>
                     <option value="seller">Vendedores</option>
                   </select>
                   <SelectChevron />
                 </label>
-                <label className="relative">
-                  <select aria-label="Ordenar" className={`${selectClass} min-w-[200px]`} onChange={(event) => updateFilters(() => setSort(event.target.value as SortKey))} value={sort}>
+                <label className="relative min-w-0 flex-1 sm:flex-none">
+                  <select aria-label="Ordenar" className={`${selectClass} w-full sm:min-w-[200px]`} onChange={(event) => updateFilters(() => setSort(event.target.value as SortKey))} value={sort}>
                     <option value="performance">Ordenar por desempeño</option>
                     <option value="conversion">Mayor conversión</option>
                     <option value="pending">Más pendientes</option>
@@ -420,11 +420,17 @@ export default function SupplierTeamPage() {
                 </label>
               </div>
 
-              <div className="mt-4 overflow-x-auto">
+              {/* La tabla se desliza de costado en pantallas chicas: la primera
+                  columna queda fija para no perder de vista al vendedor. */}
+              <p className="mt-3 flex items-center gap-1.5 text-[12px] text-slate-400 md:hidden">
+                <Icon className="h-3.5 w-3.5" name="chev-right" />
+                Deslizá la tabla hacia el costado para ver todos los datos.
+              </p>
+              <div className="mt-2 overflow-x-auto md:mt-4">
                 <table className="w-full min-w-[860px] text-left text-[14px]">
                   <thead>
                     <tr className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      <th className="px-2.5 py-3">Vendedor</th>
+                      <th className="sticky left-0 z-10 bg-white px-2.5 py-3">Vendedor</th>
                       <th className="px-2.5 py-3">Rol</th>
                       <th className="px-2.5 py-3">Estado</th>
                       <th className="px-2.5 py-3 text-center" title="Solicitudes asignadas">Oportunidades</th>
@@ -456,22 +462,22 @@ export default function SupplierTeamPage() {
                         const stale = !last || nowMs - new Date(last).getTime() > 7 * DAY;
                         const highlight = member.pending >= 3 && !invited;
                         return (
-                          <tr key={member.id} className={`border-t border-slate-100 ${highlight ? 'bg-[#f7f5ff]' : ''}`}>
-                            <td className="px-2.5 py-3">
+                          <tr key={member.id} className={`border-t border-slate-100 ${highlight ? 'bg-[#f7f5ff]' : 'bg-white'}`}>
+                            <td className="sticky left-0 z-10 max-w-[150px] bg-inherit px-2.5 py-3 shadow-[6px_0_10px_-8px_rgba(40,28,110,0.25)] md:max-w-none md:shadow-none">
                               <Link className="flex items-center gap-3" href={`/dashboard/proveedor/equipo/${member.id}`}>
-                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600">
+                                <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600 md:flex">
                                   {initials(member.name)}
                                 </span>
                                 <span className="min-w-0">
                                   <span className="block truncate font-semibold text-slate-900 hover:underline">{member.name}</span>
-                                  <span className="block truncate text-[13px] text-slate-500">{member.email}</span>
+                                  <span className="hidden truncate text-[13px] text-slate-500 md:block">{member.email}</span>
                                   {highlight ? (
-                                    <span className="mt-0.5 flex items-center gap-1 text-[12px] text-amber-600">
+                                    <span className="mt-0.5 hidden items-center gap-1 text-[12px] text-amber-600 md:flex">
                                       <Icon className="h-3.5 w-3.5" name="alert" />
                                       {member.pending} solicitudes pendientes
                                     </span>
                                   ) : invited ? null : (
-                                    <span className="mt-0.5 flex items-center gap-1.5 text-[12px] text-slate-500">
+                                    <span className="mt-0.5 hidden items-center gap-1.5 text-[12px] text-slate-500 md:flex">
                                       <span className={`h-1.5 w-1.5 rounded-full ${stale ? 'bg-slate-300' : 'bg-emerald-500'}`} />
                                       {last ? `Última actividad ${formatAgo(last, nowMs)}` : 'Sin actividad registrada'}
                                     </span>

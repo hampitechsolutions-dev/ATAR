@@ -17,6 +17,18 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+// El API devuelve el estado en inglés (enum); acá se traduce para mostrarlo.
+const REQUEST_STATUS_LABEL: Record<string, string> = {
+  DRAFT: 'Borrador',
+  PUBLISHED: 'Abierta',
+  REVIEWING: 'En revisión',
+  NEGOTIATING: 'En negociación',
+  AWARDED: 'Adjudicada',
+  ORDER_ISSUED: 'Orden emitida',
+  COMPLETED: 'Completada',
+  CANCELLED: 'Cancelada',
+};
+
 export default function SupplierOpportunitiesPage() {
   const { session, openRequests, loading, error } = useSupplierDashboardData();
   const [search, setSearch] = useState('');
@@ -109,7 +121,7 @@ export default function SupplierOpportunitiesPage() {
                       <p className="mt-1">
                         Estado:{' '}
                         <span className="font-semibold text-slate-950">
-                          {request.status}
+                          {REQUEST_STATUS_LABEL[request.status] ?? 'Abierta'}
                         </span>
                       </p>
                     </div>

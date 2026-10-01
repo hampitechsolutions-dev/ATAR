@@ -132,8 +132,8 @@ export default function SiteFooter() {
       {/* FOOTER: el mismo que usa la home. */}
       <footer className="bg-[#0b1530] text-white">
         <div className="mx-auto w-full max-w-[1440px] px-6 pb-8 pt-14 lg:px-12">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_0.7fr_0.7fr_0.8fr_1.3fr]">
-            <div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-[1.3fr_0.7fr_0.7fr_0.8fr_1.3fr]">
+            <div className="col-span-2 sm:col-span-3 lg:col-span-1">
               <div className="flex items-center gap-2.5">
                 <Image alt="ATAR" height={34} src="/logoatarblanco.png" width={34} />
                 <span className="text-2xl font-bold tracking-tight">ATAR</span>
@@ -158,7 +158,7 @@ export default function SiteFooter() {
               </div>
             ))}
 
-            <div className="lg:border-l lg:border-white/10 lg:pl-10">
+            <div className="col-span-2 sm:col-span-3 lg:col-span-1 lg:border-l lg:border-white/10 lg:pl-10">
               <p className="text-sm font-semibold text-white">Recibí novedades de ATAR</p>
               <form className="mt-4 flex items-center overflow-hidden rounded-[10px] bg-white">
                 <input

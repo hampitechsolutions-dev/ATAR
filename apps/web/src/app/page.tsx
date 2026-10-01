@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Caveat } from 'next/font/google';
+import LatamMap from '@/components/home/latam-map';
 import LandingAuthRedirect from '@/components/layout/landing-auth-redirect';
 import CountUp from '@/components/ui/count-up';
 import Reveal from '@/components/ui/reveal';
@@ -165,45 +166,6 @@ function Flag({ name }: { name: FlagName }) {
   );
 }
 
-/* ============================ MAPA ============================ */
-
-// Silueta simplificada de Sudamérica con los puntos donde hay empresas.
-function SouthAmericaMap() {
-  const dots = [
-    { x: 64, y: 44 },
-    { x: 150, y: 70 },
-    { x: 60, y: 108 },
-    { x: 118, y: 120 },
-    { x: 166, y: 150 },
-    { x: 124, y: 162 },
-    { x: 84, y: 186 },
-    { x: 128, y: 190 },
-  ];
-  return (
-    <svg aria-hidden="true" className="h-full w-full" viewBox="0 0 220 270">
-      <defs>
-        <radialGradient id="sa-glow" cx="50%" cy="45%" r="60%">
-          <stop offset="0%" stopColor="#dbe6ff" />
-          <stop offset="100%" stopColor="#eef3ff" />
-        </radialGradient>
-      </defs>
-      <path
-        d="M58 28 L78 14 L102 16 L122 24 L140 30 L152 40 L162 52 L180 64 L200 84 L204 100 L194 114 L182 128 L172 146 L160 160 L146 172 L136 184 L126 194 L118 206 L112 222 L104 238 L96 254 L88 262 L84 250 L82 230 L80 208 L78 186 L76 162 L72 138 L64 118 L52 100 L42 86 L38 70 L42 54 L50 40 Z"
-        fill="url(#sa-glow)"
-        stroke="#bcd0ff"
-        strokeWidth="1.5"
-      />
-      <path d="M78 186 L128 190 M76 162 L124 162 M72 138 L118 120 M64 118 L150 110 M52 100 L150 70" stroke="#cddbff" strokeWidth="1" fill="none" />
-      {dots.map((dot) => (
-        <g key={`${dot.x}-${dot.y}`}>
-          <circle className="animate-map-pulse" cx={dot.x} cy={dot.y} r="7" fill="#2f6bff" style={{ animationDelay: `${(dot.x * 7) % 2400}ms` }} />
-          <circle cx={dot.x} cy={dot.y} r="3.4" fill="#2f6bff" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
 /* ============================ DATA ============================ */
 
 const HERO_FEATURES: { icon: IconName; text: string }[] = [
@@ -296,10 +258,10 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="animate-fade-up mt-12 grid max-w-lg grid-cols-3 gap-6 [animation-delay:450ms]">
+            <div className="animate-fade-up mt-10 grid max-w-lg gap-3 [animation-delay:450ms] sm:mt-12 sm:grid-cols-3 sm:gap-6">
               {HERO_FEATURES.map((item) => (
                 <div key={item.text} className="flex items-center gap-3">
-                  <Icon name={item.icon} className="h-7 w-7 shrink-0 text-[#5b8dff]" />
+                  <Icon name={item.icon} className="h-6 w-6 shrink-0 text-[#5b8dff] sm:h-7 sm:w-7" />
                   <p className="text-[13px] leading-5 text-white/85">{item.text}</p>
                 </div>
               ))}
@@ -375,10 +337,10 @@ export default function Home() {
             <p className="text-[15px] text-slate-600">Simple. Rápido. Enfocado en tu industria.</p>
           </Reveal>
 
-          <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:mt-12 sm:gap-10 lg:grid-cols-4 lg:gap-6">
             {STEPS.map((step, index) => (
-              <Reveal key={step.label} className="group relative flex items-start gap-4" delay={index * 140}>
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e3eaff] text-lg font-semibold text-[#1f5bff] transition duration-300 group-hover:bg-[#1f5bff] group-hover:text-white">
+              <Reveal key={step.label} className="group relative flex flex-col items-start gap-3 sm:flex-row sm:gap-4" delay={index * 140}>
+                <span className="flex h-10 w-10 shrink-0 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#e3eaff] text-lg font-semibold text-[#1f5bff] transition duration-300 group-hover:bg-[#1f5bff] group-hover:text-white">
                   {index + 1}
                 </span>
                 <div className="min-w-0">
@@ -482,7 +444,7 @@ export default function Home() {
 
       {/* ==================== REGIÓN ==================== */}
       <section className="bg-[linear-gradient(180deg,#ffffff_0%,#f3f6fd_100%)]">
-        <div className="mx-auto grid w-full max-w-[1440px] items-center gap-10 px-6 py-14 lg:grid-cols-[1.1fr_0.8fr_0.7fr] lg:px-12">
+        <div className="mx-auto grid w-full max-w-[1440px] items-center gap-10 px-6 py-14 lg:grid-cols-[1fr_minmax(0,460px)] xl:grid-cols-[1fr_minmax(0,480px)_0.62fr] lg:px-12">
           <Reveal>
             <h2 className="text-3xl font-bold tracking-[-0.03em] text-slate-950 sm:text-[2.3rem]">Una industria que mueve el mundo.</h2>
             <p className="mt-4 max-w-xl text-[15px] leading-7 text-slate-600">
@@ -501,8 +463,8 @@ export default function Home() {
             </Link>
           </Reveal>
 
-          <Reveal className="mx-auto h-[260px] w-full max-w-[260px] lg:h-[300px]" delay={120}>
-            <SouthAmericaMap />
+          <Reveal delay={120}>
+            <LatamMap className="mx-auto h-auto w-full max-w-[460px]" />
           </Reveal>
 
           <Reveal className="rounded-[16px] border border-slate-200 bg-white/80 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.05)]" delay={240}>

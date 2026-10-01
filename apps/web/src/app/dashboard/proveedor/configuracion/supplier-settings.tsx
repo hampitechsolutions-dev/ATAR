@@ -380,7 +380,7 @@ function toForm(record: SupplierProfileRecord): ProfileForm {
 
 /* Componente ---------------------------------------------------------------- */
 
-export default function SupplierSettingsDesktop({ session }: { session: WebSession | null }) {
+export default function SupplierSettings({ session }: { session: WebSession | null }) {
   const router = useRouter();
   const { isManager, activeWorkspace } = useWorkspace();
   const accessToken = session?.accessToken;
@@ -639,11 +639,11 @@ export default function SupplierSettingsDesktop({ session }: { session: WebSessi
           <h1 className="text-[32px] font-bold leading-tight tracking-[-0.035em] text-[#16123a] sm:text-[34px]">Configuración</h1>
           <p className="text-[15px] text-slate-500">Gestioná la información de tu empresa y cómo operás en ATAR.</p>
         </div>
-        <div className={`${card} flex items-center gap-4 px-4 py-3`}>
+        <div className={`${card} flex w-full flex-wrap items-center gap-3 px-4 py-3 sm:w-auto sm:flex-nowrap sm:gap-4`}>
           <span className={`flex h-9 w-9 items-center justify-center rounded-full ${completion >= 80 ? 'bg-emerald-500' : 'bg-amber-400'} text-white`}>
             <Icon name="check" />
           </span>
-          <div className="w-[200px]">
+          <div className="min-w-0 flex-1 sm:w-[200px] sm:flex-none">
             <p className="text-[13px] font-semibold text-slate-900">{completion >= 100 ? 'Perfil completo' : 'Completitud del perfil'}</p>
             <div className="mt-1.5 flex items-center gap-2">
               <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
@@ -653,7 +653,7 @@ export default function SupplierSettingsDesktop({ session }: { session: WebSessi
             </div>
           </div>
           {publicHref ? (
-            <Link className="inline-flex h-10 items-center rounded-[10px] border border-indigo-200 px-4 text-[13px] font-semibold hover:bg-indigo-50" href={publicHref} target="_blank">
+            <Link className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-indigo-200 px-4 text-[13px] font-semibold hover:bg-indigo-50 sm:w-auto" href={publicHref} target="_blank">
               <span className="inline-flex items-center gap-2 text-indigo-600">
                 Ver mi perfil público
                 <Icon name="external" />
@@ -1266,9 +1266,9 @@ export default function SupplierSettingsDesktop({ session }: { session: WebSessi
         </div>
       )}
 
-      {/* Barra de guardado */}
+      {/* Barra de guardado (en mobile, por encima de la navegación inferior) */}
       {tab !== 'security' ? (
-        <div className="sticky bottom-0 z-10 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-slate-100 bg-white/95 py-3 pl-5 pr-24 shadow-[0_-8px_30px_rgba(40,28,110,0.06)] backdrop-blur">
+        <div className="sticky bottom-[84px] z-10 mt-5 flex items-center justify-between gap-3 rounded-[16px] border border-slate-100 bg-white/95 px-3 py-3 shadow-[0_-8px_30px_rgba(40,28,110,0.06)] backdrop-blur sm:flex-wrap sm:pl-5 sm:pr-24 lg:bottom-0">
           <button
             className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-rose-200 px-4 text-[14px] font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-40"
             disabled={!dirty || saving}
@@ -1276,10 +1276,11 @@ export default function SupplierSettingsDesktop({ session }: { session: WebSessi
             type="button"
           >
             <Icon name="trash" />
-            Descartar cambios
+            <span className="sm:hidden">Descartar</span>
+            <span className="hidden sm:inline">Descartar cambios</span>
           </button>
           <div className="flex items-center gap-4">
-            <span className="text-[12px] text-slate-400">
+            <span className="hidden text-[12px] text-slate-400 sm:inline">
               {dirty
                 ? 'Tenés cambios sin guardar.'
                 : updatedAt
@@ -1287,7 +1288,7 @@ export default function SupplierSettingsDesktop({ session }: { session: WebSessi
                   : 'Sin cambios pendientes.'}
             </span>
             <button
-              className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-indigo-600 px-6 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(100,64,232,0.28)] hover:bg-indigo-700 disabled:opacity-50"
+              className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[14px] font-semibold sm:px-6 sm:text-[15px] text-white shadow-[0_10px_24px_rgba(100,64,232,0.28)] hover:bg-indigo-700 disabled:opacity-50"
               disabled={saving || !dirty}
               onClick={() => void handleSave()}
               type="button"

@@ -57,7 +57,8 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
           </main>
         )}
         {showBottomNav ? <BuyerBottomNav notificationCount={notificationCount} /> : null}
-        {!isBuyerWizard && !isBuyerMessages ? <BuyerNewRequestCta /> : null}
+        {/* En Configuración taparía los interruptores de preferencias. */}
+        {!isBuyerWizard && !isBuyerMessages && !pathname?.startsWith('/dashboard/comprador/configuracion') ? <BuyerNewRequestCta /> : null}
         {!isBuyerWizard ? <AssistantFab /> : null}
       </div>
     </AuthGuard>
