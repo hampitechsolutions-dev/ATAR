@@ -11,6 +11,7 @@ import {
 } from '@/lib/atar-api';
 import { LoadingState } from '@/components/ui/spinner';
 import { loadSession, type WebSession } from '@/lib/session';
+import { TONES, type Tone } from '@/components/dashboard/tone-row';
 
 const PAGE_SIZE = 5;
 
@@ -18,10 +19,10 @@ type SortKey = 'activity' | 'volume' | 'quotes' | 'name';
 type StatusKey = 'active' | 'new' | 'repurchase' | 'follow' | 'inactive';
 
 const STATUS_META: Record<StatusKey, { label: string; tone: string }> = {
-  active: { label: 'Activo', tone: 'bg-emerald-50 text-emerald-600' },
-  new: { label: 'Nuevo', tone: 'bg-indigo-50 text-indigo-600' },
-  repurchase: { label: 'Recompra', tone: 'bg-sky-50 text-sky-600' },
-  follow: { label: 'En seguimiento', tone: 'bg-amber-50 text-amber-600' },
+  active: { label: 'Activo', tone: 'bg-emerald-100 text-emerald-600' },
+  new: { label: 'Nuevo', tone: 'bg-indigo-100 text-indigo-600' },
+  repurchase: { label: 'Recompra', tone: 'bg-sky-100 text-sky-600' },
+  follow: { label: 'En seguimiento', tone: 'bg-amber-100 text-amber-600' },
   inactive: { label: 'Inactivo', tone: 'bg-slate-100 text-slate-500' },
 };
 
@@ -100,9 +101,12 @@ function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: str
   );
 }
 
-const card = 'rounded-[18px] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.05)]';
+// Un color por indicador, para distinguirlos de un vistazo.
+const KPI_TONES: Tone[] = ['indigo', 'sky', 'amber', 'emerald'];
+
+const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
 const selectClass =
-  'h-11 appearance-none rounded-[12px] border border-slate-200 bg-white pl-3.5 pr-9 text-[14px] text-slate-700 outline-none transition focus:border-indigo-300';
+  'h-11 appearance-none rounded-[12px] border border-slate-300 bg-white pl-3.5 pr-9 text-[14px] text-slate-700 outline-none transition focus:border-indigo-300';
 
 function SelectChevron() {
   return (
@@ -302,19 +306,19 @@ export default function SupplierClientsPage() {
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
       ) : null}
 
       {/* Contadores */}
       <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4 xl:grid-cols-4">
-        {kpis.map((kpi) => (
+        {kpis.map((kpi, index) => (
           <button
             key={kpi.label}
             className={`${card} group flex flex-col items-start gap-2.5 p-3.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(40,28,110,0.09)] sm:flex-row sm:gap-4 sm:p-5`}
             onClick={kpi.action}
             type="button"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 sm:h-14 sm:w-14">
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14 ${TONES[KPI_TONES[index % 4]].icon}`}>
               <Icon className="h-5 w-5 sm:h-6 sm:w-6" name={kpi.icon} />
             </span>
             <span className="min-w-0 flex-1">
@@ -324,7 +328,7 @@ export default function SupplierClientsPage() {
                 {loading ? '' : kpi.note}
               </span>
             </span>
-            <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition group-hover:translate-x-0.5 sm:flex">
+            <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 transition group-hover:translate-x-0.5 sm:flex">
               <Icon name="arrow" />
             </span>
           </button>
@@ -333,14 +337,14 @@ export default function SupplierClientsPage() {
 
       {/* Tabla. En mobile no es una tarjeta: los filtros y las tarjetas de
           cliente van directo sobre el fondo, sin "tarjeta dentro de tarjeta". */}
-      <section className="mt-5 md:rounded-[18px] md:bg-white md:p-4 md:shadow-[0_10px_30px_rgba(40,28,110,0.05)]">
+      <section className="mt-5 md:rounded-[18px] md:border md:border-[#cbc4ee] md:bg-white md:p-4 md:shadow-[0_10px_30px_rgba(40,28,110,0.07)]">
         <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
           <label className="relative col-span-2 md:min-w-[240px] md:flex-1">
             <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
               <Icon name="search" />
             </span>
             <input
-              className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-[14px] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+              className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-[14px] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
               onChange={(event) => updateFilters(() => setSearch(event.target.value))}
               placeholder="Buscar clientes por nombre, ciudad o producto..."
               type="search"
@@ -401,9 +405,9 @@ export default function SupplierClientsPage() {
               const meta = STATUS_META[statusOf(customer)];
               const product = customer.lastProduct ?? customer.lastQuotedProduct;
               return (
-                <li key={customer.companyId} className="rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(40,28,110,0.05)]">
+                <li key={customer.companyId} className="rounded-[18px] border border-[#cbc4ee] bg-white p-3.5 shadow-[0_6px_20px_rgba(40,28,110,0.07)]">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-bold text-indigo-600">
                       {initials(customer.name)}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -418,7 +422,7 @@ export default function SupplierClientsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-100 rounded-[10px] bg-[#f7f6fd] py-2 text-center">
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-[#ddd8f5] rounded-[10px] bg-[#f1efff] py-2 text-center">
                     <span>
                       <span className="block text-[10px] text-slate-500">Cotizaciones</span>
                       <span className="block text-[13px] font-semibold text-slate-900">{customer.quotesCount}</span>
@@ -437,7 +441,7 @@ export default function SupplierClientsPage() {
                       {activity ? `${activity.label} · ${formatDayTime(activity.at)}` : 'Sin actividad'}
                     </p>
                     <button
-                      className="inline-flex h-9 shrink-0 items-center rounded-[10px] bg-indigo-50 px-4 text-[13px] font-semibold text-indigo-600"
+                      className="inline-flex h-9 shrink-0 items-center rounded-[10px] bg-indigo-100 px-4 text-[13px] font-semibold text-indigo-600"
                       onClick={() => void openHistory(customer)}
                       type="button"
                     >
@@ -453,7 +457,7 @@ export default function SupplierClientsPage() {
         <div className="mt-4 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1000px] text-left text-[14px]">
             <thead>
-              <tr className="bg-[#f6f4fd] text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <tr className="bg-[#eceaff] text-[11px] font-semibold uppercase tracking-[0.08em] text-[#3d3780]">
                 <th className="rounded-l-lg px-3 py-3">Cliente</th>
                 <th className="px-3 py-3">Ubicación</th>
                 <th className="px-3 py-3 text-center">Cotizaciones</th>
@@ -485,10 +489,10 @@ export default function SupplierClientsPage() {
                   const meta = STATUS_META[statusOf(customer)];
                   const product = customer.lastProduct ?? customer.lastQuotedProduct;
                   return (
-                    <tr key={customer.companyId} className="border-b border-slate-100 last:border-b-0">
+                    <tr key={customer.companyId} className="border-b border-[#d6d0f2] last:border-b-0 even:bg-[#f0eff8]">
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
-                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600">
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-bold text-indigo-600">
                             {initials(customer.name)}
                           </span>
                           <span className="min-w-0">
@@ -525,7 +529,7 @@ export default function SupplierClientsPage() {
                       <td className="px-3 py-3">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            className="inline-flex h-10 items-center whitespace-nowrap rounded-[10px] bg-indigo-50 px-5 text-[13px] font-semibold text-indigo-600 transition hover:bg-indigo-100"
+                            className="inline-flex h-10 items-center whitespace-nowrap rounded-[10px] bg-indigo-100 px-5 text-[13px] font-semibold text-indigo-600 transition hover:bg-indigo-100"
                             onClick={() => void openHistory(customer)}
                             type="button"
                           >
@@ -547,7 +551,7 @@ export default function SupplierClientsPage() {
                             {menuFor === customer.companyId ? (
                               <>
                                 <button aria-label="Cerrar menú" className="fixed inset-0 z-20 cursor-default" onClick={() => setMenuFor(null)} type="button" />
-                                <div className="absolute right-0 top-11 z-30 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
+                                <div className="absolute right-0 top-11 z-30 w-48 overflow-hidden rounded-xl border border-slate-300 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
                                   <Link className="block px-3 py-2 text-slate-700 hover:bg-slate-50" href="/dashboard/proveedor/mensajes">
                                     Enviar mensaje
                                   </Link>
@@ -576,14 +580,14 @@ export default function SupplierClientsPage() {
           </p>
           {totalPages > 1 ? (
             <div className="flex items-center gap-1.5">
-              <button aria-label="Página anterior" className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} type="button">
+              <button aria-label="Página anterior" className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 disabled:opacity-40" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} type="button">
                 <Icon name="chev-left" />
               </button>
               {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
                 <button
                   key={number}
                   className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-[13px] font-semibold ${
-                    number === currentPage ? 'bg-indigo-600 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    number === currentPage ? 'bg-indigo-600 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
                   }`}
                   onClick={() => setPage(number)}
                   type="button"
@@ -591,7 +595,7 @@ export default function SupplierClientsPage() {
                   {number}
                 </button>
               ))}
-              <button aria-label="Página siguiente" className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} type="button">
+              <button aria-label="Página siguiente" className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 disabled:opacity-40" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} type="button">
                 <Icon name="chev-right" />
               </button>
             </div>
@@ -618,11 +622,11 @@ export default function SupplierClientsPage() {
             {topCustomers.map((customer) => (
               <button
                 key={customer.companyId}
-                className="flex items-center gap-3 rounded-[14px] border border-slate-100 px-3 py-3 text-left transition sm:px-4 hover:border-indigo-200 hover:bg-[#fbfaff]"
+                className="flex items-center gap-3 rounded-[14px] border border-[#cbc4ee] bg-[#eceafb] px-3 py-3 text-left transition sm:px-4 hover:border-indigo-200 hover:bg-[#fbfaff]"
                 onClick={() => void openHistory(customer)}
                 type="button"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[12px] font-bold text-indigo-600">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[12px] font-bold text-indigo-600">
                   {initials(customer.name)}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -647,9 +651,9 @@ export default function SupplierClientsPage() {
             className="flex h-full w-full max-w-[480px] flex-col bg-white shadow-[-20px_0_60px_rgba(18,15,46,0.25)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-5">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 p-5">
               <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-[14px] font-bold text-indigo-600">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-[14px] font-bold text-indigo-600">
                   {initials(historyFor.name)}
                 </span>
                 <div>
@@ -661,7 +665,7 @@ export default function SupplierClientsPage() {
                 <Icon name="close" />
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-3 border-b border-slate-100 p-5 text-center">
+            <div className="grid grid-cols-3 gap-3 border-b border-slate-200 p-5 text-center">
               <div>
                 <p className="text-[20px] font-bold text-[#16123a]">{historyFor.quotesCount}</p>
                 <p className="text-[12px] text-slate-500">Cotizaciones</p>
@@ -677,7 +681,7 @@ export default function SupplierClientsPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-5">
               {(signalsByCompany.get(historyFor.companyId) ?? []).map((signal, index) => (
-                <p key={`${signal.type}-${index}`} className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-[13px] text-amber-700">
+                <p key={`${signal.type}-${index}`} className="mb-3 rounded-xl bg-amber-100 px-3 py-2 text-[13px] text-amber-700">
                   {signal.type === 'REPURCHASE'
                     ? `Oportunidad de recompra${signal.product ? ` de ${signal.product}` : ''}${typeof signal.days === 'number' ? ` · última compra hace ${signal.days} días` : ''}.`
                     : signal.type === 'FOLLOW_UP'
@@ -688,12 +692,12 @@ export default function SupplierClientsPage() {
               {historyLoading ? (
                 <LoadingState label="Cargando historial..." />
               ) : historyError ? (
-                <p className="rounded-xl bg-rose-50 px-3 py-2 text-[13px] text-rose-700">{historyError}</p>
+                <p className="rounded-xl bg-rose-100 px-3 py-2 text-[13px] text-rose-700">{historyError}</p>
               ) : history && history.quotes.length > 0 ? (
                 <ol className="space-y-3">
                   {history.quotes.map((quote) => (
                     <li key={quote.id}>
-                      <Link className="block rounded-[14px] border border-slate-100 p-3.5 transition hover:border-indigo-200 hover:bg-[#fbfaff]" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
+                      <Link className="block rounded-[14px] border border-[#cbc4ee] bg-[#eceafb] p-3.5 transition hover:border-indigo-200 hover:bg-[#fbfaff]" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
                         <span className="flex items-start justify-between gap-3">
                           <span className="min-w-0">
                             <span className="block truncate font-semibold text-slate-900">{quote.requestTitle}</span>
@@ -706,7 +710,7 @@ export default function SupplierClientsPage() {
                             <span className="block font-semibold text-slate-900">
                               {typeof quote.amount === 'number' ? formatCurrency(quote.amount) : 'A convenir'}
                             </span>
-                            <span className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${quote.order ? 'bg-emerald-50 text-emerald-600' : quote.status === 'REJECTED' ? 'bg-slate-100 text-slate-500' : 'bg-indigo-50 text-indigo-600'}`}>
+                            <span className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${quote.order ? 'bg-emerald-100 text-emerald-600' : quote.status === 'REJECTED' ? 'bg-slate-100 text-slate-500' : 'bg-indigo-100 text-indigo-600'}`}>
                               {quote.order ? 'Pedido' : quote.status === 'AWARDED' ? 'Aceptada' : quote.status === 'REJECTED' ? 'Rechazada' : 'Cotización'}
                             </span>
                           </span>
@@ -719,7 +723,7 @@ export default function SupplierClientsPage() {
                 <p className="text-center text-[13px] text-slate-500">Todavía no hay cotizaciones con este cliente.</p>
               ) : null}
             </div>
-            <div className="border-t border-slate-100 p-5">
+            <div className="border-t border-slate-200 p-5">
               <Link className="flex h-11 items-center justify-center gap-2 rounded-[12px] bg-indigo-600 text-[14px] font-semibold transition hover:bg-indigo-700" href="/dashboard/proveedor/mensajes">
                 {/* globals.css fija `a { color: inherit }`: el color va en el hijo. */}
                 <span className="inline-flex items-center gap-2 text-white">

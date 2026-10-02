@@ -105,7 +105,7 @@ export default function SupplierCatalogPage() {
         {/* Esta pantalla es analitica: sale de las cotizaciones y solicitudes,
             no de lo que la empresa declara. Lo declarado vive en la ficha. */}
         <Link
-          className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 transition hover:bg-indigo-100"
+          className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-100 px-4 py-3 transition hover:bg-indigo-100"
           href="/dashboard/proveedor/configuracion"
         >
           <span className="min-w-0">
@@ -121,7 +121,7 @@ export default function SupplierCatalogPage() {
         </Link>
 
         {/* Tabs */}
-        <div className="mt-4 flex items-center gap-5 border-b border-slate-200">
+        <div className="mt-4 flex items-center gap-5 border-b border-slate-300">
           {mobileTabs.map((tab) => {
             const active = mobileTab === tab.key;
             return (
@@ -141,7 +141,7 @@ export default function SupplierCatalogPage() {
         </div>
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
@@ -161,7 +161,7 @@ export default function SupplierCatalogPage() {
 
             <div className="mt-3 space-y-3">
               {loading ? (
-                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10">
+                <div className="rounded-2xl border border-slate-300 bg-white px-4 py-10">
                   <LoadingState label="Cargando catálogo..." />
                 </div>
               ) : catalogRows.length === 0 ? (
@@ -174,9 +174,9 @@ export default function SupplierCatalogPage() {
                   return (
                     <article
                       key={row.category}
-                      className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                      className="flex items-center gap-3 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm"
                     >
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
                         <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
                           <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                           <path d="M3.3 7.3L12 12l8.7-4.7M12 22V12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -190,7 +190,7 @@ export default function SupplierCatalogPage() {
                         </p>
                         <span
                           className={`mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                            active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                            active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'
                           }`}
                         >
                           {active ? 'Activo' : 'Sin actividad'}
@@ -200,7 +200,7 @@ export default function SupplierCatalogPage() {
                       <Link
                         aria-label="Editar rubros y productos"
                         href="/dashboard/proveedor/configuracion"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:bg-slate-50 hover:text-[#6440e8]"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-400 transition hover:bg-slate-50 hover:text-[#6440e8]"
                       >
                         <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                           <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -223,7 +223,7 @@ export default function SupplierCatalogPage() {
               { label: 'Oportunidades abiertas', value: loading ? '—' : metrics.openOpportunities },
               { label: 'Ingreso estimado', value: loading ? '—' : formatCurrency(metrics.estimatedRevenue) },
             ].map((card) => (
-              <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <article key={card.label} className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
                 <p className="text-lg font-bold tracking-tight text-slate-950">{card.value}</p>
                 <p className="mt-0.5 text-[11px] text-slate-500">{card.label}</p>
               </article>
@@ -255,18 +255,18 @@ export default function SupplierCatalogPage() {
 
       {/* ==================== VISTA DESKTOP ==================== */}
       <section className="hidden space-y-4 lg:block">
-        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
           <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
             Catalogo
           </h1>
-          <p className="mt-1 text-sm text-[#7e85b2]">
+          <p className="mt-1 text-sm text-[#565e88]">
             Organiza tu oferta por categoria y detecta donde hoy tenes mayor demanda.
           </p>
 
         {/* Esta pantalla es analitica: sale de las cotizaciones y solicitudes,
             no de lo que la empresa declara. Lo declarado vive en la ficha. */}
         <Link
-          className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 transition hover:bg-indigo-100"
+          className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-100 px-4 py-3 transition hover:bg-indigo-100"
           href="/dashboard/proveedor/configuracion"
         >
           <span className="min-w-0">
@@ -284,43 +284,43 @@ export default function SupplierCatalogPage() {
         </div>
 
         {error ? (
-          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          <div className="rounded-[20px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4 [&>*:nth-child(5n+1)]:shadow-[inset_4px_0_0_#6366f1,0_8px_22px_rgba(40,28,110,0.07)] [&>*:nth-child(5n+2)]:shadow-[inset_4px_0_0_#0ea5e9,0_8px_22px_rgba(40,28,110,0.07)] [&>*:nth-child(5n+3)]:shadow-[inset_4px_0_0_#f59e0b,0_8px_22px_rgba(40,28,110,0.07)] [&>*:nth-child(5n+4)]:shadow-[inset_4px_0_0_#10b981,0_8px_22px_rgba(40,28,110,0.07)] [&>*:nth-child(5n+5)]:shadow-[inset_4px_0_0_#8b5cf6,0_8px_22px_rgba(40,28,110,0.07)]">
           <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
-            <p className="text-xs font-semibold text-[#8b92bc]">Categorias activas</p>
+            <p className="text-xs font-semibold text-[#5f678f]">Categorias activas</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.categories}
             </p>
           </article>
           <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
-            <p className="text-xs font-semibold text-[#8b92bc]">Cotizaciones asociadas</p>
+            <p className="text-xs font-semibold text-[#5f678f]">Cotizaciones asociadas</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.activeQuotes}
             </p>
           </article>
           <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
-            <p className="text-xs font-semibold text-[#8b92bc]">Oportunidades abiertas</p>
+            <p className="text-xs font-semibold text-[#5f678f]">Oportunidades abiertas</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : metrics.openOpportunities}
             </p>
           </article>
           <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
-            <p className="text-xs font-semibold text-[#8b92bc]">Ingreso estimado</p>
+            <p className="text-xs font-semibold text-[#5f678f]">Ingreso estimado</p>
             <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
               {loading ? '-' : formatCurrency(metrics.estimatedRevenue)}
             </p>
           </article>
         </div>
 
-        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold text-[#27305f]">Categorias del catalogo</h2>
-              <p className="mt-1 text-sm text-[#8d95be]">
+              <p className="mt-1 text-sm text-[#5f678f]">
                 Resumen comercial por rubro y performance actual.
               </p>
             </div>
@@ -334,33 +334,33 @@ export default function SupplierCatalogPage() {
 
           <div className="mt-4 grid gap-3">
             {loading ? (
-              <div className="rounded-[18px] border border-[#dde5f2] bg-[#fbfbff] px-4 py-8">
+              <div className="rounded-[18px] border border-[#c3d0e8] bg-[#f1effc] px-4 py-8">
                 <LoadingState label="Cargando catálogo..." />
               </div>
             ) : catalogRows.length === 0 ? (
-              <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
+              <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-[#f1effc] px-4 py-8 text-sm text-[#5f678f]">
                 Aun no hay categorias activas para mostrar.
               </div>
             ) : (
               catalogRows.map((row) => (
                 <article
                   key={row.category}
-                  className="grid grid-cols-1 gap-4 rounded-[18px] border border-[#dde5f2] bg-[#fbfbff] p-4 md:grid-cols-[1.2fr_repeat(4,0.6fr)] md:items-center"
+                  className="grid grid-cols-1 gap-4 rounded-[18px] border border-[#c3d0e8] bg-[#f1effc] p-4 md:grid-cols-[1.2fr_repeat(4,0.6fr)] md:items-center"
                 >
                   <div>
                     <p className="text-sm font-semibold text-[#33407a]">{row.category}</p>
-                    <p className="mt-1 text-xs text-[#8d95be]">
+                    <p className="mt-1 text-xs text-[#5f678f]">
                       {row.opportunities} oportunidades activas en marketplace
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-[#9aa1c8]">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-[#5f678f]">
                       Cotizaciones
                     </p>
                     <p className="mt-1 text-sm font-semibold text-[#33407a]">{row.quotes}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-[#9aa1c8]">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-[#5f678f]">
                       Ingreso
                     </p>
                     <p className="mt-1 text-sm font-semibold text-[#33407a]">
@@ -368,7 +368,7 @@ export default function SupplierCatalogPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-[#9aa1c8]">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-[#5f678f]">
                       Lead time
                     </p>
                     <p className="mt-1 text-sm font-semibold text-[#33407a]">

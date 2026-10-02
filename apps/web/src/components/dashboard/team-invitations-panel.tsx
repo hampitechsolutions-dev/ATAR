@@ -172,13 +172,13 @@ export default function TeamInvitationsPanel({
   return (
     <section className="space-y-4">
       {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+        <div className="rounded-2xl border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">
           {error}
         </div>
       ) : null}
 
       {message ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">
           {message}
         </div>
       ) : null}
@@ -217,7 +217,7 @@ export default function TeamInvitationsPanel({
 
                   <div className="flex shrink-0 items-center gap-2">
                     <button
-                      className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-3 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                      className="inline-flex h-9 items-center rounded-xl border border-slate-300 px-3 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
                       disabled={processingId === request.id}
                       onClick={() => void handleRespond(request, 'reject')}
                       type="button"
@@ -236,7 +236,7 @@ export default function TeamInvitationsPanel({
                 </div>
 
                 {request.message ? (
-                  <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-[12px] text-slate-600">
+                  <p className="mt-2 rounded-lg bg-[#eef1f7] px-3 py-2 text-[12px] text-slate-600">
                     &ldquo;{request.message}&rdquo;
                   </p>
                 ) : null}
@@ -247,14 +247,14 @@ export default function TeamInvitationsPanel({
       ) : null}
 
       {/* Invitar a un vendedor. */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
         <p className="text-sm font-semibold text-slate-950">Invitar a un vendedor</p>
         <p className="mt-0.5 text-[11px] text-slate-500">
           Busca por nombre si ya vende en ATAR, o escribi su email para invitarlo directo.
         </p>
 
         <input
-          className="mt-3 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-sm outline-none transition focus:border-indigo-400"
+          className="mt-3 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-sm outline-none transition focus:border-indigo-400"
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Nombre o email del vendedor"
           value={search}
@@ -263,7 +263,7 @@ export default function TeamInvitationsPanel({
         {trimmedSearch.length >= 2 ? (
           <>
             <textarea
-              className="mt-3 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-indigo-400"
+              className="mt-3 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-indigo-400"
               maxLength={500}
               onChange={(event) => setNote(event.target.value)}
               placeholder="Mensaje para el vendedor (opcional)"
@@ -276,7 +276,7 @@ export default function TeamInvitationsPanel({
 
               {options.map((option) => (
                 <div
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-3.5 py-3"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 px-3.5 py-3"
                   key={option.id}
                 >
                   <div className="min-w-0">
@@ -302,7 +302,7 @@ export default function TeamInvitationsPanel({
               {/* Salida para vendedores que todavia no aparecen en el buscador. */}
               {!searching && options.length === 0 ? (
                 looksLikeEmail ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-3.5 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 px-3.5 py-3">
                     <p className="min-w-0 truncate text-[12px] text-slate-600">
                       Invitar a <span className="font-semibold">{trimmedSearch}</span>
                     </p>
@@ -328,14 +328,14 @@ export default function TeamInvitationsPanel({
 
       {/* Invitaciones enviadas esperando respuesta. */}
       {inbox.outgoing.length > 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-950">Invitaciones enviadas</p>
           <p className="mt-0.5 text-[11px] text-slate-500">Esperando que el vendedor responda.</p>
 
           <div className="mt-3 space-y-2">
             {inbox.outgoing.map((request) => (
               <div
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-3.5 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 px-3.5 py-3"
                 key={request.id}
               >
                 <div className="min-w-0">

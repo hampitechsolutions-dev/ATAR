@@ -135,24 +135,23 @@ export default function BuyerSettingsPage() {
     <div className="mx-auto max-w-[720px] pb-4">
       <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-950 lg:text-[30px]">Configuración</h1>
 
-      <div className="mt-5 flex items-center gap-4">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-lg font-bold text-white">{initials}</span>
-        <div className="min-w-0">
-          <p className="truncate text-[18px] font-bold leading-6 text-slate-950">{loading || !session ? 'Cargando…' : companyName}</p>
-          <p className="truncate text-[13px] text-slate-500">
-            {[userName, session?.user.email].filter(Boolean).join(' · ')}
-          </p>
-        </div>
-      </div>
-
       {message ? (
-        <div className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>
+        <div className="mt-4 rounded-xl bg-emerald-100 px-4 py-3 text-sm text-emerald-700">{message}</div>
       ) : null}
 
-      <div className="mt-6 divide-y divide-slate-100 rounded-[16px] border border-slate-200 bg-white px-5">
+      <div className="mt-5 divide-y divide-slate-200 rounded-[16px] border border-slate-300 bg-white px-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
+        <div className="-mx-5 flex items-center gap-4 rounded-t-[16px] bg-[#eef0ff] px-5 py-5">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-lg font-bold text-white">{initials}</span>
+          <div className="min-w-0">
+            <p className="truncate text-[18px] font-bold leading-6 text-slate-950">{loading || !session ? 'Cargando…' : companyName}</p>
+            <p className="truncate text-[13px] text-slate-500">
+              {[userName, session?.user.email].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+        </div>
         <section className="py-5">
           <h2 className={sectionTitle}>Preferencias</h2>
-          <div className="mt-1 divide-y divide-slate-100">
+          <div className="mt-1 divide-y divide-slate-200">
             <div className="flex items-center justify-between gap-4 py-3.5">
               <div className="min-w-0">
                 <p className="text-[14px] font-semibold text-slate-950">Recibir notificaciones</p>
@@ -174,7 +173,7 @@ export default function BuyerSettingsPage() {
               </span>
               <span className="relative block sm:w-[240px]">
                 <select
-                  className="h-11 w-full appearance-none rounded-[12px] border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-900 outline-none transition focus:border-indigo-400"
+                  className="h-11 w-full appearance-none rounded-[12px] border border-slate-300 bg-white px-4 pr-10 text-sm text-slate-900 outline-none transition focus:border-indigo-400"
                   onChange={(event) => updateSettings({ preferredCategory: event.target.value })}
                   value={settings.preferredCategory}
                 >

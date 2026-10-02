@@ -190,7 +190,7 @@ export default function BuyerRequestsPage() {
             </svg>
           </span>
           <input
-            className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+            className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
             onChange={(event) => {
               setSearch(event.target.value);
               setPage(1);
@@ -232,11 +232,11 @@ export default function BuyerRequestsPage() {
           })}
         </div>
 
-        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
         <div className="mt-4 space-y-3">
           {loading ? (
-            <div className="rounded-[18px] bg-white px-4 py-10 shadow-sm">
+            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando solicitudes..." />
             </div>
           ) : filteredRequests.length === 0 ? (
@@ -249,7 +249,7 @@ export default function BuyerRequestsPage() {
               return (
                 <Link
                   key={request.id}
-                  className="block rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/70 transition active:scale-[0.99]"
+                  className="block rounded-[18px] border border-slate-300 bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.07)] transition active:scale-[0.99]"
                   href={`/dashboard/comprador/solicitudes/${request.id}`}
                 >
                   <div className="flex gap-3">
@@ -258,7 +258,7 @@ export default function BuyerRequestsPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
+                        <span className="rounded-md bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
                           {request.category}
                         </span>
                         <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${getRequestStatusStyles(request.status)}`}>
@@ -274,7 +274,7 @@ export default function BuyerRequestsPage() {
                       </svg>
                     </span>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200/70 rounded-[12px] bg-[#f5f7fc] py-2 text-center">
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-[#cfdcf7] rounded-[12px] bg-[#eef3ff] py-2 text-center">
                     <span className="px-1">
                       <span className="block text-[10px] text-slate-500">Cantidad</span>
                       <span className="block truncate text-[12px] font-semibold text-slate-900">{requestQuantity(request)}</span>
@@ -330,7 +330,7 @@ export default function BuyerRequestsPage() {
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-          <div className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm sm:w-[260px]">
+          <div className="flex w-full items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 shadow-sm sm:w-[260px]">
             <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
               <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
               <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -346,7 +346,7 @@ export default function BuyerRequestsPage() {
             />
           </div>
 
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50" type="button">
+          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50" type="button">
             Filtros
             <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
               <path d="M4 6h16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -372,7 +372,7 @@ export default function BuyerRequestsPage() {
       </div>
 
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="flex min-w-max items-center gap-6 border-b border-slate-200 pb-3 text-sm">
+        <div className="flex min-w-max items-center gap-6 border-b border-slate-300 pb-3 text-sm">
           {[
             { key: 'ALL' as const, label: 'Todas', count: counts.total },
             { key: 'REVIEWING' as const, label: 'En evaluación', count: counts.reviewing },
@@ -409,13 +409,13 @@ export default function BuyerRequestsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">
           {error}
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="hidden lg:grid grid-cols-[0.26fr_0.16fr_0.16fr_0.18fr_0.16fr_0.14fr_0.14fr] gap-4 border-b border-slate-200 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm">
+        <div className="hidden lg:grid grid-cols-[0.26fr_0.16fr_0.16fr_0.18fr_0.16fr_0.14fr_0.14fr] gap-4 rounded-t-2xl border-b border-slate-300 bg-[#eef3ff] px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#33457a]">
           <p>Solicitud</p>
           <p>Producto</p>
           <p>Cantidad</p>
@@ -438,10 +438,10 @@ export default function BuyerRequestsPage() {
                 new Set((request.quotes ?? []).map((quote) => quote.supplierCompany?.name).filter((name): name is string => Boolean(name))),
               );
               return (
-                <div key={request.id} className="px-4 py-4 sm:px-6">
+                <div key={request.id} className="px-4 py-4 even:bg-[#eef1f7] sm:px-6">
                   <div className="grid gap-4 lg:grid-cols-[0.26fr_0.16fr_0.16fr_0.18fr_0.16fr_0.14fr_0.14fr] lg:items-center">
                     <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
                         <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                           <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                           <path d="M14 2v6h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -503,7 +503,7 @@ export default function BuyerRequestsPage() {
 
                     <div className="flex justify-start lg:justify-end">
                       <Link
-                        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-100 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
                         href={`/dashboard/comprador/solicitudes/${request.id}`}
                       >
                         Ver detalle
@@ -519,13 +519,13 @@ export default function BuyerRequestsPage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-slate-200 px-6 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-t border-slate-300 px-6 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>
             Mostrando {(safePage - 1) * pageSize + (pageItems.length ? 1 : 0)} a {(safePage - 1) * pageSize + pageItems.length} de {filteredRequests.length} solicitudes
           </p>
           <div className="flex items-center justify-between gap-2 sm:justify-end">
             <button
-              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
               disabled={safePage <= 1}
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               type="button"
@@ -540,7 +540,7 @@ export default function BuyerRequestsPage() {
                   <button
                     key={p}
                     className={`h-9 w-9 rounded-xl border text-xs font-semibold ${
-                      isActive ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      isActive ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                     onClick={() => setPage(p)}
                     type="button"
@@ -551,7 +551,7 @@ export default function BuyerRequestsPage() {
               })}
             </div>
             <button
-              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
               disabled={safePage >= totalPages}
               onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               type="button"
@@ -567,14 +567,14 @@ export default function BuyerRequestsPage() {
       {isCreateOpen ? (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-slate-950/40" onClick={() => setIsCreateOpen(false)} />
-          <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-2xl rounded-t-3xl border border-slate-200 bg-white px-5 pb-6 pt-5 shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-3xl sm:px-7">
+          <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-2xl rounded-t-3xl border border-slate-300 bg-white px-5 pb-6 pt-5 shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-3xl sm:px-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-950">Nueva solicitud</p>
                 <p className="mt-1 text-xs text-slate-500">Publicá un pedido y recibí cotizaciones reales.</p>
               </div>
               <button
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                 onClick={() => setIsCreateOpen(false)}
                 type="button"
               >
@@ -589,7 +589,7 @@ export default function BuyerRequestsPage() {
               <label className="block space-y-2 text-xs font-semibold text-slate-700">
                 <span>Título</span>
                 <input
-                  className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
+                  className="h-11 w-full rounded-2xl border border-slate-300 bg-[#eef1f7] px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                   placeholder="Ej. Bolsa de polipropileno 90x120cm"
                   required
@@ -599,7 +599,7 @@ export default function BuyerRequestsPage() {
               <label className="block space-y-2 text-xs font-semibold text-slate-700">
                 <span>Categoría</span>
                 <input
-                  className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
+                  className="h-11 w-full rounded-2xl border border-slate-300 bg-[#eef1f7] px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
                   onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
                   placeholder="Packaging, químicos, maquinaria..."
                   required
@@ -609,7 +609,7 @@ export default function BuyerRequestsPage() {
               <label className="block space-y-2 text-xs font-semibold text-slate-700">
                 <span>Descripción</span>
                 <textarea
-                  className="min-h-28 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
+                  className="min-h-28 w-full rounded-2xl border border-slate-300 bg-[#eef1f7] px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
                   onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
                   placeholder="Detallá especificaciones, volumen y condiciones."
                   required
@@ -620,13 +620,13 @@ export default function BuyerRequestsPage() {
                 <label className="block space-y-2 text-xs font-semibold text-slate-700">
                   <span>Fecha límite</span>
                   <input
-                    className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
+                    className="h-11 w-full rounded-2xl border border-slate-300 bg-[#eef1f7] px-4 text-sm text-slate-950 outline-none transition focus:border-indigo-500"
                     onChange={(event) => setForm((current) => ({ ...current, dueDate: event.target.value }))}
                     type="date"
                     value={form.dueDate}
                   />
                 </label>
-                <label className="mt-6 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 sm:mt-7">
+                <label className="mt-6 flex items-center gap-3 rounded-2xl border border-slate-300 bg-[#eef1f7] px-4 py-3 text-sm text-slate-700 sm:mt-7">
                   <input
                     checked={form.privateRequest}
                     onChange={(event) => setForm((current) => ({ ...current, privateRequest: event.target.checked }))}

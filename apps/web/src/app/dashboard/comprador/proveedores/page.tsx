@@ -67,7 +67,7 @@ function VerifiedMark() {
 }
 
 const selectClass =
-  'h-11 cursor-pointer appearance-none rounded-[10px] border border-slate-200 bg-white bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%2364748b%27%20stroke-width%3D%272%27%3E%3Cpath%20d%3D%27M6%209l6%206%206-6%27/%3E%3C/svg%3E")] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pl-4 pr-10 text-[13px] font-medium text-slate-800 outline-none transition focus:border-[#1f5bff]';
+  'h-11 cursor-pointer appearance-none rounded-[10px] border border-slate-300 bg-white bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%2364748b%27%20stroke-width%3D%272%27%3E%3Cpath%20d%3D%27M6%209l6%206%206-6%27/%3E%3C/svg%3E")] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pl-4 pr-10 text-[13px] font-medium text-slate-800 outline-none transition focus:border-[#1f5bff]';
 
 export default function BuyerProvidersPage() {
   const { session, loading: dashboardLoading } = useBuyerDashboardData();
@@ -192,7 +192,7 @@ export default function BuyerProvidersPage() {
             <SearchIcon />
           </span>
           <input
-            className="h-11 w-full rounded-[10px] border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#1f5bff] focus:ring-4 focus:ring-[#1f5bff]/10"
+            className="h-11 w-full rounded-[10px] border border-slate-300 bg-white pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#1f5bff] focus:ring-4 focus:ring-[#1f5bff]/10"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar por nombre, ciudad o descripción..."
             type="search"
@@ -218,7 +218,7 @@ export default function BuyerProvidersPage() {
           ))}
         </select>
 
-        <label className="inline-flex h-11 cursor-pointer items-center gap-2.5 px-1 text-[13px] font-medium text-slate-800">
+        <label className="inline-flex h-11 cursor-pointer items-center gap-2.5 rounded-[10px] border border-slate-300 bg-white px-3.5 text-[13px] font-medium text-slate-800">
           <input
             checked={verifiedOnly}
             className="h-4 w-4 accent-[#1f5bff]"
@@ -243,12 +243,12 @@ export default function BuyerProvidersPage() {
       </section>
 
       {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{error}</div>
+        <div className="rounded-2xl border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">{error}</div>
       ) : null}
 
       {/* ==================== LISTA ==================== */}
       {/* Una sola superficie con filas, en vez de una tarjeta por proveedor. */}
-      <section className="overflow-hidden rounded-[16px] border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-[16px] border border-slate-300 bg-white">
         {isLoading ? (
           <div className="px-5 py-8">
             <LoadingState label="Cargando proveedores..." />
@@ -269,7 +269,7 @@ export default function BuyerProvidersPage() {
               ].filter(Boolean);
 
               return (
-                <li key={supplier.id} className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:gap-6">
+                <li key={supplier.id} className="even:bg-[#eef1f7] last:rounded-b-[inherit] flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:gap-6">
                   <div className="flex min-w-0 flex-1 gap-4">
                     <Link className="relative h-[76px] w-[76px] shrink-0 overflow-hidden rounded-[12px] bg-slate-100 sm:h-[92px] sm:w-[124px]" href={`/dashboard/comprador/proveedores/${supplier.slug}`}>
                       <Image alt="" className="object-cover" fill sizes="124px" src={supplierCover(supplier)} />

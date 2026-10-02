@@ -147,7 +147,7 @@ export default function BuyerBottomNav({ notificationCount = 0 }: { notification
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-300 bg-white/95 backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2">
           {tabs.map((tab) => {
             const active =
@@ -192,12 +192,12 @@ export default function BuyerBottomNav({ notificationCount = 0 }: { notification
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-slate-950/50" onClick={() => setOpen(false)} />
           <div className="absolute inset-x-0 bottom-0 max-h-[82vh] overflow-y-auto rounded-t-3xl bg-white pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-20px_60px_rgba(2,6,23,0.28)]">
-            <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+            <div className="sticky top-0 flex items-center justify-between border-b border-slate-300 bg-white px-5 py-4">
               <p className="text-base font-bold text-slate-950">Menú</p>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-500"
               >
                 <Icon name="close" className="h-4 w-4" />
               </button>

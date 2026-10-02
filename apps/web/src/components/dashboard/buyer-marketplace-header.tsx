@@ -131,7 +131,7 @@ export default function BuyerMarketplaceHeader({
   }, []);
 
   return (
-    <header className="hidden border-b border-slate-200 bg-white lg:block">
+    <header className="hidden border-b border-slate-300 bg-white lg:block">
       <div
         className={`mx-auto flex items-center justify-between gap-5 px-4 py-2.5 ${
           wide ? 'max-w-none xl:px-6' : 'max-w-[1320px]'
@@ -199,14 +199,14 @@ export default function BuyerMarketplaceHeader({
           </Link>
 
           <Link
-            className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700"
+            className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
             href="/dashboard/comprador/mensajes"
           >
             <Icon name="msg" />
           </Link>
 
           <Link
-            className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700"
+            className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
             href="/dashboard/comprador/notificaciones"
           >
             <Icon name="bell" />
@@ -220,7 +220,7 @@ export default function BuyerMarketplaceHeader({
           <div className="relative hidden lg:block" ref={accountRef}>
             <button
               aria-expanded={isAccountOpen}
-              className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-3 py-1 transition hover:bg-slate-50"
+              className="flex items-center gap-2.5 rounded-full border border-slate-300 bg-white px-3 py-1 transition hover:bg-slate-50"
               onClick={() => setIsAccountOpen((current) => !current)}
               type="button"
             >
@@ -237,8 +237,8 @@ export default function BuyerMarketplaceHeader({
             </button>
 
             {isAccountOpen ? (
-              <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[260px] rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-3">
+              <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[260px] rounded-2xl border border-slate-300 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+                <div className="flex items-center gap-3 rounded-xl bg-[#eef1f7] px-3 py-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#4f46ff]">
                     {profileInitials}
                   </span>

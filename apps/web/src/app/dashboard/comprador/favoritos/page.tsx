@@ -53,7 +53,7 @@ export default function BuyerFavoritesPage() {
       </header>
 
       {/* Una sola superficie con filas, igual que el directorio de proveedores. */}
-      <section className="overflow-hidden rounded-[16px] border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-[16px] border border-slate-300 bg-white">
         {favoriteProviders.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-slate-500">
             Todavía no guardaste proveedores. Podés agregarlos con el corazón desde{' '}
@@ -65,7 +65,7 @@ export default function BuyerFavoritesPage() {
         ) : (
           <ul className="divide-y divide-slate-200">
             {favoriteProviders.map((provider) => (
-              <li key={provider.id} className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:gap-6">
+              <li key={provider.id} className="even:bg-[#eef1f7] last:rounded-b-[inherit] flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:gap-6">
                 <div className="flex min-w-0 flex-1 gap-4">
                   <CompanyLogo
                     className="h-14 w-14"
@@ -90,7 +90,7 @@ export default function BuyerFavoritesPage() {
                 </div>
                 <div className="grid shrink-0 grid-cols-2 gap-2.5 lg:flex">
                   <button
-                    className="flex h-10 items-center justify-center rounded-[10px] border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="flex h-10 items-center justify-center rounded-[10px] border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     onClick={() => setFavorites(toggleBuyerFavorite(provider.id))}
                     type="button"
                   >

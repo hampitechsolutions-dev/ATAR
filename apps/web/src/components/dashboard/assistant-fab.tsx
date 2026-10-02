@@ -148,7 +148,7 @@ export default function AssistantFab() {
   return (
     <div ref={rootRef}>
       {open ? (
-        <div className="fixed bottom-20 right-4 z-50 flex h-[min(72vh,470px)] w-[min(92vw,360px)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_30px_80px_rgba(2,6,23,0.30)] lg:bottom-6 lg:right-6">
+        <div className="fixed bottom-20 right-4 z-50 flex h-[min(72vh,470px)] w-[min(92vw,360px)] flex-col overflow-hidden rounded-3xl border border-slate-300 bg-white shadow-[0_30px_80px_rgba(2,6,23,0.30)] lg:bottom-6 lg:right-6">
           <div className="flex items-center gap-3 bg-gradient-to-br from-indigo-600 to-indigo-500 px-4 py-3 text-white">
             <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/15 p-1">
               <BotAvatar />
@@ -174,10 +174,10 @@ export default function AssistantFab() {
 
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[linear-gradient(180deg,#f8f9fc_0%,#f3f5fb_100%)] px-3 py-4">
             <div className="flex items-end gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-0.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white p-0.5">
                 <BotAvatar />
               </span>
-              <div className="max-w-[80%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-3 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
+              <div className="max-w-[80%] rounded-2xl rounded-bl-md border border-slate-300 bg-white px-3 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
                 ¡Hola! Soy <span className="font-semibold text-indigo-600">ATAR AI</span>. ¿En qué te puedo ayudar?
               </div>
             </div>
@@ -191,10 +191,10 @@ export default function AssistantFab() {
                 </div>
               ) : (
                 <div key={message.id} className="flex items-end gap-2">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-0.5">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white p-0.5">
                     <BotAvatar />
                   </span>
-                  <div className="max-w-[80%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-3 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
+                  <div className="max-w-[80%] rounded-2xl rounded-bl-md border border-slate-300 bg-white px-3 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
                     {message.text}
                   </div>
                 </div>
@@ -220,9 +220,9 @@ export default function AssistantFab() {
             <div ref={endRef} />
           </div>
 
-          <div className="border-t border-slate-200 bg-white p-3">
+          <div className="border-t border-slate-300 bg-white p-3">
             <form
-              className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2"
+              className="flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-3 py-2"
               onSubmit={(event) => {
                 event.preventDefault();
                 handleSend();
@@ -251,7 +251,7 @@ export default function AssistantFab() {
         <>
           {introVisible ? (
             <div
-              className="animate-fade-up fixed bottom-20 right-[84px] z-50 w-[min(290px,calc(100vw-104px))] rounded-2xl rounded-br-md border border-slate-200 bg-white p-4 shadow-[0_24px_60px_rgba(2,6,23,0.22)] lg:bottom-6 lg:right-[100px]"
+              className="animate-fade-up fixed bottom-20 right-[84px] z-50 w-[min(290px,calc(100vw-104px))] rounded-2xl rounded-br-md border border-slate-300 bg-white p-4 shadow-[0_24px_60px_rgba(2,6,23,0.22)] lg:bottom-6 lg:right-[100px]"
               role="dialog"
               aria-label="Presentación de ATAR AI"
             >
@@ -285,7 +285,7 @@ export default function AssistantFab() {
           ) : null}
           <button
             aria-label="Hablar con ATAR AI"
-            className={`group fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.22)] transition duration-300 hover:shadow-[0_22px_48px_rgba(15,23,42,0.30)] lg:bottom-6 lg:right-6 lg:h-16 lg:w-16 ${
+            className={`group fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-slate-300 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.22)] transition duration-300 hover:shadow-[0_22px_48px_rgba(15,23,42,0.30)] lg:bottom-6 lg:right-6 lg:h-16 lg:w-16 ${
               introVisible
                 ? ''
                 : 'translate-x-[calc(50%+16px)] opacity-80 hover:translate-x-0 hover:opacity-100 focus-visible:translate-x-0 focus-visible:opacity-100 lg:translate-x-[calc(50%+24px)]'

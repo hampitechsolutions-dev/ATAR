@@ -35,7 +35,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
     <AuthGuard allowedRole="BUYER">
       <div
         className={`text-slate-950 ${
-          isBuyerWizard ? 'bg-[linear-gradient(180deg,#f7f9ff_0%,#eef2fe_100%)]' : 'bg-[#f5f7fb]'
+          isBuyerWizard ? 'bg-[linear-gradient(180deg,#f7f9ff_0%,#eef2fe_100%)]' : 'bg-[#e9edf5]'
         } ${isBuyerMessages ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'}`}
       >
         <BuyerMarketplaceHeader session={session} wide notificationCount={notificationCount} />

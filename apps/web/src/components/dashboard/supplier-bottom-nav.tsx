@@ -167,7 +167,7 @@ export default function SupplierBottomNav() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-300 bg-white/95 backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2">
           {tabs.slice(0, 2).map((tab) => {
             const active = isActive(tab.href);
@@ -225,12 +225,12 @@ export default function SupplierBottomNav() {
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-slate-950/50" onClick={() => setOpen(false)} />
           <div className="absolute inset-x-0 bottom-0 max-h-[82vh] overflow-y-auto rounded-t-3xl bg-white pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-20px_60px_rgba(2,6,23,0.28)]">
-            <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+            <div className="sticky top-0 flex items-center justify-between border-b border-slate-300 bg-white px-5 py-4">
               <p className="text-base font-bold text-slate-950">Menú</p>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-500"
               >
                 <Icon name="close" className="h-4 w-4" />
               </button>
@@ -243,7 +243,7 @@ export default function SupplierBottomNav() {
                 name={companyName}
                 rounded="rounded-full"
                 textClassName="text-[13px]"
-                tone="bg-indigo-50 text-indigo-600"
+                tone="bg-indigo-100 text-indigo-600"
               />
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold text-slate-950">{userName}</p>
@@ -252,7 +252,7 @@ export default function SupplierBottomNav() {
             </div>
 
             {hasMultipleWorkspaces ? (
-              <div className="mx-4 mt-3 rounded-2xl border border-slate-200 p-1.5">
+              <div className="mx-4 mt-3 rounded-2xl border border-slate-300 p-1.5">
                 <p className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Representás a</p>
                 {workspaces.map((workspace) => {
                   const current = workspace.companyId === activeWorkspace?.companyId;
@@ -260,7 +260,7 @@ export default function SupplierBottomNav() {
                     <button
                       key={workspace.companyId}
                       aria-pressed={current}
-                      className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left ${current ? 'bg-indigo-50' : 'active:bg-slate-50'}`}
+                      className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left ${current ? 'bg-indigo-100' : 'active:bg-slate-50'}`}
                       onClick={() => {
                         setOpen(false);
                         if (!current) {
@@ -301,7 +301,7 @@ export default function SupplierBottomNav() {
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3 ${
-                      active ? 'bg-indigo-50' : 'active:bg-slate-50'
+                      active ? 'bg-indigo-100' : 'active:bg-slate-50'
                     }`}
                   >
                     <span className="flex items-center gap-3">

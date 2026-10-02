@@ -8,6 +8,7 @@ import TeamInvitationsPanel from '@/components/dashboard/team-invitations-panel'
 import { atarApi, type RequestAssignmentRecord, type TeamMemberRecord } from '@/lib/atar-api';
 import { LoadingState } from '@/components/ui/spinner';
 import { loadSession, type WebSession } from '@/lib/session';
+import { TONES, type Tone } from '@/components/dashboard/tone-row';
 
 const PAGE_SIZE = 6;
 const DAY = 86400000;
@@ -43,13 +44,13 @@ function activityFor(assignment: RequestAssignmentRecord) {
   const product = assignment.request.productName || assignment.request.title;
   const buyer = assignment.request.buyerCompany?.name;
   const detail = [product, buyer].filter(Boolean).join(' · ');
-  if (assignment.status === 'WON') return { text: 'ganó una venta', detail, icon: 'trophy' as const, tone: 'bg-emerald-50 text-emerald-600', dot: 'bg-emerald-500' };
+  if (assignment.status === 'WON') return { text: 'ganó una venta', detail, icon: 'trophy' as const, tone: 'bg-emerald-100 text-emerald-600', dot: 'bg-emerald-500' };
   if (assignment.status === 'LOST') return { text: 'perdió una oportunidad', detail, icon: 'doc' as const, tone: 'bg-slate-100 text-slate-500', dot: 'bg-slate-400' };
   if (assignment.quote || assignment.status === 'QUOTED' || assignment.status === 'NEGOTIATING') {
-    return { text: 'envió una cotización', detail, icon: 'send' as const, tone: 'bg-indigo-50 text-indigo-600', dot: 'bg-indigo-500' };
+    return { text: 'envió una cotización', detail, icon: 'send' as const, tone: 'bg-indigo-100 text-indigo-600', dot: 'bg-indigo-500' };
   }
-  if (assignment.status === 'IN_RESPONSE') return { text: 'está preparando una respuesta', detail, icon: 'doc' as const, tone: 'bg-indigo-50 text-indigo-600', dot: 'bg-indigo-500' };
-  return { text: 'tiene una nueva solicitud asignada', detail, icon: 'user' as const, tone: 'bg-amber-50 text-amber-600', dot: 'bg-amber-500' };
+  if (assignment.status === 'IN_RESPONSE') return { text: 'está preparando una respuesta', detail, icon: 'doc' as const, tone: 'bg-indigo-100 text-indigo-600', dot: 'bg-indigo-500' };
+  return { text: 'tiene una nueva solicitud asignada', detail, icon: 'user' as const, tone: 'bg-amber-100 text-amber-600', dot: 'bg-amber-500' };
 }
 
 /* Íconos ------------------------------------------------------------------- */
@@ -80,9 +81,12 @@ function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: str
   );
 }
 
-const card = 'rounded-[18px] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.05)]';
+// Un color por indicador, para distinguirlos de un vistazo.
+const KPI_TONES: Tone[] = ['indigo', 'sky', 'amber', 'emerald'];
+
+const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
 const selectClass =
-  'h-11 appearance-none rounded-[12px] border border-slate-200 bg-white pl-3.5 pr-9 text-[14px] text-slate-700 outline-none transition focus:border-indigo-300';
+  'h-11 appearance-none rounded-[12px] border border-slate-300 bg-white pl-3.5 pr-9 text-[14px] text-slate-700 outline-none transition focus:border-indigo-300';
 
 function SelectChevron() {
   return (
@@ -321,16 +325,16 @@ export default function SupplierTeamPage() {
       </div>
 
       {!isManager ? (
-        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-100 px-5 py-4 text-sm text-amber-800">
           Esta sección es solo para administradores de la empresa.
         </div>
       ) : (
         <>
-          {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-          {message ? <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
+          {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+          {message ? <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-100 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
           {incomingCount > 0 ? (
             <button
-              className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-left text-sm text-amber-800 transition hover:bg-amber-100/70"
+              className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-100 px-5 py-3 text-left text-sm text-amber-800 transition hover:bg-amber-100/70"
               onClick={() => setInviteOpen(true)}
               type="button"
             >
@@ -346,10 +350,10 @@ export default function SupplierTeamPage() {
 
           {/* Contadores */}
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {kpis.map((kpi) => {
+            {kpis.map((kpi, index) => {
               const content = (
                 <>
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+                  <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${TONES[KPI_TONES[index % 4]].icon}`}>
                     <Icon className="h-6 w-6" name={kpi.icon} />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -359,7 +363,7 @@ export default function SupplierTeamPage() {
                       {loading ? '' : kpi.note}
                     </span>
                   </span>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition group-hover:translate-x-0.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e2ddff] text-indigo-600 transition group-hover:translate-x-0.5">
                     <Icon name="arrow" />
                   </span>
                 </>
@@ -386,7 +390,7 @@ export default function SupplierTeamPage() {
                     <Icon name="search" />
                   </span>
                   <input
-                    className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-[14px] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                    className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-[14px] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                     onChange={(event) => updateFilters(() => setSearch(event.target.value))}
                     placeholder="Buscar vendedores por nombre o email..."
                     type="search"
@@ -429,8 +433,8 @@ export default function SupplierTeamPage() {
               <div className="mt-2 overflow-x-auto md:mt-4">
                 <table className="w-full min-w-[860px] text-left text-[14px]">
                   <thead>
-                    <tr className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      <th className="sticky left-0 z-10 bg-white px-2.5 py-3">Vendedor</th>
+                    <tr className="bg-[#eceaff] text-[11px] font-semibold uppercase tracking-[0.08em] text-[#3d3780]">
+                      <th className="sticky left-0 z-10 rounded-l-lg bg-[#eceaff] px-2.5 py-3">Vendedor</th>
                       <th className="px-2.5 py-3">Rol</th>
                       <th className="px-2.5 py-3">Estado</th>
                       <th className="px-2.5 py-3 text-center" title="Solicitudes asignadas">Oportunidades</th>
@@ -439,7 +443,7 @@ export default function SupplierTeamPage() {
                       <th className="px-2.5 py-3 text-center">Ganadas</th>
                       <th className="px-2.5 py-3 text-center">Conversión</th>
                       <th className="whitespace-nowrap px-2.5 py-3">Volumen</th>
-                      <th className="px-2.5 py-3 text-center">Acciones</th>
+                      <th className="rounded-r-lg px-2.5 py-3 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -462,10 +466,10 @@ export default function SupplierTeamPage() {
                         const stale = !last || nowMs - new Date(last).getTime() > 7 * DAY;
                         const highlight = member.pending >= 3 && !invited;
                         return (
-                          <tr key={member.id} className={`border-t border-slate-100 ${highlight ? 'bg-[#f7f5ff]' : 'bg-white'}`}>
+                          <tr key={member.id} className={`border-t border-[#d6d0f2] ${highlight ? 'bg-[#efeaff]' : 'bg-white even:bg-[#f0eff8]'}`}>
                             <td className="sticky left-0 z-10 max-w-[150px] bg-inherit px-2.5 py-3 shadow-[6px_0_10px_-8px_rgba(40,28,110,0.25)] md:max-w-none md:shadow-none">
                               <Link className="flex items-center gap-3" href={`/dashboard/proveedor/equipo/${member.id}`}>
-                                <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-bold text-indigo-600 md:flex">
+                                <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-bold text-indigo-600 md:flex">
                                   {initials(member.name)}
                                 </span>
                                 <span className="min-w-0">
@@ -486,14 +490,14 @@ export default function SupplierTeamPage() {
                               </Link>
                             </td>
                             <td className="px-2.5 py-3">
-                              <span className="rounded-md bg-indigo-50 px-2.5 py-1 text-[12px] font-medium text-indigo-600">
+                              <span className="rounded-md bg-indigo-100 px-2.5 py-1 text-[12px] font-medium text-indigo-600">
                                 {member.isManager ? 'Gerente' : 'Vendedor'}
                               </span>
                             </td>
                             <td className="px-2.5 py-3">
                               <span
                                 className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[12px] font-medium ${
-                                  invited ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                                  invited ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'
                                 }`}
                               >
                                 <span className={`h-1.5 w-1.5 rounded-full ${invited ? 'bg-amber-500' : 'bg-emerald-500'}`} />
@@ -512,9 +516,9 @@ export default function SupplierTeamPage() {
                               <span
                                 className={`rounded-md px-2.5 py-1 text-[12px] font-semibold ${
                                   member.conversionRate >= 20
-                                    ? 'bg-emerald-50 text-emerald-600'
+                                    ? 'bg-emerald-100 text-emerald-600'
                                     : member.conversionRate > 0
-                                      ? 'bg-amber-50 text-amber-600'
+                                      ? 'bg-amber-100 text-amber-600'
                                       : 'bg-slate-100 text-slate-500'
                                 }`}
                               >
@@ -550,7 +554,7 @@ export default function SupplierTeamPage() {
                                   {menuFor === member.id ? (
                                     <>
                                       <button aria-label="Cerrar menú" className="fixed inset-0 z-20 cursor-default" onClick={() => setMenuFor(null)} type="button" />
-                                      <div className="absolute right-0 top-10 z-30 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
+                                      <div className="absolute right-0 top-10 z-30 w-48 overflow-hidden rounded-xl border border-slate-300 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
                                         <Link className="block px-3 py-2 text-slate-700 hover:bg-slate-50" href={`/dashboard/proveedor/equipo/${member.id}`}>
                                           Ver desempeño
                                         </Link>
@@ -588,20 +592,20 @@ export default function SupplierTeamPage() {
                 </p>
                 {totalPages > 1 ? (
                   <div className="flex items-center gap-1.5">
-                    <button aria-label="Página anterior" className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} type="button">
+                    <button aria-label="Página anterior" className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 disabled:opacity-40" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} type="button">
                       <Icon name="chev-left" />
                     </button>
                     {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
                       <button
                         key={number}
-                        className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-[13px] font-semibold ${number === currentPage ? 'bg-indigo-600 text-white' : 'border border-slate-200 bg-white text-slate-600'}`}
+                        className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-[13px] font-semibold ${number === currentPage ? 'bg-indigo-600 text-white' : 'border border-slate-300 bg-white text-slate-600'}`}
                         onClick={() => setPage(number)}
                         type="button"
                       >
                         {number}
                       </button>
                     ))}
-                    <button aria-label="Página siguiente" className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} type="button">
+                    <button aria-label="Página siguiente" className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 disabled:opacity-40" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} type="button">
                       <Icon name="chev-right" />
                     </button>
                   </div>

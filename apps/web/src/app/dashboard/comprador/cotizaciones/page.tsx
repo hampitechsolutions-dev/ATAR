@@ -95,7 +95,7 @@ export default function BuyerQuotesPage() {
             </svg>
           </span>
           <input
-            className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+            className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar por solicitud o proveedor..."
             value={search}
@@ -127,11 +127,11 @@ export default function BuyerQuotesPage() {
           })}
         </div>
 
-        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
         <div className="mt-4 space-y-3">
           {loading ? (
-            <div className="rounded-[18px] bg-white px-4 py-10 shadow-sm">
+            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando cotizaciones..." />
             </div>
           ) : mobileRequests.length === 0 ? (
@@ -146,7 +146,7 @@ export default function BuyerQuotesPage() {
               return (
                 <Link
                   key={request.id}
-                  className="block rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/70 transition active:scale-[0.99]"
+                  className="block rounded-[18px] border border-slate-300 bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.07)] transition active:scale-[0.99]"
                   href={`/dashboard/comprador/solicitudes/${request.id}`}
                 >
                   <div className="flex gap-3">
@@ -155,7 +155,7 @@ export default function BuyerQuotesPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
+                        <span className="rounded-md bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
                           {request.category}
                         </span>
                         <span
@@ -177,7 +177,7 @@ export default function BuyerQuotesPage() {
                       </svg>
                     </span>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200/70 rounded-[12px] bg-[#f5f7fc] py-2 text-center">
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-[#cfdcf7] rounded-[12px] bg-[#eef3ff] py-2 text-center">
                     <span className="px-1">
                       <span className="block text-[10px] text-slate-500">Propuestas</span>
                       <span className="block truncate text-[12px] font-semibold text-slate-900">{quotes}</span>
@@ -195,7 +195,7 @@ export default function BuyerQuotesPage() {
                       </span>
                     </span>
                   </div>
-                  <span className="mt-3 flex h-9 items-center justify-center rounded-[10px] bg-indigo-50 text-[13px] font-semibold text-indigo-700">
+                  <span className="mt-3 flex h-9 items-center justify-center rounded-[10px] bg-indigo-100 text-[13px] font-semibold text-indigo-700">
                     {awarded ? 'Ver detalle' : 'Comparar propuestas'}
                   </span>
                 </Link>
@@ -213,7 +213,7 @@ export default function BuyerQuotesPage() {
           <p className="mt-1 text-sm text-slate-500">Compará propuestas y seguí cada respuesta de proveedor</p>
         </div>
 
-        <div className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm lg:w-[320px]">
+        <div className="flex w-full items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 shadow-sm lg:w-[320px]">
           <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
             <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
             <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -228,7 +228,7 @@ export default function BuyerQuotesPage() {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">
           {error}
         </div>
       ) : null}
@@ -240,7 +240,7 @@ export default function BuyerQuotesPage() {
         {awardedCount === 1 ? 'adjudicada' : 'adjudicadas'}
       </p>
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm">
         {loading ? (
           <div className="px-5 py-8">
             <LoadingState label="Cargando cotizaciones..." />
@@ -253,7 +253,7 @@ export default function BuyerQuotesPage() {
               const quotes = request._count?.quotes ?? 0;
               const awarded = Boolean(request.awardedQuoteId);
               return (
-                <li key={request.id} className="grid grid-cols-[56px_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_210px] items-center gap-5 px-5 py-4">
+                <li key={request.id} className="even:bg-[#eef1f7] last:rounded-b-[inherit] grid grid-cols-[56px_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_210px] items-center gap-5 px-5 py-4">
                   <span className="relative h-14 w-14 overflow-hidden rounded-xl bg-slate-100">
                     <Image alt="" className="object-cover" fill sizes="56px" src={requestImage(request)} />
                   </span>
@@ -283,7 +283,7 @@ export default function BuyerQuotesPage() {
                       {awarded ? 'Adjudicada' : 'Por decidir'}
                     </span>
                     <Link
-                      className="inline-flex h-9 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-[13px] font-semibold text-indigo-700 hover:bg-indigo-100"
+                      className="inline-flex h-9 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-100 px-4 text-[13px] font-semibold text-indigo-700 hover:bg-indigo-100"
                       href={`/dashboard/comprador/solicitudes/${request.id}`}
                     >
                       {awarded ? 'Ver detalle' : 'Comparar'}

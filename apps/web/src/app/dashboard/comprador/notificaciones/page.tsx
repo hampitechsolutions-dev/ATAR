@@ -125,14 +125,14 @@ export default function BuyerNotificationsPage() {
           <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
             {summary.total} recientes
           </div>
-          <div className="rounded-full bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700">
+          <div className="rounded-full bg-indigo-100 px-4 py-2 text-sm font-semibold text-indigo-700">
             {summary.unread} sin leer
           </div>
-          <div className="rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">
+          <div className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700">
             {summary.messages} mensajes
           </div>
           <button
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!hasUnread}
             onClick={() => void markAllAsRead()}
             type="button"
@@ -145,12 +145,12 @@ export default function BuyerNotificationsPage() {
       <PushOptIn />
 
       {visibleError ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">
           {visibleError}
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm">
         {dashboardLoading || loading ? (
           <div className="px-6 py-8"><LoadingState label="Cargando notificaciones..." /></div>
         ) : notifications.length === 0 ? (
