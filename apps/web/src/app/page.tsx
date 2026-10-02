@@ -4,6 +4,7 @@ import { Caveat } from 'next/font/google';
 import LatamMap from '@/components/home/latam-map';
 import LandingAuthRedirect from '@/components/layout/landing-auth-redirect';
 import CountUp from '@/components/ui/count-up';
+import { isCategoryHidden } from '@/lib/hidden-categories';
 import Reveal from '@/components/ui/reveal';
 
 const script = Caveat({ subsets: ['latin'], weight: ['500', '600'] });
@@ -181,7 +182,7 @@ const CATEGORIES: { title: string; text: string; img: string }[] = [
   { title: 'Hilos y cuerdas', text: 'Resistencia y calidad industrial.', img: '/hilosweb.png' },
   { title: 'Polímeros', text: 'Materia prima para producir.', img: '/polimero.png' },
   { title: 'Maquinaria', text: 'Equipos y soluciones para tu planta.', img: '/maquinariaweb.png' },
-];
+].filter((category) => !isCategoryHidden(category.title));
 
 const STEPS: { label: string; text: string; icon: IconName }[] = [
   { label: 'Buscá', text: 'Encontrá productos o proveedores.', icon: 'search' },
@@ -212,6 +213,14 @@ const TRUST = ['Braskem', 'ALPE', 'LyondellBasell', 'Indorama', 'Sinteplast', 'E
 
 // globals.css fija `a { color: inherit }` fuera de las capas de Tailwind, así
 // que en los <Link> el color del texto va en un <span> hijo.
+// Accesos del hero. El perfil viaja a /acceso, que abre el registro con ese
+// perfil preseleccionado (ver AccessPanel).
+const HERO_ROLES: { label: string; hint: string; href: string; primary?: boolean }[] = [
+  { label: 'CLIENTE', hint: 'Quiero comprar', href: '/acceso?perfil=cliente', primary: true },
+  { label: 'VENDEDOR', hint: 'Trabajo para una empresa', href: '/acceso?perfil=vendedor' },
+  { label: 'PROVEEDOR', hint: 'Quiero vender', href: '/acceso?perfil=proveedor' },
+];
+
 const primaryCta =
   'inline-flex h-12 items-center justify-center gap-2 rounded-[10px] bg-[#1f5bff] px-6 text-sm font-semibold text-white shadow-[0_14px_36px_rgba(31,91,255,0.35)] transition hover:-translate-y-0.5 hover:bg-[#194ee6] hover:shadow-[0_18px_42px_rgba(31,91,255,0.45)]';
 
@@ -243,19 +252,25 @@ export default function Home() {
               Comprá y vendé productos de la cadena del polipropileno, con proveedores verificados y cotizaciones en minutos.
             </p>
 
-            <div className="animate-fade-up mt-9 flex flex-col gap-3 [animation-delay:300ms] sm:flex-row">
-              <Link className={primaryCta} href="/acceso">
-                <span className="inline-flex items-center gap-2 text-white">
-                  Iniciar una cotización
-                  <Icon name="arrow" className="h-4 w-4" />
-                </span>
-              </Link>
-              <Link
-                className="inline-flex h-12 items-center justify-center rounded-[10px] border border-white/45 px-6 text-sm font-semibold text-white transition hover:bg-white/10"
-                href="/acceso"
-              >
-                Quiero vender en ATAR
-              </Link>
+            {/* Un acceso por perfil: abre el registro existente con ese perfil ya elegido. */}
+            <div className="animate-fade-up mt-9 grid max-w-[680px] grid-cols-1 gap-3 [animation-delay:300ms] sm:grid-cols-3">
+              {HERO_ROLES.map((role) => (
+                <Link
+                  key={role.label}
+                  className={`group flex h-[60px] items-center justify-between gap-3 rounded-[10px] px-5 transition hover:-translate-y-0.5 ${
+                    role.primary
+                      ? 'bg-[#1f5bff] text-white shadow-[0_14px_36px_rgba(31,91,255,0.35)] hover:bg-[#194ee6]'
+                      : 'border border-white/70 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20'
+                  }`}
+                  href={role.href}
+                >
+                  <span className="leading-tight">
+                    <span className="block text-[15px] font-bold tracking-[0.08em]">{role.label}</span>
+                    <span className={`block text-[12px] ${role.primary ? 'text-white/85' : 'text-white/75'}`}>{role.hint}</span>
+                  </span>
+                  <Icon name="arrow" className="h-4 w-4 shrink-0 transition group-hover:translate-x-0.5" />
+                </Link>
+              ))}
             </div>
 
             <div className="animate-fade-up mt-10 grid max-w-lg gap-3 [animation-delay:450ms] sm:mt-12 sm:grid-cols-3 sm:gap-6">
@@ -297,7 +312,7 @@ export default function Home() {
             </Link>
           </Reveal>
 
-          <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+          <div className={`mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 ${CATEGORIES.length === 5 ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
             {CATEGORIES.map((cat, index) => (
               <Reveal key={cat.title} delay={index * 80}>
               <Link

@@ -65,7 +65,7 @@ export default function SupplierOpportunitiesPage() {
               cotizar sobre la seleccionada.
             </p>
             <input
-              className="mt-6 w-full rounded-2xl border border-slate-300 bg-[#eef1f7] px-4 py-3 text-sm outline-none transition focus:border-sky-400"
+              className="mt-6 w-full rounded-2xl border border-slate-300 bg-seller-surface px-4 py-3 text-sm outline-none transition focus:border-sky-400"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar por comprador, categoria o descripcion"
               value={search}
@@ -105,7 +105,7 @@ export default function SupplierOpportunitiesPage() {
                         {request.description}
                       </p>
                     </div>
-                    <div className="rounded-[1.5rem] bg-[#eef1f7] p-4 text-sm text-slate-600">
+                    <div className="rounded-[1.5rem] bg-seller-surface p-4 text-sm text-slate-600">
                       <p>
                         Comprador:{' '}
                         <span className="font-semibold text-slate-950">

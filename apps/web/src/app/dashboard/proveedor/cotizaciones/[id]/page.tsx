@@ -36,7 +36,7 @@ const QUOTE_STATUS: Record<QuoteRecord['status'], { label: string; tone: string 
   WITHDRAWN: { label: 'Retirada', tone: 'bg-slate-100 text-slate-600' },
 };
 
-const card = 'rounded-[18px] border border-[#cbc4ee] bg-white p-5 shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
+const card = 'rounded-[18px] border border-slate-300 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.07)]';
 
 export default function SupplierQuoteDetailPage() {
   const params = useParams<{ id: string }>();
@@ -115,7 +115,7 @@ export default function SupplierQuoteDetailPage() {
         </span>
       </Link>
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-[#16123a] lg:text-[32px]">
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-900 lg:text-[32px]">
           {quote?.request?.productName ?? quote?.request?.title ?? 'Cotización'}
         </h1>
         {status ? <span className={`rounded-md px-2.5 py-1 text-[12px] font-medium ${status.tone}`}>{status.label}</span> : null}
@@ -131,7 +131,7 @@ export default function SupplierQuoteDetailPage() {
       ) : quote && status ? (
         <div className="mt-5 space-y-5">
           <section className={card}>
-            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 [&>div]:rounded-[12px] [&>div]:border [&>div]:border-[#cbc4ee] [&>div]:bg-[#f0eefb] [&>div]:px-4 [&>div]:py-3">
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 [&>div]:rounded-[12px] [&>div]:border [&>div]:border-slate-300 [&>div]:bg-seller-surface [&>div]:px-4 [&>div]:py-3">
               <div>
                 <p className="text-[13px] text-slate-500">Comprador</p>
                 <p className="mt-1 text-[16px] font-semibold text-slate-950">{quote.request?.buyerCompany?.name ?? 'Comprador'}</p>

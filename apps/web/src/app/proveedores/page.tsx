@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import CompanyLogo from '@/components/dashboard/company-logo';
 import ArgentinaMap from '@/components/home/argentina-map';
 import Reveal from '@/components/ui/reveal';
+import { isCategoryHidden, withoutHiddenCategories } from '@/lib/hidden-categories';
 import { atarApi, SUPPLIER_ROLE_LABELS, type SupplierDirectoryRecord, type SupplierRole } from '@/lib/atar-api';
 
 /* Categorías -------------------------------------------------------------- */
@@ -35,9 +36,9 @@ const FAMILIES: { id: string; label: string; image: string; catalog: string[]; k
   { id: 'impresion', label: 'Impresión y terminación', image: '/tintas.png', catalog: ['Tintas', 'Cintas/Cintillas'], keywords: ['tinta', 'cinta', 'impres'] },
   { id: 'maquinaria', label: 'Maquinaria', image: '/maquinariaweb.png', catalog: ['Maquinarias'], keywords: ['maquin', 'equipo', 'extrus', 'telar'] },
   { id: 'medida', label: 'A medida', image: '/amedida.png', catalog: ['A medida'], keywords: ['a medida'] },
-];
+].filter((family) => !isCategoryHidden(family.label));
 
-const FREQUENT_SEARCHES = ['Big Bags', 'Telas', 'Rafia', 'Polímeros', 'Maquinaria'];
+const FREQUENT_SEARCHES = withoutHiddenCategories(['Big Bags', 'Telas', 'Rafia', 'Polímeros', 'Maquinaria']);
 
 type SortKey = 'relevance' | 'name' | 'leadTime';
 
@@ -314,7 +315,7 @@ export default function ProveedoresPage() {
             </h1>
             <p className="animate-fade-up mt-5 max-w-[520px] text-[17px] leading-7 text-slate-600 [animation-delay:200ms]">
               Conectá con fabricantes, distribuidores y proveedores verificados de rafia, Big Bags, sacos, telas, hilos,
-              polímeros, maquinaria y más.
+              maquinaria y más.
             </p>
 
             <form

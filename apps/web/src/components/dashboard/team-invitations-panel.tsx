@@ -236,7 +236,7 @@ export default function TeamInvitationsPanel({
                 </div>
 
                 {request.message ? (
-                  <p className="mt-2 rounded-lg bg-[#eef1f7] px-3 py-2 text-[12px] text-slate-600">
+                  <p className="mt-2 rounded-lg bg-seller-surface px-3 py-2 text-[12px] text-slate-600">
                     &ldquo;{request.message}&rdquo;
                   </p>
                 ) : null}

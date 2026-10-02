@@ -157,6 +157,7 @@ export default function BuyerBottomNav({ notificationCount = 0 }: { notification
             return (
               <Link
                 key={tab.href}
+                data-tour={`nav-${tab.href.split('/')[3] ?? 'inicio'}`}
                 href={tab.href}
                 className="relative flex flex-1 flex-col items-center gap-1 py-1"
               >
@@ -177,6 +178,7 @@ export default function BuyerBottomNav({ notificationCount = 0 }: { notification
 
           <button
             type="button"
+            data-tour="nav-more"
             onClick={() => setOpen(true)}
             className="flex flex-1 flex-col items-center gap-1 py-1"
           >

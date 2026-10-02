@@ -172,7 +172,7 @@ export default function SupplierBottomNav() {
           {tabs.slice(0, 2).map((tab) => {
             const active = isActive(tab.href);
             return (
-              <Link key={tab.href} href={tab.href} className="flex flex-1 flex-col items-center gap-1 py-1">
+              <Link key={tab.href} data-tour={`nav-${tab.href.split('/')[3] ?? 'inicio'}`} href={tab.href} className="flex flex-1 flex-col items-center gap-1 py-1">
                 <span className={active ? 'text-indigo-600' : 'text-slate-400'}>
                   <Icon name={tab.icon} className="h-6 w-6" />
                 </span>
@@ -201,7 +201,7 @@ export default function SupplierBottomNav() {
           {tabs.slice(2).map((tab) => {
             const active = isActive(tab.href);
             return (
-              <Link key={tab.href} href={tab.href} className="flex flex-1 flex-col items-center gap-1 py-1">
+              <Link key={tab.href} data-tour={`nav-${tab.href.split('/')[3] ?? 'inicio'}`} href={tab.href} className="flex flex-1 flex-col items-center gap-1 py-1">
                 <span className={active ? 'text-indigo-600' : 'text-slate-400'}>
                   <Icon name={tab.icon} className="h-6 w-6" />
                 </span>
@@ -212,7 +212,7 @@ export default function SupplierBottomNav() {
             );
           })}
 
-          <button type="button" onClick={() => setOpen(true)} className="flex flex-1 flex-col items-center gap-1 py-1">
+          <button type="button" data-tour="nav-more" onClick={() => setOpen(true)} className="flex flex-1 flex-col items-center gap-1 py-1">
             <span className="text-slate-400">
               <Icon name="menu" className="h-6 w-6" />
             </span>

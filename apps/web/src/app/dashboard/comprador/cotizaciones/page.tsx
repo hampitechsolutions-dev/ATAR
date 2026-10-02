@@ -129,7 +129,7 @@ export default function BuyerQuotesPage() {
 
         {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3" data-tour="quotes-list">
           {loading ? (
             <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando cotizaciones..." />
@@ -240,7 +240,7 @@ export default function BuyerQuotesPage() {
         {awardedCount === 1 ? 'adjudicada' : 'adjudicadas'}
       </p>
 
-      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm">
+      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm" data-tour="quotes-list">
         {loading ? (
           <div className="px-5 py-8">
             <LoadingState label="Cargando cotizaciones..." />

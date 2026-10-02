@@ -244,24 +244,162 @@ a:focus-visible,
 }
 
 /* ---------------------------------------------------------------------------
- * Tema del perfil vendedor / empresa proveedora.
+ * Tema del panel de ventas. Por defecto es el del VENDEDOR: identidad verde.
+ * La empresa proveedora usa el mismo panel en violeta (ver `.theme-company`,
+ * más abajo).
  *
- * Los mismos componentes que usa el comprador, con la identidad violeta del
- * panel de ventas: dentro de `.theme-supplier` la escala `indigo` (el acento de
- * toda la UI) se corre a violeta, así el vendedor se distingue del comprador
- * (azul) sin duplicar pantallas. Se aplica en app/dashboard/proveedor/layout.
+ * La escala `seller` es la única fuente de los verdes del entorno de ventas.
+ * Dentro de `.theme-supplier` (app/dashboard/proveedor/layout) el acento de la
+ * UI (`indigo`) se corre a esa escala, así los componentes compartidos con el
+ * comprador (chat, filas de tareas, asistente) toman el verde solos sin
+ * duplicarse. El comprador y el sitio público no usan esta clase y no cambian.
+ *
+ * Contraste: los botones principales usan `seller-600` (#047857, 5.5:1 con
+ * texto blanco). #059669 queda en `seller-500` para acentos, barras y estados
+ * activos, porque con texto blanco chico no llega a 4.5:1.
  * ------------------------------------------------------------------------- */
+@theme {
+  --color-seller-50: #ecfdf5;
+  --color-seller-100: #d1fae5;
+  --color-seller-200: #a7f3d0;
+  --color-seller-300: #6ee7b7;
+  --color-seller-400: #34d399;
+  --color-seller-500: #059669;
+  --color-seller-600: #047857;
+  --color-seller-700: #065f46;
+  --color-seller-800: #064e3b;
+  --color-seller-900: #053d2f;
+  --color-seller-950: #022c22;
+  /* Fondo general del entorno y superficie secundaria (filas alternas, cajas
+     internas): neutros con un punto de verde, para que las tarjetas blancas
+     se recorten sin teñir toda la pantalla. */
+  --color-seller-canvas: #e8eeeb;
+  --color-seller-surface: #f0f5f2;
+}
+
 .theme-supplier {
-  --color-indigo-50: #f3f0ff;
-  --color-indigo-100: #e8e2ff;
-  --color-indigo-200: #d4c9ff;
-  --color-indigo-300: #b6a4ff;
-  --color-indigo-400: #9477ff;
-  --color-indigo-500: #7a55f7;
-  --color-indigo-600: #6440e8;
-  --color-indigo-700: #5332c7;
-  --color-indigo-800: #432aa0;
-  --color-indigo-900: #2e1f6e;
+  --color-indigo-50: var(--color-seller-50);
+  --color-indigo-100: var(--color-seller-100);
+  --color-indigo-200: var(--color-seller-200);
+  --color-indigo-300: var(--color-seller-300);
+  --color-indigo-400: var(--color-seller-400);
+  --color-indigo-500: var(--color-seller-500);
+  --color-indigo-600: var(--color-seller-600);
+  --color-indigo-700: var(--color-seller-700);
+  --color-indigo-800: var(--color-seller-800);
+  --color-indigo-900: var(--color-seller-900);
+  --color-indigo-950: var(--color-seller-950);
+
+  /* Segundo color de categoría (indicadores, series de gráficos): el violeta
+     pasa a un verde azulado, que convive con el verde sin confundirse con él. */
+  --color-violet-50: #f0fdfa;
+  --color-violet-100: #ccfbf1;
+  --color-violet-200: #99f6e4;
+  --color-violet-300: #5eead4;
+  --color-violet-400: #2dd4bf;
+  --color-violet-500: #14b8a6;
+  --color-violet-600: #0d9488;
+  --color-violet-700: #0f766e;
+  --color-violet-800: #115e59;
+  --color-violet-900: #134e4a;
+
+  /* Bordes y campos: el mismo peso que en el resto de la app, sin el tinte azul. */
+  --color-slate-200: #cfdad5;
+  --color-slate-300: #b1c2bb;
+  --field-border: #b1c2bb;
+  --focus-ring: var(--color-seller-600);
+
+  /* Componentes compartidos que traen el azul del comprador por defecto
+     (pantalla de carga, botón de activar notificaciones). */
+  --brand-accent: var(--color-seller-600);
+  --brand-accent-soft: var(--color-seller-100);
+  --brand-wash-from: #f6faf8;
+  --brand-wash-to: var(--color-seller-canvas);
+  --color-blue-600: var(--color-seller-600);
+  --color-blue-700: var(--color-seller-700);
+
+  /* Sombra de color de los botones principales (canales RGB del acento). */
+  --accent-rgb: 4 120 87;
+
+  /* Sidebar. */
+  --nav-bg: var(--color-seller-800);
+  --nav-active-bg: var(--color-seller-100);
+  --nav-active-fg: var(--color-seller-900);
+  --nav-active-icon: var(--color-seller-700);
+  --nav-badge-bg: var(--color-seller-400);
+  --nav-badge-fg: var(--color-seller-950);
+  --nav-badge-active-bg: var(--color-seller-700);
+  --nav-badge-active-fg: #ffffff;
+}
+
+/* ---------------------------------------------------------------------------
+ * Empresa proveedora: conserva su identidad violeta.
+ *
+ * El verde es solo del vendedor. Cuando quien entra administra la empresa,
+ * SupplierTheme agrega esta clase y la escala `seller` (de la que cuelga todo
+ * el panel de ventas) vuelve a los violetas originales.
+ * ------------------------------------------------------------------------- */
+.theme-supplier.theme-company {
+  --color-seller-50: #f3f0ff;
+  --color-seller-100: #e8e2ff;
+  --color-seller-200: #d4c9ff;
+  --color-seller-300: #b6a4ff;
+  --color-seller-400: #9477ff;
+  --color-seller-500: #7a55f7;
+  --color-seller-600: #6440e8;
+  --color-seller-700: #5332c7;
+  --color-seller-800: #1b1745;
+  --color-seller-900: #16123a;
+  --color-seller-950: #120f2e;
+  --color-seller-canvas: #eae7f8;
+  --color-seller-surface: #f0eff8;
+
+  --color-violet-50: #f5f3ff;
+  --color-violet-100: #ede9fe;
+  --color-violet-200: #ddd6fe;
+  --color-violet-300: #c4b5fd;
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #8b5cf6;
+  --color-violet-600: #7c3aed;
+  --color-violet-700: #6d28d9;
+  --color-violet-800: #5b21b6;
+  --color-violet-900: #4c1d95;
+
+  --color-slate-200: #d6d0f2;
+  --color-slate-300: #cbc4ee;
+  --field-border: #a8bcdf;
+  --focus-ring: #6440e8;
+
+  --brand-accent: #6440e8;
+  --brand-accent-soft: #e8e2ff;
+  --brand-wash-from: #f7f6ff;
+  --brand-wash-to: #eae7f8;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+
+  --accent-rgb: 100 64 232;
+
+  --nav-bg: linear-gradient(180deg, #1b1745 0%, #16123a 55%, #120f2e 100%);
+  --nav-active-bg: linear-gradient(90deg, #6d45f0 0%, #7a55f7 100%);
+  --nav-active-fg: #ffffff;
+  --nav-active-icon: #ffffff;
+  --nav-badge-bg: #7a55f7;
+  --nav-badge-fg: #ffffff;
+  --nav-badge-active-bg: rgb(255 255 255 / 0.25);
+  --nav-badge-active-fg: #ffffff;
+}
+
+/* ATARIA en el perfil comprador: el acento del asistente pasa al azul de ATAR.
+   El alcance es solo el asistente, no el resto de las pantallas del comprador. */
+.assistant-buyer {
+  --color-indigo-50: #eef3ff;
+  --color-indigo-100: #dbe6ff;
+  --color-indigo-200: #b9ccff;
+  --color-indigo-300: #8fadff;
+  --color-indigo-500: #2f63ff;
+  --color-indigo-600: #1847ff;
+  --color-indigo-700: #1238d6;
+  --color-indigo-900: #0b1f66;
 }
 
 /* Badge flotante: entra desde abajo y después flota suave. */

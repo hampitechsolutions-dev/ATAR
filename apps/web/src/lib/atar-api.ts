@@ -1,3 +1,5 @@
+import { isCategoryHidden, withoutHiddenCategories } from './hidden-categories';
+
 export type MembershipRole = 'ADMIN' | 'BUYER' | 'SUPPLIER' | 'SELLER';
 export type CompanyType = 'BUYER' | 'SUPPLIER' | 'HYBRID';
 
@@ -775,6 +777,15 @@ export type MarketplaceStatsRecord = {
   }>;
 };
 
+/** El directorio no muestra los rubros ocultos entre lo que ofrece cada proveedor. */
+function hideSupplierCategories(supplier: SupplierDirectoryRecord): SupplierDirectoryRecord {
+  return {
+    ...supplier,
+    mainProducts: withoutHiddenCategories(supplier.mainProducts ?? []),
+    categories: withoutHiddenCategories(supplier.categories ?? []),
+  };
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export const ACTIVE_COMPANY_STORAGE_KEY = 'atar.activeCompanyId';
@@ -894,19 +905,22 @@ export const atarApi = {
     return request<AuthUser>('/auth/me', undefined, token);
   },
   getSuppliers(token: string) {
-    return request<SupplierDirectoryRecord[]>('/users/suppliers', undefined, token);
+    return request<SupplierDirectoryRecord[]>('/users/suppliers', undefined, token).then((list) => list.map(hideSupplierCategories));
   },
   getMarketplaceSuppliers() {
-    return request<SupplierDirectoryRecord[]>('/catalog/suppliers');
+    return request<SupplierDirectoryRecord[]>('/catalog/suppliers').then((list) => list.map(hideSupplierCategories));
   },
   getMarketplaceStats() {
     return request<MarketplaceStatsRecord>('/catalog/stats');
   },
   getRequestCategories() {
-    return request<RequestCatalogCategoryRecord[]>('/catalog/request-categories');
+    // Los rubros ocultos (ver hidden-categories) no llegan a ninguna pantalla.
+    return request<RequestCatalogCategoryRecord[]>('/catalog/request-categories').then((list) =>
+      list.filter((category) => !isCategoryHidden(category.label)),
+    );
   },
   getMarketplaceSupplierBySlug(slug: string) {
-    return request<SupplierDirectoryRecord>(`/catalog/suppliers/${slug}`);
+    return request<SupplierDirectoryRecord>(`/catalog/suppliers/${slug}`).then(hideSupplierCategories);
   },
   getBuyerRequests(token: string) {
     return request<RequestRecord[]>('/requests/mine', undefined, token);

@@ -10,11 +10,12 @@ import type { ReactNode } from 'react';
 export type Tone = 'indigo' | 'blue' | 'sky' | 'amber' | 'violet' | 'emerald' | 'rose' | 'slate';
 
 export const TONES: Record<Tone, { row: string; icon: string; accent: string; text: string }> = {
-  indigo: { row: 'bg-[#f3f1ff] hover:bg-[#ebe8ff]', icon: 'bg-[#e2ddff] text-indigo-600', accent: 'shadow-[inset_4px_0_0_#6366f1]', text: 'text-indigo-600' },
+  // `indigo` y `violet` usan la escala del tema: dentro de `.theme-supplier` son verde y verde azulado.
+  indigo: { row: 'bg-indigo-50 hover:bg-indigo-100', icon: 'bg-indigo-100 text-indigo-600', accent: 'shadow-[inset_4px_0_0_var(--color-indigo-500)]', text: 'text-indigo-600' },
   blue: { row: 'bg-[#eef3ff] hover:bg-[#e3ebff]', icon: 'bg-[#d9e4ff] text-[#1f5bff]', accent: 'shadow-[inset_4px_0_0_#1f5bff]', text: 'text-[#1f5bff]' },
   sky: { row: 'bg-[#edf6ff] hover:bg-[#e0f0ff]', icon: 'bg-[#d6eaff] text-sky-600', accent: 'shadow-[inset_4px_0_0_#0ea5e9]', text: 'text-sky-600' },
   amber: { row: 'bg-[#fff6e8] hover:bg-[#ffefd6]', icon: 'bg-[#ffe6bd] text-amber-600', accent: 'shadow-[inset_4px_0_0_#f59e0b]', text: 'text-amber-600' },
-  violet: { row: 'bg-[#f6f1ff] hover:bg-[#efe6ff]', icon: 'bg-[#e9dcff] text-violet-600', accent: 'shadow-[inset_4px_0_0_#8b5cf6]', text: 'text-violet-600' },
+  violet: { row: 'bg-violet-50 hover:bg-violet-100', icon: 'bg-violet-100 text-violet-600', accent: 'shadow-[inset_4px_0_0_var(--color-violet-500)]', text: 'text-violet-600' },
   emerald: { row: 'bg-[#ecfaf3] hover:bg-[#dff5ea]', icon: 'bg-[#cdefdf] text-emerald-600', accent: 'shadow-[inset_4px_0_0_#10b981]', text: 'text-emerald-600' },
   rose: { row: 'bg-[#fff1f3] hover:bg-[#ffe6ea]', icon: 'bg-[#ffd9df] text-rose-600', accent: 'shadow-[inset_4px_0_0_#f43f5e]', text: 'text-rose-600' },
   slate: { row: 'bg-slate-100 hover:bg-slate-200/70', icon: 'bg-slate-200 text-slate-600', accent: 'shadow-[inset_4px_0_0_#64748b]', text: 'text-slate-600' },

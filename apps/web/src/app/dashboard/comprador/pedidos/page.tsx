@@ -206,7 +206,7 @@ export default function BuyerOrdersPage() {
 
         {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3" data-tour="orders-list">
           {loading ? (
             <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando pedidos..." />
@@ -380,7 +380,7 @@ export default function BuyerOrdersPage() {
         <div className="rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm">
+      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm" data-tour="orders-list">
         <div className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)] rounded-t-2xl border-b border-slate-300 bg-[#eef3ff] px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#33457a]">
           <p>Pedido</p>
           <p>Producto</p>

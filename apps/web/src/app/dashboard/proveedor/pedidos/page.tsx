@@ -219,7 +219,7 @@ function OrderColumnIcon({ kind }: { kind: OrderColumnKey }) {
 function MetricIcon({ kind }: { kind: 'active' | 'production' | 'transit' | 'delivered' }) {
   const tone =
     kind === 'active'
-      ? 'bg-[#e2ddff] text-[#5b48f0]'
+      ? 'bg-seller-100 text-seller-600'
       : kind === 'production'
         ? 'bg-[#d8ebff] text-[#1677e0]'
         : kind === 'transit'
@@ -391,8 +391,8 @@ export default function SupplierOrdersPage() {
     {
       key: 'transit',
       title: 'En transito',
-      dot: 'bg-[#7f60ff]',
-      bg: 'bg-[#eee6ff]',
+      dot: 'bg-seller-500',
+      bg: 'bg-seller-50',
       moreLabel: 'Agregar pedido',
     },
     {
@@ -430,7 +430,7 @@ export default function SupplierOrdersPage() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-950">Pedidos</h1>
 
         {/* Tabs */}
-        <div className="mt-4 flex items-center gap-5 border-b border-slate-300">
+        <div className="mt-4 flex items-center gap-5 border-b border-slate-300" data-tour="sales-orders">
           {mobileTabs.map((tab) => {
             const active = mobileTab === tab.key;
             return (
@@ -532,27 +532,27 @@ export default function SupplierOrdersPage() {
       <section className="hidden space-y-4 lg:block">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
+            <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900 sm:text-[32px]">
               Pedidos
             </h1>
-            <p className="mt-1 text-sm text-[#565e88]">
+            <p className="mt-1 text-sm text-slate-600">
               Gestiona el estado de tus pedidos y cumpli cada etapa.
             </p>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-4 text-sm font-semibold text-[#6d739d] transition hover:bg-[#f8f9fe]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
               type="button"
             >
               <FilterIcon />
               Filtros
             </button>
 
-            <label className="flex h-10 min-w-[250px] items-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-3 text-sm text-[#565e88]">
+            <label className="flex h-10 min-w-[250px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-600">
               <SearchIcon />
               <input
-                className="w-full bg-transparent outline-none placeholder:text-[#5f678f]"
+                className="w-full bg-transparent outline-none placeholder:text-slate-600"
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar en pedidos..."
                 value={search}
@@ -560,7 +560,7 @@ export default function SupplierOrdersPage() {
             </label>
 
             <button
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-[#6440e8] px-4 text-sm font-semibold text-white transition hover:bg-[#4739ea]"
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-seller-600 px-4 text-sm font-semibold text-white transition hover:bg-seller-600"
               type="button"
             >
               + Nuevo pedido manual
@@ -580,69 +580,69 @@ export default function SupplierOrdersPage() {
         ) : null}
 
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+          <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="active" />
               <div>
-                <p className="text-xs font-semibold text-[#5f678f]">Pedidos activos</p>
-                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.active}</p>
+                <p className="text-xs font-semibold text-slate-600">Pedidos activos</p>
+                <p className="mt-1 text-[22px] font-semibold text-slate-900 sm:text-[30px]">{metrics.active}</p>
               </div>
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+          <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="production" />
               <div>
-                <p className="text-xs font-semibold text-[#5f678f]">En produccion</p>
-                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.production}</p>
+                <p className="text-xs font-semibold text-slate-600">En produccion</p>
+                <p className="mt-1 text-[22px] font-semibold text-slate-900 sm:text-[30px]">{metrics.production}</p>
               </div>
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+          <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="transit" />
               <div>
-                <p className="text-xs font-semibold text-[#5f678f]">En transito</p>
-                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.transit}</p>
+                <p className="text-xs font-semibold text-slate-600">En transito</p>
+                <p className="mt-1 text-[22px] font-semibold text-slate-900 sm:text-[30px]">{metrics.transit}</p>
               </div>
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+          <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="delivered" />
               <div>
-                <p className="text-xs font-semibold text-[#5f678f]">Entregados</p>
-                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.delivered}</p>
+                <p className="text-xs font-semibold text-slate-600">Entregados</p>
+                <p className="mt-1 text-[22px] font-semibold text-slate-900 sm:text-[30px]">{metrics.delivered}</p>
               </div>
             </div>
           </article>
         </div>
 
         {loading ? (
-          <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10">
+          <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-10">
             <LoadingState label="Cargando pedidos..." />
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10 text-sm text-[#565e88]">
+          <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-10 text-sm text-slate-600">
             No hay pedidos que coincidan con tu busqueda.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" data-tour="sales-orders">
             {columns.map((column) => (
               <section
                 key={column.key}
-                className={`rounded-[24px] border border-[#c3d0e8] p-4 ${column.bg}`}
+                className={`rounded-[24px] border border-slate-200 p-4 ${column.bg}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`h-2 w-2 rounded-full ${column.dot}`} />
-                    <h2 className="text-sm font-semibold text-[#2a3266]">{column.title}</h2>
+                    <h2 className="text-sm font-semibold text-slate-900">{column.title}</h2>
                   </div>
                   <button
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#5f678f] transition hover:bg-white/70"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-white/70"
                     type="button"
                   >
                     <DotsIcon />
@@ -651,7 +651,7 @@ export default function SupplierOrdersPage() {
 
                 <div className="mt-4 space-y-3">
                   {groupedOrders[column.key].length === 0 ? (
-                    <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-white/70 px-4 py-8 text-center text-sm text-[#5f678f]">
+                    <div className="rounded-[18px] border border-dashed border-slate-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-600">
                       Sin pedidos en esta etapa.
                     </div>
                   ) : (
@@ -666,47 +666,47 @@ export default function SupplierOrdersPage() {
                           className="rounded-[18px] border border-white/80 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
                         >
                           <div className="flex items-start gap-3">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#eceafb] text-xs font-bold text-[#4f59a7]">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-seller-surface text-xs font-bold text-slate-600">
                               {item.companyShort}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                  <p className="text-[11px] font-semibold text-[#5f678f]">
+                                  <p className="text-[11px] font-semibold text-slate-600">
                                     {item.orderNumber}
                                   </p>
-                                  <h3 className="truncate text-sm font-semibold text-[#24305f]">
+                                  <h3 className="truncate text-sm font-semibold text-slate-900">
                                     {item.companyName}
                                   </h3>
                                 </div>
-                                <span className="shrink-0 text-[10px] font-medium text-[#5f678f]">
+                                <span className="shrink-0 text-[10px] font-medium text-slate-600">
                                   {item.updatedLabel}
                                 </span>
                               </div>
 
-                              <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[#6f77a7]">
+                              <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500">
                                 {item.title}
                               </p>
 
                               {column.key === 'production' ? (
                                 <div className="mt-3">
-                                  <div className="h-1.5 overflow-hidden rounded-full bg-[#e7ebff]">
+                                  <div className="h-1.5 overflow-hidden rounded-full bg-seller-50">
                                     <div
-                                      className="h-full rounded-full bg-[#4f65ff]"
+                                      className="h-full rounded-full bg-seller-500"
                                       style={{ width: `${item.progress}%` }}
                                     />
                                   </div>
                                   <div className="mt-2 flex items-center justify-between text-[11px]">
-                                    <span className="font-medium text-[#565e88]">
+                                    <span className="font-medium text-slate-600">
                                       {item.stageLabel}
                                     </span>
-                                    <span className="font-semibold text-[#2b3470]">
+                                    <span className="font-semibold text-slate-900">
                                       {item.progress}%
                                     </span>
                                   </div>
                                 </div>
                               ) : (
-                                <div className="mt-3 text-[11px] font-medium text-[#565e88]">
+                                <div className="mt-3 text-[11px] font-medium text-slate-600">
                                   {item.noteLabel}
                                   {column.key === 'transit' ? `: ${item.promisedLabel}` : ''}
                                 </div>
@@ -726,14 +726,14 @@ export default function SupplierOrdersPage() {
                                 >
                                   {item.stageLabel}
                                 </span>
-                                <span className="text-sm font-semibold text-[#1f2373]">
+                                <span className="text-sm font-semibold text-slate-900">
                                   {item.amountLabel}
                                 </span>
                               </div>
 
                               {column.key !== 'delivered' ? (
                                 <button
-                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#6440e8] transition hover:bg-[#f7f6ff] disabled:opacity-60"
+                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-seller-600 transition hover:bg-seller-50 disabled:opacity-60"
                                   disabled={
                                     !nextAction || updatingFulfillmentId === item.quote.requestId
                                   }
@@ -761,7 +761,7 @@ export default function SupplierOrdersPage() {
                 </div>
 
                 <button
-                  className="mt-4 text-sm font-semibold text-[#6440e8] transition hover:text-[#4336dc]"
+                  className="mt-4 text-sm font-semibold text-seller-600 transition hover:text-seller-700"
                   type="button"
                 >
                   + {column.moreLabel}
@@ -771,16 +771,16 @@ export default function SupplierOrdersPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-4 rounded-[24px] border border-[#c3d0e8] bg-white px-5 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)] lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f1ff] text-[#6f57ff]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-seller-50 text-seller-500">
               <OrderColumnIcon kind="pending" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#2b336a]">
+              <p className="text-sm font-semibold text-slate-900">
                 Necesitas ayuda para gestionar tus pedidos?
               </p>
-              <p className="mt-1 text-sm text-[#565e88]">
+              <p className="mt-1 text-sm text-slate-600">
                 El Asistente ATAR puede ayudarte a actualizar estados, generar documentos y
                 mas.
               </p>
@@ -788,7 +788,7 @@ export default function SupplierOrdersPage() {
           </div>
 
           <button
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-[#ddd8ff] bg-[#f1effc] px-4 text-sm font-semibold text-[#6440e8] transition hover:bg-[#f5f2ff]"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-seller-100 bg-seller-surface px-4 text-sm font-semibold text-seller-600 transition hover:bg-seller-50"
             type="button"
           >
             Hablar con el Asistente

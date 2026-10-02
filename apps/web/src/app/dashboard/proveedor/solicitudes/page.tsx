@@ -578,7 +578,7 @@ export default function SupplierRequestsPage() {
       {/* Mismo diseño que escritorio (etapas, tarjetas con imagen y datos),
           apilado; el detalle se abre en su propia página. */}
       <div className="pb-4 lg:hidden">
-        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-[#16123a]">Solicitudes recibidas</h1>
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-900">Solicitudes recibidas</h1>
         <p className="mt-1 text-[13px] text-slate-500">
           {isManager
             ? 'Revisá las solicitudes de cotización y respondé a las que te interesen.'
@@ -604,7 +604,7 @@ export default function SupplierRequestsPage() {
               <button
                 key={tab.key}
                 className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold transition ${
-                  active ? 'bg-indigo-600 text-white shadow-[0_8px_18px_rgba(100,64,232,0.28)]' : 'bg-white text-slate-600 ring-1 ring-slate-200'
+                  active ? 'bg-indigo-600 text-white shadow-[0_8px_18px_rgb(var(--accent-rgb)/0.28)]' : 'bg-white text-slate-600 ring-1 ring-slate-200'
                 }`}
                 onClick={() => setStage(tab.key)}
                 type="button"
@@ -642,7 +642,7 @@ export default function SupplierRequestsPage() {
           <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
         ) : null}
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3" data-tour="sales-requests-list">
           {loading ? (
             <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando solicitudes..." />
@@ -656,7 +656,7 @@ export default function SupplierRequestsPage() {
               const request = assignment.request;
               const answer = answerState(assignment);
               return (
-                <article key={assignment.id} className="rounded-[18px] border border-[#cbc4ee] bg-white p-3.5 shadow-[0_6px_20px_rgba(40,28,110,0.07)]">
+                <article key={assignment.id} className="rounded-[18px] border border-slate-300 bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.07)]">
                   <Link className="flex gap-3" href={`/dashboard/proveedor/solicitudes/${assignment.requestId}`}>
                     <span className="relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-[12px] bg-slate-100">
                       <Image alt="" className="object-cover" fill sizes="84px" src={requestImage(request)} />
@@ -671,7 +671,7 @@ export default function SupplierRequestsPage() {
                         </span>
                         {request.privateRequest ? <Icon className="h-3.5 w-3.5 text-indigo-500" name="lock" /> : null}
                       </span>
-                      <span className="mt-1 block truncate text-[16px] font-bold tracking-[-0.01em] text-[#16123a]">
+                      <span className="mt-1 block truncate text-[16px] font-bold tracking-[-0.01em] text-slate-900">
                         {request.productName || request.title}
                       </span>
                       <span className="mt-0.5 flex items-center gap-1.5 text-[12px] text-slate-600">
@@ -685,7 +685,7 @@ export default function SupplierRequestsPage() {
                     </span>
                   </Link>
 
-                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200 rounded-[12px] bg-[#eceafb] py-2 text-center">
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200 rounded-[12px] bg-seller-surface py-2 text-center">
                     <span className="px-1">
                       <span className="block text-[10px] text-slate-500">Cantidad</span>
                       <span className="block truncate text-[12px] font-semibold text-slate-900">{requestQuantity(request)}</span>
@@ -725,7 +725,7 @@ export default function SupplierRequestsPage() {
                     ) : null}
                     {/* globals.css fija `a { color: inherit }`: el color va en el span. */}
                     <Link
-                      className="inline-flex h-9 flex-1 items-center justify-center rounded-[10px] bg-indigo-600 text-xs font-semibold shadow-[0_8px_18px_rgba(100,64,232,0.25)]"
+                      className="inline-flex h-9 flex-1 items-center justify-center rounded-[10px] bg-indigo-600 text-xs font-semibold shadow-[0_8px_18px_rgb(var(--accent-rgb)/0.25)]"
                       href={`/dashboard/proveedor/solicitudes/${assignment.requestId}`}
                     >
                       <span className="text-white">Cotizar</span>
@@ -751,7 +751,7 @@ export default function SupplierRequestsPage() {
             </Link>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-[34px] font-bold leading-tight tracking-[-0.035em] text-[#16123a]">Solicitudes recibidas</h1>
+                <h1 className="text-[34px] font-bold leading-tight tracking-[-0.035em] text-slate-900">Solicitudes recibidas</h1>
                 <p className="mt-1 text-[14px] text-slate-500">
                   {isManager
                     ? 'Revisá las solicitudes de cotización y respondé a las que te interesen.'
@@ -766,7 +766,7 @@ export default function SupplierRequestsPage() {
                       key={tab.key}
                       className={`inline-flex h-9 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold transition ${
                         active
-                          ? 'bg-indigo-600 text-white shadow-[0_8px_18px_rgba(100,64,232,0.28)]'
+                          ? 'bg-indigo-600 text-white shadow-[0_8px_18px_rgb(var(--accent-rgb)/0.28)]'
                           : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-indigo-200'
                       }`}
                       onClick={() => {
@@ -809,7 +809,7 @@ export default function SupplierRequestsPage() {
               <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
             ) : null}
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 space-y-3" data-tour="sales-requests-list">
               {loading ? (
                 <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
                   <LoadingState label="Cargando solicitudes..." />
@@ -829,8 +829,8 @@ export default function SupplierRequestsPage() {
                       key={assignment.id}
                       className={`group grid w-full grid-cols-[112px_minmax(0,1fr)_230px_40px] items-center gap-5 rounded-[18px] border bg-white p-4 text-left transition ${
                         selected
-                          ? 'border-indigo-400 shadow-[0_0_0_1px_var(--color-indigo-400),0_14px_32px_rgba(100,64,232,0.12)]'
-                          : 'border-[#cbc4ee] shadow-[0_6px_20px_rgba(40,28,110,0.07)] hover:border-indigo-300'
+                          ? 'border-indigo-400 shadow-[0_0_0_1px_var(--color-indigo-400),0_14px_32px_rgb(var(--accent-rgb)/0.12)]'
+                          : 'border-slate-300 shadow-[0_6px_20px_rgba(15,23,42,0.07)] hover:border-indigo-300'
                       }`}
                       onClick={() => {
                         setDetailClosed(false);
@@ -850,7 +850,7 @@ export default function SupplierRequestsPage() {
                             {OPPORTUNITY_STATUS_LABEL[assignment.status]}
                           </span>
                         </span>
-                        <span className="mt-1.5 block truncate text-[19px] font-bold tracking-[-0.02em] text-[#16123a]">
+                        <span className="mt-1.5 block truncate text-[19px] font-bold tracking-[-0.02em] text-slate-900">
                           {request.productName || request.title}
                         </span>
                         <span className="mt-1 flex items-center gap-2 text-[13px] text-slate-600">
@@ -891,7 +891,7 @@ export default function SupplierRequestsPage() {
           </div>
 
           {/* ---------- Detalle ---------- */}
-          <aside className="sticky top-0 rounded-[18px] border border-[#cbc4ee] bg-white p-5 shadow-[0_10px_30px_rgba(40,28,110,0.07)]">
+          <aside className="sticky top-0 rounded-[18px] border border-slate-300 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.07)]" data-tour="sales-request-detail">
             {submitError ? (
               <div className="mb-3 rounded-xl border border-rose-200 bg-rose-100 px-3 py-2 text-xs text-rose-700">{submitError}</div>
             ) : null}
@@ -964,7 +964,7 @@ export default function SupplierRequestsPage() {
                     <Image alt="" className="object-cover" fill sizes="132px" src={requestImage(activeRequest)} />
                   </span>
                   <div className="min-w-0">
-                    <h2 className="text-[21px] font-bold leading-tight tracking-[-0.02em] text-[#16123a]">
+                    <h2 className="text-[21px] font-bold leading-tight tracking-[-0.02em] text-slate-900">
                       {activeRequest.productName || activeRequest.title}
                     </h2>
                     <p className="mt-2 flex items-center gap-2 text-[14px] text-slate-600">
@@ -983,13 +983,13 @@ export default function SupplierRequestsPage() {
                 </div>
 
                 {detailNotes ? (
-                  <div className="mt-4 whitespace-pre-line rounded-[12px] bg-[#efecfb] px-4 py-3 text-[14px] leading-6 text-slate-700">
+                  <div className="mt-4 whitespace-pre-line rounded-[12px] bg-seller-surface px-4 py-3 text-[14px] leading-6 text-slate-700">
                     {detailNotes}
                   </div>
                 ) : null}
 
-                <h3 className="mt-5 text-[16px] font-bold text-[#16123a]">Detalle de la solicitud</h3>
-                <dl className="mt-3 [&>div]:py-2 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-[#f0eff8]">
+                <h3 className="mt-5 text-[16px] font-bold text-slate-900">Detalle de la solicitud</h3>
+                <dl className="mt-3 [&>div]:py-2 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-seller-surface">
                   {detailRows.map((row) => (
                     <div key={`${row.label}-${row.value}`} className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-3 text-[13px]">
                       <dt className="text-slate-500">{row.label}</dt>
@@ -1019,7 +1019,7 @@ export default function SupplierRequestsPage() {
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <button
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-indigo-600 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(100,64,232,0.28)] transition hover:bg-indigo-700"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-indigo-600 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgb(var(--accent-rgb)/0.28)] transition hover:bg-indigo-700"
                     onClick={openQuoteModal}
                     type="button"
                   >

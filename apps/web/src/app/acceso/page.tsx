@@ -1,5 +1,6 @@
 import AccessPanel from '@/components/auth/access-panel';
 import Image from 'next/image';
+import { Suspense } from 'react';
 
 export default function AccesoPage() {
   return (
@@ -24,7 +25,7 @@ export default function AccesoPage() {
               <h1 className="text-5xl font-semibold leading-[1.06] tracking-tight text-white">
                 La red comercial
                 <br />
-                de la <span className="text-indigo-500">industria.</span>
+                de la <span className="text-indigo-500">industria de la rafia.</span>
               </h1>
               <p className="max-w-lg text-base leading-8 text-slate-300">
                 Comprá, cotizá y gestioná proveedores verificados desde un único lugar.
@@ -39,7 +40,10 @@ export default function AccesoPage() {
         {/* items-start + my-auto: centrado cuando entra, scrolleable cuando no. */}
         <section className="flex h-full items-start justify-center overflow-y-auto bg-slate-50 px-6 py-6 lg:px-10">
           <div className="my-auto w-full">
-            <AccessPanel />
+            {/* AccessPanel lee ?perfil= de la URL. */}
+            <Suspense fallback={null}>
+              <AccessPanel />
+            </Suspense>
           </div>
         </section>
       </div>

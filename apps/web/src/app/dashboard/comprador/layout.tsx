@@ -7,6 +7,7 @@ import AssistantFab from '@/components/dashboard/assistant-fab';
 import BuyerBottomNav from '@/components/dashboard/buyer-bottom-nav';
 import BuyerMarketplaceHeader from '@/components/dashboard/buyer-marketplace-header';
 import BuyerNewRequestCta from '@/components/dashboard/buyer-new-request-cta';
+import TourProvider from '@/components/tour/tour-provider';
 import { useBuyerNotificationCount } from '@/lib/dashboard-hooks';
 
 export default function BuyerDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -33,12 +34,13 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
 
   return (
     <AuthGuard allowedRole="BUYER">
+      <TourProvider>
       <div
         className={`text-slate-950 ${
           isBuyerWizard ? 'bg-[linear-gradient(180deg,#f7f9ff_0%,#eef2fe_100%)]' : 'bg-[#e9edf5]'
         } ${isBuyerMessages ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'}`}
       >
-        <BuyerMarketplaceHeader session={session} wide notificationCount={notificationCount} />
+        <BuyerMarketplaceHeader session={session} wide marketplace notificationCount={notificationCount} />
         {isFullBleed ? (
           <div className={showBottomNav ? 'pb-[76px] lg:pb-0' : undefined}>{children}</div>
         ) : isBuyerMessages ? (
@@ -61,6 +63,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
         {!isBuyerWizard && !isBuyerMessages && !pathname?.startsWith('/dashboard/comprador/configuracion') ? <BuyerNewRequestCta /> : null}
         {!isBuyerWizard ? <AssistantFab /> : null}
       </div>
+      </TourProvider>
     </AuthGuard>
   );
 }
