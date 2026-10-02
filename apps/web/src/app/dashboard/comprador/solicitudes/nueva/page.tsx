@@ -682,7 +682,7 @@ function VerifiedBadge() {
       <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
         <Icon className="h-2.5 w-2.5" name="check" />
       </span>
-      <span className="rounded-full bg-emerald-50 px-2 py-0.5">Proveedor verificado</span>
+      <span className="rounded-full bg-emerald-100 px-2 py-0.5">Proveedor verificado</span>
     </span>
   );
 }
@@ -1542,10 +1542,10 @@ export default function BuyerNewRequestWizardPage() {
   const alerts = (
     <>
       {error ? (
-        <div className="rounded-[12px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        <div className="rounded-[12px] border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
       ) : null}
       {notice ? (
-        <div className="rounded-[12px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-[12px] border border-emerald-200 bg-emerald-100 px-4 py-3 text-sm text-emerald-700">{notice}</div>
       ) : null}
     </>
   );
@@ -1613,7 +1613,7 @@ export default function BuyerNewRequestWizardPage() {
           return (
             <div
               key={line.id}
-              className={`flex items-center gap-3 rounded-[12px] border bg-white ${mode === 'compact' ? 'p-2' : 'p-2.5'} ${isEditing ? 'border-[#c9cfff]' : 'border-[#e6eaf3]'}`}
+              className={`flex items-center gap-3 rounded-[12px] border bg-white ${mode === 'compact' ? 'p-2' : 'p-2.5'} ${isEditing ? 'border-[#c9cfff]' : 'border-[#cdd5e6]'}`}
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef0ff] text-[12px] font-semibold text-[#3f3df5]">
                 {index + 1}
@@ -2166,7 +2166,7 @@ export default function BuyerNewRequestWizardPage() {
             {stepEyebrow}
             <h1 className={stepTitle}>Especificaciones del producto</h1>
           </div>
-          <div className="relative flex items-center gap-3 rounded-[12px] border border-[#e6eaf3] bg-[#f6f8fc] py-2 pl-2 pr-3">
+          <div className="relative flex items-center gap-3 rounded-[12px] border border-[#cdd5e6] bg-[#eef1f7] py-2 pl-2 pr-3">
             <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[10px] bg-white">
               {getCategoryImage(editingLine.category) ? (
                 <Image alt="" className="object-cover" fill sizes="44px" src={getCategoryImage(editingLine.category) as string} />
@@ -2321,7 +2321,7 @@ export default function BuyerNewRequestWizardPage() {
                   <button
                     key={option.key}
                     className={`flex h-10 items-center gap-2.5 rounded-[10px] border px-3 text-left text-[13px] transition ${
-                      active ? 'border-[#3f3df5] bg-[#f5f5ff] text-slate-950' : 'border-[#e3e8f3] text-slate-700 hover:border-[#c9cfff]'
+                      active ? 'border-[#3f3df5] bg-[#eceafb] text-slate-950' : 'border-[#e3e8f3] text-slate-700 hover:border-[#c9cfff]'
                     }`}
                     onClick={() =>
                       setDraft((current) =>
@@ -2567,7 +2567,7 @@ export default function BuyerNewRequestWizardPage() {
               <div
                 key={provider.id}
                 className={`grid gap-3 rounded-[12px] border p-2.5 transition md:grid-cols-[150px_minmax(0,1fr)_minmax(0,0.9fr)_112px] md:items-center md:gap-4 ${
-                  selected ? 'border-[#c9cfff] bg-[#fbfbff]' : 'border-[#e6eaf3] bg-white'
+                  selected ? 'border-[#c9cfff] bg-[#f1effc]' : 'border-[#cdd5e6] bg-white'
                 }`}
               >
                 {providerImage(provider, 'h-[84px] w-full md:w-[150px]')}
@@ -2672,8 +2672,8 @@ export default function BuyerNewRequestWizardPage() {
       </div>
 
       <div className={`${scrollArea} mt-4 space-y-3 px-5 pb-5 sm:px-6`}>
-      <div className="rounded-[12px] border border-[#e6eaf3]">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#e6eaf3] px-4 py-3">
+      <div className="rounded-[12px] border border-[#cdd5e6]">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#cdd5e6] px-4 py-3">
           <p className="whitespace-nowrap text-[15px] font-semibold text-slate-950">Productos ({productCount})</p>
           <div className="flex items-center gap-4 whitespace-nowrap">
             <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#3f3df5]" onClick={addAnotherProduct} type="button">
@@ -2686,13 +2686,13 @@ export default function BuyerNewRequestWizardPage() {
             </button>
           </div>
         </div>
-        <div className="divide-y divide-[#e6eaf3]">
+        <div className="divide-y divide-[#cdd5e6]">
           {allProductLines.map((line, index) => {
             const specs = getLineSpecEntries(line).slice(0, 5);
             return (
               <div
                 key={line.id}
-                className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1.2fr)_auto]"
+                className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-2.5 even:bg-[#eef1f7] sm:grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1.2fr)_auto]"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef0ff] text-[12px] font-semibold text-[#3f3df5]">
                   {index + 1}
@@ -2725,7 +2725,7 @@ export default function BuyerNewRequestWizardPage() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-[12px] border border-[#e6eaf3] px-4 py-3.5">
+        <div className="rounded-[12px] border border-[#cdd5e6] px-4 py-3.5">
           <div className="flex items-center justify-between">
             <p className="text-[15px] font-semibold text-slate-950">Entrega</p>
             <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#3f3df5]" onClick={() => goToStep(3)} type="button">
@@ -2748,7 +2748,7 @@ export default function BuyerNewRequestWizardPage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-col rounded-[12px] border border-[#e6eaf3] px-4 py-3.5">
+        <div className="flex flex-col rounded-[12px] border border-[#cdd5e6] px-4 py-3.5">
           <div className="flex items-center justify-between">
             <p className="text-[15px] font-semibold text-slate-950">Información adicional</p>
             <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#3f3df5]" onClick={() => goToStep(3)} type="button">
@@ -2871,7 +2871,7 @@ export default function BuyerNewRequestWizardPage() {
         <div className={`lg:min-h-0 lg:overflow-y-auto [scrollbar-color:#d5dbeb_transparent] [scrollbar-width:thin] -mx-1 mt-4 space-y-2.5 px-1`}>
           {sidebarProductList(step === 2 ? 'status' : 'done')}
           {step === 2 && editingLine ? (
-            <div className="rounded-[12px] border border-[#e6eaf3] p-3.5">
+            <div className="rounded-[12px] border border-[#cdd5e6] p-3.5">
               <p className="text-[13px] font-semibold text-slate-900">Especificaciones de {getProductDisplayName(editingLine)}</p>
               <ul className="mt-2.5 space-y-1.5">
                 {editingModules
@@ -3013,7 +3013,7 @@ export default function BuyerNewRequestWizardPage() {
             </p>
           ) : (
             selectedProviders.map((provider) => (
-              <div key={provider.id} className="flex items-center gap-3 rounded-[12px] border border-[#e6eaf3] p-2.5">
+              <div key={provider.id} className="flex items-center gap-3 rounded-[12px] border border-[#cdd5e6] p-2.5">
                 {providerImage(provider, 'h-[72px] w-[84px]')}
                 <div className="min-w-0">
                   <p className="truncate text-[15px] font-semibold text-slate-950">{provider.name}</p>

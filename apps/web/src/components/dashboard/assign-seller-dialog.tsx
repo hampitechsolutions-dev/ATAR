@@ -51,7 +51,7 @@ export default function AssignSellerDialog({
       />
 
       <div className="relative z-10 flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-[0_24px_70px_rgba(2,6,23,0.35)] sm:rounded-2xl">
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-300 px-5 py-4">
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-slate-950">
               {isReassignment ? 'Reasignar solicitud' : 'Asignar vendedor'}
@@ -60,7 +60,7 @@ export default function AssignSellerDialog({
           </div>
           <button
             aria-label="Cerrar"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-500 transition hover:bg-slate-50"
             onClick={onClose}
             type="button"
           >
@@ -72,7 +72,7 @@ export default function AssignSellerDialog({
 
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-5 py-4">
           {team.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-xs text-slate-500">
+            <p className="rounded-xl border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-8 text-center text-xs text-slate-500">
               Todavía no hay vendedores cargados en la empresa.
             </p>
           ) : (
@@ -84,7 +84,7 @@ export default function AssignSellerDialog({
                   className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition ${
                     isSelected
                       ? 'border-indigo-500 bg-indigo-50/60'
-                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                      : 'border-slate-300 bg-white hover:border-slate-300 hover:bg-slate-50'
                   }`}
                   key={member.id}
                   onClick={() => setSelected(member.id)}
@@ -125,7 +125,7 @@ export default function AssignSellerDialog({
           )}
         </div>
 
-        <footer className="flex items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
+        <footer className="flex items-center justify-between gap-3 border-t border-slate-300 px-5 py-4">
           {isReassignment ? (
             <button
               className="text-[12px] font-semibold text-slate-500 transition hover:text-rose-600 disabled:opacity-50"
@@ -141,7 +141,7 @@ export default function AssignSellerDialog({
 
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex h-10 items-center rounded-xl border border-slate-200 px-4 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="inline-flex h-10 items-center rounded-xl border border-slate-300 px-4 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50"
               onClick={onClose}
               type="button"
             >

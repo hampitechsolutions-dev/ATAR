@@ -292,16 +292,16 @@ function getFileStyle(fileName: string) {
   const extension = fileName.split('.').pop()?.toLowerCase() ?? '';
 
   if (extension === 'pdf') {
-    return { badge: 'bg-rose-50 text-rose-600', label: 'PDF' };
+    return { badge: 'bg-rose-100 text-rose-600', label: 'PDF' };
   }
   if (['xlsx', 'xls', 'csv'].includes(extension)) {
-    return { badge: 'bg-emerald-50 text-emerald-600', label: extension.toUpperCase() };
+    return { badge: 'bg-emerald-100 text-emerald-600', label: extension.toUpperCase() };
   }
   if (['doc', 'docx'].includes(extension)) {
-    return { badge: 'bg-sky-50 text-sky-600', label: extension.toUpperCase() };
+    return { badge: 'bg-sky-100 text-sky-600', label: extension.toUpperCase() };
   }
   if (['png', 'jpg', 'jpeg'].includes(extension)) {
-    return { badge: 'bg-violet-50 text-violet-600', label: extension.toUpperCase() };
+    return { badge: 'bg-violet-100 text-violet-600', label: extension.toUpperCase() };
   }
 
   return { badge: 'bg-slate-100 text-slate-500', label: extension ? extension.toUpperCase() : 'ARCHIVO' };
@@ -590,14 +590,14 @@ export default function SupplierRequestsPage() {
             <Icon name="search" />
           </span>
           <input
-            className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+            className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar por comprador, producto o ubicación..."
             value={search}
           />
         </div>
 
-        <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        <div className="-mx-4 mt-1.5 flex gap-2 overflow-x-auto px-4 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {STAGE_TABS.map((tab) => {
             const active = stage === tab.key;
             return (
@@ -639,12 +639,12 @@ export default function SupplierRequestsPage() {
         ) : null}
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
         ) : null}
 
         <div className="mt-4 space-y-3">
           {loading ? (
-            <div className="rounded-[18px] bg-white px-4 py-10 shadow-sm">
+            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando solicitudes..." />
             </div>
           ) : stageAssignments.length === 0 ? (
@@ -656,14 +656,14 @@ export default function SupplierRequestsPage() {
               const request = assignment.request;
               const answer = answerState(assignment);
               return (
-                <article key={assignment.id} className="rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(40,28,110,0.05)]">
+                <article key={assignment.id} className="rounded-[18px] border border-[#cbc4ee] bg-white p-3.5 shadow-[0_6px_20px_rgba(40,28,110,0.07)]">
                   <Link className="flex gap-3" href={`/dashboard/proveedor/solicitudes/${assignment.requestId}`}>
                     <span className="relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-[12px] bg-slate-100">
                       <Image alt="" className="object-cover" fill sizes="84px" src={requestImage(request)} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
+                        <span className="rounded-md bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
                           {request.category}
                         </span>
                         <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${OPPORTUNITY_STATUS_TONE[assignment.status]}`}>
@@ -685,7 +685,7 @@ export default function SupplierRequestsPage() {
                     </span>
                   </Link>
 
-                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-100 rounded-[12px] bg-[#f7f6fd] py-2 text-center">
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200 rounded-[12px] bg-[#eceafb] py-2 text-center">
                     <span className="px-1">
                       <span className="block text-[10px] text-slate-500">Cantidad</span>
                       <span className="block truncate text-[12px] font-semibold text-slate-900">{requestQuantity(request)}</span>
@@ -702,7 +702,7 @@ export default function SupplierRequestsPage() {
 
                   <div className="mt-3 flex gap-2">
                     <button
-                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 text-xs font-semibold text-slate-700 transition active:bg-slate-50"
+                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-slate-300 text-xs font-semibold text-slate-700 transition active:bg-slate-50"
                       disabled={openingChat}
                       onClick={() => void handleOpenChat(assignment.requestId)}
                       type="button"
@@ -712,7 +712,7 @@ export default function SupplierRequestsPage() {
                     </button>
                     {isManager ? (
                       <button
-                        className="inline-flex h-9 flex-1 items-center justify-center rounded-[10px] border border-slate-200 text-xs font-semibold text-slate-700 transition active:bg-slate-50"
+                        className="inline-flex h-9 flex-1 items-center justify-center rounded-[10px] border border-slate-300 text-xs font-semibold text-slate-700 transition active:bg-slate-50"
                         onClick={() => {
                           setActiveRequestId(assignment.requestId);
                           setDetailClosed(false);
@@ -806,12 +806,12 @@ export default function SupplierRequestsPage() {
             </div>
 
             {error ? (
-              <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+              <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
             ) : null}
 
             <div className="mt-5 space-y-3">
               {loading ? (
-                <div className="rounded-[18px] bg-white px-4 py-10 shadow-sm">
+                <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
                   <LoadingState label="Cargando solicitudes..." />
                 </div>
               ) : stageAssignments.length === 0 ? (
@@ -830,7 +830,7 @@ export default function SupplierRequestsPage() {
                       className={`group grid w-full grid-cols-[112px_minmax(0,1fr)_230px_40px] items-center gap-5 rounded-[18px] border bg-white p-4 text-left transition ${
                         selected
                           ? 'border-indigo-400 shadow-[0_0_0_1px_var(--color-indigo-400),0_14px_32px_rgba(100,64,232,0.12)]'
-                          : 'border-transparent shadow-[0_6px_20px_rgba(40,28,110,0.05)] hover:border-indigo-200'
+                          : 'border-[#cbc4ee] shadow-[0_6px_20px_rgba(40,28,110,0.07)] hover:border-indigo-300'
                       }`}
                       onClick={() => {
                         setDetailClosed(false);
@@ -843,7 +843,7 @@ export default function SupplierRequestsPage() {
                       </span>
                       <span className="min-w-0">
                         <span className="flex flex-wrap gap-1.5">
-                          <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
+                          <span className="rounded-md bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-indigo-600">
                             {request.category}
                           </span>
                           <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${OPPORTUNITY_STATUS_TONE[assignment.status]}`}>
@@ -863,7 +863,7 @@ export default function SupplierRequestsPage() {
                         </span>
                         {summary ? <span className="mt-1 block truncate text-[12px] text-slate-500">{summary}</span> : null}
                       </span>
-                      <span className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5 border-l border-slate-100 pl-5 text-[13px]">
+                      <span className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5 border-l border-slate-200 pl-5 text-[13px]">
                         <Icon className="h-4 w-4 text-slate-400" name="calendar" />
                         <span className="flex justify-between gap-2">
                           <span className="text-slate-500">Cantidad</span>
@@ -880,7 +880,7 @@ export default function SupplierRequestsPage() {
                           <span className={`font-semibold ${answer.tone}`}>{answer.label}</span>
                         </span>
                       </span>
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition group-hover:translate-x-0.5">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 transition group-hover:translate-x-0.5">
                         <Icon name="chevron-right" />
                       </span>
                     </button>
@@ -891,17 +891,17 @@ export default function SupplierRequestsPage() {
           </div>
 
           {/* ---------- Detalle ---------- */}
-          <aside className="sticky top-0 rounded-[18px] bg-white p-5 shadow-[0_10px_30px_rgba(40,28,110,0.06)]">
+          <aside className="sticky top-0 rounded-[18px] border border-[#cbc4ee] bg-white p-5 shadow-[0_10px_30px_rgba(40,28,110,0.07)]">
             {submitError ? (
-              <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{submitError}</div>
+              <div className="mb-3 rounded-xl border border-rose-200 bg-rose-100 px-3 py-2 text-xs text-rose-700">{submitError}</div>
             ) : null}
             {message ? (
-              <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">{message}</div>
+              <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-100 px-3 py-2 text-xs text-emerald-700">{message}</div>
             ) : null}
 
             {!activeAssignment || !activeRequest ? (
               <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                   <Icon className="h-5 w-5" name="doc" />
                 </span>
                 <p className="mt-3 text-[15px] font-semibold text-slate-900">Elegí una solicitud</p>
@@ -933,7 +933,7 @@ export default function SupplierRequestsPage() {
                       {detailMenuOpen ? (
                         <>
                           <button aria-label="Cerrar menú" className="fixed inset-0 z-20 cursor-default" onClick={() => setDetailMenuOpen(false)} type="button" />
-                          <div className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
+                          <div className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-xl border border-slate-300 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
                             <Link
                               className="block px-3 py-2 text-slate-700 hover:bg-slate-50"
                               href={`/dashboard/proveedor/solicitudes/${activeAssignment.requestId}`}
@@ -983,13 +983,13 @@ export default function SupplierRequestsPage() {
                 </div>
 
                 {detailNotes ? (
-                  <div className="mt-4 whitespace-pre-line rounded-[12px] bg-[#f4f2fd] px-4 py-3 text-[14px] leading-6 text-slate-700">
+                  <div className="mt-4 whitespace-pre-line rounded-[12px] bg-[#efecfb] px-4 py-3 text-[14px] leading-6 text-slate-700">
                     {detailNotes}
                   </div>
                 ) : null}
 
                 <h3 className="mt-5 text-[16px] font-bold text-[#16123a]">Detalle de la solicitud</h3>
-                <dl className="mt-3 space-y-2.5">
+                <dl className="mt-3 [&>div]:py-2 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-[#f0eff8]">
                   {detailRows.map((row) => (
                     <div key={`${row.label}-${row.value}`} className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-3 text-[13px]">
                       <dt className="text-slate-500">{row.label}</dt>
@@ -1003,7 +1003,7 @@ export default function SupplierRequestsPage() {
                     {parsedDescription.attachments.map((fileName) => {
                       const style = getFileStyle(fileName);
                       return (
-                        <span key={fileName} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] text-slate-700">
+                        <span key={fileName} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-2.5 py-1.5 text-[12px] text-slate-700">
                           <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${style.badge}`}>{style.label}</span>
                           {fileName}
                         </span>

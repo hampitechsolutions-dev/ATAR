@@ -25,7 +25,7 @@ export default function WorkspaceSwitcher({ className = '' }: { className?: stri
 
   return (
     <div
-      className={`inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-slate-100 p-1 ${className}`}
       role="tablist"
       aria-label="Modo de trabajo"
     >

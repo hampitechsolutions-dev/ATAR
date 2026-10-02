@@ -29,14 +29,14 @@ function formatCurrency(value: number | null | undefined, currency = 'ARS') {
 
 // El API devuelve el estado en inglés (enum); acá se traduce para mostrarlo.
 const QUOTE_STATUS: Record<QuoteRecord['status'], { label: string; tone: string }> = {
-  DRAFT: { label: 'Borrador', tone: 'bg-amber-50 text-amber-600' },
-  SUBMITTED: { label: 'Enviada', tone: 'bg-indigo-50 text-indigo-600' },
-  AWARDED: { label: 'Aceptada', tone: 'bg-emerald-50 text-emerald-600' },
-  REJECTED: { label: 'Rechazada', tone: 'bg-rose-50 text-rose-600' },
+  DRAFT: { label: 'Borrador', tone: 'bg-amber-100 text-amber-600' },
+  SUBMITTED: { label: 'Enviada', tone: 'bg-indigo-100 text-indigo-600' },
+  AWARDED: { label: 'Aceptada', tone: 'bg-emerald-100 text-emerald-600' },
+  REJECTED: { label: 'Rechazada', tone: 'bg-rose-100 text-rose-600' },
   WITHDRAWN: { label: 'Retirada', tone: 'bg-slate-100 text-slate-600' },
 };
 
-const card = 'rounded-[18px] bg-white p-5 shadow-[0_10px_30px_rgba(40,28,110,0.05)]';
+const card = 'rounded-[18px] border border-[#cbc4ee] bg-white p-5 shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
 
 export default function SupplierQuoteDetailPage() {
   const params = useParams<{ id: string }>();
@@ -100,7 +100,7 @@ export default function SupplierQuoteDetailPage() {
     };
   }, [params.id, router]);
 
-  const status = quote ? QUOTE_STATUS[quote.status] ?? { label: 'Enviada', tone: 'bg-indigo-50 text-indigo-600' } : null;
+  const status = quote ? QUOTE_STATUS[quote.status] ?? { label: 'Enviada', tone: 'bg-indigo-100 text-indigo-600' } : null;
 
   // Mismo contenedor que el resto del panel del proveedor: en mobile usa la
   // navegación inferior en vez de desplegar el menú lateral completo.
@@ -122,7 +122,7 @@ export default function SupplierQuoteDetailPage() {
       </div>
       <p className="mt-1 text-[14px] text-slate-500">Revisá la propuesta enviada y respondé al comprador desde una sola vista.</p>
 
-      {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
       {loading ? (
         <div className={`${card} mt-5`}>
@@ -131,7 +131,7 @@ export default function SupplierQuoteDetailPage() {
       ) : quote && status ? (
         <div className="mt-5 space-y-5">
           <section className={card}>
-            <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 [&>div]:rounded-[12px] [&>div]:border [&>div]:border-[#cbc4ee] [&>div]:bg-[#f0eefb] [&>div]:px-4 [&>div]:py-3">
               <div>
                 <p className="text-[13px] text-slate-500">Comprador</p>
                 <p className="mt-1 text-[16px] font-semibold text-slate-950">{quote.request?.buyerCompany?.name ?? 'Comprador'}</p>
@@ -151,7 +151,7 @@ export default function SupplierQuoteDetailPage() {
                 <p className="mt-1 text-[16px] font-semibold text-slate-950">{status.label}</p>
               </div>
             </div>
-            <p className="mt-4 border-t border-slate-100 pt-4 text-sm leading-6 text-slate-600">
+            <p className="mt-4 border-t border-slate-200 pt-4 text-sm leading-6 text-slate-600">
               {quote.technicalComment ?? 'Sin comentario técnico adicional.'}
             </p>
           </section>

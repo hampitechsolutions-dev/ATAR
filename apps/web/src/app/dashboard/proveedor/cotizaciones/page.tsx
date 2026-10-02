@@ -99,12 +99,12 @@ function requestQuantity(request: RequestRecord | null) {
 }
 
 const STATUS_META: Record<Row['kind'] | 'expired', { label: string; tone: string; dot: string }> = {
-  pending: { label: 'Por responder', tone: 'bg-rose-50 text-rose-600', dot: 'bg-rose-500' },
-  submitted: { label: 'Enviada', tone: 'bg-indigo-50 text-indigo-600', dot: 'bg-indigo-500' },
-  awarded: { label: 'Aceptada', tone: 'bg-emerald-50 text-emerald-600', dot: 'bg-emerald-500' },
+  pending: { label: 'Por responder', tone: 'bg-rose-100 text-rose-600', dot: 'bg-rose-500' },
+  submitted: { label: 'Enviada', tone: 'bg-indigo-100 text-indigo-600', dot: 'bg-indigo-500' },
+  awarded: { label: 'Aceptada', tone: 'bg-emerald-100 text-emerald-600', dot: 'bg-emerald-500' },
   rejected: { label: 'Rechazada', tone: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
   withdrawn: { label: 'Retirada', tone: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
-  expired: { label: 'Vencida', tone: 'bg-amber-50 text-amber-600', dot: 'bg-amber-500' },
+  expired: { label: 'Vencida', tone: 'bg-amber-100 text-amber-600', dot: 'bg-amber-500' },
 };
 
 /* Íconos ------------------------------------------------------------------- */
@@ -140,7 +140,7 @@ function DotsIcon() {
   );
 }
 
-const card = 'rounded-[18px] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.05)]';
+const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
 
 /* Página ------------------------------------------------------------------- */
 
@@ -253,7 +253,7 @@ export default function SupplierQuotesPage() {
       note: sentThisWeek > 0 ? `↑ +${sentThisWeek} esta semana` : 'Sin envíos esta semana',
       noteTone: sentThisWeek > 0 ? 'text-emerald-600' : 'text-slate-400',
       icon: 'send' as const,
-      tone: 'bg-indigo-50 text-indigo-600',
+      tone: 'bg-[#e2ddff] text-indigo-600',
       tab: 'submitted' as const,
     },
     {
@@ -262,7 +262,7 @@ export default function SupplierQuotesPage() {
       note: awardedThisWeek > 0 ? `+${awardedThisWeek} esta semana` : 'Sin novedades esta semana',
       noteTone: awardedThisWeek > 0 ? 'text-emerald-600' : 'text-slate-400',
       icon: 'check' as const,
-      tone: 'bg-emerald-50 text-emerald-600',
+      tone: 'bg-[#d3f3e0] text-emerald-700',
       tab: 'awarded' as const,
     },
     {
@@ -271,7 +271,7 @@ export default function SupplierQuotesPage() {
       note: pendingOld > 0 ? `+${pendingOld} con más de 48 h` : 'Todas al día',
       noteTone: pendingOld > 0 ? 'text-rose-500' : 'text-slate-400',
       icon: 'clock' as const,
-      tone: 'bg-rose-50 text-rose-500',
+      tone: 'bg-[#ffdbe0] text-rose-600',
       tab: 'pending' as const,
     },
   ];
@@ -325,7 +325,7 @@ export default function SupplierQuotesPage() {
               <Icon name="search" />
             </span>
             <input
-              className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-[14px] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+              className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-[14px] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
               onChange={(event) => updateSearch(event.target.value)}
               placeholder="Buscar cotizaciones..."
               type="search"
@@ -346,7 +346,7 @@ export default function SupplierQuotesPage() {
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
       ) : null}
 
       {/* Contadores */}
@@ -366,7 +366,7 @@ export default function SupplierQuotesPage() {
               <span className="mt-1 block text-[16px] text-slate-700">{summary.label}</span>
               <span className={`mt-0.5 block text-[13px] ${summary.noteTone}`}>{summary.note}</span>
             </span>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition group-hover:translate-x-0.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e2ddff] text-indigo-600 transition group-hover:translate-x-0.5">
               <Icon name="arrow" />
             </span>
           </button>
@@ -375,7 +375,7 @@ export default function SupplierQuotesPage() {
 
       {/* Tabla */}
       <section className={`${card} mt-5 p-5`}>
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 [scrollbar-width:none]">
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-200 [scrollbar-width:none]">
           {tabs.map((tab) => {
             const active = activeTab === tab.key;
             return (
@@ -388,7 +388,7 @@ export default function SupplierQuotesPage() {
                 type="button"
               >
                 {tab.label}
-                <span className={`rounded-md px-2 py-0.5 text-[12px] ${active ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                <span className={`rounded-md px-2 py-0.5 text-[12px] ${active ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
                   {tabCounts[tab.key]}
                 </span>
                 {tab.key === 'pending' && tabCounts.pending > 0 ? (
@@ -416,7 +416,7 @@ export default function SupplierQuotesPage() {
               const due = row.kind === 'pending' || row.kind === 'submitted' ? formatDue(row.deadline, nowMs) : null;
               return (
                 <li key={row.id}>
-                  <Link className={`block rounded-[14px] border border-slate-100 p-3.5 ${highlight?.bg ?? ''}`} href={rowHref(row)}>
+                  <Link className={`block rounded-[14px] border border-slate-200 p-3.5 ${highlight?.bg ?? ''}`} href={rowHref(row)}>
                     <div className="flex items-start gap-3">
                       <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
                         <Image alt="" className="object-cover" fill sizes="48px" src={requestImage(row.request)} />
@@ -453,7 +453,7 @@ export default function SupplierQuotesPage() {
         <div className="mt-3 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[900px] text-left text-[14px]">
             <thead>
-              <tr className="bg-[#f6f4fd] text-[13px] text-slate-600">
+              <tr className="bg-[#eceaff] text-[13px] font-semibold text-[#3d3780]">
                 <th className="rounded-l-lg px-3 py-2.5 font-medium">Solicitud / Producto</th>
                 <th className="px-3 py-2.5 font-medium">Comprador</th>
                 <th className="px-3 py-2.5 font-medium">Monto</th>
@@ -483,7 +483,7 @@ export default function SupplierQuotesPage() {
                   const highlight = urgency(row);
                   const due = row.kind === 'pending' || row.kind === 'submitted' ? formatDue(row.deadline, nowMs) : null;
                   return (
-                    <tr key={row.id} className={`border-b border-slate-100 last:border-b-0 ${highlight?.bg ?? ''}`}>
+                    <tr key={row.id} className={`border-b border-[#d6d0f2] last:border-b-0 ${highlight?.bg ?? 'even:bg-[#f0eff8]'}`}>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
                           <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
@@ -497,7 +497,7 @@ export default function SupplierQuotesPage() {
                       </td>
                       <td className="px-3 py-3">
                         <span className="flex items-center gap-2.5">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] font-bold text-indigo-600">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-bold text-indigo-600">
                             {initials(row.buyer)}
                           </span>
                           <span className="truncate text-slate-700">{row.buyer}</span>
@@ -543,7 +543,7 @@ export default function SupplierQuotesPage() {
                             {menuRow === row.id ? (
                               <>
                                 <button aria-label="Cerrar menú" className="fixed inset-0 z-20 cursor-default" onClick={() => setMenuRow(null)} type="button" />
-                                <div className="absolute right-0 top-10 z-30 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
+                                <div className="absolute right-0 top-10 z-30 w-48 overflow-hidden rounded-xl border border-slate-300 bg-white py-1 text-[13px] shadow-[0_16px_40px_rgba(15,23,42,0.14)]">
                                   {row.request ? (
                                     <Link className="block px-3 py-2 text-slate-700 hover:bg-slate-50" href={`/dashboard/proveedor/solicitudes/${row.request.id}`}>
                                       Ver solicitud
@@ -578,7 +578,7 @@ export default function SupplierQuotesPage() {
             <div className="flex items-center gap-1.5">
               <button
                 aria-label="Página anterior"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 disabled:opacity-40"
                 disabled={currentPage === 1}
                 onClick={() => setPage(currentPage - 1)}
                 type="button"
@@ -589,7 +589,7 @@ export default function SupplierQuotesPage() {
                 <button
                   key={number}
                   className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-[13px] font-semibold ${
-                    number === currentPage ? 'bg-indigo-600 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    number === currentPage ? 'bg-indigo-600 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
                   }`}
                   onClick={() => setPage(number)}
                   type="button"
@@ -599,7 +599,7 @@ export default function SupplierQuotesPage() {
               ))}
               <button
                 aria-label="Página siguiente"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 disabled:opacity-40"
                 disabled={currentPage === totalPages}
                 onClick={() => setPage(currentPage + 1)}
                 type="button"
@@ -615,7 +615,7 @@ export default function SupplierQuotesPage() {
       <section className={`${card} mt-5 p-5`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
               <Icon name="clock" />
             </span>
             <div>
@@ -635,10 +635,10 @@ export default function SupplierQuotesPage() {
           ) : null}
         </div>
         {upcoming.length > 0 ? (
-          <div className="mt-4 grid gap-4 lg:grid-cols-2 lg:divide-x lg:divide-slate-100">
+          <div className="mt-4 grid gap-4 lg:grid-cols-2 lg:divide-x lg:divide-slate-200">
             {upcoming.slice(0, 2).map((row, index) => {
               const diff = new Date(row.deadline as string).getTime() - nowMs;
-              const tone = diff < DAY ? 'bg-rose-50 text-rose-500' : 'bg-amber-50 text-amber-600';
+              const tone = diff < DAY ? 'bg-rose-100 text-rose-500' : 'bg-amber-100 text-amber-600';
               const amount = formatAmount(row.amount, row.currency);
               return (
                 <div key={row.id} className={`flex flex-wrap items-center gap-4 ${index === 1 ? 'lg:pl-5' : ''}`}>

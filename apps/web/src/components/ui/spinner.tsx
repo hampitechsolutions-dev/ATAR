@@ -33,17 +33,12 @@ export function LoadingState({
 }
 
 /**
- * Pantalla completa de carga al entrar al panel: el logo de ATAR con un pulso
- * y una barra de progreso. Reemplaza al spinner chico dentro de una tarjeta.
+ * Carga de una pantalla del panel: el logo de ATAR con un pulso y una barra
+ * de progreso. Va dentro del layout (deja visibles header y navegación).
  */
-export function DashboardLoader({ label = 'Preparando tu panel…' }: { label?: string }) {
+export function PageLoader({ label = 'Cargando…', className = 'min-h-[60vh]' }: { label?: string; className?: string }) {
   return (
-    <main
-      aria-busy="true"
-      aria-live="polite"
-      className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[linear-gradient(180deg,#f7f9ff_0%,#eef1fe_100%)] px-6 text-slate-950"
-      role="status"
-    >
+    <div aria-busy="true" aria-live="polite" className={`flex flex-col items-center justify-center gap-6 px-6 ${className}`} role="status">
       <span className="relative flex h-20 w-20 items-center justify-center">
         <span className="loader-ring absolute inset-0 rounded-full bg-[#1f5bff]/25" />
         <span className="loader-ring absolute inset-0 rounded-full bg-[#1f5bff]/20 [animation-delay:0.8s]" />
@@ -56,6 +51,15 @@ export function DashboardLoader({ label = 'Preparando tu panel…' }: { label?: 
         <span className="loader-bar block h-full w-2/5 rounded-full bg-[#1f5bff]" />
       </span>
       <p className="text-sm font-medium text-slate-500">{label}</p>
+    </div>
+  );
+}
+
+/** Igual que PageLoader pero a pantalla completa: al entrar al panel, antes de que exista el layout. */
+export function DashboardLoader({ label = 'Preparando tu panel…' }: { label?: string }) {
+  return (
+    <main className="bg-[linear-gradient(180deg,#f7f9ff_0%,#eef1fe_100%)] text-slate-950">
+      <PageLoader className="min-h-screen" label={label} />
     </main>
   );
 }

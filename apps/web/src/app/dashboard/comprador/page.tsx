@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { LoadingState } from '@/components/ui/spinner';
+import { PageLoader } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 import type { RequestRecord } from '@/lib/atar-api';
 
@@ -33,12 +33,12 @@ function getStatusBadge(status: RequestRecord['status']) {
     return { label: 'Borrador', className: 'bg-slate-100 text-slate-500' };
   }
   if (status === 'AWARDED' || status === 'ORDER_ISSUED') {
-    return { label: 'Adjudicada', className: 'bg-emerald-50 text-emerald-600' };
+    return { label: 'Adjudicada', className: 'bg-emerald-100 text-emerald-600' };
   }
   if (status === 'CANCELLED') {
-    return { label: 'Cancelada', className: 'bg-rose-50 text-rose-600' };
+    return { label: 'Cancelada', className: 'bg-rose-100 text-rose-600' };
   }
-  return { label: 'En progreso', className: 'bg-blue-50 text-blue-600' };
+  return { label: 'En progreso', className: 'bg-blue-100 text-blue-600' };
 }
 
 const NUEVA_HREF = '/dashboard/comprador/solicitudes/nueva';
@@ -221,9 +221,7 @@ export default function DashboardCompradorPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <LoadingState label="Cargando..." />
-      </div>
+      <PageLoader label="Preparando tu panel…" />
     );
   }
 
@@ -289,7 +287,7 @@ export default function DashboardCompradorPage() {
         {/* Ver más → paso 1 (explorar todas las categorías) */}
         <Link
           href={NUEVA_HREF}
-          className="flex h-28 flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-center shadow-sm transition active:bg-slate-50"
+          className="flex h-28 flex-col items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white text-center shadow-sm transition active:bg-slate-50"
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
             <svg aria-hidden="true" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -337,7 +335,7 @@ export default function DashboardCompradorPage() {
 
       <div className="mt-3 space-y-3">
         {recentRequests.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
             Todavía no tenés cotizaciones. Empezá con una nueva.
           </div>
         ) : (
@@ -348,9 +346,9 @@ export default function DashboardCompradorPage() {
               <Link
                 key={request.id}
                 href={`/dashboard/comprador/solicitudes/${request.id}`}
-                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:bg-slate-50"
+                className="flex items-center gap-3 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm transition active:bg-slate-50"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
                     <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                     <path d="M14 2v6h6M9 13h6M9 17h4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -381,7 +379,7 @@ export default function DashboardCompradorPage() {
     {/* ==================== VISTA DESKTOP ==================== */}
     <div className="hidden lg:block">
       {/* HERO */}
-      <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#f7f9ff_0%,#ffffff_100%)]">
+      <section className="border-b border-slate-300 bg-[linear-gradient(180deg,#f7f9ff_0%,#ffffff_100%)]">
         <div className="grid w-full grid-cols-2 items-center gap-8 px-8 py-12 xl:px-6">
           <div>
             <h1 className="text-[2.6rem] font-extrabold leading-[1.05] tracking-tight text-slate-950">
@@ -438,7 +436,7 @@ export default function DashboardCompradorPage() {
       </section>
 
       {/* CATEGORÍAS */}
-      <section className="bg-[#f6f8fc]">
+      <section className="bg-[#eef1f7]">
         <div className="w-full px-8 py-10 xl:px-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold tracking-tight text-slate-950">Elegí una categoría</h2>
@@ -500,12 +498,12 @@ export default function DashboardCompradorPage() {
       </section>
 
       {/* FEATURES */}
-      <section className="bg-[#f6f8fc] pb-12">
+      <section className="bg-[#eef1f7] pb-12">
         <div className="w-full px-8 xl:px-6">
-          <div className="grid grid-cols-4 gap-6 rounded-2xl border border-slate-200 bg-white px-8 py-6 shadow-sm">
+          <div className="grid grid-cols-4 gap-6 rounded-2xl border border-slate-300 bg-white px-8 py-6 shadow-sm">
             {DESKTOP_FEATURES.map((feature) => (
               <div key={feature.title} className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <DIcon name={feature.icon} className="h-5 w-5" />
                 </span>
                 <div>

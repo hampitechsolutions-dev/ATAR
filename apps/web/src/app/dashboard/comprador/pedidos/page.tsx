@@ -59,19 +59,19 @@ function getOrderMeta(request: {
       progressText: 'Pendiente de emitir la orden',
       pct: 10,
       progressColor: negotiating ? 'bg-amber-500' : 'bg-indigo-600',
-      iconTone: 'bg-amber-50 text-amber-600',
+      iconTone: 'bg-amber-100 text-amber-600',
     };
   }
 
   const byFulfillment: Record<string, OrderMeta> = {
-    ISSUED: { label: 'Orden emitida', pill: 'bg-indigo-100 text-indigo-700', progressText: 'Esperando confirmación del proveedor', pct: 20, progressColor: 'bg-indigo-600', iconTone: 'bg-indigo-50 text-indigo-600' },
-    CONFIRMED: { label: 'Confirmada', pill: 'bg-violet-100 text-violet-700', progressText: 'Confirmada por el proveedor', pct: 40, progressColor: 'bg-violet-600', iconTone: 'bg-violet-50 text-violet-600' },
-    IN_PRODUCTION: { label: 'En producción', pill: 'bg-amber-100 text-amber-700', progressText: 'En producción', pct: 60, progressColor: 'bg-amber-500', iconTone: 'bg-amber-50 text-amber-600' },
-    DISPATCHED: { label: 'Despachado', pill: 'bg-sky-100 text-sky-700', progressText: 'En tránsito', pct: 80, progressColor: 'bg-sky-500', iconTone: 'bg-sky-50 text-sky-600' },
+    ISSUED: { label: 'Orden emitida', pill: 'bg-indigo-100 text-indigo-700', progressText: 'Esperando confirmación del proveedor', pct: 20, progressColor: 'bg-indigo-600', iconTone: 'bg-indigo-100 text-indigo-600' },
+    CONFIRMED: { label: 'Confirmada', pill: 'bg-violet-100 text-violet-700', progressText: 'Confirmada por el proveedor', pct: 40, progressColor: 'bg-violet-600', iconTone: 'bg-violet-100 text-violet-600' },
+    IN_PRODUCTION: { label: 'En producción', pill: 'bg-amber-100 text-amber-700', progressText: 'En producción', pct: 60, progressColor: 'bg-amber-500', iconTone: 'bg-amber-100 text-amber-600' },
+    DISPATCHED: { label: 'Despachado', pill: 'bg-sky-100 text-sky-700', progressText: 'En tránsito', pct: 80, progressColor: 'bg-sky-500', iconTone: 'bg-sky-100 text-sky-600' },
     DELIVERED:
       request.status === 'COMPLETED'
-        ? { label: 'Entregado', pill: 'bg-emerald-100 text-emerald-700', progressText: 'Recepción confirmada', pct: 100, progressColor: 'bg-emerald-500', iconTone: 'bg-emerald-50 text-emerald-600' }
-        : { label: 'Entregado', pill: 'bg-emerald-100 text-emerald-700', progressText: 'Confirmá la recepción', pct: 90, progressColor: 'bg-emerald-500', iconTone: 'bg-emerald-50 text-emerald-600' },
+        ? { label: 'Entregado', pill: 'bg-emerald-100 text-emerald-700', progressText: 'Recepción confirmada', pct: 100, progressColor: 'bg-emerald-500', iconTone: 'bg-emerald-100 text-emerald-600' }
+        : { label: 'Entregado', pill: 'bg-emerald-100 text-emerald-700', progressText: 'Confirmá la recepción', pct: 90, progressColor: 'bg-emerald-500', iconTone: 'bg-emerald-100 text-emerald-600' },
   };
 
   return (
@@ -91,41 +91,6 @@ function OrderIcon() {
     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
       <path d="M6 7h12l-1 14H7L6 7z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
       <path d="M9 7a3 3 0 016 0" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
-
-function StatIcon({ name }: { name: 'bag' | 'box' | 'truck' | 'check' | 'x' }) {
-  if (name === 'bag') {
-    return <OrderIcon />;
-  }
-  if (name === 'box') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M3.3 7.3L12 12l8.7-4.7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-  if (name === 'truck') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M1 3h14v13H1V3z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M15 8h4l4 4v4h-8V8z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-  if (name === 'check') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M18 6L6 18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M6 6l12 12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </svg>
   );
 }
@@ -199,7 +164,7 @@ export default function BuyerOrdersPage() {
             </svg>
           </span>
           <input
-            className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+            className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
             onChange={(event) => {
               setSearch(event.target.value);
               setPage(1);
@@ -209,7 +174,7 @@ export default function BuyerOrdersPage() {
           />
         </div>
 
-        <div className="-mx-3 mt-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
+        <div className="-mx-3 mt-1.5 flex gap-2 overflow-x-auto px-3 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             { key: 'ALL' as const, label: 'Todos', count: counts.total },
             { key: 'NEGOTIATING' as const, label: 'En producción', count: counts.inProduction },
@@ -239,11 +204,11 @@ export default function BuyerOrdersPage() {
           })}
         </div>
 
-        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+        {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
         <div className="mt-4 space-y-3">
           {loading ? (
-            <div className="rounded-[18px] bg-white px-4 py-10 shadow-sm">
+            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando pedidos..." />
             </div>
           ) : visibleOrders.length === 0 ? (
@@ -258,7 +223,7 @@ export default function BuyerOrdersPage() {
               return (
                 <Link
                   key={request.id}
-                  className="block rounded-[18px] bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/70 transition active:scale-[0.99]"
+                  className="block rounded-[18px] border border-slate-300 bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.07)] transition active:scale-[0.99]"
                   href={`/dashboard/comprador/solicitudes/${request.id}`}
                 >
                   <div className="flex gap-3">
@@ -290,7 +255,7 @@ export default function BuyerOrdersPage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 divide-x divide-slate-200/70 rounded-[12px] bg-[#f5f7fc] py-2 text-center">
+                  <div className="mt-3 grid grid-cols-2 divide-x divide-[#cfdcf7] rounded-[12px] bg-[#eef3ff] py-2 text-center">
                     <span className="px-1">
                       <span className="block text-[10px] text-slate-500">Entrega prometida</span>
                       <span className="block truncate text-[12px] font-semibold text-slate-900">{promised ? formatDate(promised) : 'A convenir'}</span>
@@ -342,7 +307,7 @@ export default function BuyerOrdersPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row">
-          <div className="col-span-2 flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm sm:w-[320px]">
+          <div className="col-span-2 flex w-full items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 shadow-sm sm:w-[320px]">
             <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
               <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
               <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -358,7 +323,7 @@ export default function BuyerOrdersPage() {
             />
           </div>
 
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50" type="button">
+          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50" type="button">
             Filtros
             <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
               <path d="M4 6h16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -367,7 +332,7 @@ export default function BuyerOrdersPage() {
             </svg>
           </button>
 
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50" type="button">
+          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50" type="button">
             Exportar
             <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
               <path d="M12 3v12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -379,7 +344,7 @@ export default function BuyerOrdersPage() {
       </div>
 
       <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:px-0">
-        <div className="flex min-w-max items-center gap-6 border-b border-slate-200 pb-3 text-sm">
+        <div className="flex min-w-max items-center gap-6 border-b border-slate-300 pb-3 text-sm">
           {[
             { key: 'ALL' as const, label: 'Todos', count: counts.total },
             { key: 'NEGOTIATING' as const, label: 'En producción', count: counts.inProduction },
@@ -412,33 +377,11 @@ export default function BuyerOrdersPage() {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        <div className="rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
       ) : null}
 
-      {/* En mobile las métricas van en una fila deslizable para no ocupar toda la pantalla. */}
-      <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-5">
-        {[
-          { label: 'Total pedidos', value: counts.total, sub: 'Todos los pedidos', tone: 'bg-indigo-50 text-indigo-600', icon: 'bag' as const },
-          { label: 'En producción', value: counts.inProduction, sub: 'Actualmente en proceso', tone: 'bg-amber-50 text-amber-600', icon: 'box' as const },
-          { label: 'En camino', value: counts.onWay, sub: 'En tránsito', tone: 'bg-violet-50 text-violet-600', icon: 'truck' as const },
-          { label: 'Entregados', value: counts.delivered, sub: 'Completados', tone: 'bg-emerald-50 text-emerald-600', icon: 'check' as const },
-          { label: 'Cancelados', value: counts.cancelled, sub: 'No completados', tone: 'bg-rose-50 text-rose-600', icon: 'x' as const },
-        ].map((card) => (
-          <article key={card.label} className="min-w-[150px] shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:min-w-0">
-            <div className="flex items-center justify-between gap-3 sm:block">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
-                <StatIcon name={card.icon} />
-              </div>
-              <p className="text-2xl font-semibold text-slate-950 sm:mt-4">{card.value}</p>
-            </div>
-            <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
-            <p className="mt-1 text-xs text-slate-500">{card.sub}</p>
-          </article>
-        ))}
-      </div>
-
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)] border-b border-slate-200 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm">
+        <div className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)] rounded-t-2xl border-b border-slate-300 bg-[#eef3ff] px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#33457a]">
           <p>Pedido</p>
           <p>Producto</p>
           <p>Proveedor</p>
@@ -462,7 +405,7 @@ export default function BuyerOrdersPage() {
               const promised = request.order?.promisedDate ?? null;
 
               return (
-                <div key={request.id} className="px-4 py-4 sm:px-6 lg:px-6">
+                <div key={request.id} className="px-4 py-4 even:bg-[#eef1f7] sm:px-6 lg:px-6">
                   <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)] lg:items-center">
                     <div className="flex items-start gap-4">
                       <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${orderMeta.iconTone}`}>
@@ -471,7 +414,7 @@ export default function BuyerOrdersPage() {
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-950">{orderNumber}</p>
                         <p className="mt-1 text-[11px] text-slate-500">Creado el {formatDate(request.createdAt)}</p>
-                        <p className="mt-2 inline-flex rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-600">
+                        <p className="mt-2 inline-flex rounded-full bg-indigo-100 px-2 py-1 text-[10px] font-semibold text-indigo-600">
                           {requestCode}
                         </p>
                       </div>
@@ -520,12 +463,12 @@ export default function BuyerOrdersPage() {
 
                     <div className="flex justify-start gap-2 lg:justify-end">
                       <Link
-                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-100 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
                         href={`/dashboard/comprador/solicitudes/${request.id}`}
                       >
                         Ver detalle
                       </Link>
-                      <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" type="button">
+                      <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-500 hover:bg-slate-50" type="button">
                         <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                           <path d="M12 5h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
                           <path d="M12 12h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
@@ -540,13 +483,13 @@ export default function BuyerOrdersPage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-slate-200 px-6 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-t border-slate-300 px-6 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>
             Mostrando {(safePage - 1) * pageSize + (visibleOrders.length ? 1 : 0)} a {(safePage - 1) * pageSize + visibleOrders.length} de {filteredOrders.length} pedidos
           </p>
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
               disabled={safePage <= 1}
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               type="button"
@@ -561,7 +504,7 @@ export default function BuyerOrdersPage() {
                   <button
                     key={number}
                     className={`h-9 w-9 rounded-xl border text-xs font-semibold ${
-                      isActive ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      isActive ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                     onClick={() => setPage(number)}
                     type="button"
@@ -572,7 +515,7 @@ export default function BuyerOrdersPage() {
               })}
             </div>
             <button
-              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
               disabled={safePage >= totalPages}
               onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               type="button"

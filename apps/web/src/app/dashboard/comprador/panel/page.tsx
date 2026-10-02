@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { atarApi, type RequestRecord, type SupplierDirectoryRecord } from '@/lib/atar-api';
-import { LoadingState } from '@/components/ui/spinner';
+import { PageLoader } from '@/components/ui/spinner';
 import { useBuyerDashboardData } from '@/lib/dashboard-hooks';
 import { loadBuyerFavorites } from '@/lib/dashboard-local';
 import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 import { getUserFirstName } from '@/lib/session';
+import ToneRow, { type Tone } from '@/components/dashboard/tone-row';
 
 type IconName = 'plus' | 'file' | 'box' | 'building' | 'hourglass' | 'bell' | 'search' | 'arrow' | 'chevron';
 
@@ -33,7 +34,7 @@ function Icon({ name, size = 'h-4 w-4' }: { name: IconName; size?: string }) {
   );
 }
 
-const panelCard = 'rounded-[18px] border border-slate-200/80 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]';
+const panelCard = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]';
 
 function PanelSeeAll({ href }: { href: string }) {
   // globals.css fija `a { color: inherit }`: el color va en el hijo.
@@ -65,12 +66,6 @@ const QUICK_ACCESS: { label: string; text: string; href: string; icon: IconName 
 ];
 
 type TaskTone = 'red' | 'amber' | 'blue';
-
-const TASK_TONES: Record<TaskTone, { border: string; soft: string; dot: string }> = {
-  red: { border: 'border-l-rose-400', soft: 'bg-rose-50', dot: 'bg-rose-500' },
-  amber: { border: 'border-l-amber-400', soft: 'bg-amber-50', dot: 'bg-amber-400' },
-  blue: { border: 'border-l-[#1f5bff]', soft: 'bg-[#eef3ff]', dot: 'bg-[#1f5bff]' },
-};
 
 function startOfDay(value: number) {
   const date = new Date(value);
@@ -110,11 +105,11 @@ function buyerRequestStatus(request: RequestRecord) {
   if (['AWARDED', 'ORDER_ISSUED', 'COMPLETED'].includes(request.status) || request.awardedQuoteId) {
     return { label: 'Cerrada', tone: 'bg-slate-100 text-slate-600' };
   }
-  if (request.status === 'CANCELLED') return { label: 'Cancelada', tone: 'bg-rose-50 text-rose-600' };
+  if (request.status === 'CANCELLED') return { label: 'Cancelada', tone: 'bg-rose-100 text-rose-600' };
   if (request.status === 'DRAFT') return { label: 'Borrador', tone: 'bg-slate-100 text-slate-600' };
   if (request.status === 'NEGOTIATING') return { label: 'Cotizando', tone: 'bg-[#eef3ff] text-[#1f5bff]' };
-  if (quotes > 0) return { label: 'Recibidas', tone: 'bg-emerald-50 text-emerald-600' };
-  return { label: 'Sin cotizaciones', tone: 'bg-amber-50 text-amber-600' };
+  if (quotes > 0) return { label: 'Recibidas', tone: 'bg-emerald-100 text-emerald-600' };
+  return { label: 'Sin cotizaciones', tone: 'bg-amber-100 text-amber-600' };
 }
 
 export default function DashboardCompradorPanelPage() {
@@ -256,9 +251,7 @@ export default function DashboardCompradorPanelPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <LoadingState label="Cargando panel..." />
-      </div>
+      <PageLoader label="Preparando tu panel…" />
     );
   }
 
@@ -282,11 +275,12 @@ export default function DashboardCompradorPanelPage() {
   return (
     <main className="w-full space-y-5 px-4 py-5 pb-24 lg:pb-8 xl:px-6">
       {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        <div className="rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
       ) : null}
 
       {/* ==================== CABECERA ==================== */}
-      <section className={`${panelCard} grid grid-cols-1 gap-6 p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] lg:items-center lg:p-7`}>
+      {/* Todo el bloque va contenido en una tarjeta: nada queda suelto sobre el fondo. */}
+      <section className={`${panelCard} grid grid-cols-1 gap-6 p-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] lg:items-center lg:p-7`}>
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-500">Panel comprador</p>
           <h1 className="mt-2 text-[34px] font-bold leading-tight tracking-[-0.04em] text-slate-950 sm:text-[40px]">
@@ -300,14 +294,14 @@ export default function DashboardCompradorPanelPage() {
         </div>
 
         <div>
-          <form className="flex flex-col gap-2 rounded-[16px] bg-[#eef3ff] p-2 sm:flex-row" onSubmit={handleSearch} role="search">
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={handleSearch} role="search">
             <label className="relative flex-1">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
                 <Icon name="search" />
               </span>
               <input
                 aria-label="Buscar productos"
-                className="h-12 w-full rounded-[12px] border border-slate-200 bg-white pl-11 pr-4 text-[15px] outline-none transition placeholder:text-slate-400 focus:border-[#1f5bff]"
+                className="h-12 w-full rounded-[12px] border border-slate-300 bg-white pl-11 pr-4 text-[15px] outline-none transition placeholder:text-slate-400 focus:border-[#1f5bff]"
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar productos (ej. Big Bags, Sacos, Rollos...)"
                 type="search"
@@ -320,52 +314,49 @@ export default function DashboardCompradorPanelPage() {
             </button>
           </form>
 
-          <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-7">
-            {QUICK_CATEGORIES.map((category) => (
+          <div className="mt-4 grid grid-cols-4 gap-x-2 gap-y-4 rounded-[16px] bg-[#eef3ff] px-2 py-4 sm:grid-cols-7">
+            {/* En mobile una sola fila: 3 categorías y el "+" de ver todas. */}
+            {QUICK_CATEGORIES.map((category, index) => (
               <Link
                 key={category.label}
-                className="group flex flex-col items-center justify-end gap-1.5 rounded-[12px] border border-slate-200 bg-white px-2 pb-2 pt-2.5 transition hover:-translate-y-0.5 hover:border-[#1f5bff]/40 hover:shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                className={`group flex-col items-center gap-2 text-center ${index >= 3 ? 'hidden sm:flex' : 'flex'}`}
                 href={`/dashboard/comprador/solicitudes/nueva?category=${encodeURIComponent(category.category)}`}
               >
-                <span className={`relative block h-14 overflow-hidden ${category.cutout ? 'w-full' : 'w-14 rounded-full'}`}>
+                <span className="relative block h-16 w-16 overflow-hidden rounded-full bg-white shadow-[0_6px_18px_rgba(15,23,42,0.07)] ring-1 ring-slate-200/70 transition group-hover:-translate-y-0.5 group-hover:ring-[#1f5bff]/50">
                   <Image
                     alt=""
-                    className={category.cutout ? 'scale-[1.45] object-contain mix-blend-multiply transition group-hover:scale-[1.55]' : 'object-cover'}
+                    className={category.cutout ? 'scale-[1.2] object-contain p-2.5' : 'object-cover'}
                     fill
                     sizes="80px"
                     src={category.image}
                   />
                 </span>
-                <span className="text-[13px] font-medium text-slate-800">{category.label}</span>
+                <span className="text-[13px] font-medium text-slate-800 group-hover:text-[#1f5bff]">{category.label}</span>
               </Link>
             ))}
-            <Link
-              className="group flex flex-col items-center justify-end gap-1.5 rounded-[12px] border border-slate-200 bg-white px-2 pb-2 pt-2.5 transition hover:-translate-y-0.5 hover:border-[#1f5bff]/40"
-              href="/dashboard/comprador/solicitudes/nueva"
-            >
-              <span className="flex h-14 items-center">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef3ff] text-[#1f5bff]">
-                  <Icon name="plus" />
-                </span>
+            <Link className="group flex flex-col items-center gap-2 text-center" href="/dashboard/comprador/solicitudes/nueva">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#e6edff] text-[#1f5bff] transition group-hover:-translate-y-0.5">
+                <Icon name="plus" />
               </span>
-              <span className="text-[13px] font-medium text-slate-800">Ver todas</span>
+              <span className="text-[13px] font-medium text-slate-800 group-hover:text-[#1f5bff]">Ver todas</span>
             </Link>
           </div>
         </div>
       </section>
 
       {/* ==================== CONTADORES ==================== */}
-      <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      {/* Una sola franja con divisores, en vez de cuatro tarjetas. */}
+      <section className={`${panelCard} grid grid-cols-2 divide-slate-200 overflow-hidden max-xl:[&>*:nth-child(-n+2)]:border-b max-xl:[&>*:nth-child(odd)]:border-r xl:grid-cols-4 xl:divide-x`}>
         {statCards.map((card) => (
-          <Link key={card.label} className={`${panelCard} group relative flex flex-col items-start gap-3 p-4 transition sm:flex-row sm:items-center sm:gap-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]`} href={card.href}>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#eef3ff] text-[#1f5bff] sm:h-14 sm:w-14">
-              <Icon name={card.icon} size="h-6 w-6" />
+          <Link key={card.label} className="group flex items-center gap-3 border-slate-300 px-4 py-4 transition hover:bg-[#eef3ff] sm:gap-4 sm:px-6 sm:py-5" href={card.href}>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d9e4ff] text-[#1f5bff] sm:h-12 sm:w-12">
+              <Icon name={card.icon} size="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[30px] font-bold leading-none tracking-tight text-slate-950">{card.value}</span>
-              <span className="mt-1.5 block text-[13px] leading-4 text-slate-600 sm:truncate sm:text-[14px]">{card.label}</span>
+              <span className="block text-[26px] font-bold leading-none tracking-tight text-slate-950 sm:text-[30px]">{card.value}</span>
+              <span className="mt-1.5 block text-[13px] leading-4 text-slate-600 sm:text-[14px]">{card.label}</span>
             </span>
-            <span className="absolute right-3 top-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef3ff] text-[#1f5bff] transition group-hover:translate-x-0.5 sm:static sm:h-9 sm:w-9">
+            <span className="hidden text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#1f5bff] sm:block">
               <Icon name="arrow" />
             </span>
           </Link>
@@ -376,10 +367,7 @@ export default function DashboardCompradorPanelPage() {
         {/* ==================== TAREAS PENDIENTES ==================== */}
         <section className={`${panelCard} p-5`}>
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef3ff] text-[#1f5bff]">
-                <Icon name="bell" />
-              </span>
+            <div className="flex items-center gap-2.5">
               <h2 className="text-[18px] font-bold text-slate-950">Tareas pendientes</h2>
               {attention.length > 0 ? (
                 <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[12px] font-semibold text-white">
@@ -391,29 +379,25 @@ export default function DashboardCompradorPanelPage() {
           </div>
           <div className="mt-4 space-y-2.5">
             {attention.length === 0 ? (
-              <p className="rounded-[12px] border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
+              <p className="rounded-[14px] bg-[#ecfaf3] px-4 py-8 text-center text-sm font-medium text-emerald-700">
                 No tenés tareas pendientes. ¡Todo al día!
               </p>
             ) : (
-              attention.map((item) => (
-                <Link
-                  key={item.key}
-                  className={`group flex items-center gap-4 rounded-[12px] border border-slate-100 border-l-[3px] bg-white px-4 py-3.5 transition hover:bg-slate-50 ${TASK_TONES[item.tone].border}`}
-                  href={item.href}
-                >
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${TASK_TONES[item.tone].soft}`}>
-                    <span className={`h-2.5 w-2.5 rounded-full ${TASK_TONES[item.tone].dot}`} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-semibold text-slate-900">{item.label}</span>
-                    <span className="block text-[13px] text-slate-500">{item.hint}</span>
-                  </span>
-                  <span className="shrink-0 text-[13px] text-slate-500">{formatRelativeDay(item.at)}</span>
-                  <span className="text-slate-400 transition group-hover:translate-x-0.5">
-                    <Icon name="chevron" />
-                  </span>
-                </Link>
-              ))
+              attention.map((item) => {
+                const tone: Tone = item.tone === 'red' ? 'rose' : item.tone === 'amber' ? 'amber' : 'blue';
+                return (
+                  <ToneRow
+                    key={item.key}
+                    detail={item.hint}
+                    highlight={item.tone !== 'blue'}
+                    href={item.href}
+                    icon={<Icon name={item.tone === 'blue' ? 'file' : 'bell'} size="h-5 w-5" />}
+                    meta={formatRelativeDay(item.at)}
+                    title={item.label}
+                    tone={tone}
+                  />
+                );
+              })
             )}
           </div>
         </section>
@@ -421,16 +405,11 @@ export default function DashboardCompradorPanelPage() {
         {/* ==================== SOLICITUDES RECIENTES ==================== */}
         <section className={`${panelCard} p-5`}>
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef3ff] text-[#1f5bff]">
-                <Icon name="file" />
-              </span>
-              <h2 className="text-[18px] font-bold text-slate-950">Solicitudes recientes</h2>
-            </div>
+            <h2 className="text-[18px] font-bold text-slate-950">Solicitudes recientes</h2>
             <PanelSeeAll href="/dashboard/comprador/solicitudes" />
           </div>
           {/* Mobile: lista. Desde md, la tabla completa. */}
-          <ul className="mt-3 divide-y divide-slate-100 md:hidden">
+          <ul className="-mx-5 mt-3 divide-y divide-slate-200 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-[#eef1f7]">
             {recentRequests.length === 0 ? (
               <li className="py-6 text-center text-[13px] text-slate-500">Todavía no creaste solicitudes.</li>
             ) : (
@@ -461,10 +440,10 @@ export default function DashboardCompradorPanelPage() {
               })
             )}
           </ul>
-          <div className="mt-4 hidden overflow-x-auto rounded-[12px] border border-slate-100 md:block">
+          <div className="mt-3 hidden overflow-x-auto md:block">
             <table className="w-full min-w-[600px] text-left text-[13px]">
               <thead>
-                <tr className="bg-[#f5f7fc] text-[12px] text-slate-500">
+                <tr className="bg-[#eef3ff] text-[12px] text-slate-600 [&>th:first-child]:rounded-l-lg [&>th:last-child]:rounded-r-lg">
                   <th className="px-3 py-2.5 font-medium">Producto</th>
                   <th className="px-3 py-2.5 font-medium">Cantidad</th>
                   <th className="px-3 py-2.5 font-medium">Fecha</th>
@@ -473,7 +452,7 @@ export default function DashboardCompradorPanelPage() {
                   <th className="px-3 py-2.5 font-medium">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {recentRequests.length === 0 ? (
                   <tr>
                     <td className="px-3 py-8 text-center text-slate-500" colSpan={6}>
@@ -486,7 +465,7 @@ export default function DashboardCompradorPanelPage() {
                     const quantity = item?.quantity ?? request.quantityRequested ?? null;
                     const status = buyerRequestStatus(request);
                     return (
-                      <tr key={request.id} className="text-slate-600">
+                      <tr key={request.id} className="text-slate-600 even:bg-[#eef1f7]">
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-3">
                             <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-100">
@@ -505,7 +484,7 @@ export default function DashboardCompradorPanelPage() {
                         <td className="px-3 py-2.5 text-center">{request._count?.quotes ?? 0}</td>
                         <td className="px-3 py-2.5">
                           <Link
-                            className="inline-flex h-8 items-center whitespace-nowrap rounded-lg border border-[#1f5bff]/40 px-3 text-[12px] font-semibold transition hover:bg-[#f3f6ff]"
+                            className="inline-flex h-8 items-center whitespace-nowrap text-[13px] font-semibold hover:underline"
                             href={`/dashboard/comprador/solicitudes/${request.id}`}
                           >
                             <span className="text-[#1f5bff]">Ver detalle</span>
@@ -522,26 +501,18 @@ export default function DashboardCompradorPanelPage() {
       </div>
 
       {/* ==================== ACCESOS RÁPIDOS ==================== */}
-      <section>
+      <section className={`${panelCard} p-5`}>
         <h2 className="text-[18px] font-bold text-slate-950">Accesos rápidos</h2>
-        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           {QUICK_ACCESS.map((access, index) => (
-            <Link
+            <ToneRow
               key={access.label}
-              className={`${panelCard} group flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]`}
+              detail={access.text}
               href={access.href}
-            >
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#eef3ff] text-[#1f5bff]">
-                <Icon name={access.icon} size="h-6 w-6" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className={`block text-[16px] font-semibold ${index === 0 ? 'text-[#1f5bff]' : 'text-slate-900'}`}>{access.label}</span>
-                <span className="mt-0.5 block text-[13px] leading-5 text-slate-500">{access.text}</span>
-              </span>
-              <span className="text-[#1f5bff] transition group-hover:translate-x-0.5">
-                <Icon name="arrow" />
-              </span>
-            </Link>
+              icon={<Icon name={access.icon} size="h-5 w-5" />}
+              title={access.label}
+              tone={(['blue', 'violet', 'sky', 'emerald'] as Tone[])[index % 4]}
+            />
           ))}
         </div>
       </section>

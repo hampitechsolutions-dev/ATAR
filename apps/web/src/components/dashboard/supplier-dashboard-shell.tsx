@@ -70,7 +70,7 @@ export default function SupplierDashboardShell({
   });
 
   return (
-    <main className="h-screen overflow-hidden bg-[#f4f2fd] text-slate-950">
+    <main className="h-screen overflow-hidden bg-[#eae7f8] text-slate-950">
       <div className="flex h-full">
         <div className="hidden h-full w-[264px] shrink-0 lg:block">
           <DashboardSidebar
@@ -84,7 +84,7 @@ export default function SupplierDashboardShell({
         <section className="min-w-0 flex-1 overflow-hidden">
           {/* Solo escritorio. En mobile no hay header: la navegación, las
               notificaciones y la cuenta viven en la barra inferior ("Más"). */}
-          <header className="sticky top-0 z-30 hidden border-b border-slate-200 bg-white/90 backdrop-blur lg:block">
+          <header className="sticky top-0 z-30 hidden border-b border-slate-300 bg-white/90 backdrop-blur lg:block">
             <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
               <div className="flex min-w-0 items-center gap-3">
                 <Link href="/dashboard/proveedor" className="flex shrink-0 items-center gap-2 lg:hidden">
@@ -124,13 +124,13 @@ export default function SupplierDashboardShell({
                 <CompanySwitcher className="hidden lg:block" />
                 <WorkspaceSwitcher className="hidden sm:inline-flex" />
                 <button
-                  className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex"
+                  className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-100 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex"
                   type="button"
                 >
                   Invitar a un miembro
                 </button>
                 <Link
-                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
                   href="/dashboard/proveedor/mensajes"
                 >
                   <HeaderActionIcon kind="chat" />
@@ -141,7 +141,7 @@ export default function SupplierDashboardShell({
                   ) : null}
                 </Link>
                 <Link
-                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
                   href="/dashboard/proveedor/notificaciones"
                 >
                   <HeaderActionIcon kind="bell" />

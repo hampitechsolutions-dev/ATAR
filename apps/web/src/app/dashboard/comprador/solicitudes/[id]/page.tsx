@@ -47,7 +47,7 @@ function QuoteCell({
   if (line.availability === 'UNAVAILABLE') {
     return (
       <div>
-        <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600">No disp.</span>
+        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-600">No disp.</span>
         {line.note ? <p className="mt-1 text-[10px] leading-4 text-slate-500">{line.note}</p> : null}
       </div>
     );
@@ -60,7 +60,7 @@ function QuoteCell({
           {line.unitPrice != null ? `${formatCurrency(line.unitPrice, currency)}/u` : '—'}
         </span>
         {line.availability === 'ALTERNATIVE' ? (
-          <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">Alt.</span>
+          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">Alt.</span>
         ) : null}
       </div>
       {subtotal != null ? (
@@ -95,8 +95,8 @@ function QuoteComparison({
 }) {
   const multiProduct = items.length > 1;
   return (
-    <div className="mt-4 overflow-hidden rounded-[18px] border border-slate-200 bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+    <div className="mt-4 overflow-hidden rounded-[18px] border border-slate-300 bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <p className="text-[13px] font-semibold text-slate-900">Comparar lado a lado</p>
         <p className="hidden text-[11px] text-slate-400 sm:block">Deslizá para ver todos los proveedores →</p>
       </div>
@@ -106,7 +106,7 @@ function QuoteComparison({
           style={{ minWidth: `${150 + quotes.length * 150}px` }}
         >
           <thead>
-            <tr className="border-b border-slate-100">
+            <tr className="border-b border-slate-200">
               <th className="sticky left-0 z-10 w-[150px] bg-white px-4 py-3 align-bottom text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
                 Proveedor
               </th>
@@ -142,7 +142,7 @@ function QuoteComparison({
                         <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[9px] font-semibold text-[#4f46ff]">Mejor precio</span>
                       ) : null}
                       {fastestId === quote.id ? (
-                        <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[9px] font-semibold text-teal-700">Más rápida</span>
+                        <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[9px] font-semibold text-teal-700">Más rápida</span>
                       ) : null}
                       {awarded ? (
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">Asignada</span>
@@ -153,11 +153,11 @@ function QuoteComparison({
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-200">
             {multiProduct
               ? items.map((item) => (
-                  <tr key={item.id}>
-                    <th className="sticky left-0 z-10 bg-white px-4 py-2.5 text-left align-top">
+                  <tr key={item.id} className="bg-white even:bg-[#eef1f7]">
+                    <th className="sticky left-0 z-10 bg-inherit px-4 py-2.5 text-left align-top">
                       <p className="text-[12px] font-semibold text-slate-800">{item.productName}</p>
                       {item.quantity ? (
                         <p className="text-[10px] text-slate-400">
@@ -1024,8 +1024,8 @@ export default function BuyerRequestDetailPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-950">
-        <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">
+      <main className="flex min-h-screen items-center justify-center bg-[#eef1f7] text-slate-950">
+        <div className="rounded-[2rem] border border-slate-300 bg-white px-6 py-5 shadow-sm">
           <LoadingState label="Cargando detalle..." className="gap-3" />
         </div>
       </main>
@@ -1033,7 +1033,7 @@ export default function BuyerRequestDetailPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-950">
+    <main className="min-h-screen overflow-x-hidden bg-[#eef1f7] text-slate-950">
       <div className="flex w-full flex-col gap-5 py-2 sm:py-3">
         <Link
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-700"
@@ -1045,12 +1045,12 @@ export default function BuyerRequestDetailPage() {
           Volver a solicitudes
         </Link>
 
-        {error ? <div className="rounded-[18px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{error}</div> : null}
-        {message ? <div className="rounded-[18px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">{message}</div> : null}
+        {error ? <div className="rounded-[18px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">{error}</div> : null}
+        {message ? <div className="rounded-[18px] border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">{message}</div> : null}
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_360px] 2xl:grid-cols-[minmax(0,1.7fr)_380px]">
-          <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)] sm:p-6">
-            <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
+          <section className="rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)] sm:p-6">
+            <div className="flex flex-col gap-4 border-b border-slate-300 pb-6 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#4f46ff]">Solicitud publicada</p>
                 <h1 className="mt-3 text-[26px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[32px] lg:text-[40px] lg:tracking-[-0.05em]">{request?.title ?? 'Solicitud no encontrada'}</h1>
@@ -1071,7 +1071,7 @@ export default function BuyerRequestDetailPage() {
               <div className="relative shrink-0" ref={actionsRef}>
                 <button
                   aria-expanded={actionsOpen}
-                  className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                   onClick={() => setActionsOpen((current) => !current)}
                   type="button"
                 >
@@ -1082,7 +1082,7 @@ export default function BuyerRequestDetailPage() {
                 </button>
 
                 {actionsOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[16px] border border-slate-200 bg-white p-1.5 shadow-[0_20px_50px_rgba(15,23,42,0.14)]">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[16px] border border-slate-300 bg-white p-1.5 shadow-[0_20px_50px_rgba(15,23,42,0.14)]">
                     <button
                       className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={!canEditRequest}
@@ -1162,7 +1162,7 @@ export default function BuyerRequestDetailPage() {
                     {(request?.items ?? []).map((item, index) => {
                       const specRows = parseRequestDescription(item.specifications ?? '');
                       return (
-                        <article key={item.id} className="rounded-[16px] border border-slate-200 bg-white p-4">
+                        <article key={item.id} className="rounded-[16px] border border-slate-300 bg-white p-4">
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4f46ff]">Producto {index + 1}</p>
@@ -1176,7 +1176,7 @@ export default function BuyerRequestDetailPage() {
                           {specRows.length ? (
                             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                               {specRows.map((row, rowIndex) => (
-                                <div key={`${row.label}-${rowIndex}`} className="rounded-[12px] bg-slate-50 px-3 py-2">
+                                <div key={`${row.label}-${rowIndex}`} className="rounded-[12px] bg-[#eef1f7] px-3 py-2">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">{row.label}</p>
                                   <p className="mt-0.5 text-[13px] font-medium leading-5 text-slate-900">{row.value || '-'}</p>
                                 </div>
@@ -1192,7 +1192,7 @@ export default function BuyerRequestDetailPage() {
                 ) : (
                   <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
                     {detailItems.map((item) => (
-                      <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-200 bg-white px-4 py-4">
+                      <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-300 bg-white px-4 py-4">
                         <div className="flex items-center gap-2 text-slate-400">
                           <DetailIcon type={getDetailIcon(item.label)} />
                           <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
@@ -1205,7 +1205,7 @@ export default function BuyerRequestDetailPage() {
               </section>
 
               {/* ==================== COTIZACIONES RECIBIDAS ==================== */}
-              <section className="border-t border-slate-200 pt-6">
+              <section className="border-t border-slate-300 pt-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                     <DetailIcon type="scale" />
@@ -1219,7 +1219,7 @@ export default function BuyerRequestDetailPage() {
                 </div>
 
                 {awardedQuote ? (
-                  <div className="mt-4 flex items-start gap-3 rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <div className="mt-4 flex items-start gap-3 rounded-[16px] border border-emerald-200 bg-emerald-100 px-4 py-3">
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
                       <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
                         <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
@@ -1288,8 +1288,8 @@ export default function BuyerRequestDetailPage() {
                             isAwarded
                               ? 'border-emerald-300 bg-emerald-50/60'
                               : isRejected
-                                ? 'border-slate-200 bg-slate-50/70'
-                                : 'border-slate-200 bg-white'
+                                ? 'border-slate-300 bg-slate-50/70'
+                                : 'border-slate-300 bg-white'
                           }`}
                         >
                           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1333,7 +1333,7 @@ export default function BuyerRequestDetailPage() {
                                     </span>
                                   ) : null}
                                   {!isRejected && fastest?.id === quote.id ? (
-                                    <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-semibold text-teal-700">
+                                    <span className="rounded-full bg-teal-100 px-2.5 py-1 text-[10px] font-semibold text-teal-700">
                                       Entrega más rápida
                                     </span>
                                   ) : null}
@@ -1352,13 +1352,13 @@ export default function BuyerRequestDetailPage() {
                           </div>
 
                           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="rounded-[14px] bg-slate-50 px-3 py-2.5">
+                            <div className="rounded-[14px] bg-[#eef1f7] px-3 py-2.5">
                               <p className="text-[11px] font-semibold text-slate-400">Plazo de entrega</p>
                               <p className="mt-1 text-[13px] font-semibold text-slate-900">
                                 {typeof quote.leadTimeDays === 'number' ? `${quote.leadTimeDays} días` : 'A convenir'}
                               </p>
                             </div>
-                            <div className="rounded-[14px] bg-slate-50 px-3 py-2.5">
+                            <div className="rounded-[14px] bg-[#eef1f7] px-3 py-2.5">
                               <p className="text-[11px] font-semibold text-slate-400">Condiciones de pago</p>
                               <p className="mt-1 text-[13px] font-semibold text-slate-900">
                                 {quote.paymentTerms || 'A convenir'}
@@ -1367,7 +1367,7 @@ export default function BuyerRequestDetailPage() {
                           </div>
 
                           {quote.items && quote.items.length > 0 && (request?.items?.length ?? 0) > 1 ? (
-                            <div className="mt-3 rounded-[14px] border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+                            <div className="mt-3 rounded-[14px] border border-slate-200 bg-slate-50/70 px-3 py-2.5">
                               <p className="text-[11px] font-semibold text-slate-400">Precio por producto</p>
                               <ul className="mt-1.5 space-y-1">
                                 {quote.items.map((line) => {
@@ -1388,11 +1388,11 @@ export default function BuyerRequestDetailPage() {
                                             {qty ? ` · ${qty} ${reqItem?.unit ?? 'u.'}` : ''}
                                           </span>
                                           {unavailable ? (
-                                            <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[9px] font-semibold text-rose-600">
+                                            <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-semibold text-rose-600">
                                               No disp.
                                             </span>
                                           ) : alternative ? (
-                                            <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">
+                                            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">
                                               Alternativa
                                             </span>
                                           ) : null}
@@ -1416,14 +1416,14 @@ export default function BuyerRequestDetailPage() {
                           ) : null}
 
                           {quote.technicalComment ? (
-                            <p className="mt-3 whitespace-pre-wrap rounded-[14px] bg-slate-50 px-3 py-2.5 text-[12px] leading-6 text-slate-600">
+                            <p className="mt-3 whitespace-pre-wrap rounded-[14px] bg-[#eef1f7] px-3 py-2.5 text-[12px] leading-6 text-slate-600">
                               {quote.technicalComment}
                             </p>
                           ) : null}
 
                           <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                             <Link
-                              className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                              className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-300 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50"
                               href={`/dashboard/comprador/cotizaciones/${quote.id}`}
                             >
                               Ver cotización
@@ -1452,7 +1452,7 @@ export default function BuyerRequestDetailPage() {
                       );
                     })
                   ) : (
-                    <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                    <div className="rounded-[18px] border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-5 text-sm text-slate-500">
                       Todavía no recibiste cotizaciones para esta solicitud.
                     </div>
                   )}
@@ -1460,7 +1460,7 @@ export default function BuyerRequestDetailPage() {
               </section>
 
               {awardedQuote ? (
-                <section className="border-t border-slate-200 pt-6">
+                <section className="border-t border-slate-300 pt-6">
                   <div className="flex items-center gap-2">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                       <DetailIcon type="file" />
@@ -1469,7 +1469,7 @@ export default function BuyerRequestDetailPage() {
                   </div>
 
                   {request?.status === 'AWARDED' || request?.status === 'NEGOTIATING' ? (
-                    <div className="mt-4 rounded-[18px] border border-slate-200 bg-white p-4">
+                    <div className="mt-4 rounded-[18px] border border-slate-300 bg-white p-4">
                       <p className="text-[13px] leading-6 text-slate-600">
                         Ya adjudicaste la compra a{' '}
                         <span className="font-semibold text-slate-900">{awardedQuote.supplierCompany?.name ?? 'el proveedor'}</span>. Emití la orden de compra para que el proveedor pueda empezar a preparar el pedido y puedas seguir su cumplimiento.
@@ -1477,7 +1477,7 @@ export default function BuyerRequestDetailPage() {
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         {request?.status === 'AWARDED' ? (
                           <button
-                            className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-300 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                             disabled={Boolean(progressingAction)}
                             onClick={() => void handleProgress('START_NEGOTIATION')}
                             type="button"
@@ -1499,7 +1499,7 @@ export default function BuyerRequestDetailPage() {
 
                   {request?.status === 'ORDER_ISSUED' && request?.order ? (
                     <div className="mt-4 space-y-4">
-                      <div className="rounded-[18px] border border-slate-200 bg-white p-4">
+                      <div className="rounded-[18px] border border-slate-300 bg-white p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Orden {request.order.orderNumber}</p>
@@ -1525,7 +1525,7 @@ export default function BuyerRequestDetailPage() {
                       </div>
 
                       {request.order.fulfillmentStatus === 'DELIVERED' ? (
-                        <div className="rounded-[18px] border border-emerald-200 bg-emerald-50 p-4">
+                        <div className="rounded-[18px] border border-emerald-200 bg-emerald-100 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <p className="text-[13px] leading-6 text-emerald-800">
                               El proveedor marcó el pedido como <span className="font-semibold">entregado</span>. Confirmá la recepción para cerrar la operación.
@@ -1542,14 +1542,14 @@ export default function BuyerRequestDetailPage() {
                         </div>
                       ) : null}
 
-                      <form className="rounded-[18px] border border-slate-200 bg-white p-4" onSubmit={handleSaveOrder}>
+                      <form className="rounded-[18px] border border-slate-300 bg-white p-4" onSubmit={handleSaveOrder}>
                         <p className="text-[14px] font-semibold text-slate-900">Datos de la orden</p>
                         <p className="mt-1 text-[12px] text-slate-500">Información operativa para tu registro y el del proveedor.</p>
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <label className="block">
                             <span className="text-[11px] font-semibold text-slate-500">Número de orden</span>
                             <input
-                              className="mt-1 w-full rounded-[12px] border border-slate-200 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                              className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
                               onChange={(event) => setOrderForm((form) => ({ ...form, orderNumber: event.target.value }))}
                               value={orderForm.orderNumber}
                             />
@@ -1557,7 +1557,7 @@ export default function BuyerRequestDetailPage() {
                           <label className="block">
                             <span className="text-[11px] font-semibold text-slate-500">Fecha prometida</span>
                             <input
-                              className="mt-1 w-full rounded-[12px] border border-slate-200 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                              className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
                               onChange={(event) => setOrderForm((form) => ({ ...form, promisedDate: event.target.value }))}
                               type="date"
                               value={orderForm.promisedDate}
@@ -1567,7 +1567,7 @@ export default function BuyerRequestDetailPage() {
                         <label className="mt-3 block">
                           <span className="text-[11px] font-semibold text-slate-500">Notas</span>
                           <textarea
-                            className="mt-1 w-full rounded-[12px] border border-slate-200 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                            className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
                             onChange={(event) => setOrderForm((form) => ({ ...form, notes: event.target.value }))}
                             rows={2}
                             value={orderForm.notes}
@@ -1575,7 +1575,7 @@ export default function BuyerRequestDetailPage() {
                         </label>
                         <div className="mt-3 flex justify-end">
                           <button
-                            className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex h-10 items-center justify-center rounded-[12px] border border-slate-300 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                             disabled={savingOrder}
                             type="submit"
                           >
@@ -1587,7 +1587,7 @@ export default function BuyerRequestDetailPage() {
                   ) : null}
 
                   {request?.status === 'COMPLETED' ? (
-                    <div className="mt-4 rounded-[18px] border border-emerald-200 bg-emerald-50 p-4">
+                    <div className="mt-4 rounded-[18px] border border-emerald-200 bg-emerald-100 p-4">
                       <div className="flex items-start gap-3">
                         <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
                           <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
@@ -1606,7 +1606,7 @@ export default function BuyerRequestDetailPage() {
                 </section>
               ) : null}
 
-              <section className="border-t border-slate-200 pt-6">
+              <section className="border-t border-slate-300 pt-6">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                     <DetailIcon type="pin" />
@@ -1616,7 +1616,7 @@ export default function BuyerRequestDetailPage() {
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {deliveryItems.length ? (
                     deliveryItems.map((item) => (
-                      <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-200 bg-white px-4 py-4">
+                      <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-300 bg-white px-4 py-4">
                         <div className="flex items-center gap-2 text-slate-400">
                           <DetailIcon type={getDetailIcon(item.label)} />
                           <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
@@ -1625,24 +1625,24 @@ export default function BuyerRequestDetailPage() {
                       </article>
                     ))
                   ) : (
-                    <article className="rounded-[16px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500 md:col-span-2 xl:col-span-3">
+                    <article className="rounded-[16px] border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-5 text-sm text-slate-500 md:col-span-2 xl:col-span-3">
                       Aún no hay información de entrega cargada en esta solicitud.
                     </article>
                   )}
                 </div>
               </section>
 
-              <section className="border-t border-slate-200 pt-6">
+              <section className="border-t border-slate-300 pt-6">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
                     <DetailIcon type="file" />
                   </span>
                   <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Especificaciones</h2>
                 </div>
-                <div className="mt-4 rounded-[18px] border border-slate-200 bg-white p-4">
+                <div className="mt-4 rounded-[18px] border border-slate-300 bg-white p-4">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-rose-50 text-[11px] font-bold text-rose-500">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-rose-100 text-[11px] font-bold text-rose-500">
                         PDF
                       </span>
                       <div className="min-w-0">
@@ -1652,7 +1652,7 @@ export default function BuyerRequestDetailPage() {
                     </div>
                     <button
                       aria-label="Descargar especificaciones"
-                      className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-slate-200 px-3 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                      className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-slate-300 px-3 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50"
                       onClick={handleDownloadSpecs}
                       type="button"
                     >
@@ -1665,7 +1665,7 @@ export default function BuyerRequestDetailPage() {
                 </div>
               </section>
 
-              <div className="rounded-[16px] bg-[#f5f7ff] px-4 py-4">
+              <div className="rounded-[16px] bg-[#eceafb] px-4 py-4">
                 <div className="flex items-start gap-3">
                   <span className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white text-[#4f46ff] shadow-sm">
                     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -1683,7 +1683,7 @@ export default function BuyerRequestDetailPage() {
           </section>
 
           <aside className="space-y-5">
-            <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+            <section className="rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-slate-950">Proveedores seleccionados</h2>
                 {supplierCards.length ? (
@@ -1696,7 +1696,7 @@ export default function BuyerRequestDetailPage() {
               <div className="mt-3 space-y-2">
                 {supplierCards.length ? (
                   supplierCards.map((provider) => (
-                    <article key={provider.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
+                    <article key={provider.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-slate-300 bg-white px-3 py-2.5">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#eef2ff] text-sm font-bold text-[#4f46ff]">
                           {provider.name.slice(0, 1).toUpperCase()}
@@ -1707,20 +1707,20 @@ export default function BuyerRequestDetailPage() {
                         </div>
                       </div>
                       {provider.quoted ? (
-                        <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">Cotizó</span>
+                        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">Cotizó</span>
                       ) : (
                         <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Invitado</span>
                       )}
                     </article>
                   ))
                 ) : (
-                  <div className="rounded-[14px] border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-[13px] text-slate-500">
+                  <div className="rounded-[14px] border border-dashed border-slate-300 bg-[#eef1f7] px-3 py-4 text-[13px] text-slate-500">
                     Todavía no hay proveedores vinculados a esta solicitud.
                   </div>
                 )}
 
                 <button
-                  className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-slate-50 px-4 py-2.5 text-[12px] font-semibold text-[#4f46ff] transition hover:bg-[#f5f7ff]"
+                  className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#eef1f7] px-4 py-2.5 text-[12px] font-semibold text-[#4f46ff] transition hover:bg-[#f5f7ff]"
                   onClick={() => router.push(`/dashboard/comprador/solicitudes/nueva?category=${encodeURIComponent(request?.category ?? '')}&step=4`)}
                   type="button"
                 >
@@ -1730,7 +1730,7 @@ export default function BuyerRequestDetailPage() {
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+            <section className="rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-slate-950">Timeline</h2>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
@@ -1744,7 +1744,7 @@ export default function BuyerRequestDetailPage() {
                     {requestTimeline.map((event) => (
                       <div key={event.id} className="relative">
                         <span className="absolute -left-5 top-2.5 h-[8px] w-[8px] rounded-full bg-[#4f46ff] ring-4 ring-white" />
-                        <article className="rounded-[12px] border border-slate-200 bg-white px-3 py-2.5">
+                        <article className="rounded-[12px] border border-slate-300 bg-white px-3 py-2.5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <h3 className="text-[13px] font-semibold text-slate-950">{event.title}</h3>
@@ -1760,7 +1760,7 @@ export default function BuyerRequestDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-[12px] border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-[13px] text-slate-500">
+                  <div className="rounded-[12px] border border-dashed border-slate-300 bg-[#eef1f7] px-3 py-4 text-[13px] text-slate-500">
                     Todavía no hay eventos registrados para esta solicitud.
                   </div>
                 )}
@@ -1769,9 +1769,9 @@ export default function BuyerRequestDetailPage() {
           </aside>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-[20px] border border-slate-200 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-[20px] border border-slate-300 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between">
           <Link
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             href="/dashboard/comprador/solicitudes"
           >
             <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -1781,7 +1781,7 @@ export default function BuyerRequestDetailPage() {
           </Link>
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-sm font-semibold text-[#4f46ff] transition hover:bg-[#f8f9ff]"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-slate-300 bg-white px-4 text-sm font-semibold text-[#4f46ff] transition hover:bg-[#f8f9ff]"
               onClick={() => setMessage('Borrador guardado localmente.')}
               type="button"
             >

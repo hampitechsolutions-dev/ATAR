@@ -331,17 +331,17 @@ export default function BuyerQuoteDetailPage() {
         </div>
 
         {error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{error}</div>
+          <div className="rounded-2xl border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">{error}</div>
         ) : null}
 
         {message ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">
             {message}
           </div>
         ) : null}
 
         {loading ? (
-          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-16">
+          <div className="rounded-3xl border border-slate-300 bg-white px-6 py-16">
             <LoadingState label="Cargando detalle de cotización..." />
           </div>
         ) : !quote ? (
@@ -351,7 +351,7 @@ export default function BuyerQuoteDetailPage() {
         ) : (
           <>
             {/* ---------- Hero ---------- */}
-            <section className="relative isolate overflow-hidden rounded-3xl border border-slate-200 bg-[linear-gradient(110deg,#eef0ff_0%,#f4f5ff_42%,#fafaff_60%,#ffffff_100%)]">
+            <section className="relative isolate overflow-hidden rounded-3xl border border-slate-300 bg-[linear-gradient(110deg,#eef0ff_0%,#f4f5ff_42%,#fafaff_60%,#ffffff_100%)]">
               <div className="absolute inset-y-0 right-0 hidden w-[38%] lg:block">
                 <Image
                   alt=""
@@ -392,7 +392,7 @@ export default function BuyerQuoteDetailPage() {
             </section>
 
             {/* ---------- Métricas ---------- */}
-            <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <section className="grid gap-3 rounded-2xl border border-slate-300 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <MetricCard icon="users" label="Proveedor">
                 <p className="text-[17px] font-bold text-slate-950">{quote.supplierCompany?.name ?? 'Proveedor'}</p>
                 {quote.supplierCompany?.city ? (
@@ -455,16 +455,16 @@ export default function BuyerQuoteDetailPage() {
 
             {/* ---------- Propuesta + chat ---------- */}
             <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_440px]">
-              <section className="rounded-2xl border border-slate-200 bg-white p-5">
+              <section className="rounded-2xl border border-slate-300 bg-white p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-[17px] font-bold tracking-[-0.02em] text-slate-950">Propuesta del proveedor</h2>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     Cotización en línea
                   </span>
                 </div>
 
-                <dl className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                <dl className="mt-4 overflow-hidden rounded-xl border border-slate-300">
                   <SpecRow index={0} label="Producto">
                     {request?.productName || request?.title || '—'}
                   </SpecRow>
@@ -479,11 +479,11 @@ export default function BuyerQuoteDetailPage() {
                 </dl>
 
                 {quote.items && quote.items.length > 0 && (request?.items?.length ?? 0) > 1 ? (
-                  <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
-                    <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-2.5">
+                  <div className="mt-4 overflow-hidden rounded-xl border border-slate-300">
+                    <div className="border-b border-slate-200 bg-slate-50/70 px-4 py-2.5">
                       <p className="text-[11px] font-semibold text-slate-500">Precio por producto</p>
                     </div>
-                    <ul className="divide-y divide-slate-100">
+                    <ul className="divide-y divide-slate-200">
                       {quote.items.map((line) => {
                         const reqItem = request?.items?.find((item) => item.id === line.requestItemId);
                         const qty = reqItem?.quantity ?? null;
@@ -492,16 +492,16 @@ export default function BuyerQuoteDetailPage() {
                         const subtotal =
                           !unavailable && qty != null && line.unitPrice != null ? line.unitPrice * qty : null;
                         return (
-                          <li key={line.id} className="flex items-start justify-between gap-3 px-4 py-2.5 text-[13px]">
+                          <li key={line.id} className="flex items-start justify-between gap-3 px-4 py-2.5 text-[13px] even:bg-[#eef1f7]">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <p className="truncate font-semibold text-slate-900">{reqItem?.productName ?? 'Producto'}</p>
                                 {unavailable ? (
-                                  <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600">
+                                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-600">
                                     No disponible
                                   </span>
                                 ) : alternative ? (
-                                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
+                                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
                                     Alternativa
                                   </span>
                                 ) : null}
@@ -524,7 +524,7 @@ export default function BuyerQuoteDetailPage() {
                         );
                       })}
                     </ul>
-                    <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/70 px-4 py-2.5">
+                    <div className="flex items-center justify-between border-t border-slate-300 bg-slate-50/70 px-4 py-2.5">
                       <span className="text-[12px] font-semibold text-slate-600">Total</span>
                       <span className="text-[14px] font-bold text-slate-950">
                         {formatCurrency(quote.amount, quote.currency)}
@@ -533,7 +533,7 @@ export default function BuyerQuoteDetailPage() {
                   </div>
                 ) : null}
 
-                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                <div className="mt-4 rounded-xl border border-slate-300 bg-slate-50/70 px-4 py-3">
                   <p className="text-[11px] font-semibold text-slate-500">Comentario técnico</p>
                   <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-6 text-slate-700">
                     {quote.technicalComment || 'El proveedor no dejó comentarios técnicos.'}
@@ -541,7 +541,7 @@ export default function BuyerQuoteDetailPage() {
                 </div>
 
                 {(quote.revisions?.length ?? 0) > 1 ? (
-                  <div className="mt-4 rounded-xl border border-slate-200 px-4 py-3">
+                  <div className="mt-4 rounded-xl border border-slate-300 px-4 py-3">
                     <p className="text-[11px] font-semibold text-slate-500">Historial de la negociación</p>
                     <ul className="mt-2 space-y-2">
                       {[...(quote.revisions ?? [])]
@@ -556,7 +556,7 @@ export default function BuyerQuoteDetailPage() {
                             <li
                               key={rev.id}
                               className={`rounded-lg border px-3 py-2 text-[12px] ${
-                                isCurrent ? 'border-[#c7d2fe] bg-[#eef2ff]/50' : 'border-slate-100 bg-white'
+                                isCurrent ? 'border-[#c7d2fe] bg-[#eef2ff]/50' : 'border-slate-200 bg-white'
                               }`}
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -597,9 +597,9 @@ export default function BuyerQuoteDetailPage() {
                   </div>
                 ) : null}
 
-                <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
+                <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-slate-300 pt-4">
                   {quote.status === 'AWARDED' ? (
-                    <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-[13px] font-semibold text-emerald-700">
+                    <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-100 px-4 py-2.5 text-[13px] font-semibold text-emerald-700">
                       <Icon className="h-4 w-4" name="check" />
                       Le asignaste la compra a este proveedor
                     </span>
@@ -610,7 +610,7 @@ export default function BuyerQuoteDetailPage() {
                   ) : null}
 
                   <Link
-                    className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50"
                     href={request ? `/dashboard/comprador/solicitudes/${request.id}` : '/dashboard/comprador/solicitudes'}
                   >
                     Ver solicitud completa
@@ -630,7 +630,7 @@ export default function BuyerQuoteDetailPage() {
                 </div>
               </section>
 
-              <section className="flex h-[620px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <section className="flex h-[620px] flex-col overflow-hidden rounded-2xl border border-slate-300 bg-white">
                 <ConversationPanel
                   mode="quote"
                   quoteId={quote.id}
@@ -642,7 +642,7 @@ export default function BuyerQuoteDetailPage() {
 
             {/* ---------- Timeline + consejo ---------- */}
             <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_440px]">
-              <section className="rounded-2xl border border-slate-200 bg-white p-5">
+              <section className="rounded-2xl border border-slate-300 bg-white p-5">
                 <h2 className="text-[17px] font-bold tracking-[-0.02em] text-slate-950">Estado de la cotización</h2>
 
                 <div className="mt-6 flex items-start">
@@ -684,7 +684,7 @@ export default function BuyerQuoteDetailPage() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-indigo-100 bg-[#f5f6ff] p-5">
+              <section className="rounded-2xl border border-indigo-100 bg-[#eceafb] p-5">
                 <div className="flex items-start gap-2">
                   <span className="mt-0.5 text-[#4f46ff]">
                     <Icon name="info" />
@@ -727,12 +727,12 @@ function MetricCard({
   return (
     <div
       className={`flex items-start gap-3 rounded-xl px-4 py-3.5 ${
-        highlight ? 'bg-[#f5f6ff]' : 'bg-white'
+        highlight ? 'bg-[#eceafb]' : 'bg-white'
       }`}
     >
       <span
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-          highlight ? 'bg-white text-[#4f46ff]' : 'bg-slate-50 text-[#4f46ff]'
+          highlight ? 'bg-white text-[#4f46ff]' : 'bg-[#eef1f7] text-[#4f46ff]'
         }`}
       >
         <Icon name={icon} />

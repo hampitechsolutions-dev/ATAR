@@ -259,7 +259,7 @@ function ComparisonBarChart({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-4 text-[11px] text-[#7b84b1]">
+      <div className="flex flex-wrap gap-4 text-[11px] text-[#565e88]">
         <span className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-[#6440e8]" />
           Cotizaciones enviadas
@@ -283,7 +283,7 @@ function ComparisonBarChart({
                 style={{ height: `${(item.orders / max) * 150}px` }}
               />
             </div>
-            <p className="mt-3 text-center text-[11px] font-semibold text-[#8b92bc]">{item.label}</p>
+            <p className="mt-3 text-center text-[11px] font-semibold text-[#5f678f]">{item.label}</p>
           </div>
         ))}
       </div>
@@ -331,7 +331,7 @@ function DonutChart({
       </svg>
       <div className="absolute text-center">
         <p className="text-[24px] font-semibold text-[#242c63]">{centerValue}</p>
-        <p className="text-[11px] text-[#8d95be]">{centerLabel}</p>
+        <p className="text-[11px] text-[#5f678f]">{centerLabel}</p>
       </div>
     </div>
   );
@@ -561,7 +561,7 @@ export default function SupplierReportsPage() {
             <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
               Estadisticas
             </h1>
-            <p className="mt-1 text-sm text-[#7e85b2]">
+            <p className="mt-1 text-sm text-[#565e88]">
               Analisis de tu rendimiento y actividad en la plataforma.
             </p>
           </div>
@@ -591,7 +591,7 @@ export default function SupplierReportsPage() {
         </div>
 
         {error ? (
-          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          <div className="rounded-[20px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
@@ -628,19 +628,23 @@ export default function SupplierReportsPage() {
               note: 'Clientes activos en el periodo',
               icon: 'clients' as const,
             },
-          ].map((card) => (
+          ].map((card, index) => (
             <article
               key={card.title}
-              className="rounded-[22px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]"
+              className="rounded-[22px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]"
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f7f7ff] text-[#6440e8]">
+                <div
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+                    ['bg-[#e2ddff] text-indigo-600', 'bg-[#d8ebff] text-sky-600', 'bg-[#ffe6bd] text-amber-600', 'bg-[#d3f3e0] text-emerald-600', 'bg-[#ecdcff] text-violet-600'][index % 5]
+                  }`}
+                >
                   <StatIcon kind={card.icon} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#8b92bc]">{card.title}</p>
+                  <p className="text-xs font-semibold text-[#5f678f]">{card.title}</p>
                   <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">{card.value}</p>
-                  <p className="mt-1 text-[11px] text-[#8d95be]">{card.note}</p>
+                  <p className="mt-1 text-[11px] text-[#5f678f]">{card.note}</p>
                 </div>
               </div>
             </article>
@@ -650,17 +654,17 @@ export default function SupplierReportsPage() {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-              <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+              <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-[#27305f]">Ventas totales</h2>
                     <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
                       {loading ? '-' : formatCurrency(analytics.totalSales)}
                     </p>
-                    <p className="mt-1 text-[11px] text-[#8d95be]">Serie consolidada del periodo analizado</p>
+                    <p className="mt-1 text-[11px] text-[#5f678f]">Serie consolidada del periodo analizado</p>
                   </div>
                   <button
-                    className="inline-flex h-9 items-center rounded-xl border border-[#dde5f2] bg-white px-3 text-[11px] font-semibold text-[#7b84b1]"
+                    className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] bg-white px-3 text-[11px] font-semibold text-[#565e88]"
                     type="button"
                   >
                     Mensual
@@ -672,13 +676,13 @@ export default function SupplierReportsPage() {
                 </div>
               </article>
 
-              <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+              <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-[#27305f]">Cotizaciones vs Pedidos</h2>
                   </div>
                   <button
-                    className="inline-flex h-9 items-center rounded-xl border border-[#dde5f2] bg-white px-3 text-[11px] font-semibold text-[#7b84b1]"
+                    className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] bg-white px-3 text-[11px] font-semibold text-[#565e88]"
                     type="button"
                   >
                     Mensual
@@ -692,7 +696,7 @@ export default function SupplierReportsPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-              <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+              <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
                 <h2 className="text-sm font-semibold text-[#27305f]">Rendimiento de cotizaciones</h2>
                 <div className="mt-4 flex flex-col items-center gap-4 xl:flex-row xl:items-center">
                   <DonutChart
@@ -706,7 +710,7 @@ export default function SupplierReportsPage() {
                   <div className="w-full space-y-3">
                     {analytics.quoteOutcome.map((item) => (
                       <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
-                        <span className="flex items-center gap-2 text-[#7b84b1]">
+                        <span className="flex items-center gap-2 text-[#565e88]">
                           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                           {item.label}
                         </span>
@@ -719,11 +723,11 @@ export default function SupplierReportsPage() {
                 </div>
               </article>
 
-              <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+              <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="text-sm font-semibold text-[#27305f]">Principales clientes por ventas</h2>
                   <button
-                    className="inline-flex h-9 items-center rounded-xl border border-[#dde5f2] bg-white px-3 text-[11px] font-semibold text-[#7b84b1]"
+                    className="inline-flex h-9 items-center rounded-xl border border-[#c3d0e8] bg-white px-3 text-[11px] font-semibold text-[#565e88]"
                     type="button"
                   >
                     Este periodo
@@ -734,12 +738,12 @@ export default function SupplierReportsPage() {
                   {analytics.topClients.map((client, index) => (
                     <div
                       key={client.name}
-                      className="grid grid-cols-[22px_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-[16px] bg-[#fbfbff] px-3 py-3"
+                      className="grid grid-cols-[22px_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-[16px] bg-[#f1effc] px-3 py-3"
                     >
-                      <span className="text-xs font-semibold text-[#9aa1c8]">{index + 1}</span>
+                      <span className="text-xs font-semibold text-[#5f678f]">{index + 1}</span>
                       <span className="truncate text-sm font-semibold text-[#33407a]">{client.name}</span>
                       <span className="text-sm font-semibold text-[#33407a]">{formatCurrency(client.total)}</span>
-                      <span className="text-xs font-semibold text-[#7b84b1]">
+                      <span className="text-xs font-semibold text-[#565e88]">
                         {analytics.totalSales === 0 ? 0 : Math.round((client.total / analytics.totalSales) * 100)}%
                       </span>
                     </div>
@@ -748,12 +752,12 @@ export default function SupplierReportsPage() {
               </article>
             </div>
 
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
               <h2 className="text-sm font-semibold text-[#27305f]">Evolucion mensual (ultimos 6 meses)</h2>
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[720px]">
                   <thead>
-                    <tr className="border-b border-[#dde5f2] text-left text-[11px] uppercase tracking-[0.16em] text-[#9aa1c8]">
+                    <tr className="border-b border-[#c3d0e8] text-left text-[11px] uppercase tracking-[0.16em] text-[#5f678f]">
                       <th className="px-3 py-3 font-semibold">Mes</th>
                       <th className="px-3 py-3 font-semibold">Ventas totales</th>
                       <th className="px-3 py-3 font-semibold">Cotizaciones enviadas</th>
@@ -762,9 +766,9 @@ export default function SupplierReportsPage() {
                       <th className="px-3 py-3 font-semibold">Clientes nuevos</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#dde5f2] text-sm text-[#33407a]">
+                  <tbody className="divide-y divide-[#c3d0e8] text-sm text-[#33407a]">
                     {analytics.monthlyRows.map((row) => (
-                      <tr key={row.key}>
+                      <tr key={row.key} className="even:bg-[#f0eff8]">
                         <td className="px-3 py-3 font-semibold">{row.label}</td>
                         <td className="px-3 py-3">{formatCurrency(row.sales)}</td>
                         <td className="px-3 py-3">{row.quotes}</td>
@@ -787,35 +791,35 @@ export default function SupplierReportsPage() {
           </div>
 
           <aside className="space-y-4">
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
               <h2 className="text-sm font-semibold text-[#27305f]">Resumen del periodo</h2>
-              <div className="mt-4 space-y-3 text-sm">
+              <div className="mt-4 text-sm [&>div]:py-2 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-[#f0eff8]">
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[#8d95be]">Periodo</span>
+                  <span className="text-[#5f678f]">Periodo</span>
                   <span className="font-semibold text-[#2c3567]">
                     {analytics.periodStart} - {analytics.periodEnd}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[#8d95be]">Dias en el periodo</span>
+                  <span className="text-[#5f678f]">Dias en el periodo</span>
                   <span className="font-semibold text-[#2c3567]">{analytics.periodDays} dias</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[#8d95be]">Ventas promedio por dia</span>
+                  <span className="text-[#5f678f]">Ventas promedio por dia</span>
                   <span className="font-semibold text-[#2c3567]">{formatCurrency(Math.round(analytics.salesPerDay))}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[#8d95be]">Cotizaciones promedio por dia</span>
+                  <span className="text-[#5f678f]">Cotizaciones promedio por dia</span>
                   <span className="font-semibold text-[#2c3567]">{analytics.quotesPerDay.toFixed(1)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[#8d95be]">Pedidos promedio por dia</span>
+                  <span className="text-[#5f678f]">Pedidos promedio por dia</span>
                   <span className="font-semibold text-[#2c3567]">{analytics.ordersPerDay.toFixed(1)}</span>
                 </div>
               </div>
             </article>
 
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
               <h2 className="text-sm font-semibold text-[#27305f]">Ventas por categoria</h2>
               <div className="mt-4 flex flex-col items-center gap-4">
                 <DonutChart
@@ -830,7 +834,7 @@ export default function SupplierReportsPage() {
                 <div className="w-full space-y-3">
                   {analytics.categoryBreakdown.map((item) => (
                     <div key={item.category} className="flex items-center justify-between gap-4 text-sm">
-                      <span className="flex items-center gap-2 text-[#7b84b1]">
+                      <span className="flex items-center gap-2 text-[#565e88]">
                         <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                         {item.category}
                       </span>
@@ -848,7 +852,7 @@ export default function SupplierReportsPage() {
               </div>
             </article>
 
-            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+            <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
               <h2 className="text-sm font-semibold text-[#27305f]">Actividad reciente</h2>
               <div className="mt-4 space-y-4">
                 {analytics.recentActivity.map((item) => (
@@ -858,9 +862,9 @@ export default function SupplierReportsPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-[#33407a]">{item.title}</p>
-                      <p className="mt-1 truncate text-xs text-[#8d95be]">{item.detail}</p>
+                      <p className="mt-1 truncate text-xs text-[#5f678f]">{item.detail}</p>
                     </div>
-                    <span className="text-[11px] font-semibold text-[#8d95be]">{item.time}</span>
+                    <span className="text-[11px] font-semibold text-[#5f678f]">{item.time}</span>
                   </div>
                 ))}
               </div>

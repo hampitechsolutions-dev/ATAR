@@ -62,10 +62,10 @@ const STAGES: { status: OrderFulfillmentStatus; label: string }[] = [
 ];
 
 function stageTone(status: OrderFulfillmentStatus) {
-  if (status === 'DELIVERED') return 'bg-emerald-50 text-emerald-600';
-  if (status === 'DISPATCHED') return 'bg-sky-50 text-sky-600';
-  if (status === 'IN_PRODUCTION') return 'bg-amber-50 text-amber-600';
-  return 'bg-indigo-50 text-indigo-600';
+  if (status === 'DELIVERED') return 'bg-emerald-100 text-emerald-600';
+  if (status === 'DISPATCHED') return 'bg-sky-100 text-sky-600';
+  if (status === 'IN_PRODUCTION') return 'bg-amber-100 text-amber-600';
+  return 'bg-indigo-100 text-indigo-600';
 }
 
 function categoryImage(category?: string | null) {
@@ -74,7 +74,7 @@ function categoryImage(category?: string | null) {
 
 type Filter = 'all' | 'pending' | 'active' | 'delivered';
 
-const card = 'rounded-[18px] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.05)]';
+const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
 
 function KpiIcon({ name }: { name: Exclude<Filter, 'all'> }) {
   const paths = {
@@ -135,9 +135,9 @@ export default function SupplierProductionPage() {
   });
 
   const kpis: { key: Exclude<Filter, 'all'>; label: string; value: number; tone: string }[] = [
-    { key: 'pending', label: 'Pendientes', value: metrics.pending, tone: 'bg-indigo-50 text-indigo-600' },
-    { key: 'active', label: 'En proceso', value: metrics.active, tone: 'bg-amber-50 text-amber-600' },
-    { key: 'delivered', label: 'Entregadas', value: metrics.delivered, tone: 'bg-emerald-50 text-emerald-600' },
+    { key: 'pending', label: 'Pendientes', value: metrics.pending, tone: 'bg-[#e2ddff] text-indigo-600' },
+    { key: 'active', label: 'En proceso', value: metrics.active, tone: 'bg-amber-100 text-amber-600' },
+    { key: 'delivered', label: 'Entregadas', value: metrics.delivered, tone: 'bg-emerald-100 text-emerald-600' },
   ];
 
   return (
@@ -150,7 +150,7 @@ export default function SupplierProductionPage() {
       <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-[#16123a] sm:text-[34px]">Producción</h1>
       <p className="mt-1 text-[13px] text-slate-500 sm:text-[15px]">Seguí el avance operativo de cada orden adjudicada.</p>
 
-      {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+      {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
       {/* Contadores: también filtran la lista. */}
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-5 sm:gap-4">
@@ -185,7 +185,7 @@ export default function SupplierProductionPage() {
           </svg>
         </span>
         <input
-          className="h-11 w-full rounded-[12px] border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+          className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Buscar órdenes, clientes o estado..."
           type="search"
@@ -232,7 +232,7 @@ export default function SupplierProductionPage() {
                         ) : null}
                         <span
                           className={`relative z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                            done ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white'
+                            done ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white'
                           }`}
                         >
                           {done ? (
@@ -249,7 +249,7 @@ export default function SupplierProductionPage() {
                   })}
                 </ol>
 
-                <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] bg-[#f7f6fd] px-3.5 py-2.5">
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] bg-[#f1efff] px-3.5 py-2.5">
                   <div className="min-w-0">
                     <p className="text-[10px] text-slate-500">Entrega estimada</p>
                     <p className="text-[13px] font-semibold text-slate-900">{row.promisedDate}</p>
