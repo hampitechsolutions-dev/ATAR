@@ -135,6 +135,11 @@ enum NotificationType {
   REPRESENTATION_CANCELLED
   REQUEST_COMPLETED
   REQUEST_CANCELLED
+  BILLING_SETTLEMENT_ISSUED
+  BILLING_SETTLEMENT_DUE_SOON
+  BILLING_SETTLEMENT_OVERDUE
+  BILLING_PAYMENT_CONFIRMED
+  BILLING_PAYMENT_REJECTED
 }
 
 enum NotificationEmailStatus {
@@ -779,6 +784,9 @@ model BillingSettlement {
   dueAt            DateTime?
   paidAt           DateTime?
   voidedAt         DateTime?
+  // Dedupe de recordatorios (Fase 8): se setean una sola vez cuando se avisa.
+  dueSoonNotifiedAt DateTime?
+  overdueNotifiedAt DateTime?
   period           BillingPeriod       @relation(fields: [periodId], references: [id], onDelete: Cascade)
   company          Company             @relation(fields: [companyId], references: [id])
   commissions      BillingCommission[]

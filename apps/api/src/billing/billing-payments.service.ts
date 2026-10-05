@@ -2,25 +2,50 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
   BillingPaymentMethod,
   BillingPaymentStatus,
   CommissionStatus,
+  NotificationType,
+  Prisma,
   SettlementStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
 import { isPlatformAdmin } from '../common/workspace.util';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { roundMoney } from './billing.util';
+import {
+  BILLING_COMPANY_HREF,
+  BILLING_MANAGER_ROLES,
+} from './billing.constants';
+import { formatMoneyLabel, roundMoney } from './billing.util';
 import { ManualTransferProvider } from './payments/payment-provider';
 
 @Injectable()
 export class BillingPaymentsService {
+  private readonly logger = new Logger(BillingPaymentsService.name);
   private readonly manualProvider = new ManualTransferProvider();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  /** Las notificaciones son best-effort: nunca tumban la operación de pago. */
+  private async safeNotify(run: () => Promise<unknown>) {
+    try {
+      await run();
+    } catch (error) {
+      this.logger.warn(
+        error instanceof Error
+          ? `No se pudo notificar: ${error.message}`
+          : 'No se pudo notificar.',
+      );
+    }
+  }
 
   private companyIdsOf(user: AuthUser): string[] {
     return [...new Set(user.memberships.map((m) => m.companyId))];
@@ -28,7 +53,9 @@ export class BillingPaymentsService {
 
   private assertAdmin(user: AuthUser) {
     if (!isPlatformAdmin(user)) {
-      throw new ForbiddenException('Solo un administrador de ATAR puede validar pagos.');
+      throw new ForbiddenException(
+        'Solo un administrador de ATAR puede validar pagos.',
+      );
     }
   }
 
@@ -59,7 +86,9 @@ export class BillingPaymentsService {
       where: { id: settlementId },
       include: {
         period: { select: { code: true } },
-        company: { select: { id: true, name: true, legalName: true, taxId: true } },
+        company: {
+          select: { id: true, name: true, legalName: true, taxId: true },
+        },
         commissions: {
           include: { request: { select: { id: true, title: true } } },
           orderBy: { generatedAt: 'asc' },
@@ -71,11 +100,16 @@ export class BillingPaymentsService {
     if (!settlement) {
       throw new NotFoundException('Liquidación no encontrada.');
     }
-    const allowed = isPlatformAdmin(user) || this.companyIdsOf(user).includes(settlement.companyId);
+    const allowed =
+      isPlatformAdmin(user) ||
+      this.companyIdsOf(user).includes(settlement.companyId);
     if (!allowed) {
       throw new ForbiddenException('No tenés acceso a esta liquidación.');
     }
-    if (settlement.status === SettlementStatus.DRAFT && !isPlatformAdmin(user)) {
+    if (
+      settlement.status === SettlementStatus.DRAFT &&
+      !isPlatformAdmin(user)
+    ) {
       throw new ForbiddenException('Esta liquidación todavía no fue emitida.');
     }
     return settlement;
@@ -98,7 +132,9 @@ export class BillingPaymentsService {
       throw new NotFoundException('Liquidación no encontrada.');
     }
     if (!this.companyIdsOf(user).includes(settlement.companyId)) {
-      throw new ForbiddenException('No podés pagar una liquidación de otra empresa.');
+      throw new ForbiddenException(
+        'No podés pagar una liquidación de otra empresa.',
+      );
     }
     const payable: SettlementStatus[] = [
       SettlementStatus.ISSUED,
@@ -106,7 +142,9 @@ export class BillingPaymentsService {
       SettlementStatus.OVERDUE,
     ];
     if (!payable.includes(settlement.status)) {
-      throw new BadRequestException('Esta liquidación no admite pagos en su estado actual.');
+      throw new BadRequestException(
+        'Esta liquidación no admite pagos en su estado actual.',
+      );
     }
     const amount = roundMoney(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -145,7 +183,13 @@ export class BillingPaymentsService {
       where: status ? { status } : {},
       include: {
         settlement: {
-          select: { id: true, documentNumber: true, companyId: true, grandTotal: true, currency: true },
+          select: {
+            id: true,
+            documentNumber: true,
+            companyId: true,
+            grandTotal: true,
+            currency: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -155,7 +199,9 @@ export class BillingPaymentsService {
   /** El admin confirma el pago (fuente server-side). Recalcula el estado. */
   async confirmPayment(user: AuthUser, paymentId: string) {
     this.assertAdmin(user);
-    const payment = await this.prisma.billingPayment.findUnique({ where: { id: paymentId } });
+    const payment = await this.prisma.billingPayment.findUnique({
+      where: { id: paymentId },
+    });
     if (!payment) {
       throw new NotFoundException('Pago no encontrado.');
     }
@@ -163,7 +209,9 @@ export class BillingPaymentsService {
       return payment; // idempotente
     }
     if (payment.status === BillingPaymentStatus.REJECTED) {
-      throw new BadRequestException('El pago fue rechazado; no se puede confirmar.');
+      throw new BadRequestException(
+        'El pago fue rechazado; no se puede confirmar.',
+      );
     }
 
     const now = new Date();
@@ -177,33 +225,96 @@ export class BillingPaymentsService {
       },
     });
 
-    await this.recomputeSettlementPaymentStatus(payment.settlementId, user.userId);
-    await this.audit(user, 'BILLING_PAYMENT_CONFIRM', 'BillingPayment', paymentId, {
-      settlementId: payment.settlementId,
-      amount: payment.amount,
+    await this.recomputeSettlementPaymentStatus(
+      payment.settlementId,
+      user.userId,
+    );
+    await this.audit(
+      user,
+      'BILLING_PAYMENT_CONFIRM',
+      'BillingPayment',
+      paymentId,
+      {
+        settlementId: payment.settlementId,
+        amount: payment.amount,
+      },
+    );
+
+    // Fase 8: avisar a la empresa que ATAR confirmó el pago.
+    const settlement = await this.prisma.billingSettlement.findUnique({
+      where: { id: payment.settlementId },
     });
+    if (settlement) {
+      const fullyPaid = settlement.status === SettlementStatus.PAID;
+      await this.safeNotify(() =>
+        this.notifications.createForCompany({
+          companyId: settlement.companyId,
+          roles: BILLING_MANAGER_ROLES,
+          type: NotificationType.BILLING_PAYMENT_CONFIRMED,
+          title: `Pago confirmado · ${settlement.documentNumber}`,
+          detail: fullyPaid
+            ? `ATAR confirmó tu pago de ${formatMoneyLabel(payment.amount, payment.currency)}. La liquidación quedó saldada.`
+            : `ATAR confirmó tu pago de ${formatMoneyLabel(payment.amount, payment.currency)}.`,
+          href: BILLING_COMPANY_HREF,
+          metadata: { settlementId: settlement.id, paymentId },
+        }),
+      );
+    }
     return confirmed;
   }
 
   /** El admin rechaza un pago pendiente. */
   async rejectPayment(user: AuthUser, paymentId: string, reason: string) {
     this.assertAdmin(user);
-    const payment = await this.prisma.billingPayment.findUnique({ where: { id: paymentId } });
+    const payment = await this.prisma.billingPayment.findUnique({
+      where: { id: paymentId },
+    });
     if (!payment) {
       throw new NotFoundException('Pago no encontrado.');
     }
     if (payment.status !== BillingPaymentStatus.PENDING) {
-      throw new BadRequestException('Solo se pueden rechazar pagos pendientes.');
+      throw new BadRequestException(
+        'Solo se pueden rechazar pagos pendientes.',
+      );
     }
     const rejected = await this.prisma.billingPayment.update({
       where: { id: paymentId },
       data: {
         status: BillingPaymentStatus.REJECTED,
         rejectedAt: new Date(),
-        metadata: { ...(typeof payment.metadata === 'object' && payment.metadata ? payment.metadata : {}), rejectReason: reason },
+        metadata: {
+          ...(typeof payment.metadata === 'object' && payment.metadata
+            ? payment.metadata
+            : {}),
+          rejectReason: reason,
+        },
       },
     });
-    await this.audit(user, 'BILLING_PAYMENT_REJECT', 'BillingPayment', paymentId, { reason });
+    await this.audit(
+      user,
+      'BILLING_PAYMENT_REJECT',
+      'BillingPayment',
+      paymentId,
+      { reason },
+    );
+
+    // Fase 8: avisar a la empresa que el pago fue rechazado, con el motivo.
+    const settlement = await this.prisma.billingSettlement.findUnique({
+      where: { id: payment.settlementId },
+    });
+    if (settlement) {
+      await this.safeNotify(() =>
+        this.notifications.createForCompany({
+          companyId: settlement.companyId,
+          roles: BILLING_MANAGER_ROLES,
+          type: NotificationType.BILLING_PAYMENT_REJECTED,
+          title: `Pago rechazado · ${settlement.documentNumber}`,
+          detail: `ATAR rechazó tu pago de ${formatMoneyLabel(payment.amount, payment.currency)}. Motivo: ${reason}`,
+          href: BILLING_COMPANY_HREF,
+          metadata: { settlementId: settlement.id, paymentId, reason },
+        }),
+      );
+    }
     return rejected;
   }
 
@@ -212,8 +323,13 @@ export class BillingPaymentsService {
    * CONFIRMED: PAID si cubre el total, PARTIALLY_PAID si hay algo, y marca las
    * comisiones como PAID cuando queda saldada.
    */
-  private async recomputeSettlementPaymentStatus(settlementId: string, actorUserId: string) {
-    const settlement = await this.prisma.billingSettlement.findUnique({ where: { id: settlementId } });
+  private async recomputeSettlementPaymentStatus(
+    settlementId: string,
+    actorUserId: string,
+  ) {
+    const settlement = await this.prisma.billingSettlement.findUnique({
+      where: { id: settlementId },
+    });
     if (!settlement) {
       return;
     }
@@ -222,7 +338,8 @@ export class BillingPaymentsService {
       select: { amount: true },
     });
     const paid = roundMoney(payments.reduce((s, p) => s + p.amount, 0));
-    const fullyPaid = paid + 0.001 >= settlement.grandTotal && settlement.grandTotal > 0;
+    const fullyPaid =
+      paid + 0.001 >= settlement.grandTotal && settlement.grandTotal > 0;
 
     const nextStatus = fullyPaid
       ? SettlementStatus.PAID
@@ -234,7 +351,9 @@ export class BillingPaymentsService {
       where: { id: settlementId },
       data: {
         status: nextStatus,
-        paidAt: fullyPaid ? (settlement.paidAt ?? new Date()) : settlement.paidAt,
+        paidAt: fullyPaid
+          ? (settlement.paidAt ?? new Date())
+          : settlement.paidAt,
       },
     });
 
@@ -245,7 +364,10 @@ export class BillingPaymentsService {
       });
       // Rollup del período: si todas sus liquidaciones están pagadas, pasa a PAID.
       const settlementsLeft = await this.prisma.billingSettlement.count({
-        where: { periodId: settlement.periodId, status: { not: SettlementStatus.PAID } },
+        where: {
+          periodId: settlement.periodId,
+          status: { not: SettlementStatus.PAID },
+        },
       });
       if (settlementsLeft === 0) {
         await this.prisma.billingPeriod.update({
@@ -277,7 +399,7 @@ export class BillingPaymentsService {
         action,
         entity,
         entityId,
-        newValue: (extra ?? {}) as object,
+        newValue: (extra ?? {}) as Prisma.InputJsonValue,
       },
     });
   }

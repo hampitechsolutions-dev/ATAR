@@ -13,6 +13,18 @@ export function roundMoney(value: number): number {
 }
 
 /**
+ * Etiqueta monetaria para textos (notificaciones, CSV legible). Formato es-AR
+ * con el código de moneda al frente. No es para cálculo, solo presentación.
+ */
+export function formatMoneyLabel(value: number, currency = 'ARS'): string {
+  const amount = Number.isFinite(value) ? value : 0;
+  return `${currency} ${amount.toLocaleString('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+/**
  * Comisión = base * ratePercent% + fixedAmount, acotada por [minAmount, maxAmount].
  * Devuelve el monto y los snapshots usados (para persistir y no recalcular luego).
  */

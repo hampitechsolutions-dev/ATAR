@@ -913,6 +913,37 @@ export type BillingAdminPaymentRecord = BillingPaymentRecord & {
 
 export type RegisterPaymentPayload = { amount: number; receiptUrl?: string; note?: string };
 
+export type BillingOverviewCurrency = {
+  currency: string;
+  billed: number;
+  collected: number;
+  pending: number;
+  overdue: number;
+  settlements: number;
+};
+
+export type BillingOverview = {
+  currencies: BillingOverviewCurrency[];
+  pendingPaymentsToValidate: number;
+};
+
+export type BillingReconciliation = {
+  period: string;
+  periodStatus: string;
+  commissionCount: number;
+  settlementCount: number;
+  commissionTotal: number;
+  settledTotal: number;
+  collectedTotal: number;
+  balanced: boolean;
+  issues: {
+    confirmedUnsettled: { commissionId: string; requestId: string; amount: number }[];
+    mismatchedSettlements: { documentNumber: string; grandTotal: number; expected: number }[];
+  };
+};
+
+export type BillingReminderResult = { scanned: number; dueSoon: number; overdue: number };
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export const ACTIVE_COMPANY_STORAGE_KEY = 'atar.activeCompanyId';
@@ -1411,7 +1442,36 @@ export const atarApi = {
       token,
     );
   },
+  getBillingOverview(token: string) {
+    return request<BillingOverview>('/billing/admin/overview', undefined, token);
+  },
+  getBillingReconciliation(code: string, token: string) {
+    return request<BillingReconciliation>(`/billing/admin/reconciliation/${code}`, undefined, token);
+  },
+  runBillingReminders(token: string) {
+    return request<BillingReminderResult>('/billing/admin/reminders/run', { method: 'POST' }, token);
+  },
 };
+
+/**
+ * Descarga un export CSV de facturación. No usa `request()` porque la respuesta
+ * es un archivo, no JSON: baja el blob con el header de autorización.
+ */
+export async function downloadBillingCsv(
+  kind: 'settlements' | 'commissions',
+  period: string | undefined,
+  token: string,
+): Promise<Blob> {
+  const query = period ? `?period=${encodeURIComponent(period)}` : '';
+  const response = await fetch(`${API_URL}/billing/admin/export/${kind}.csv${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    throw new ApiError('No se pudo exportar el CSV.', response.status);
+  }
+  return response.blob();
+}
 
 export const appConfig = {
   apiUrl: API_URL,

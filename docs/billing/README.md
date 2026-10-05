@@ -1,6 +1,6 @@
 # ATAR — Sistema de comisiones y liquidación (Billing)
 
-> **Estado: EN IMPLEMENTACIÓN.** Decisiones de negocio confirmadas (§3). Fases 1–6 hechas (backend + dashboards admin y empresa); ver §11.
+> **Estado: EN IMPLEMENTACIÓN.** Decisiones de negocio confirmadas (§3). Fases 1–6, 8, 9 y 10 hechas (backend + dashboards + notificaciones + reportes/export + QA); Fase 7 (webhooks/MercadoPago) pospuesta. Ver §11.
 > Principio rector: *Business Operations ≠ Commissions ≠ Billing ≠ Payments ≠ Tax* (§59 del pedido): responsabilidades separadas, trazable, auditable, idempotente y seguro.
 
 ---
@@ -269,10 +269,10 @@ SETTLEMENT → vence dueAt → OVERDUE → PAGO
 | **4** | Dashboard ATAR (admin): área protegida `/dashboard/admin` (`AdminGuard` → solo rol `ADMIN`, `AdminShell` canvas oscuro). `/dashboard/admin/facturacion`: control de período (vista previa por empresa, generar liquidaciones, emitir) + validación de pagos (tabs por estado, confirmar/rechazar con motivo). Consume `billing/admin`; enlace "Panel de ATAR" en el sidebar solo para admins. *(Reglas/ajustes/export = pendiente §9.)* | ✅ Hecha |
 | **5** | Dashboard empresa (proveedor): `/dashboard/proveedor/facturacion` con "Mis liquidaciones" (totales por pagar/en validación/pagado), detalle trazable (operación → base → comisión, ajustes, historial de pagos) y registro de pago manual (importe/comprobante/nota → `PENDING`, nunca se marca pagado por el cliente). Consume `billing/me`; en el menú del proveedor (sidebar + bottom-nav), solo para cuentas que administran la empresa. *(Documento PDF descargable = pendiente §9.)* | ✅ Hecha |
 | **6** | Pagos (backend): abstracción `PaymentProvider` + `ManualTransferProvider`; `BillingPaymentsService` (empresa registra pago manual con `externalReference` único → `PENDING`; admin confirma/rechaza; recálculo de estado de la liquidación → `PARTIALLY_PAID`/`PAID`, comisiones → `PAID`, rollup del período). Endpoints `billing/me` (listar/detalle/pagar, scope por empresa) y `billing/admin/payments` (listar/confirmar/rechazar). Confirmación **server-side** (nunca por el frontend). | ✅ Hecha |
-| **7** | Webhooks (idempotentes/persistidos) — se activa con MercadoPago. | — |
-| **8** | Notificaciones (generada / por vencer / vencida / pago recibido / rechazado). | enum notif |
-| **9** | Reportes + export CSV + reconciliación. | — |
-| **10** | QA: tests de cálculo, liquidación (regeneración/duplicación/cierre), pagos (webhook duplicado/orden), seguridad (cross-company, manipulación). | — |
+| **7** | Webhooks (idempotentes/persistidos) — se activa con MercadoPago. | ⏸️ Pospuesta |
+| **8** | Notificaciones: 5 tipos nuevos (`BILLING_SETTLEMENT_ISSUED/DUE_SOON/OVERDUE`, `BILLING_PAYMENT_CONFIRMED/REJECTED`) emitidos vía `NotificationsService.createForCompany` (roles manager, href al panel). Al emitir → aviso a cada empresa; al confirmar/rechazar pago → aviso con monto/motivo. Recordatorios `runDueReminders` (idempotentes vía `dueSoonNotifiedAt`/`overdueNotifiedAt`; marca `OVERDUE` pasado el vencimiento), disparo manual admin `POST billing/admin/reminders/run` (cron futuro). Notificaciones **best-effort** (no tumban la facturación). | ✅ Hecha |
+| **9** | `BillingReportsService` + endpoints admin: `GET overview` (KPIs por moneda: facturado/cobrado/pendiente/vencido + pagos por validar), `GET settlements` (filtros período/estado/empresa), `GET reconciliation/:code` (esperado vs liquidado vs cobrado; detecta comisiones confirmadas sin liquidar y descuadres contables), `GET export/settlements.csv` y `export/commissions.csv` (UTF-8 con BOM). Consumido en el dashboard admin (panel de cobranza, export, reconciliación). | ✅ Hecha |
+| **10** | QA (Jest, 32 tests PASS): cálculo (`billing.util`), liquidaciones (agrupación por empresa+moneda, código de período inválido, recordatorios idempotentes), pagos (idempotencia de confirmación, guards REJECTED/no-PENDING, recálculo PAID/PARTIALLY_PAID + rollup, cross-company, admin-only), reportes (overview, reconciliación balanceada/descuadrada, CSV). | ✅ Hecha |
 
 ---
 

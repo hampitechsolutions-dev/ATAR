@@ -1,13 +1,26 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import {
   BillingPeriodStatus,
   CommissionStatus,
+  NotificationType,
+  Prisma,
   SettlementStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
 import { isPlatformAdmin } from '../common/workspace.util';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { roundMoney } from './billing.util';
+import {
+  BILLING_COMPANY_HREF,
+  BILLING_DUE_SOON_DAYS,
+  BILLING_MANAGER_ROLES,
+} from './billing.constants';
+import { formatMoneyLabel, roundMoney } from './billing.util';
 
 type PeriodWindow = { startsAt: Date; endsAt: Date; dueAt: Date };
 
@@ -15,11 +28,16 @@ type PeriodWindow = { startsAt: Date; endsAt: Date; dueAt: Date };
 export class BillingSettlementsService {
   private readonly logger = new Logger(BillingSettlementsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   private assertAdmin(user: AuthUser) {
     if (!isPlatformAdmin(user)) {
-      throw new ForbiddenException('Solo un administrador de ATAR puede operar la facturación.');
+      throw new ForbiddenException(
+        'Solo un administrador de ATAR puede operar la facturación.',
+      );
     }
   }
 
@@ -27,14 +45,18 @@ export class BillingSettlementsService {
   private async periodWindow(code: string): Promise<PeriodWindow> {
     const match = /^(\d{4})-(\d{2})$/.exec(code);
     if (!match) {
-      throw new BadRequestException('El período debe tener formato YYYY-MM (ej. 2026-09).');
+      throw new BadRequestException(
+        'El período debe tener formato YYYY-MM (ej. 2026-09).',
+      );
     }
     const year = Number(match[1]);
     const month = Number(match[2]);
     if (month < 1 || month > 12) {
       throw new BadRequestException('Mes inválido en el período.');
     }
-    const settings = await this.prisma.billingSettings.findUnique({ where: { id: 'default' } });
+    const settings = await this.prisma.billingSettings.findUnique({
+      where: { id: 'default' },
+    });
     const dueDays = settings?.dueDays ?? 15;
 
     const startsAt = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
@@ -56,7 +78,7 @@ export class BillingSettlementsService {
         action,
         entity,
         entityId,
-        newValue: (extra ?? {}) as object,
+        newValue: (extra ?? {}) as Prisma.InputJsonValue,
       },
     });
   }
@@ -93,27 +115,32 @@ export class BillingSettlementsService {
         operationsCount: number;
         baseTotal: number;
         commissionTotal: number;
-        commissions: { requestId: string; generatedAt: Date; baseAmount: number; commissionAmount: number }[];
+        commissions: {
+          requestId: string;
+          generatedAt: Date;
+          baseAmount: number;
+          commissionAmount: number;
+        }[];
       }
     >();
 
     for (const c of commissions) {
       const key = `${c.companyId}__${c.currency}`;
-      const group =
-        groups.get(key) ??
-        {
-          companyId: c.companyId,
-          companyName: c.company.name,
-          currency: c.currency,
-          payer: c.payer,
-          operationsCount: 0,
-          baseTotal: 0,
-          commissionTotal: 0,
-          commissions: [],
-        };
+      const group = groups.get(key) ?? {
+        companyId: c.companyId,
+        companyName: c.company.name,
+        currency: c.currency,
+        payer: c.payer,
+        operationsCount: 0,
+        baseTotal: 0,
+        commissionTotal: 0,
+        commissions: [],
+      };
       group.operationsCount += 1;
       group.baseTotal = roundMoney(group.baseTotal + c.baseAmount);
-      group.commissionTotal = roundMoney(group.commissionTotal + c.commissionAmount);
+      group.commissionTotal = roundMoney(
+        group.commissionTotal + c.commissionAmount,
+      );
       group.commissions.push({
         requestId: c.requestId,
         generatedAt: c.generatedAt,
@@ -163,7 +190,9 @@ export class BillingSettlementsService {
       groups.set(key, [...(groups.get(key) ?? []), c]);
     }
 
-    let seq = await this.prisma.billingSettlement.count({ where: { periodId: period.id } });
+    let seq = await this.prisma.billingSettlement.count({
+      where: { periodId: period.id },
+    });
     const createdOrUpdated: string[] = [];
     let skipped = 0;
 
@@ -221,11 +250,19 @@ export class BillingSettlementsService {
         });
 
         // Recalcular totales desde TODAS las comisiones de la liquidación.
-        const all = await tx.billingCommission.findMany({ where: { settlementId } });
-        const adjustments = await tx.billingAdjustment.findMany({ where: { settlementId } });
+        const all = await tx.billingCommission.findMany({
+          where: { settlementId },
+        });
+        const adjustments = await tx.billingAdjustment.findMany({
+          where: { settlementId },
+        });
         const baseTotal = roundMoney(all.reduce((s, c) => s + c.baseAmount, 0));
-        const commissionTotal = roundMoney(all.reduce((s, c) => s + c.commissionAmount, 0));
-        const adjustmentsTotal = roundMoney(adjustments.reduce((s, a) => s + a.amount, 0));
+        const commissionTotal = roundMoney(
+          all.reduce((s, c) => s + c.commissionAmount, 0),
+        );
+        const adjustmentsTotal = roundMoney(
+          adjustments.reduce((s, a) => s + a.amount, 0),
+        );
         await tx.billingSettlement.update({
           where: { id: settlementId },
           data: {
@@ -246,12 +283,18 @@ export class BillingSettlementsService {
       data: { status: BillingPeriodStatus.GENERATED, generatedAt: new Date() },
     });
 
-    await this.writeAudit(user, 'BILLING_GENERATE', 'BillingPeriod', period.id, {
-      code,
-      settlements: createdOrUpdated.length,
-      commissions: commissions.length,
-      skipped,
-    });
+    await this.writeAudit(
+      user,
+      'BILLING_GENERATE',
+      'BillingPeriod',
+      period.id,
+      {
+        code,
+        settlements: createdOrUpdated.length,
+        commissions: commissions.length,
+        skipped,
+      },
+    );
 
     return {
       period: code,
@@ -265,15 +308,30 @@ export class BillingSettlementsService {
   /** Emite las liquidaciones DRAFT del período (las vuelve visibles/cobrables). */
   async issue(user: AuthUser, code: string) {
     this.assertAdmin(user);
-    const period = await this.prisma.billingPeriod.findUnique({ where: { code } });
+    const period = await this.prisma.billingPeriod.findUnique({
+      where: { code },
+    });
     if (!period) {
-      throw new BadRequestException('El período no existe o no fue generado todavía.');
+      throw new BadRequestException(
+        'El período no existe o no fue generado todavía.',
+      );
     }
 
     const now = new Date();
+
+    // Las que se emiten en esta corrida (DRAFT -> ISSUED). Se leen antes para
+    // poder notificar solo a las empresas que recién reciben su liquidación.
+    const toIssue = await this.prisma.billingSettlement.findMany({
+      where: { periodId: period.id, status: SettlementStatus.DRAFT },
+    });
+
     const result = await this.prisma.billingSettlement.updateMany({
       where: { periodId: period.id, status: SettlementStatus.DRAFT },
-      data: { status: SettlementStatus.ISSUED, issuedAt: now, dueAt: period.dueAt },
+      data: {
+        status: SettlementStatus.ISSUED,
+        issuedAt: now,
+        dueAt: period.dueAt,
+      },
     });
 
     await this.prisma.billingPeriod.update({
@@ -286,6 +344,152 @@ export class BillingSettlementsService {
       issued: result.count,
     });
 
+    // Fase 8: avisar a cada empresa que ya puede ver y pagar su liquidación.
+    for (const settlement of toIssue) {
+      await this.safeNotify(() =>
+        this.notifications.createForCompany({
+          companyId: settlement.companyId,
+          roles: BILLING_MANAGER_ROLES,
+          type: NotificationType.BILLING_SETTLEMENT_ISSUED,
+          title: `Nueva liquidación ${settlement.documentNumber}`,
+          detail: `Se emitió la liquidación de comisión del período ${code} por ${formatMoneyLabel(
+            settlement.grandTotal,
+            settlement.currency,
+          )}. Vence el ${this.dateLabel(period.dueAt)}.`,
+          href: BILLING_COMPANY_HREF,
+          metadata: { settlementId: settlement.id, period: code },
+        }),
+      );
+    }
+
     return { period: code, issued: result.count };
+  }
+
+  /**
+   * Recordatorios de vencimiento (Fase 8). Pensado para disparo manual del
+   * admin o un cron futuro. Es idempotente: cada liquidación se avisa una sola
+   * vez por transición (campos `dueSoonNotifiedAt` / `overdueNotifiedAt`), y las
+   * que pasaron su vencimiento se marcan `OVERDUE`.
+   */
+  async runDueReminders(user: AuthUser) {
+    this.assertAdmin(user);
+    const now = new Date();
+    const soonThreshold = new Date(
+      now.getTime() + BILLING_DUE_SOON_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    // Solo liquidaciones cobrables (emitidas o con pago parcial) y con vencimiento.
+    const open = await this.prisma.billingSettlement.findMany({
+      where: {
+        status: {
+          in: [
+            SettlementStatus.ISSUED,
+            SettlementStatus.PARTIALLY_PAID,
+            SettlementStatus.OVERDUE,
+          ],
+        },
+        dueAt: { not: null },
+      },
+    });
+
+    let dueSoon = 0;
+    let overdue = 0;
+
+    for (const settlement of open) {
+      const due = settlement.dueAt!;
+
+      // Vencida: marca OVERDUE (si no lo estaba) y avisa una vez.
+      if (due < now) {
+        if (settlement.status !== SettlementStatus.OVERDUE) {
+          await this.prisma.billingSettlement.update({
+            where: { id: settlement.id },
+            data: { status: SettlementStatus.OVERDUE },
+          });
+        }
+        if (!settlement.overdueNotifiedAt) {
+          await this.prisma.billingSettlement.update({
+            where: { id: settlement.id },
+            data: { overdueNotifiedAt: now },
+          });
+          await this.safeNotify(() =>
+            this.notifications.createForCompany({
+              companyId: settlement.companyId,
+              roles: BILLING_MANAGER_ROLES,
+              type: NotificationType.BILLING_SETTLEMENT_OVERDUE,
+              title: `Liquidación vencida ${settlement.documentNumber}`,
+              detail: `La liquidación por ${formatMoneyLabel(
+                settlement.grandTotal,
+                settlement.currency,
+              )} venció el ${this.dateLabel(due)}. Regularizá el pago para evitar la suspensión del servicio.`,
+              href: BILLING_COMPANY_HREF,
+              metadata: { settlementId: settlement.id },
+            }),
+          );
+          overdue += 1;
+        }
+        continue;
+      }
+
+      // Por vencer: dentro de la ventana y todavía sin aviso.
+      if (due <= soonThreshold && !settlement.dueSoonNotifiedAt) {
+        await this.prisma.billingSettlement.update({
+          where: { id: settlement.id },
+          data: { dueSoonNotifiedAt: now },
+        });
+        await this.safeNotify(() =>
+          this.notifications.createForCompany({
+            companyId: settlement.companyId,
+            roles: BILLING_MANAGER_ROLES,
+            type: NotificationType.BILLING_SETTLEMENT_DUE_SOON,
+            title: `Liquidación por vencer ${settlement.documentNumber}`,
+            detail: `La liquidación por ${formatMoneyLabel(
+              settlement.grandTotal,
+              settlement.currency,
+            )} vence el ${this.dateLabel(due)}.`,
+            href: BILLING_COMPANY_HREF,
+            metadata: { settlementId: settlement.id },
+          }),
+        );
+        dueSoon += 1;
+      }
+    }
+
+    await this.writeAudit(
+      user,
+      'BILLING_DUE_REMINDERS',
+      'BillingSettlement',
+      'batch',
+      {
+        scanned: open.length,
+        dueSoon,
+        overdue,
+      },
+    );
+
+    return { scanned: open.length, dueSoon, overdue };
+  }
+
+  private dateLabel(value: Date | null) {
+    if (!value) {
+      return '—';
+    }
+    return new Intl.DateTimeFormat('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(value);
+  }
+
+  /** Las notificaciones son best-effort: nunca deben tumbar la operación de facturación. */
+  private async safeNotify(run: () => Promise<unknown>) {
+    try {
+      await run();
+    } catch (error) {
+      this.logger.warn(
+        error instanceof Error
+          ? `No se pudo notificar: ${error.message}`
+          : 'No se pudo notificar.',
+      );
+    }
   }
 }

@@ -14,10 +14,13 @@ import { Spinner } from '@/components/ui/spinner';
 import {
   ApiError,
   atarApi,
+  downloadBillingCsv,
   type BillingAdminPaymentRecord,
   type BillingGenerateResult,
+  type BillingOverview,
   type BillingPaymentStatus,
   type BillingPreview,
+  type BillingReconciliation,
 } from '@/lib/atar-api';
 import {
   PAYMENT_STATUS_LABEL,
@@ -60,10 +63,127 @@ export default function AdminBillingPage() {
           </p>
         </div>
 
+        <OverviewSection token={token} />
         <PeriodSection period={period} onPeriodChange={setPeriod} token={token} />
         <PaymentsSection token={token} />
       </div>
     </AdminShell>
+  );
+}
+
+/** Baja un Blob como archivo desde el navegador. */
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function OverviewSection({ token }: { token: string | undefined }) {
+  const [overview, setOverview] = useState<BillingOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderMsg, setReminderMsg] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      setOverview(await atarApi.getBillingOverview(token));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo cargar el resumen.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function runReminders() {
+    if (!token) {
+      return;
+    }
+    setReminderBusy(true);
+    setReminderMsg(null);
+    try {
+      const res = await atarApi.runBillingReminders(token);
+      setReminderMsg(
+        `Recordatorios: ${res.dueSoon} por vencer, ${res.overdue} vencidas (de ${res.scanned} revisadas).`,
+      );
+      await load();
+    } catch (err) {
+      setReminderMsg(err instanceof ApiError ? err.message : 'No se pudieron correr los recordatorios.');
+    } finally {
+      setReminderBusy(false);
+    }
+  }
+
+  return (
+    <Panel>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-lg font-semibold text-slate-900">Cobranza</h2>
+        <button
+          className={dashboardSecondaryButtonClassName}
+          disabled={reminderBusy}
+          onClick={() => void runReminders()}
+          type="button"
+        >
+          {reminderBusy ? 'Procesando…' : 'Correr recordatorios de vencimiento'}
+        </button>
+      </div>
+
+      {reminderMsg ? (
+        <div className="mt-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-800">
+          {reminderMsg}
+        </div>
+      ) : null}
+      {error ? (
+        <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+          {error}
+        </div>
+      ) : null}
+
+      {loading && !overview ? (
+        <div className="mt-4 flex items-center gap-3 text-sm text-slate-500">
+          <Spinner className="h-5 w-5" /> Cargando resumen…
+        </div>
+      ) : overview ? (
+        <div className="mt-4 space-y-4">
+          {overview.currencies.length === 0 ? (
+            <p className="text-sm text-slate-500">Todavía no hay liquidaciones emitidas.</p>
+          ) : (
+            overview.currencies.map((entry) => (
+              <div key={entry.currency}>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  {entry.currency} · {entry.settlements} liquidación{entry.settlements === 1 ? '' : 'es'}
+                </p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Stat label="Facturado" value={formatMoney(entry.billed, entry.currency)} />
+                  <Stat label="Cobrado" value={formatMoney(entry.collected, entry.currency)} />
+                  <Stat label="Pendiente" value={formatMoney(entry.pending, entry.currency)} />
+                  <Stat label="Vencido" value={formatMoney(entry.overdue, entry.currency)} />
+                </div>
+              </div>
+            ))
+          )}
+          {overview.pendingPaymentsToValidate > 0 ? (
+            <p className="text-sm text-amber-600">
+              {overview.pendingPaymentsToValidate} pago(s) pendiente(s) de validación.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </Panel>
   );
 }
 
@@ -81,6 +201,9 @@ function PeriodSection({
   const [busy, setBusy] = useState<null | 'generate' | 'issue'>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [recon, setRecon] = useState<BillingReconciliation | null>(null);
+  const [reconBusy, setReconBusy] = useState(false);
+  const [csvBusy, setCsvBusy] = useState<null | 'settlements' | 'commissions'>(null);
 
   const validPeriod = /^\d{4}-\d{2}$/.test(period);
 
@@ -145,6 +268,39 @@ function PeriodSection({
     }
   }
 
+  async function loadReconciliation() {
+    if (!token || !validPeriod) {
+      return;
+    }
+    setReconBusy(true);
+    setError(null);
+    try {
+      setRecon(await atarApi.getBillingReconciliation(period, token));
+    } catch (err) {
+      setRecon(null);
+      setError(err instanceof ApiError ? err.message : 'No se pudo calcular la reconciliación.');
+    } finally {
+      setReconBusy(false);
+    }
+  }
+
+  async function exportCsv(kind: 'settlements' | 'commissions') {
+    if (!token) {
+      return;
+    }
+    setCsvBusy(kind);
+    setError(null);
+    try {
+      const blob = await downloadBillingCsv(kind, validPeriod ? period : undefined, token);
+      const name = kind === 'settlements' ? 'liquidaciones' : 'comisiones';
+      triggerDownload(blob, `${name}${validPeriod ? `-${period}` : ''}.csv`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo exportar el CSV.');
+    } finally {
+      setCsvBusy(null);
+    }
+  }
+
   return (
     <Panel>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -181,6 +337,33 @@ function PeriodSection({
         </div>
       </div>
 
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          className={dashboardSecondaryButtonClassName}
+          disabled={reconBusy || !validPeriod}
+          onClick={() => void loadReconciliation()}
+          type="button"
+        >
+          {reconBusy ? 'Reconciliando…' : 'Reconciliación'}
+        </button>
+        <button
+          className={dashboardSecondaryButtonClassName}
+          disabled={csvBusy !== null}
+          onClick={() => void exportCsv('settlements')}
+          type="button"
+        >
+          {csvBusy === 'settlements' ? 'Exportando…' : 'Export liquidaciones (CSV)'}
+        </button>
+        <button
+          className={dashboardSecondaryButtonClassName}
+          disabled={csvBusy !== null}
+          onClick={() => void exportCsv('commissions')}
+          type="button"
+        >
+          {csvBusy === 'commissions' ? 'Exportando…' : 'Export comisiones (CSV)'}
+        </button>
+      </div>
+
       {!validPeriod ? (
         <p className="mt-4 text-sm text-amber-600">El período debe tener formato AAAA-MM.</p>
       ) : null}
@@ -193,6 +376,33 @@ function PeriodSection({
       {result ? (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
           {result}
+        </div>
+      ) : null}
+
+      {recon ? (
+        <div
+          className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
+            recon.balanced ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'
+          }`}
+        >
+          <p className="font-semibold text-slate-900">
+            Reconciliación {recon.period} ·{' '}
+            {recon.balanced ? 'cuadra ✓' : 'con descuadres'}
+          </p>
+          <p className="mt-1 text-slate-600">
+            Comisiones {formatMoney(recon.commissionTotal)} · Liquidado {formatMoney(recon.settledTotal)} · Cobrado{' '}
+            {formatMoney(recon.collectedTotal)}
+          </p>
+          {recon.issues.confirmedUnsettled.length > 0 ? (
+            <p className="mt-1 text-amber-700">
+              {recon.issues.confirmedUnsettled.length} comisión(es) confirmada(s) sin liquidar.
+            </p>
+          ) : null}
+          {recon.issues.mismatchedSettlements.length > 0 ? (
+            <p className="mt-1 text-amber-700">
+              {recon.issues.mismatchedSettlements.length} liquidación(es) con descuadre contable.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
