@@ -185,7 +185,7 @@ function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: str
 
 /* Piezas ---------------------------------------------------------------------- */
 
-const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
+const card = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]';
 const inputClass =
   'h-11 w-full rounded-[10px] border border-slate-300 bg-white px-3.5 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100';
 
@@ -193,11 +193,11 @@ function SectionHead({ icon, title, text, action }: { icon: IconName; title: str
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#e2ddff] text-indigo-600">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-seller-100 text-indigo-600">
           <Icon className="h-5 w-5" name={icon} />
         </span>
         <div>
-          <h2 className="text-[17px] font-bold text-[#16123a]">{title}</h2>
+          <h2 className="text-[17px] font-bold text-slate-900">{title}</h2>
           <p className="text-[13px] text-slate-500">{text}</p>
         </div>
       </div>
@@ -594,7 +594,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
       <div className="relative px-4 pb-4">
         <div className="-mt-9 flex items-end gap-3">
           <span className="rounded-[12px] bg-white p-1 shadow-md">
-            <CompanyLogo className="h-[72px] w-[72px]" logoUrl={form.logoUrl || null} name={companyName} rounded="rounded-[10px]" textClassName="text-[18px]" tone="bg-[#eef3ff] text-indigo-600" />
+            <CompanyLogo className="h-[72px] w-[72px]" logoUrl={form.logoUrl || null} name={companyName} rounded="rounded-[10px]" textClassName="text-[18px]" tone="bg-seller-50 text-indigo-600" />
           </span>
           <div className="min-w-0 pb-1">
             {record?.supplierProfile?.isVerified ? (
@@ -603,7 +603,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                 Proveedor verificado
               </span>
             ) : null}
-            <p className="truncate text-[17px] font-bold text-[#16123a]">{companyName}</p>
+            <p className="truncate text-[17px] font-bold text-slate-900">{companyName}</p>
           </div>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5 text-[12px] text-slate-600">
@@ -639,10 +639,10 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
       {/* Encabezado */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[32px] font-bold leading-tight tracking-[-0.035em] text-[#16123a] sm:text-[34px]">Configuración</h1>
+          <h1 className="text-[32px] font-bold leading-tight tracking-[-0.035em] text-slate-900 sm:text-[34px]">Configuración</h1>
           <p className="text-[15px] text-slate-500">Gestioná la información de tu empresa y cómo operás en ATAR.</p>
         </div>
-        <div className={`${card} flex w-full flex-wrap items-center gap-3 px-4 py-3 sm:w-auto sm:flex-nowrap sm:gap-4`}>
+        <div className={`${card} flex w-full flex-wrap items-center gap-3 px-4 py-3 sm:w-auto sm:flex-nowrap sm:gap-4`} data-tour="settings-progress">
           <span className={`flex h-9 w-9 items-center justify-center rounded-full ${completion >= 80 ? 'bg-emerald-500' : 'bg-amber-400'} text-white`}>
             <Icon name="check" />
           </span>
@@ -667,7 +667,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
       </div>
 
       {/* Pestañas */}
-      <div className={`${card} mt-4 flex gap-1 overflow-x-auto px-3 [scrollbar-width:none]`}>
+      <div className={`${card} mt-4 flex gap-1 overflow-x-auto px-3 [scrollbar-width:none]`} data-tour="settings-tabs">
         {tabs.map((item) => {
           const active = tab === item.key;
           return (
@@ -767,7 +767,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                     <Label>Logo de la empresa</Label>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <button
-                        className="flex h-[110px] flex-col items-center justify-center rounded-[12px] border border-dashed border-indigo-200 bg-[#f1effc] text-center transition hover:bg-indigo-50/60"
+                        className="flex h-[110px] flex-col items-center justify-center rounded-[12px] border border-dashed border-indigo-200 bg-seller-surface text-center transition hover:bg-indigo-50/60"
                         onClick={() => logoInput.current?.click()}
                         type="button"
                       >
@@ -776,7 +776,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                         <span className="mt-1.5 text-[14px] font-semibold text-indigo-600">{form.logoUrl ? 'Cambiar imagen' : 'Subir imagen'}</span>
                         <span className="text-[11px] text-slate-400">PNG o JPG · se ajusta a 320px</span>
                       </button>
-                      <div className="flex h-[110px] items-center justify-center rounded-[12px] bg-[#eef1f7]">
+                      <div className="flex h-[110px] items-center justify-center rounded-[12px] bg-seller-surface">
                         {form.logoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img alt="Logo actual" className="max-h-[90px] max-w-[80%] object-contain" src={form.logoUrl} />
@@ -813,8 +813,8 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                 </section>
               </div>
 
-              <div className="space-y-5">
-                <section className="rounded-[18px] bg-[#16123a] p-4">
+              <div className="space-y-5" data-tour="settings-preview">
+                <section className="rounded-[18px] bg-seller-900 p-4">
                   <p className="mb-3 flex items-center gap-2 px-1 text-[14px] font-semibold text-white">
                     Tu perfil público
                     <Icon className="h-4 w-4" name="external" />
@@ -828,13 +828,13 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                       <Icon className="h-5 w-5" name="bulb" />
                     </span>
                     <div>
-                      <p className="text-[16px] font-bold text-[#16123a]">Tips para mejorar tu perfil</p>
+                      <p className="text-[16px] font-bold text-slate-900">Tips para mejorar tu perfil</p>
                       <p className="text-[13px] text-slate-500">
                         {tips.filter((tip) => tip.done).length} de {tips.length} completados
                       </p>
                     </div>
                   </div>
-                  <ul className="mt-4 divide-y divide-[#d6d0f2] overflow-hidden rounded-[12px] border border-[#cbc4ee] [&>li:nth-child(even)]:bg-[#f0eff8]">
+                  <ul className="mt-4 divide-y divide-slate-200 overflow-hidden rounded-[12px] border border-slate-300 [&>li:nth-child(even)]:bg-seller-surface">
                     {tips.map((tip) => (
                       <li key={tip.label}>
                         <button className="flex w-full items-center gap-3 px-3.5 py-3 text-left text-[14px] text-slate-700 hover:bg-slate-50" onClick={() => setTab(tip.tab)} type="button">
@@ -856,7 +856,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
           {tab === 'operation' ? (
             <>
               <div className="space-y-5">
-                <section className="relative overflow-hidden rounded-[18px] border border-indigo-100 bg-[linear-gradient(90deg,#f3f0ff,#ffffff)] p-5">
+                <section className="relative overflow-hidden rounded-[18px] border border-indigo-100 bg-[linear-gradient(90deg,var(--color-seller-50),#ffffff)] p-5">
                   <SectionHead icon="truck" text="Esta información ayuda a los compradores a elegirte y facilita el proceso de cotización." title="Definí cómo operás" />
                 </section>
 
@@ -869,7 +869,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                         <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                           <Icon name="pin" />
                         </span>
-                        <input className={`${inputClass} bg-[#eef1f7] pl-10 text-slate-500`} readOnly value={location || 'Sin ubicación'} />
+                        <input className={`${inputClass} bg-seller-surface pl-10 text-slate-500`} readOnly value={location || 'Sin ubicación'} />
                       </span>
                       <span className="mt-1 block text-[11px] text-slate-400">Se toma de los datos de alta de la empresa.</span>
                     </label>
@@ -971,7 +971,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                   <SectionHead icon="map" text="Mostrá en qué zonas realizás entregas." title="Mi zona de servicio" />
                   <div className="mt-4 grid grid-cols-[minmax(0,1fr)_170px] gap-4">
                     <ZoneMap zones={prefs.coverage === 'national' ? PROVINCES : prefs.zones} />
-                    <div className="rounded-[12px] border border-[#cbc4ee] p-3">
+                    <div className="rounded-[12px] border border-slate-300 p-3">
                       <p className="text-[13px] font-semibold text-slate-800">Cobertura</p>
                       <ul className="mt-2 space-y-1.5 text-[13px]">
                         <li className="flex items-center gap-2 text-slate-700">
@@ -1015,7 +1015,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
 
                 <section className={`${card} p-5`}>
                   <SectionHead icon="doc" text="Condiciones de envío, política de devoluciones y otros documentos." title="Documentación logística" />
-                  <div className="mt-4 rounded-[12px] border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-5 text-center text-[13px] text-slate-500">
+                  <div className="mt-4 rounded-[12px] border border-dashed border-slate-300 bg-seller-surface px-4 py-5 text-center text-[13px] text-slate-500">
                     <Icon className="mx-auto h-5 w-5 text-slate-400" name="upload" />
                     <p className="mt-1.5">La carga de documentos va a estar disponible próximamente.</p>
                     <p className="text-[12px] text-slate-400">Mientras tanto, compartilos con cada comprador por el chat de la solicitud.</p>
@@ -1029,7 +1029,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
           {tab === 'preferences' ? (
             <>
               <div className="space-y-5">
-                <section className="rounded-[18px] border border-indigo-100 bg-[linear-gradient(90deg,#f3f0ff,#ffffff)] p-5">
+                <section className="rounded-[18px] border border-indigo-100 bg-[linear-gradient(90deg,var(--color-seller-50),#ffffff)] p-5">
                   <SectionHead icon="sliders" text="Definí qué productos ofrecés, cómo querés que te contacten y qué mostrar en tu perfil público." title="Personalizá tu experiencia" />
                 </section>
 
@@ -1134,12 +1134,12 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
               <div className="space-y-5">
                 <section className={`${card} p-4`}>
                   <div className="mb-3 flex items-center justify-between px-1">
-                    <p className="flex items-center gap-2 text-[15px] font-bold text-[#16123a]">
+                    <p className="flex items-center gap-2 text-[15px] font-bold text-slate-900">
                       <Icon className="h-5 w-5 text-indigo-600" name="eye" />
                       Vista previa de tu perfil
                     </p>
                   </div>
-                  <div className="rounded-[14px] border border-[#cbc4ee]">{publicCard}</div>
+                  <div className="rounded-[14px] border border-slate-300">{publicCard}</div>
                 </section>
 
                 <section className={`${card} p-5`}>
@@ -1218,7 +1218,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                 <div className="mt-4">
                   <Select onChange={(value) => setSettings((current) => ({ ...current, preferredCurrency: value }))} options={['ARS', 'USD', 'BRL', 'EUR']} value={settings.preferredCurrency} />
                 </div>
-                <Link className="mt-5 flex items-center justify-between rounded-[12px] border border-[#cbc4ee] px-4 py-3 text-[14px] hover:bg-slate-50" href="/dashboard/proveedor/notificaciones">
+                <Link className="mt-5 flex items-center justify-between rounded-[12px] border border-slate-300 px-4 py-3 text-[14px] hover:bg-slate-50" href="/dashboard/proveedor/notificaciones">
                   <span className="text-slate-700">Ver mis notificaciones</span>
                   <Icon className="h-4 w-4 text-indigo-500" name="arrow" />
                 </Link>
@@ -1245,7 +1245,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                     <dd className="font-medium text-slate-900">Gerente</dd>
                   </div>
                 </dl>
-                <p className="mt-4 flex items-start gap-2 rounded-[10px] bg-[#eef1f7] px-3.5 py-3 text-[13px] text-slate-600">
+                <p className="mt-4 flex items-start gap-2 rounded-[10px] bg-seller-surface px-3.5 py-3 text-[13px] text-slate-600">
                   <Icon className="mt-0.5 h-4 w-4 shrink-0" name="lock" />
                   Para cambiar tu contraseña o el email de acceso, escribinos desde el Asistente ATAR y te ayudamos a verificar tu identidad.
                 </p>
@@ -1271,7 +1271,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
 
       {/* Barra de guardado (en mobile, por encima de la navegación inferior) */}
       {tab !== 'security' ? (
-        <div className="sticky bottom-[84px] z-10 mt-5 flex items-center justify-between gap-3 rounded-[16px] border border-[#cbc4ee] bg-white/95 px-3 py-3 shadow-[0_-8px_30px_rgba(40,28,110,0.06)] backdrop-blur sm:flex-wrap sm:pl-5 sm:pr-24 lg:bottom-0">
+        <div className="sticky bottom-[84px] z-10 mt-5 flex items-center justify-between gap-3 rounded-[16px] border border-slate-300 bg-white/95 px-3 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.06)] backdrop-blur sm:flex-wrap sm:pl-5 sm:pr-24 lg:bottom-0">
           <button
             className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-rose-200 px-4 text-[14px] font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-40"
             disabled={!dirty || saving}
@@ -1291,7 +1291,7 @@ export default function SupplierSettings({ session }: { session: WebSession | nu
                   : 'Sin cambios pendientes.'}
             </span>
             <button
-              className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[14px] font-semibold sm:px-6 sm:text-[15px] text-white shadow-[0_10px_24px_rgba(100,64,232,0.28)] hover:bg-indigo-700 disabled:opacity-50"
+              className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[14px] font-semibold sm:px-6 sm:text-[15px] text-white shadow-[0_10px_24px_rgb(var(--accent-rgb)/0.28)] hover:bg-indigo-700 disabled:opacity-50"
               disabled={saving || !dirty}
               onClick={() => void handleSave()}
               type="button"
@@ -1320,15 +1320,15 @@ const PROVINCE_SHAPES: Record<string, string> = {
 function ZoneMap({ zones }: { zones: string[] }) {
   const others = zones.includes('Otras provincias');
   return (
-    <svg aria-label="Zonas de servicio" className="h-full max-h-[260px] w-full rounded-[12px] bg-[#eceafb]" role="img" viewBox="0 0 130 270">
+    <svg aria-label="Zonas de servicio" className="h-full max-h-[260px] w-full rounded-[12px] bg-seller-surface" role="img" viewBox="0 0 130 270">
       <path
         d="M36 8 L60 6 L84 12 L100 30 L104 44 L92 52 L88 70 L84 88 L92 104 L104 118 L96 146 L80 150 L74 160 L64 164 L62 180 L56 196 L52 212 L48 230 L44 246 L46 260 L34 264 L30 248 L30 226 L28 204 L26 182 L24 160 L22 138 L22 116 L24 94 L26 72 L28 50 L30 30 Z"
-        fill={others ? '#d9d0ff' : '#ebe7fb'}
-        stroke="#c9bdf9"
+        fill={others ? 'var(--color-seller-100)' : 'var(--color-seller-surface)'}
+        stroke="var(--color-seller-200)"
         strokeWidth="1.2"
       />
       {Object.entries(PROVINCE_SHAPES).map(([name, d]) => (
-        <path key={name} d={d} fill={zones.includes(name) ? '#7a55f7' : '#ddd6fb'} opacity={zones.includes(name) ? 0.85 : 1} stroke="#fff" strokeWidth="1">
+        <path key={name} d={d} fill={zones.includes(name) ? 'var(--color-seller-500)' : 'var(--color-seller-100)'} opacity={zones.includes(name) ? 0.85 : 1} stroke="#fff" strokeWidth="1">
           <title>{name}</title>
         </path>
       ))}

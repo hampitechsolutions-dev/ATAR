@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
 import {
   ApiError,
@@ -102,10 +102,19 @@ function ProfileIcon({ value }: { value: ProfileValue }) {
   );
 }
 
+// La landing enlaza a /acceso?perfil=cliente|vendedor|proveedor.
+const PROFILE_BY_PARAM: Record<string, ProfileValue> = {
+  cliente: 'BUYER',
+  vendedor: 'SELLER',
+  proveedor: 'SUPPLIER',
+};
+
 export default function AccessPanel() {
   const router = useRouter();
+  // Si llega un perfil válido, se abre el registro con ese perfil elegido.
+  const requestedProfile = PROFILE_BY_PARAM[useSearchParams()?.get('perfil') ?? ''];
   const { isHydrated, isAuthenticated, signIn, getDefaultPath } = useAuth();
-  const [mode, setMode] = useState<Mode>('login');
+  const [mode, setMode] = useState<Mode>(requestedProfile ? 'register' : 'login');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionProgress, setTransitionProgress] = useState(0);
@@ -118,7 +127,7 @@ export default function AccessPanel() {
     companyName: '',
     email: '',
     password: '',
-    role: 'BUYER' as ProfileValue,
+    role: requestedProfile ?? ('BUYER' as ProfileValue),
     hybrid: false,
     companyId: '',
   });
@@ -200,16 +209,6 @@ export default function AccessPanel() {
 
   function updateField<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function useDemoCredentials(role: RegisterPayload['role']) {
-    setMode('login');
-    setError(null);
-    setMessage(
-      role === 'SUPPLIER'
-        ? 'Ingresa con una cuenta proveedora real registrada en la plataforma.'
-        : 'Ingresa con una cuenta compradora real registrada en la plataforma.',
-    );
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -603,25 +602,6 @@ export default function AccessPanel() {
                 : `Crear cuenta de ${selectedProfile.label.toLowerCase()}`}
             <span aria-hidden="true">→</span>
           </button>
-
-          {mode === 'login' ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              <button
-                className="flex h-9 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                onClick={() => useDemoCredentials('BUYER')}
-                type="button"
-              >
-                Ayuda comprador
-              </button>
-              <button
-                className="flex h-9 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                onClick={() => useDemoCredentials('SUPPLIER')}
-                type="button"
-              >
-                Ayuda proveedor
-              </button>
-            </div>
-          ) : null}
 
           <div className={`relative py-1.5 ${mode === 'register' ? 'hidden' : ''}`}>
             <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-slate-200" />

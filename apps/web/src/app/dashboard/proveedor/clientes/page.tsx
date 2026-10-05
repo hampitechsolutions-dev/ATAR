@@ -102,9 +102,9 @@ function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: str
 }
 
 // Un color por indicador, para distinguirlos de un vistazo.
-const KPI_TONES: Tone[] = ['indigo', 'sky', 'amber', 'emerald'];
+const KPI_TONES: Tone[] = ['indigo', 'sky', 'amber', 'violet'];
 
-const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
+const card = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]';
 const selectClass =
   'h-11 appearance-none rounded-[12px] border border-slate-300 bg-white pl-3.5 pr-9 text-[14px] text-slate-700 outline-none transition focus:border-indigo-300';
 
@@ -301,7 +301,7 @@ export default function SupplierClientsPage() {
       {/* Encabezado */}
       <div>
         <p className="hidden text-[12px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:block">Clientes</p>
-        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-[#16123a] sm:mt-1 sm:text-[36px]">Clientes</h1>
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-900 sm:mt-1 sm:text-[36px]">Clientes</h1>
         <p className="mt-1 text-[13px] text-slate-500 sm:mt-0.5 sm:text-[15px]">Todo lo que cotizaste y vendiste, por cliente, con las señales de recompra.</p>
       </div>
 
@@ -310,11 +310,11 @@ export default function SupplierClientsPage() {
       ) : null}
 
       {/* Contadores */}
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4 xl:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4 xl:grid-cols-4" data-tour="sales-clients-kpis">
         {kpis.map((kpi, index) => (
           <button
             key={kpi.label}
-            className={`${card} group flex flex-col items-start gap-2.5 p-3.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(40,28,110,0.09)] sm:flex-row sm:gap-4 sm:p-5`}
+            className={`${card} group flex flex-col items-start gap-2.5 p-3.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.09)] sm:flex-row sm:gap-4 sm:p-5`}
             onClick={kpi.action}
             type="button"
           >
@@ -322,7 +322,7 @@ export default function SupplierClientsPage() {
               <Icon className="h-5 w-5 sm:h-6 sm:w-6" name={kpi.icon} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block whitespace-nowrap text-[20px] font-bold leading-none text-[#16123a] sm:text-[22px] 2xl:text-[28px]">{loading ? '—' : kpi.value}</span>
+              <span className="block whitespace-nowrap text-[20px] font-bold leading-none text-slate-900 sm:text-[22px] 2xl:text-[28px]">{loading ? '—' : kpi.value}</span>
               <span className="mt-1.5 block text-[13px] leading-4 text-slate-600 sm:text-[15px]">{kpi.label}</span>
               <span className={`mt-1.5 block text-[11px] font-medium sm:mt-2 sm:text-[12px] ${kpi.note.startsWith('Sin') ? 'text-slate-400' : 'text-emerald-600'}`}>
                 {loading ? '' : kpi.note}
@@ -337,7 +337,7 @@ export default function SupplierClientsPage() {
 
       {/* Tabla. En mobile no es una tarjeta: los filtros y las tarjetas de
           cliente van directo sobre el fondo, sin "tarjeta dentro de tarjeta". */}
-      <section className="mt-5 md:rounded-[18px] md:border md:border-[#cbc4ee] md:bg-white md:p-4 md:shadow-[0_10px_30px_rgba(40,28,110,0.07)]">
+      <section className="mt-5 md:rounded-[18px] md:border md:border-slate-300 md:bg-white md:p-4 md:shadow-[0_10px_30px_rgba(15,23,42,0.07)]" data-tour="sales-clients-table">
         <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
           <label className="relative col-span-2 md:min-w-[240px] md:flex-1">
             <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
@@ -405,7 +405,7 @@ export default function SupplierClientsPage() {
               const meta = STATUS_META[statusOf(customer)];
               const product = customer.lastProduct ?? customer.lastQuotedProduct;
               return (
-                <li key={customer.companyId} className="rounded-[18px] border border-[#cbc4ee] bg-white p-3.5 shadow-[0_6px_20px_rgba(40,28,110,0.07)]">
+                <li key={customer.companyId} className="rounded-[18px] border border-slate-300 bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.07)]">
                   <div className="flex items-start gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-bold text-indigo-600">
                       {initials(customer.name)}
@@ -422,7 +422,7 @@ export default function SupplierClientsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 divide-x divide-[#ddd8f5] rounded-[10px] bg-[#f1efff] py-2 text-center">
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-slate-200 rounded-[10px] bg-seller-50 py-2 text-center">
                     <span>
                       <span className="block text-[10px] text-slate-500">Cotizaciones</span>
                       <span className="block text-[13px] font-semibold text-slate-900">{customer.quotesCount}</span>
@@ -457,7 +457,7 @@ export default function SupplierClientsPage() {
         <div className="mt-4 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1000px] text-left text-[14px]">
             <thead>
-              <tr className="bg-[#eceaff] text-[11px] font-semibold uppercase tracking-[0.08em] text-[#3d3780]">
+              <tr className="bg-seller-50 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-700">
                 <th className="rounded-l-lg px-3 py-3">Cliente</th>
                 <th className="px-3 py-3">Ubicación</th>
                 <th className="px-3 py-3 text-center">Cotizaciones</th>
@@ -489,7 +489,7 @@ export default function SupplierClientsPage() {
                   const meta = STATUS_META[statusOf(customer)];
                   const product = customer.lastProduct ?? customer.lastQuotedProduct;
                   return (
-                    <tr key={customer.companyId} className="border-b border-[#d6d0f2] last:border-b-0 even:bg-[#f0eff8]">
+                    <tr key={customer.companyId} className="border-b border-slate-200 last:border-b-0 even:bg-seller-surface">
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
                           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-bold text-indigo-600">
@@ -607,7 +607,7 @@ export default function SupplierClientsPage() {
       {topCustomers.length > 0 ? (
         <section className={`${card} mt-5 p-4`}>
           <div className="flex items-center justify-between gap-3 px-1">
-            <h2 className="flex items-center gap-2 text-[15px] font-bold leading-5 text-[#16123a] sm:text-[16px]">
+            <h2 className="flex items-center gap-2 text-[15px] font-bold leading-5 text-slate-900 sm:text-[16px]">
               <span className="text-indigo-600">
                 <Icon name="chart" />
               </span>
@@ -622,7 +622,7 @@ export default function SupplierClientsPage() {
             {topCustomers.map((customer) => (
               <button
                 key={customer.companyId}
-                className="flex items-center gap-3 rounded-[14px] border border-[#cbc4ee] bg-[#eceafb] px-3 py-3 text-left transition sm:px-4 hover:border-indigo-200 hover:bg-[#fbfaff]"
+                className="flex items-center gap-3 rounded-[14px] border border-slate-300 bg-seller-surface px-3 py-3 text-left transition sm:px-4 hover:border-indigo-200 hover:bg-seller-50"
                 onClick={() => void openHistory(customer)}
                 type="button"
               >
@@ -645,10 +645,10 @@ export default function SupplierClientsPage() {
 
       {/* Historial del cliente */}
       {historyFor ? (
-        <div className="fixed inset-0 z-50 flex justify-end bg-[#120f2e]/40 backdrop-blur-[2px]" onClick={() => setHistoryFor(null)} role="presentation">
+        <div className="fixed inset-0 z-50 flex justify-end bg-seller-900/40 backdrop-blur-[2px]" onClick={() => setHistoryFor(null)} role="presentation">
           <aside
             aria-label={`Historial de ${historyFor.name}`}
-            className="flex h-full w-full max-w-[480px] flex-col bg-white shadow-[-20px_0_60px_rgba(18,15,46,0.25)]"
+            className="flex h-full w-full max-w-[480px] flex-col bg-white shadow-[-20px_0_60px_rgba(2,44,34,0.25)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 border-b border-slate-200 p-5">
@@ -657,7 +657,7 @@ export default function SupplierClientsPage() {
                   {initials(historyFor.name)}
                 </span>
                 <div>
-                  <p className="text-[18px] font-bold text-[#16123a]">{historyFor.name}</p>
+                  <p className="text-[18px] font-bold text-slate-900">{historyFor.name}</p>
                   <p className="text-[13px] text-slate-500">{historyFor.location}</p>
                 </div>
               </div>
@@ -667,15 +667,15 @@ export default function SupplierClientsPage() {
             </div>
             <div className="grid grid-cols-3 gap-3 border-b border-slate-200 p-5 text-center">
               <div>
-                <p className="text-[20px] font-bold text-[#16123a]">{historyFor.quotesCount}</p>
+                <p className="text-[20px] font-bold text-slate-900">{historyFor.quotesCount}</p>
                 <p className="text-[12px] text-slate-500">Cotizaciones</p>
               </div>
               <div>
-                <p className="text-[20px] font-bold text-[#16123a]">{historyFor.ordersCount}</p>
+                <p className="text-[20px] font-bold text-slate-900">{historyFor.ordersCount}</p>
                 <p className="text-[12px] text-slate-500">Pedidos</p>
               </div>
               <div>
-                <p className="truncate text-[20px] font-bold text-[#16123a]">{formatCurrency(historyFor.purchasedAmount)}</p>
+                <p className="truncate text-[20px] font-bold text-slate-900">{formatCurrency(historyFor.purchasedAmount)}</p>
                 <p className="text-[12px] text-slate-500">Vendido</p>
               </div>
             </div>
@@ -697,7 +697,7 @@ export default function SupplierClientsPage() {
                 <ol className="space-y-3">
                   {history.quotes.map((quote) => (
                     <li key={quote.id}>
-                      <Link className="block rounded-[14px] border border-[#cbc4ee] bg-[#eceafb] p-3.5 transition hover:border-indigo-200 hover:bg-[#fbfaff]" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
+                      <Link className="block rounded-[14px] border border-slate-300 bg-seller-surface p-3.5 transition hover:border-indigo-200 hover:bg-seller-50" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
                         <span className="flex items-start justify-between gap-3">
                           <span className="min-w-0">
                             <span className="block truncate font-semibold text-slate-900">{quote.requestTitle}</span>

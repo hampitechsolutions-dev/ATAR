@@ -308,7 +308,7 @@ export default function SupplierDetail({
           ? 'lg:-mx-6 lg:-mt-4 lg:bg-white'
           : `lg:bg-white xl:grid xl:grid-cols-[minmax(0,1fr)_400px] xl:grid-rows-[auto_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1fr)_440px] ${
               variant === 'app'
-                ? 'lg:-mx-4 lg:-my-3 xl:-mx-6 xl:h-[calc(100dvh-61px)]'
+                ? 'lg:-mx-4 lg:-my-3 xl:-mx-6 xl:h-[calc(100dvh-102px)]'
                 : 'lg:-mx-6 lg:-my-4 xl:h-[calc(100dvh-69px)]'
             }`
       }

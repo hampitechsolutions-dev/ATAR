@@ -70,7 +70,7 @@ export default function SupplierDashboardShell({
   });
 
   return (
-    <main className="h-screen overflow-hidden bg-[#eae7f8] text-slate-950">
+    <main className="h-screen overflow-hidden bg-seller-canvas text-slate-950">
       <div className="flex h-full">
         <div className="hidden h-full w-[264px] shrink-0 lg:block">
           <DashboardSidebar
@@ -92,7 +92,7 @@ export default function SupplierDashboardShell({
                   <span className="text-base font-bold text-slate-950">ATAR</span>
                 </Link>
 
-                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-[#f1eefb] px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
+                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-seller-surface px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
                   <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                     <path
                       d="M21 21l-4.35-4.35"

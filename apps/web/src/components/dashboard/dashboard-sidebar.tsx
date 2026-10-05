@@ -397,12 +397,12 @@ export default function DashboardSidebar({
     router.push('/acceso');
   }
 
-  // El vendedor usa un sidebar oscuro con acento violeta: a primera vista se
-  // distingue del panel del comprador (claro y azul).
+  // Sidebar oscuro del panel de ventas. Los colores salen del tema (variables
+  // --nav-*): verde para el vendedor, violeta para la empresa.
   if (role !== 'buyer') {
     return (
       <aside
-        className={`flex h-full flex-col bg-[linear-gradient(180deg,#1b1745_0%,#16123a_55%,#120f2e_100%)] text-white ${className ?? ''}`}
+        className={`flex h-full flex-col text-white [background:var(--nav-bg)] ${className ?? ''}`}
       >
         <div className="px-5 pb-4 pt-5">
           <div className="flex items-center gap-3">
@@ -424,15 +424,15 @@ export default function DashboardSidebar({
             const content = (
               <>
                 <span className="flex items-center gap-3">
-                  <span className={`${isActive ? 'text-white' : 'text-white/55 group-hover:text-white/85'}`}>
+                  <span className={`${isActive ? 'text-[var(--nav-active-icon)]' : 'text-seller-300 group-hover:text-white'}`}>
                     <SidebarIcon name={item.icon} />
                   </span>
                   <span className={`${isActive ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>
                 </span>
                 {typeof item.badge === 'number' && item.badge > 0 ? (
                   <span
-                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold text-white ${
-                      isActive ? 'bg-white/25' : 'bg-[#7a55f7]'
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                      isActive ? 'bg-[var(--nav-badge-active-bg)] text-[var(--nav-badge-active-fg)]' : 'bg-[var(--nav-badge-bg)] text-[var(--nav-badge-fg)]'
                     }`}
                   >
                     {item.badge}
@@ -443,14 +443,14 @@ export default function DashboardSidebar({
 
             const classes = `group flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition ${
               isActive
-                ? 'bg-[linear-gradient(90deg,#6d45f0_0%,#7a55f7_100%)] text-white shadow-[0_8px_20px_rgba(109,69,240,0.35)]'
+                ? 'text-[var(--nav-active-fg)] shadow-[0_6px_16px_rgba(2,6,23,0.35)] [background:var(--nav-active-bg)]'
                 : item.href
-                  ? 'text-white/75 hover:bg-white/[0.06] hover:text-white'
+                  ? 'text-white/85 hover:bg-white/10 hover:text-white'
                   : 'cursor-default text-white/35'
             }`;
 
             const heading = startsSection ? (
-              <p className="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
+              <p className="mx-3 mb-1 mt-4 border-t border-white/15 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-seller-300">
                 {item.section}
               </p>
             ) : null;
@@ -469,7 +469,7 @@ export default function DashboardSidebar({
             return (
               <div key={item.href}>
                 {heading}
-                <Link className={classes} href={item.href} onClick={() => onNavigate?.()}>
+                <Link className={classes} data-tour={`nav-${item.href.split('/')[3] ?? 'inicio'}`} href={item.href} onClick={() => onNavigate?.()}>
                   {content}
                 </Link>
               </div>
@@ -478,17 +478,17 @@ export default function DashboardSidebar({
         </nav>
 
         <div className="px-3 pb-4">
-          <div className="rounded-2xl bg-[linear-gradient(160deg,rgba(122,85,247,0.28)_0%,rgba(122,85,247,0.08)_100%)] p-3.5 ring-1 ring-white/10">
+          <div className="rounded-2xl border border-white/15 bg-seller-900 p-3.5">
             <div className="flex items-center gap-3">
               <div className="relative h-10 w-10 overflow-hidden rounded-2xl bg-white">
                 <Image alt="Asistente ATAR" fill sizes="40px" src="/botatar.png" className="object-contain p-1" />
               </div>
               <div>
                 <p className="text-xs font-semibold text-white">¿Necesitás ayuda?</p>
-                <p className="mt-0.5 text-[11px] text-white/60">Hablá con el Asistente ATAR</p>
+                <p className="mt-0.5 text-[11px] text-white/75">Hablá con el Asistente ATAR</p>
               </div>
             </div>
-            <button className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#7a55f7] text-xs font-semibold text-white transition hover:bg-[#6d45f0]" type="button">
+            <button className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl bg-white text-xs font-semibold text-seller-700 transition hover:bg-seller-50" type="button">
               Iniciar chat
             </button>
           </div>
@@ -522,7 +522,7 @@ export default function DashboardSidebar({
               key={item.href ?? item.label}
               className={`group flex items-center justify-between rounded-lg px-3 py-2 transition ${
                 isActive
-                  ? 'bg-[linear-gradient(90deg,rgba(79,70,229,0.16)_0%,rgba(99,102,241,0.10)_60%,rgba(255,255,255,0)_100%)] text-indigo-700'
+                  ? 'bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.16)_0%,rgb(var(--accent-rgb)/0.10)_60%,rgba(255,255,255,0)_100%)] text-indigo-700'
                   : 'text-slate-600 hover:bg-slate-50'
               }`}
               href={item.href ?? '/dashboard/comprador'}

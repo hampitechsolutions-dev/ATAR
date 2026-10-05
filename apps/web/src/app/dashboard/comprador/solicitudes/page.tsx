@@ -234,7 +234,7 @@ export default function BuyerRequestsPage() {
 
         {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3" data-tour="requests-list">
           {loading ? (
             <div className="rounded-[18px] border border-dashed border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando solicitudes..." />
@@ -414,7 +414,7 @@ export default function BuyerRequestsPage() {
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm">
+      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm" data-tour="requests-list">
         <div className="hidden lg:grid grid-cols-[0.26fr_0.16fr_0.16fr_0.18fr_0.16fr_0.14fr_0.14fr] gap-4 rounded-t-2xl border-b border-slate-300 bg-[#eef3ff] px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#33457a]">
           <p>Solicitud</p>
           <p>Producto</p>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { clearSession, type WebSession } from '@/lib/session';
+import BuyerHomeSearch from './buyer-home-search';
 import WorkspaceSwitcher from './workspace-switcher';
 
 type NavItem = {
@@ -57,11 +58,15 @@ export default function BuyerMarketplaceHeader({
   session,
   notificationCount = 0,
   wide = false,
+  marketplace = false,
 }: {
   session: WebSession | null;
   notificationCount?: number;
   // Las vistas full-bleed (detalle de cotizacion) alinean el header con el contenido.
   wide?: boolean;
+  // Home del comprador: el buscador ocupa la fila principal y la navegación
+  // baja a una segunda fila, como en un marketplace.
+  marketplace?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -130,88 +135,111 @@ export default function BuyerMarketplaceHeader({
     ];
   }, []);
 
+  const underline = marketplace ? '-bottom-[9px]' : '-bottom-[11px]';
+  // Variante marketplace: la barra va en el azul de ATAR, así que los textos y
+  // botones se invierten a blanco.
+  const navActive = marketplace ? 'text-white' : 'text-slate-950';
+  const navHover = marketplace ? 'hover:text-white' : 'hover:text-slate-950';
+  const iconButton = marketplace
+    ? 'border-white/50 bg-white/10 text-white hover:bg-white/20'
+    : 'border-slate-300 bg-white text-slate-700';
+  const nav = (
+    <nav className={`hidden items-center gap-5 text-[13px] font-semibold lg:flex ${marketplace ? 'text-white/85' : 'text-slate-600'}`}>
+      <Link
+        className={pathname === '/dashboard/comprador' ? `relative ${navActive}` : navHover}
+        href="/dashboard/comprador"
+      >
+        Inicio
+        {pathname === '/dashboard/comprador' ? (
+          <span className={`absolute ${underline} left-0 h-[2px] w-full rounded-full ${marketplace ? 'bg-white' : 'bg-[#4f46ff]'}`} />
+        ) : null}
+      </Link>
+
+      <Link
+        className={
+          pathname?.startsWith('/dashboard/comprador/panel')
+            ? `relative ${navActive}`
+            : navHover
+        }
+        data-tour="nav-panel"
+        href="/dashboard/comprador/panel"
+      >
+        Panel
+        {pathname?.startsWith('/dashboard/comprador/panel') ? (
+          <span className={`absolute ${underline} left-0 h-[2px] w-full rounded-full ${marketplace ? 'bg-white' : 'bg-[#4f46ff]'}`} />
+        ) : null}
+      </Link>
+
+      {navItems.slice(1).map((item) => {
+        const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+        // Entre 1024 y 1280 px no entran todos: los `wideOnly` quedan en el menú de la cuenta.
+        return (
+          <Link
+            key={item.href}
+            data-tour={`nav-${item.href.split('/').pop()}`}
+            className={`relative ${isActive ? navActive : navHover} ${item.wideOnly ? 'hidden xl:inline' : ''}`}
+            href={item.href}
+          >
+            {item.label}
+            {isActive ? <span className={`absolute ${underline} left-0 h-[2px] w-full rounded-full ${marketplace ? 'bg-white' : 'bg-[#4f46ff]'}`} /> : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
   return (
-    <header className="hidden border-b border-slate-300 bg-white lg:block">
+    <header className={`hidden border-b lg:block ${marketplace ? 'border-[#0f2fb8] bg-[#1847ff]' : 'border-slate-300 bg-white'}`}>
       <div
         className={`mx-auto flex items-center justify-between gap-5 px-4 py-2.5 ${
           wide ? 'max-w-none xl:px-6' : 'max-w-[1320px]'
         }`}
       >
         <div className="flex items-center gap-3">
-          <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
+          <Image alt="ATAR" height={26} src={marketplace ? '/logoatarblanco.png' : '/logoatar.png'} width={26} />
           <div className="leading-tight">
-            <p className="text-sm font-bold text-slate-950">ATAR</p>
+            <p className={`text-sm font-bold ${marketplace ? 'text-white' : 'text-slate-950'}`}>ATAR</p>
           </div>
         </div>
 
-        <nav className="hidden items-center gap-5 text-[13px] font-semibold text-slate-600 lg:flex">
-          <Link
-            className={pathname === '/dashboard/comprador' ? 'relative text-slate-950' : 'hover:text-slate-950'}
-            href="/dashboard/comprador"
-          >
-            Inicio
-            {pathname === '/dashboard/comprador' ? (
-              <span className="absolute -bottom-[11px] left-0 h-[2px] w-full rounded-full bg-[#4f46ff]" />
-            ) : null}
-          </Link>
-
-          <Link
-            className={
-              pathname?.startsWith('/dashboard/comprador/panel')
-                ? 'relative text-slate-950'
-                : 'hover:text-slate-950'
-            }
-            href="/dashboard/comprador/panel"
-          >
-            Panel
-            {pathname?.startsWith('/dashboard/comprador/panel') ? (
-              <span className="absolute -bottom-[11px] left-0 h-[2px] w-full rounded-full bg-[#4f46ff]" />
-            ) : null}
-          </Link>
-
-          {navItems.slice(1).map((item) => {
-            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
-            // Entre 1024 y 1280 px no entran todos: los `wideOnly` quedan en el menú de la cuenta.
-            return (
-              <Link
-                key={item.href}
-                className={`relative ${isActive ? 'text-slate-950' : 'hover:text-slate-950'} ${item.wideOnly ? 'hidden xl:inline' : ''}`}
-                href={item.href}
-              >
-                {item.label}
-                {isActive ? <span className="absolute -bottom-[11px] left-0 h-[2px] w-full rounded-full bg-[#4f46ff]" /> : null}
-              </Link>
-            );
-          })}
-        </nav>
+        {marketplace ? (
+          <div className="min-w-0 max-w-[760px] flex-1" data-tour="buyer-search">
+            <BuyerHomeSearch size="header" />
+          </div>
+        ) : (
+          nav
+        )}
 
         <div className="flex items-center gap-3">
           <WorkspaceSwitcher className="hidden lg:inline-flex" />
 
           <Link
-            className="inline-flex h-9 items-center gap-2 rounded-xl bg-[#1847ff] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#0f3ff5]"
+            className={`inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition ${
+              marketplace ? 'bg-white text-[#1238d6] shadow-[0_2px_0_rgba(8,24,110,0.35)] hover:bg-[#eef2ff]' : 'bg-[#1847ff] text-white hover:bg-[#0f3ff5]'
+            }`}
+            data-tour="buyer-cta"
             href="/dashboard/comprador/solicitudes/nueva"
           >
             <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
             </svg>
-            Nueva solicitud
+            {marketplace ? 'Solicitar cotización' : 'Nueva solicitud'}
           </Link>
 
           <Link
-            className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
+            className={`relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border transition ${iconButton}`}
             href="/dashboard/comprador/mensajes"
           >
             <Icon name="msg" />
           </Link>
 
           <Link
-            className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
+            className={`relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border transition ${iconButton}`}
             href="/dashboard/comprador/notificaciones"
           >
             <Icon name="bell" />
             {notificationCount > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#4f46ff] px-1 text-[10px] font-semibold text-white">
+              <span className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold ${marketplace ? 'bg-white text-[#1238d6]' : 'bg-[#4f46ff] text-white'}`}>
                 {Math.min(notificationCount, 9)}
               </span>
             ) : null}
@@ -295,6 +323,11 @@ export default function BuyerMarketplaceHeader({
           </div>
         </div>
       </div>
+      {marketplace ? (
+        <div className="border-t border-white/25">
+          <div className={`mx-auto px-4 py-2 ${wide ? 'max-w-none xl:px-6' : 'max-w-[1320px]'}`}>{nav}</div>
+        </div>
+      ) : null}
     </header>
   );
 }

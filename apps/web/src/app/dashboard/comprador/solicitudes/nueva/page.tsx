@@ -1452,7 +1452,7 @@ export default function BuyerNewRequestWizardPage() {
 
   if (step === 6) {
     return (
-      <div className="flex min-h-[calc(100vh-120px)] items-center justify-center py-6">
+      <div className="flex min-h-[calc(100vh-160px)] items-center justify-center py-6">
         <div className="w-full max-w-[560px] rounded-[16px] border border-[#e3e8f3] bg-white px-6 py-12 text-center shadow-[0_18px_48px_rgba(32,48,90,0.06)]">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
             <Icon className="h-6 w-6" name="check" />
@@ -1786,7 +1786,7 @@ export default function BuyerNewRequestWizardPage() {
         </button>
       </div>
 
-      <div className="shrink-0">{stepper}</div>
+      <div className="shrink-0" data-tour="wizard-steps">{stepper}</div>
 
       {productCount === 0 || showHowItWorks ? (
       <div className="shrink-0 rounded-[12px] bg-[#eef1fd] px-4 py-3">
@@ -1825,7 +1825,7 @@ export default function BuyerNewRequestWizardPage() {
       <div className={stepCard}>
         <div className={cardHeader}>
           {stepEyebrow}
-          <h2 className={stepTitle}>¿Qué producto querés cotizar?</h2>
+          <h2 className={stepTitle} data-tour="wizard-catalog">¿Qué producto querés cotizar?</h2>
           <p className={stepSubtitle}>
             Seleccioná la categoría y contanos qué estás buscando. Siempre podés agregar más productos después.
             {filterActive ? (
@@ -3103,7 +3103,7 @@ export default function BuyerNewRequestWizardPage() {
 
   return (
     <div
-      className={`flex w-full flex-col gap-3 lg:h-[calc(100dvh-85px)] lg:overflow-hidden lg:pb-0 ${mobileActionBar ? 'pb-28' : 'pb-6'}`}
+      className={`flex w-full flex-col gap-3 lg:h-[calc(100dvh-126px)] lg:overflow-hidden lg:pb-0 ${mobileActionBar ? 'pb-28' : 'pb-6'}`}
     >
       {mobileProgress}
       {mobileActionBar}

@@ -167,7 +167,7 @@ export default function SupplierTeamMemberPage() {
                   { label: 'Ganadas', value: member.won },
                   { label: 'Conversión', value: `${member.conversionRate}%` },
                 ].map((card) => (
-                  <div className="rounded-xl border border-[#cbc4ee] bg-[#f0eefb] px-3 py-3" key={card.label}>
+                  <div className="rounded-xl border border-slate-300 bg-seller-surface px-3 py-3" key={card.label}>
                     <p className="text-lg font-semibold tracking-tight text-slate-950">{card.value}</p>
                     <p className="mt-1 text-[11px] text-slate-500">{card.label}</p>
                   </div>

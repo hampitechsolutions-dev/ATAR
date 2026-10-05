@@ -50,6 +50,7 @@ export default function BuyerNewRequestCta() {
     <Link
       href="/dashboard/comprador/solicitudes/nueva"
       aria-label="Nueva solicitud de cotización"
+      data-tour="buyer-cta"
       className={`fixed bottom-[152px] right-4 z-40 inline-flex h-14 items-center rounded-full bg-[#1847ff] shadow-[0_16px_40px_rgba(24,71,255,0.35)] transition-all duration-500 lg:hidden ${
         expanded ? 'gap-2 pl-4 pr-5' : 'w-14 translate-x-[calc(50%+16px)] justify-start pl-3 opacity-90'
       }`}

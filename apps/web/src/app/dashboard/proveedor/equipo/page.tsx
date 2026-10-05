@@ -82,9 +82,9 @@ function Icon({ name, className = 'h-4 w-4' }: { name: IconName; className?: str
 }
 
 // Un color por indicador, para distinguirlos de un vistazo.
-const KPI_TONES: Tone[] = ['indigo', 'sky', 'amber', 'emerald'];
+const KPI_TONES: Tone[] = ['indigo', 'sky', 'amber', 'violet'];
 
-const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
+const card = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]';
 const selectClass =
   'h-11 appearance-none rounded-[12px] border border-slate-300 bg-white pl-3.5 pr-9 text-[14px] text-slate-700 outline-none transition focus:border-indigo-300';
 
@@ -307,14 +307,15 @@ export default function SupplierTeamPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[14px] text-slate-500">Gestión comercial</p>
-          <h1 className="mt-0.5 text-[32px] font-bold leading-tight tracking-[-0.035em] text-[#16123a] sm:text-[36px]">Equipo comercial</h1>
+          <h1 className="mt-0.5 text-[32px] font-bold leading-tight tracking-[-0.035em] text-slate-900 sm:text-[36px]">Equipo comercial</h1>
           <p className="mt-0.5 text-[15px] text-slate-500">
             Gestioná a los vendedores de {companyName}, asigná oportunidades y seguí su desempeño.
           </p>
         </div>
         {isManager ? (
           <button
-            className="inline-flex h-12 items-center gap-2 rounded-[12px] bg-indigo-600 px-6 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(100,64,232,0.28)] transition hover:bg-indigo-700"
+            className="inline-flex h-12 items-center gap-2 rounded-[12px] bg-indigo-600 px-6 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgb(var(--accent-rgb)/0.28)] transition hover:bg-indigo-700"
+            data-tour="team-invite"
             onClick={() => setInviteOpen(true)}
             type="button"
           >
@@ -349,7 +350,7 @@ export default function SupplierTeamPage() {
           ) : null}
 
           {/* Contadores */}
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="team-kpis">
             {kpis.map((kpi, index) => {
               const content = (
                 <>
@@ -357,18 +358,18 @@ export default function SupplierTeamPage() {
                     <Icon className="h-6 w-6" name={kpi.icon} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[30px] font-bold leading-none text-[#16123a]">{loading ? '—' : kpi.value}</span>
+                    <span className="block text-[30px] font-bold leading-none text-slate-900">{loading ? '—' : kpi.value}</span>
                     <span className="mt-1.5 block text-[15px] text-slate-600">{kpi.label}</span>
                     <span className={`mt-1.5 block truncate text-[13px] font-medium ${/^Sin|al día|^\$\s?0 /.test(kpi.note) ? 'text-slate-400' : 'text-emerald-600'}`}>
                       {loading ? '' : kpi.note}
                     </span>
                   </span>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e2ddff] text-indigo-600 transition group-hover:translate-x-0.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-seller-100 text-indigo-600 transition group-hover:translate-x-0.5">
                     <Icon name="arrow" />
                   </span>
                 </>
               );
-              const className = `${card} group flex items-start gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(40,28,110,0.09)]`;
+              const className = `${card} group flex items-start gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.09)]`;
               return kpi.href ? (
                 <Link key={kpi.label} className={className} href={kpi.href}>
                   {content}
@@ -431,10 +432,10 @@ export default function SupplierTeamPage() {
                 Deslizá la tabla hacia el costado para ver todos los datos.
               </p>
               <div className="mt-2 overflow-x-auto md:mt-4">
-                <table className="w-full min-w-[860px] text-left text-[14px]">
+                <table className="w-full min-w-[860px] text-left text-[14px]" data-tour="team-table">
                   <thead>
-                    <tr className="bg-[#eceaff] text-[11px] font-semibold uppercase tracking-[0.08em] text-[#3d3780]">
-                      <th className="sticky left-0 z-10 rounded-l-lg bg-[#eceaff] px-2.5 py-3">Vendedor</th>
+                    <tr className="bg-seller-50 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-700">
+                      <th className="sticky left-0 z-10 rounded-l-lg bg-seller-50 px-2.5 py-3">Vendedor</th>
                       <th className="px-2.5 py-3">Rol</th>
                       <th className="px-2.5 py-3">Estado</th>
                       <th className="px-2.5 py-3 text-center" title="Solicitudes asignadas">Oportunidades</th>
@@ -466,8 +467,8 @@ export default function SupplierTeamPage() {
                         const stale = !last || nowMs - new Date(last).getTime() > 7 * DAY;
                         const highlight = member.pending >= 3 && !invited;
                         return (
-                          <tr key={member.id} className={`border-t border-[#d6d0f2] ${highlight ? 'bg-[#efeaff]' : 'bg-white even:bg-[#f0eff8]'}`}>
-                            <td className="sticky left-0 z-10 max-w-[150px] bg-inherit px-2.5 py-3 shadow-[6px_0_10px_-8px_rgba(40,28,110,0.25)] md:max-w-none md:shadow-none">
+                          <tr key={member.id} className={`border-t border-slate-200 ${highlight ? 'bg-seller-50' : 'bg-white even:bg-seller-surface'}`}>
+                            <td className="sticky left-0 z-10 max-w-[150px] bg-inherit px-2.5 py-3 shadow-[6px_0_10px_-8px_rgba(15,23,42,0.25)] md:max-w-none md:shadow-none">
                               <Link className="flex items-center gap-3" href={`/dashboard/proveedor/equipo/${member.id}`}>
                                 <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-bold text-indigo-600 md:flex">
                                   {initials(member.name)}
@@ -616,7 +617,7 @@ export default function SupplierTeamPage() {
             {/* Actividad del equipo */}
             <aside className={`${card} p-5`}>
               <div className="flex items-center justify-between">
-                <h2 className="text-[17px] font-bold text-[#16123a]">Actividad del equipo</h2>
+                <h2 className="text-[17px] font-bold text-slate-900">Actividad del equipo</h2>
                 <Link className="text-[13px] font-semibold" href="/dashboard/proveedor/solicitudes">
                   <span className="text-indigo-600">Ver todas</span>
                 </Link>
@@ -655,7 +656,7 @@ export default function SupplierTeamPage() {
 
       {/* Invitaciones: el mismo panel de antes, dentro de un modal. */}
       {inviteOpen ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#120f2e]/45 p-4 pt-[8vh] backdrop-blur-[2px]" onClick={() => setInviteOpen(false)} role="presentation">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-seller-900/45 p-4 pt-[8vh] backdrop-blur-[2px]" onClick={() => setInviteOpen(false)} role="presentation">
           <div aria-label="Invitar vendedor" aria-modal="true" className="relative w-full max-w-[720px]" onClick={(event) => event.stopPropagation()} role="dialog">
             <button
               aria-label="Cerrar"

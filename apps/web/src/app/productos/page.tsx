@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CompanyLogo from '@/components/dashboard/company-logo';
 import Reveal from '@/components/ui/reveal';
+import { isCategoryHidden, withoutHiddenCategories } from '@/lib/hidden-categories';
 import { atarApi, type RequestCatalogCategoryRecord, type SupplierDirectoryRecord } from '@/lib/atar-api';
 import { getSupplierCategoryLabel } from '@/lib/provider-directory';
 
@@ -104,9 +105,9 @@ const FALLBACK_CATEGORIES: ProductCategory[] = [
     imageSrc: '/telaplana.png',
     imageClassName: 'object-cover',
   },
-];
+].filter((category) => !isCategoryHidden(category.label));
 
-const MOST_SEARCHED = ['Big Bags', 'Polímeros', 'Maquinarias', 'Bolsas', 'Tintas'];
+const MOST_SEARCHED = withoutHiddenCategories(['Big Bags', 'Polímeros', 'Maquinarias', 'Bolsas', 'Tintas']);
 
 const HERO_IMAGES = ['/bigbags.png', '/cuerdas.png', '/tintas.png', '/hilomulti.png'];
 
@@ -181,7 +182,7 @@ type ProductFamily = {
   keywords: string[];
 };
 
-const FAMILIES: ProductFamily[] = [
+const ALL_FAMILIES: ProductFamily[] = [
   {
     id: 'envases',
     title: 'Envases y embalajes',
@@ -262,6 +263,8 @@ const FAMILIES: ProductFamily[] = [
     keywords: ['maquin', 'equipo', 'línea', 'linea', 'extrus', 'telar', 'accesorio', 'repuesto'],
   },
 ];
+
+const FAMILIES = ALL_FAMILIES.filter((family) => !isCategoryHidden(family.tab));
 
 function normalize(value: string) {
   return value

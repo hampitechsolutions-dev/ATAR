@@ -160,7 +160,7 @@ function HomeSeeAll({ href }: { href: string }) {
   );
 }
 
-const homeCard = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
+const homeCard = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]';
 
 /** "Hoy, 09:15", "Ayer, 16:03" o "12 sept". */
 function formatDayTime(value: string) {
@@ -199,7 +199,7 @@ function formatCompactCurrency(value: number) {
 
 export default function DashboardProveedorPage() {
   const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
-  const { activeWorkspace, hasMultipleWorkspaces } = useWorkspace();
+  const { activeWorkspace, hasMultipleWorkspaces, isSeller } = useWorkspace();
   const counters = useSupplierWorkspaceCounters({
     accessToken: session?.accessToken,
     openRequests,
@@ -444,22 +444,39 @@ export default function DashboardProveedorPage() {
   // sidebar) y, en mobile, las tablas se muestran como tarjetas.
   const homeBody = (
     <>
-            {/* Saludo */}
-            <div>
-              <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-indigo-600">{greeting},</p>
-              <h1 className="mt-0.5 text-[1.9rem] font-bold lg:text-[2.3rem] leading-tight tracking-[-0.03em] text-[#16123a]">
-                {sellerName} 👋
-              </h1>
-              <p className="mt-0.5 text-[14px] text-slate-500 lg:text-[15px]">Estas son las tareas y oportunidades de hoy en {companyName}.</p>
-            </div>
+            {/* Saludo. El vendedor lo ve en una banda verde suave, para que se lea de
+                entrada que es su entorno; la empresa conserva el saludo simple. */}
+            {isSeller ? (
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] border border-seller-200 bg-seller-50 px-5 py-4 shadow-[inset_5px_0_0_var(--color-seller-500)] lg:px-7 lg:py-5">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-seller-700">{greeting},</p>
+                  <h1 className="mt-0.5 text-[1.9rem] font-bold leading-tight tracking-[-0.03em] text-slate-900 lg:text-[2.3rem]">
+                    {sellerName} 👋
+                  </h1>
+                  <p className="mt-0.5 text-[14px] text-slate-600 lg:text-[15px]">Estas son tus tareas y oportunidades de hoy.</p>
+                </div>
+                <div className="rounded-[12px] border border-seller-200 bg-white px-4 py-2.5">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-seller-700">Panel de ventas</p>
+                  <p className="text-[15px] font-bold text-slate-900">{companyName}</p>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-indigo-600">{greeting},</p>
+                <h1 className="mt-0.5 text-[1.9rem] font-bold leading-tight tracking-[-0.03em] text-slate-900 lg:text-[2.3rem]">
+                  {sellerName} 👋
+                </h1>
+                <p className="mt-0.5 text-[14px] text-slate-500 lg:text-[15px]">Estas son las tareas y oportunidades de hoy en {companyName}.</p>
+              </div>
+            )}
 
             <div className="mt-6 grid gap-5 xl:grid-cols-[1.15fr_1fr]">
               {/* Tareas pendientes */}
-              <section className={homeCard}>
+              <section className={homeCard} data-tour="sales-tasks">
                 <div className="flex items-center justify-between gap-3 px-5 pt-5">
                   <div className="flex items-center gap-3">
                     <HomeIcon name="doc" tone="bg-indigo-100 text-indigo-600" />
-                    <h2 className="text-[18px] font-bold text-[#16123a]">Tareas pendientes</h2>
+                    <h2 className="text-[18px] font-bold text-slate-900">Tareas pendientes</h2>
                     {pendingTotal > 0 ? (
                       <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[12px] font-semibold text-white">
                         {pendingTotal}
@@ -492,14 +509,14 @@ export default function DashboardProveedorPage() {
               </section>
 
               {/* Resumen de actividad */}
-              <section className={`${homeCard} flex flex-col p-5`}>
+              <section className={`${homeCard} flex flex-col p-5`} data-tour="sales-activity">
                 <div className="flex items-center gap-3">
                   <HomeIcon name="chart" tone="bg-indigo-100 text-indigo-600" />
-                  <h2 className="text-[18px] font-bold text-[#16123a]">Resumen de tu actividad</h2>
+                  <h2 className="text-[18px] font-bold text-slate-900">Resumen de tu actividad</h2>
                 </div>
                 <div className="mt-4 grid flex-1 auto-rows-fr grid-cols-2 gap-3">
                   {activityTiles.map((tile, index) => {
-                    const tone = TONES[(['indigo', 'violet', 'sky', 'emerald'] as Tone[])[index % 4]];
+                    const tone = TONES[(['indigo', 'violet', 'sky', 'amber'] as Tone[])[index % 4]];
                     return (
                     <Link
                       key={tile.label}
@@ -510,7 +527,7 @@ export default function DashboardProveedorPage() {
                         <HomeIcon name={tile.icon} tone={tone.icon} />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-[20px] font-bold leading-7 text-[#16123a] sm:truncate sm:text-[22px]">{tile.value}</p>
+                            <p className="text-[20px] font-bold leading-7 text-slate-900 sm:truncate sm:text-[22px]">{tile.value}</p>
                             {tile.trend ? (
                               <span className="shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">
                                 ↑ {tile.trend}
@@ -529,16 +546,16 @@ export default function DashboardProveedorPage() {
             </div>
 
             {/* Oportunidades recientes */}
-            <section className={`${homeCard} mt-5`}>
+            <section className={`${homeCard} mt-5`} data-tour="sales-opportunities">
               <div className="flex items-center justify-between gap-3 px-5 pt-5">
                 <div className="flex items-center gap-3">
                   <HomeIcon name="clipboard" tone="bg-indigo-100 text-indigo-600" />
-                  <h2 className="text-[18px] font-bold text-[#16123a]">Oportunidades recientes</h2>
+                  <h2 className="text-[18px] font-bold text-slate-900">Oportunidades recientes</h2>
                 </div>
                 <HomeSeeAll href="/dashboard/proveedor/solicitudes" />
               </div>
               {/* En mobile, tarjetas; desde md, la tabla completa. */}
-              <ul className="mt-3 divide-y divide-[#d6d0f2] pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-[#f0eff8]">
+              <ul className="mt-3 divide-y divide-slate-200 pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-seller-surface">
                 {recentOpportunities.length === 0 ? (
                   <li className="py-6 text-center text-[13px] text-slate-500">Todavía no hay oportunidades para {companyName}.</li>
                 ) : (
@@ -579,7 +596,7 @@ export default function DashboardProveedorPage() {
               <div className="mt-4 hidden overflow-x-auto px-3 pb-3 md:block">
                 <table className="w-full min-w-[860px] text-left text-[13px]">
                   <thead>
-                    <tr className="bg-[#eceaff] text-[12px] font-semibold text-[#3d3780]">
+                    <tr className="bg-seller-50 text-[12px] font-semibold text-slate-700">
                       <th className="rounded-l-lg px-3 py-2.5 font-medium">Producto</th>
                       <th className="px-3 py-2.5 font-medium">Cliente</th>
                       <th className="px-3 py-2.5 font-medium">Cantidad</th>
@@ -589,7 +606,7 @@ export default function DashboardProveedorPage() {
                       <th className="rounded-r-lg px-3 py-2.5 font-medium">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#d6d0f2] [&>tr:nth-child(even)]:bg-[#f0eff8]">
+                  <tbody className="divide-y divide-slate-200 [&>tr:nth-child(even)]:bg-seller-surface">
                     {recentOpportunities.length === 0 ? (
                       <tr>
                         <td className="px-3 py-8 text-center text-slate-500" colSpan={7}>
@@ -660,11 +677,11 @@ export default function DashboardProveedorPage() {
                 <div className="flex items-center justify-between gap-3 px-5 pt-5">
                   <div className="flex items-center gap-3">
                     <HomeIcon name="doc" tone="bg-indigo-100 text-indigo-600" />
-                    <h2 className="text-[18px] font-bold text-[#16123a]">Mis cotizaciones</h2>
+                    <h2 className="text-[18px] font-bold text-slate-900">Mis cotizaciones</h2>
                   </div>
                   <HomeSeeAll href="/dashboard/proveedor/cotizaciones" />
                 </div>
-                <ul className="mt-3 divide-y divide-[#d6d0f2] pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-[#f0eff8]">
+                <ul className="mt-3 divide-y divide-slate-200 pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-seller-surface">
                   {recentQuotes.length === 0 ? (
                     <li className="py-6 text-center text-[13px] text-slate-500">Todavía no enviaste cotizaciones.</li>
                   ) : (
@@ -694,14 +711,14 @@ export default function DashboardProveedorPage() {
                 <div className="mt-4 hidden px-3 pb-3 md:block">
                   <table className="w-full text-left text-[13px]">
                     <thead>
-                      <tr className="bg-[#eceaff] text-[12px] font-semibold text-[#3d3780]">
+                      <tr className="bg-seller-50 text-[12px] font-semibold text-slate-700">
                         <th className="rounded-l-lg px-3 py-2 font-medium">Cliente</th>
                         <th className="px-3 py-2 font-medium">Producto</th>
                         <th className="px-3 py-2 font-medium">Monto</th>
                         <th className="rounded-r-lg px-3 py-2 font-medium">Estado</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#d6d0f2] [&>tr:nth-child(even)]:bg-[#f0eff8]">
+                    <tbody className="divide-y divide-slate-200 [&>tr:nth-child(even)]:bg-seller-surface">
                       {recentQuotes.length === 0 ? (
                         <tr>
                           <td className="px-3 py-6 text-center text-slate-500" colSpan={4}>
@@ -741,11 +758,11 @@ export default function DashboardProveedorPage() {
                 <div className="flex items-center justify-between gap-3 px-5 pt-5">
                   <div className="flex items-center gap-3">
                     <HomeIcon name="user" tone="bg-indigo-100 text-indigo-600" />
-                    <h2 className="text-[18px] font-bold text-[#16123a]">Clientes recientes</h2>
+                    <h2 className="text-[18px] font-bold text-slate-900">Clientes recientes</h2>
                   </div>
                   <HomeSeeAll href="/dashboard/proveedor/clientes" />
                 </div>
-                <ul className="mt-3 divide-y divide-[#d6d0f2] pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-[#f0eff8]">
+                <ul className="mt-3 divide-y divide-slate-200 pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-seller-surface">
                   {recentClients.length === 0 ? (
                     <li className="py-6 text-center text-[13px] text-slate-500">Todavía no hay clientes con actividad.</li>
                   ) : (
@@ -765,13 +782,13 @@ export default function DashboardProveedorPage() {
                 <div className="mt-4 hidden px-3 pb-3 md:block">
                   <table className="w-full text-left text-[13px]">
                     <thead>
-                      <tr className="bg-[#eceaff] text-[12px] font-semibold text-[#3d3780]">
+                      <tr className="bg-seller-50 text-[12px] font-semibold text-slate-700">
                         <th className="rounded-l-lg px-3 py-2 font-medium">Cliente</th>
                         <th className="px-3 py-2 font-medium">Última actividad</th>
                         <th className="rounded-r-lg px-3 py-2 font-medium">Estado</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#d6d0f2] [&>tr:nth-child(even)]:bg-[#f0eff8]">
+                    <tbody className="divide-y divide-slate-200 [&>tr:nth-child(even)]:bg-seller-surface">
                       {recentClients.length === 0 ? (
                         <tr>
                           <td className="px-3 py-6 text-center text-slate-500" colSpan={3}>
@@ -800,7 +817,7 @@ export default function DashboardProveedorPage() {
   );
 
   return (
-    <main className="bg-[#eae7f8] text-slate-950 lg:h-screen lg:overflow-hidden">
+    <main className="bg-seller-canvas text-slate-950 lg:h-screen lg:overflow-hidden">
       {/* ==================== VISTA MOBILE ==================== */}
       <div className="lg:hidden">
         {error ? (
@@ -836,7 +853,7 @@ export default function DashboardProveedorPage() {
                   <span className="text-base font-bold text-slate-950">ATAR</span>
                 </Link>
 
-                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-[#f1eefb] px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
+                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-seller-surface px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
                   <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                     <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                     <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />

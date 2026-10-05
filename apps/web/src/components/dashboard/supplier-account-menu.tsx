@@ -105,7 +105,7 @@ export default function SupplierAccountMenu({ session }: SupplierAccountMenuProp
 
       {isOpen ? (
         <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[280px] rounded-2xl border border-slate-300 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-          <div className="flex items-center gap-3 rounded-xl bg-[#eef1f7] px-3 py-3">
+          <div className="flex items-center gap-3 rounded-xl bg-seller-surface px-3 py-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-700 shadow-sm">
               {accountInitials}
             </div>

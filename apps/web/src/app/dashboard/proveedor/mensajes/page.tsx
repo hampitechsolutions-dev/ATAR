@@ -193,9 +193,9 @@ export default function SupplierMessagesPage() {
 
             <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto">
               {dashboardLoading || loading ? (
-                <div className="rounded-2xl bg-[#eef1f7] px-4 py-8"><LoadingState label="Cargando conversaciones..." /></div>
+                <div className="rounded-2xl bg-seller-surface px-4 py-8"><LoadingState label="Cargando conversaciones..." /></div>
               ) : filteredConversations.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-8 text-sm text-slate-500">
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-seller-surface px-4 py-8 text-sm text-slate-500">
                   Todavía no hay conversaciones.
                 </div>
               ) : (
@@ -205,7 +205,7 @@ export default function SupplierMessagesPage() {
                     <button
                       key={conversation.id}
                       className={`flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                        isActive ? 'border-indigo-400 bg-indigo-100 shadow-sm' : 'border-slate-300 bg-white hover:border-indigo-300 hover:bg-[#eef1f7]'
+                        isActive ? 'border-indigo-400 bg-indigo-100 shadow-sm' : 'border-slate-300 bg-white hover:border-indigo-300 hover:bg-seller-surface'
                       }`}
                       onClick={() => {
                         setSelectedId(conversation.id);

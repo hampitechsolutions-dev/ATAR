@@ -186,7 +186,7 @@ export default function BuyerProvidersPage() {
       </header>
 
       {/* ==================== FILTROS ==================== */}
-      <section className="grid grid-cols-2 items-center gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
+      <section className="grid grid-cols-2 items-center gap-2.5 sm:flex sm:flex-wrap sm:gap-3" data-tour="suppliers-filters">
         <label className="relative col-span-2 sm:min-w-[240px] sm:flex-1 lg:max-w-[440px]">
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
             <SearchIcon />
@@ -256,7 +256,7 @@ export default function BuyerProvidersPage() {
         ) : filteredSuppliers.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-slate-500">No encontramos proveedores con ese criterio.</p>
         ) : (
-          <ul className="divide-y divide-slate-200">
+          <ul className="divide-y divide-slate-200" data-tour="suppliers-list">
             {filteredSuppliers.map((supplier) => {
               const isFavorite = favorites.includes(supplier.id);
               const products = supplierProducts(supplier).slice(0, 3);

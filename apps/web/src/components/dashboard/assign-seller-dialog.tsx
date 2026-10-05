@@ -72,7 +72,7 @@ export default function AssignSellerDialog({
 
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-5 py-4">
           {team.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-8 text-center text-xs text-slate-500">
+            <p className="rounded-xl border border-dashed border-slate-300 bg-seller-surface px-4 py-8 text-center text-xs text-slate-500">
               Todavía no hay vendedores cargados en la empresa.
             </p>
           ) : (

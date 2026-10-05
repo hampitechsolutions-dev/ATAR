@@ -74,7 +74,7 @@ function categoryImage(category?: string | null) {
 
 type Filter = 'all' | 'pending' | 'active' | 'delivered';
 
-const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
+const card = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]';
 
 function KpiIcon({ name }: { name: Exclude<Filter, 'all'> }) {
   const paths = {
@@ -135,7 +135,7 @@ export default function SupplierProductionPage() {
   });
 
   const kpis: { key: Exclude<Filter, 'all'>; label: string; value: number; tone: string }[] = [
-    { key: 'pending', label: 'Pendientes', value: metrics.pending, tone: 'bg-[#e2ddff] text-indigo-600' },
+    { key: 'pending', label: 'Pendientes', value: metrics.pending, tone: 'bg-seller-100 text-indigo-600' },
     { key: 'active', label: 'En proceso', value: metrics.active, tone: 'bg-amber-100 text-amber-600' },
     { key: 'delivered', label: 'Entregadas', value: metrics.delivered, tone: 'bg-emerald-100 text-emerald-600' },
   ];
@@ -147,7 +147,7 @@ export default function SupplierProductionPage() {
       searchValue={search}
       session={session}
     >
-      <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-[#16123a] sm:text-[34px]">Producción</h1>
+      <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-900 sm:text-[34px]">Producción</h1>
       <p className="mt-1 text-[13px] text-slate-500 sm:text-[15px]">Seguí el avance operativo de cada orden adjudicada.</p>
 
       {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
@@ -170,7 +170,7 @@ export default function SupplierProductionPage() {
                 <KpiIcon name={kpi.key} />
               </span>
               <span className="min-w-0">
-                <span className="block text-[22px] font-bold leading-none text-[#16123a] sm:text-[28px]">{loading ? '—' : kpi.value}</span>
+                <span className="block text-[22px] font-bold leading-none text-slate-900 sm:text-[28px]">{loading ? '—' : kpi.value}</span>
                 <span className="mt-1 block truncate text-[12px] text-slate-600 sm:text-[14px]">{kpi.label}</span>
               </span>
             </button>
@@ -216,7 +216,7 @@ export default function SupplierProductionPage() {
                       <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${stageTone(row.status)}`}>{row.stage}</span>
                       <span className="text-[11px] text-slate-400">{row.orderNumber}</span>
                     </div>
-                    <h2 className="mt-1 line-clamp-2 text-[15px] font-bold leading-5 text-[#16123a] sm:text-[17px]">{row.title}</h2>
+                    <h2 className="mt-1 line-clamp-2 text-[15px] font-bold leading-5 text-slate-900 sm:text-[17px]">{row.title}</h2>
                     <p className="mt-0.5 truncate text-[12px] text-slate-500 sm:text-[13px]">{row.company}</p>
                   </div>
                 </div>
@@ -249,7 +249,7 @@ export default function SupplierProductionPage() {
                   })}
                 </ol>
 
-                <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] bg-[#f1efff] px-3.5 py-2.5">
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] bg-seller-50 px-3.5 py-2.5">
                   <div className="min-w-0">
                     <p className="text-[10px] text-slate-500">Entrega estimada</p>
                     <p className="text-[13px] font-semibold text-slate-900">{row.promisedDate}</p>

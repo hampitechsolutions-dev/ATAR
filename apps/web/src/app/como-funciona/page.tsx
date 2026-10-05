@@ -163,7 +163,7 @@ function StepVisual({ step }: { step: number }) {
       <div className="relative aspect-[4/3] overflow-hidden rounded-[12px] bg-slate-200">
         <Image alt="" className="object-cover" fill sizes="(min-width:1024px) 22vw, 90vw" src="/maquinariaweb.png" />
         <div className="absolute inset-x-3 top-1/2 flex -translate-y-1/2 items-center overflow-hidden rounded-[10px] bg-white shadow-[0_12px_30px_rgba(15,23,42,0.25)]">
-          <span className="flex-1 truncate px-3 py-2.5 text-[12px] text-slate-500">Big Bags, rafia, polímeros...</span>
+          <span className="flex-1 truncate px-3 py-2.5 text-[12px] text-slate-500">Big Bags, rafia, telas...</span>
           <span className="flex h-10 w-10 items-center justify-center bg-[#1f5bff] text-white">
             <Icon name="search" className="h-4 w-4" />
           </span>

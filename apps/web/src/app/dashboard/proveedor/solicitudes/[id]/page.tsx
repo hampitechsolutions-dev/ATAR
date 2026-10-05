@@ -422,7 +422,7 @@ export default function SupplierRequestDetailPage() {
             {/* Entrega y condiciones (a nivel solicitud) */}
             <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">Entrega y condiciones</p>
-              <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-[#f0eff8]">
+              <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-seller-surface">
                 {detailRows.map((row) => (
                   <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
                     <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
@@ -461,7 +461,7 @@ export default function SupplierRequestDetailPage() {
                         <label className="flex items-center gap-1 text-xs text-slate-400">
                           Moneda
                           <input
-                            className="w-16 rounded-lg border border-slate-300 bg-[#eef1f7] px-2 py-1 text-center text-xs uppercase text-slate-700 outline-none focus:border-indigo-400"
+                            className="w-16 rounded-lg border border-slate-300 bg-seller-surface px-2 py-1 text-center text-xs uppercase text-slate-700 outline-none focus:border-indigo-400"
                             maxLength={4}
                             onChange={(event) =>
                               setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
@@ -489,7 +489,7 @@ export default function SupplierRequestDetailPage() {
                             availabilities: { ...current.availabilities, [item.id]: value },
                           }));
                         return (
-                          <div key={item.id} className="rounded-xl border border-slate-300 bg-[#eef1f7] p-3">
+                          <div key={item.id} className="rounded-xl border border-slate-300 bg-seller-surface p-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-slate-900">{item.productName}</p>
@@ -584,7 +584,7 @@ export default function SupplierRequestDetailPage() {
                     </div>
                   ) : (
                     <Field label="Precio total">
-                      <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-300 bg-[#eef1f7] focus-within:border-indigo-400">
+                      <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-300 bg-seller-surface focus-within:border-indigo-400">
                         <span className="flex items-center px-3 text-sm text-slate-400">$</span>
                         <input
                           className="w-full bg-transparent py-3 pr-3 text-sm outline-none"
@@ -632,14 +632,14 @@ export default function SupplierRequestDetailPage() {
                   <Field label="Válida hasta (opcional)">
                     <input
                       type="date"
-                      className="h-11 w-full rounded-xl border border-slate-300 bg-[#eef1f7] px-3 text-sm outline-none transition focus:border-indigo-400"
+                      className="h-11 w-full rounded-xl border border-slate-300 bg-seller-surface px-3 text-sm outline-none transition focus:border-indigo-400"
                       value={draft.validity}
                       onChange={(event) => setDraft((current) => ({ ...current, validity: event.target.value }))}
                     />
                   </Field>
                   <Field label="Observaciones (opcional)">
                     <textarea
-                      className="min-h-24 w-full resize-y rounded-xl border border-slate-300 bg-[#eef1f7] px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
+                      className="min-h-24 w-full resize-y rounded-xl border border-slate-300 bg-seller-surface px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
                       onChange={(event) =>
                         setDraft((current) => ({ ...current, technicalComment: event.target.value }))
                       }
@@ -717,7 +717,7 @@ function Input({
 }) {
   return (
     <input
-      className="w-full rounded-xl border border-slate-300 bg-[#eef1f7] px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
+      className="w-full rounded-xl border border-slate-300 bg-seller-surface px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
       inputMode={inputMode}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}

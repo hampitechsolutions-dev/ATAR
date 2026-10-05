@@ -140,7 +140,7 @@ function DotsIcon() {
   );
 }
 
-const card = 'rounded-[18px] border border-[#cbc4ee] bg-white shadow-[0_10px_30px_rgba(40,28,110,0.07)]';
+const card = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]';
 
 /* Página ------------------------------------------------------------------- */
 
@@ -253,7 +253,7 @@ export default function SupplierQuotesPage() {
       note: sentThisWeek > 0 ? `↑ +${sentThisWeek} esta semana` : 'Sin envíos esta semana',
       noteTone: sentThisWeek > 0 ? 'text-emerald-600' : 'text-slate-400',
       icon: 'send' as const,
-      tone: 'bg-[#e2ddff] text-indigo-600',
+      tone: 'bg-seller-100 text-indigo-600',
       tab: 'submitted' as const,
     },
     {
@@ -316,7 +316,7 @@ export default function SupplierQuotesPage() {
       {/* Encabezado */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[32px] font-bold leading-tight tracking-[-0.035em] text-[#16123a] sm:text-[36px]">Cotizaciones</h1>
+          <h1 className="text-[32px] font-bold leading-tight tracking-[-0.035em] text-slate-900 sm:text-[36px]">Cotizaciones</h1>
           <p className="mt-0.5 text-[16px] text-slate-500">Gestioná y seguí tus propuestas.</p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
@@ -333,7 +333,7 @@ export default function SupplierQuotesPage() {
             />
           </label>
           <Link
-            className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-indigo-600 px-5 text-[15px] font-semibold shadow-[0_10px_24px_rgba(100,64,232,0.28)] transition hover:bg-indigo-700"
+            className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-indigo-600 px-5 text-[15px] font-semibold shadow-[0_10px_24px_rgb(var(--accent-rgb)/0.28)] transition hover:bg-indigo-700"
             href="/dashboard/proveedor/solicitudes"
           >
             {/* globals.css fija `a { color: inherit }`: el color va en el hijo. */}
@@ -350,11 +350,11 @@ export default function SupplierQuotesPage() {
       ) : null}
 
       {/* Contadores */}
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
+      <div className="mt-5 grid gap-4 md:grid-cols-3" data-tour="sales-quotes-kpis">
         {summaryCards.map((summary) => (
           <button
             key={summary.label}
-            className={`${card} group flex items-center gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(40,28,110,0.09)]`}
+            className={`${card} group flex items-center gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.09)]`}
             onClick={() => selectTab(summary.tab)}
             type="button"
           >
@@ -362,11 +362,11 @@ export default function SupplierQuotesPage() {
               <Icon className="h-7 w-7" name={summary.icon} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[30px] font-bold leading-none text-[#16123a]">{loading ? '—' : summary.value}</span>
+              <span className="block text-[30px] font-bold leading-none text-slate-900">{loading ? '—' : summary.value}</span>
               <span className="mt-1 block text-[16px] text-slate-700">{summary.label}</span>
               <span className={`mt-0.5 block text-[13px] ${summary.noteTone}`}>{summary.note}</span>
             </span>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e2ddff] text-indigo-600 transition group-hover:translate-x-0.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-seller-100 text-indigo-600 transition group-hover:translate-x-0.5">
               <Icon name="arrow" />
             </span>
           </button>
@@ -375,7 +375,7 @@ export default function SupplierQuotesPage() {
 
       {/* Tabla */}
       <section className={`${card} mt-5 p-5`}>
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-200 [scrollbar-width:none]">
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-200 [scrollbar-width:none]" data-tour="sales-quotes-table">
           {tabs.map((tab) => {
             const active = activeTab === tab.key;
             return (
@@ -453,7 +453,7 @@ export default function SupplierQuotesPage() {
         <div className="mt-3 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[900px] text-left text-[14px]">
             <thead>
-              <tr className="bg-[#eceaff] text-[13px] font-semibold text-[#3d3780]">
+              <tr className="bg-seller-50 text-[13px] font-semibold text-slate-700">
                 <th className="rounded-l-lg px-3 py-2.5 font-medium">Solicitud / Producto</th>
                 <th className="px-3 py-2.5 font-medium">Comprador</th>
                 <th className="px-3 py-2.5 font-medium">Monto</th>
@@ -483,7 +483,7 @@ export default function SupplierQuotesPage() {
                   const highlight = urgency(row);
                   const due = row.kind === 'pending' || row.kind === 'submitted' ? formatDue(row.deadline, nowMs) : null;
                   return (
-                    <tr key={row.id} className={`border-b border-[#d6d0f2] last:border-b-0 ${highlight?.bg ?? 'even:bg-[#f0eff8]'}`}>
+                    <tr key={row.id} className={`border-b border-slate-200 last:border-b-0 ${highlight?.bg ?? 'even:bg-seller-surface'}`}>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
                           <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
@@ -619,7 +619,7 @@ export default function SupplierQuotesPage() {
               <Icon name="clock" />
             </span>
             <div>
-              <h2 className="text-[17px] font-bold text-[#16123a]">Próximas a vencer</h2>
+              <h2 className="text-[17px] font-bold text-slate-900">Próximas a vencer</h2>
               <p className="text-[13px] text-slate-500">
                 {upcoming.length === 0
                   ? 'No hay cotizaciones que venzan en los próximos 7 días.'

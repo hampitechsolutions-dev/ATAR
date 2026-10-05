@@ -200,7 +200,7 @@ export default function SupplierOrderDetailPage() {
             {/* Información */}
             <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">Información del pedido</p>
-              <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-[#f0eff8]">
+              <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-seller-surface">
                 {infoRows.map((row) => (
                   <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
                     <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
