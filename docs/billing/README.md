@@ -268,7 +268,7 @@ SETTLEMENT → vence dueAt → OVERDUE → PAGO
 | **3** | Liquidaciones: generación idempotente por período (`BillingSettlementsService`) + preview + emisión, endpoints admin. Agrupa comisiones `CONFIRMED` por empresa+moneda en `BillingSettlement` (nº de documento `ATAR-YYYY-MM-NNNNNN`, vencimiento = fin de mes + `dueDays`), marca comisiones `INVOICED`, con auditoría. Re-ejecutar no duplica. *(Cron automático = pendiente: hoy trigger manual admin; `@nestjs/schedule` en fase futura.)* | ✅ Hecha |
 | **4** | Dashboard ATAR (admin): resumen, por período, por empresa, reglas, cierre, ajustes, reportes/export. | — (UI) |
 | **5** | Dashboard empresa: mis liquidaciones, detalle trazable, documento descargable. | — (UI) |
-| **6** | Pagos: `PaymentProvider` + manual (registro + validación admin) + external_reference. | — |
+| **6** | Pagos (backend): abstracción `PaymentProvider` + `ManualTransferProvider`; `BillingPaymentsService` (empresa registra pago manual con `externalReference` único → `PENDING`; admin confirma/rechaza; recálculo de estado de la liquidación → `PARTIALLY_PAID`/`PAID`, comisiones → `PAID`, rollup del período). Endpoints `billing/me` (listar/detalle/pagar, scope por empresa) y `billing/admin/payments` (listar/confirmar/rechazar). Confirmación **server-side** (nunca por el frontend). | ✅ Hecha |
 | **7** | Webhooks (idempotentes/persistidos) — se activa con MercadoPago. | — |
 | **8** | Notificaciones (generada / por vencer / vencida / pago recibido / rechazado). | enum notif |
 | **9** | Reportes + export CSV + reconciliación. | — |
