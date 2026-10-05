@@ -786,6 +786,133 @@ function hideSupplierCategories(supplier: SupplierDirectoryRecord): SupplierDire
   };
 }
 
+// ---- Billing / facturación de comisiones ----
+export type BillingSettlementStatus = 'DRAFT' | 'ISSUED' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'VOID';
+export type BillingCommissionStatus = 'PENDING' | 'CONFIRMED' | 'INVOICED' | 'PAID' | 'VOID' | 'ADJUSTED';
+export type BillingPaymentStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'REFUNDED';
+export type BillingPaymentMethod = 'MANUAL_TRANSFER' | 'MERCADOPAGO';
+export type BillingPeriodStatus =
+  | 'OPEN'
+  | 'PROCESSING'
+  | 'GENERATED'
+  | 'ISSUED'
+  | 'PARTIALLY_PAID'
+  | 'PAID'
+  | 'OVERDUE'
+  | 'CLOSED'
+  | 'CANCELLED';
+export type BillingPayer = 'SUPPLIER' | 'BUYER';
+
+export type BillingPaymentRecord = {
+  id: string;
+  settlementId: string;
+  method: BillingPaymentMethod;
+  status: BillingPaymentStatus;
+  amount: number;
+  currency: string;
+  externalReference: string | null;
+  receiptUrl: string | null;
+  registeredByUserId: string | null;
+  confirmedByUserId: string | null;
+  confirmedAt: string | null;
+  paidAt: string | null;
+  rejectedAt: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BillingSettlementRecord = {
+  id: string;
+  periodId: string;
+  companyId: string;
+  currency: string;
+  payer: BillingPayer;
+  status: BillingSettlementStatus;
+  documentNumber: string;
+  operationsCount: number;
+  baseTotal: number;
+  commissionTotal: number;
+  adjustmentsTotal: number;
+  grandTotal: number;
+  dueAt: string | null;
+  issuedAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  period?: { code: string } | null;
+  payments?: BillingPaymentRecord[];
+};
+
+export type BillingCommissionRecord = {
+  id: string;
+  requestId: string;
+  companyId: string;
+  currency: string;
+  payer: BillingPayer;
+  status: BillingCommissionStatus;
+  baseAmount: number;
+  ratePercentSnapshot: number;
+  commissionAmount: number;
+  generatedAt: string;
+  paidAt: string | null;
+  request?: { id: string; title: string | null } | null;
+};
+
+export type BillingAdjustmentRecord = {
+  id: string;
+  settlementId: string;
+  type: string;
+  amount: number;
+  reason: string | null;
+  createdAt: string;
+};
+
+export type BillingSettlementDetail = BillingSettlementRecord & {
+  company?: { id: string; name: string; legalName: string | null; taxId: string | null } | null;
+  commissions: BillingCommissionRecord[];
+  adjustments: BillingAdjustmentRecord[];
+  payments: BillingPaymentRecord[];
+};
+
+export type BillingPreviewGroup = {
+  companyId: string;
+  companyName: string;
+  currency: string;
+  payer: BillingPayer;
+  operationsCount: number;
+  baseTotal: number;
+  commissionTotal: number;
+  commissions: { requestId: string; generatedAt: string; baseAmount: number; commissionAmount: number }[];
+};
+
+export type BillingPreview = {
+  period: string;
+  window: { startsAt: string; endsAt: string; dueAt: string };
+  settlements: BillingPreviewGroup[];
+  totalCommission: number;
+};
+
+export type BillingGenerateResult = {
+  period: string;
+  settlements: string[];
+  settlementsCount: number;
+  commissionsProcessed: number;
+  skipped: number;
+};
+
+export type BillingAdminPaymentRecord = BillingPaymentRecord & {
+  settlement?: {
+    id: string;
+    documentNumber: string;
+    companyId: string;
+    grandTotal: number;
+    currency: string;
+  } | null;
+};
+
+export type RegisterPaymentPayload = { amount: number; receiptUrl?: string; note?: string };
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export const ACTIVE_COMPANY_STORAGE_KEY = 'atar.activeCompanyId';
@@ -1228,6 +1355,61 @@ export const atarApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }, token);
+  },
+
+  // ---- Billing: empresa (cada empresa ve y paga solo lo suyo) ----
+  getMySettlements(token: string) {
+    return request<BillingSettlementRecord[]>('/billing/me/settlements', undefined, token);
+  },
+  getMySettlement(settlementId: string, token: string) {
+    return request<BillingSettlementDetail>(`/billing/me/settlements/${settlementId}`, undefined, token);
+  },
+  payMySettlement(settlementId: string, payload: RegisterPaymentPayload, token: string) {
+    return request<BillingPaymentRecord>(
+      `/billing/me/settlements/${settlementId}/pay`,
+      { method: 'POST', body: JSON.stringify(payload) },
+      token,
+    );
+  },
+
+  // ---- Billing: administración de ATAR (solo admin de plataforma) ----
+  previewBillingPeriod(code: string, token: string) {
+    return request<BillingPreview>(`/billing/admin/periods/${code}/preview`, undefined, token);
+  },
+  generateBillingPeriod(code: string, token: string) {
+    return request<BillingGenerateResult>(
+      `/billing/admin/periods/${code}/generate`,
+      { method: 'POST' },
+      token,
+    );
+  },
+  issueBillingPeriod(code: string, token: string) {
+    return request<{ period: string; issued: number }>(
+      `/billing/admin/periods/${code}/issue`,
+      { method: 'POST' },
+      token,
+    );
+  },
+  listBillingPayments(status: BillingPaymentStatus | undefined, token: string) {
+    return request<BillingAdminPaymentRecord[]>(
+      `/billing/admin/payments${buildQuery(status ? { status } : undefined)}`,
+      undefined,
+      token,
+    );
+  },
+  confirmBillingPayment(paymentId: string, token: string) {
+    return request<BillingPaymentRecord>(
+      `/billing/admin/payments/${paymentId}/confirm`,
+      { method: 'POST' },
+      token,
+    );
+  },
+  rejectBillingPayment(paymentId: string, reason: string, token: string) {
+    return request<BillingPaymentRecord>(
+      `/billing/admin/payments/${paymentId}/reject`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+      token,
+    );
   },
 };
 

@@ -9,6 +9,7 @@ import {
   clearSession,
   getPrimaryCompanyName,
   getUserFullName,
+  isPlatformAdmin,
   isSellerAccount,
   type WebSession,
 } from '@/lib/session';
@@ -35,6 +36,7 @@ type SidebarIconName =
   | 'factory'
   | 'star'
   | 'chart'
+  | 'wallet'
   | 'mail';
 
 type SidebarItem = {
@@ -75,6 +77,7 @@ const supplierItems: ReadonlyArray<SidebarItem> = [
   { section: 'Mi trabajo', label: 'Clientes', href: '/dashboard/proveedor/clientes', icon: 'users' },
   { section: 'Mi trabajo', label: 'Mensajes', href: '/dashboard/proveedor/mensajes', icon: 'mail' },
 
+  { section: 'Empresa', label: 'Facturación', href: '/dashboard/proveedor/facturacion', icon: 'wallet', managerOnly: true },
   { section: 'Empresa', label: 'Equipo', href: '/dashboard/proveedor/equipo', icon: 'users', managerOnly: true },
   { section: 'Empresa', label: 'Resenas', href: '/dashboard/proveedor/resenas', icon: 'star', managerOnly: true },
   { section: 'Empresa', label: 'Configuracion', href: '/dashboard/proveedor/configuracion', icon: 'gear', managerOnly: true },
@@ -307,6 +310,16 @@ function SidebarIcon({ name }: { name: SidebarIconName }) {
     );
   }
 
+  if (name === 'wallet') {
+    return (
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+        <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2H5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+        <path d="M16 13h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+      </svg>
+    );
+  }
+
   return (
     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
       <path
@@ -338,7 +351,7 @@ export default function DashboardSidebar({
   const router = useRouter();
   const { isManager, activeWorkspace } = useWorkspace();
 
-  const items =
+  const baseItems =
     role === 'buyer'
       ? buyerItems
       : supplierItems
@@ -380,6 +393,15 @@ export default function DashboardSidebar({
 
           return item;
         });
+
+  // Los administradores de ATAR (rol ADMIN) tienen su propio panel de
+  // facturación. Se agrega al final para que puedan entrar desde cualquier
+  // dashboard; el resto de los usuarios no lo ve.
+  const items: ReadonlyArray<SidebarItem> =
+    session && isPlatformAdmin(session.user)
+      ? [...baseItems, { section: 'ATAR', label: 'Panel de ATAR', href: '/dashboard/admin', icon: 'wallet' }]
+      : baseItems;
+
   // Identidad de la persona; la empresa activa va como contexto debajo.
   const userName = session ? getUserFullName(session.user) : 'Mi cuenta';
   const companyName =

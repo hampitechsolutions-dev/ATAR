@@ -1,6 +1,6 @@
 # ATAR — Sistema de comisiones y liquidación (Billing)
 
-> **Estado: EN IMPLEMENTACIÓN.** Decisiones de negocio confirmadas (§3). Fases 1–2 hechas (ver §11).
+> **Estado: EN IMPLEMENTACIÓN.** Decisiones de negocio confirmadas (§3). Fases 1–6 hechas (backend + dashboards admin y empresa); ver §11.
 > Principio rector: *Business Operations ≠ Commissions ≠ Billing ≠ Payments ≠ Tax* (§59 del pedido): responsabilidades separadas, trazable, auditable, idempotente y seguro.
 
 ---
@@ -266,8 +266,8 @@ SETTLEMENT → vence dueAt → OVERDUE → PAGO
 | **1** | Modelo de datos (enums + tablas Billing*) + migración (`db push`) + defaults (`BillingSettings` + regla 1% semilla vía `ensureDefaults`). | ✅ Hecha |
 | **2** | Motor de cálculo (`billing.util.computeCommission`, fuente única) + generación idempotente de `BillingCommission` al cerrar la operación (`CONFIRM_RECEIPT → COMPLETED`) + 8 tests de cálculo (PASS). | ✅ Hecha |
 | **3** | Liquidaciones: generación idempotente por período (`BillingSettlementsService`) + preview + emisión, endpoints admin. Agrupa comisiones `CONFIRMED` por empresa+moneda en `BillingSettlement` (nº de documento `ATAR-YYYY-MM-NNNNNN`, vencimiento = fin de mes + `dueDays`), marca comisiones `INVOICED`, con auditoría. Re-ejecutar no duplica. *(Cron automático = pendiente: hoy trigger manual admin; `@nestjs/schedule` en fase futura.)* | ✅ Hecha |
-| **4** | Dashboard ATAR (admin): resumen, por período, por empresa, reglas, cierre, ajustes, reportes/export. | — (UI) |
-| **5** | Dashboard empresa: mis liquidaciones, detalle trazable, documento descargable. | — (UI) |
+| **4** | Dashboard ATAR (admin): área protegida `/dashboard/admin` (`AdminGuard` → solo rol `ADMIN`, `AdminShell` canvas oscuro). `/dashboard/admin/facturacion`: control de período (vista previa por empresa, generar liquidaciones, emitir) + validación de pagos (tabs por estado, confirmar/rechazar con motivo). Consume `billing/admin`; enlace "Panel de ATAR" en el sidebar solo para admins. *(Reglas/ajustes/export = pendiente §9.)* | ✅ Hecha |
+| **5** | Dashboard empresa (proveedor): `/dashboard/proveedor/facturacion` con "Mis liquidaciones" (totales por pagar/en validación/pagado), detalle trazable (operación → base → comisión, ajustes, historial de pagos) y registro de pago manual (importe/comprobante/nota → `PENDING`, nunca se marca pagado por el cliente). Consume `billing/me`; en el menú del proveedor (sidebar + bottom-nav), solo para cuentas que administran la empresa. *(Documento PDF descargable = pendiente §9.)* | ✅ Hecha |
 | **6** | Pagos (backend): abstracción `PaymentProvider` + `ManualTransferProvider`; `BillingPaymentsService` (empresa registra pago manual con `externalReference` único → `PENDING`; admin confirma/rechaza; recálculo de estado de la liquidación → `PARTIALLY_PAID`/`PAID`, comisiones → `PAID`, rollup del período). Endpoints `billing/me` (listar/detalle/pagar, scope por empresa) y `billing/admin/payments` (listar/confirmar/rechazar). Confirmación **server-side** (nunca por el frontend). | ✅ Hecha |
 | **7** | Webhooks (idempotentes/persistidos) — se activa con MercadoPago. | — |
 | **8** | Notificaciones (generada / por vencer / vencida / pago recibido / rechazado). | enum notif |

@@ -19,6 +19,7 @@ type IconName =
   | 'users'
   | 'star'
   | 'chart'
+  | 'wallet'
   | 'mail'
   | 'bell'
   | 'gear'
@@ -72,6 +73,13 @@ function Icon({ name, className = 'h-5 w-5' }: { name: IconName; className?: str
     ),
     star: <path d="M12 3l2.8 5.68L21 9.59l-4.5 4.39 1.06 6.21L12 17.27l-5.56 2.92 1.06-6.21L3 9.59l6.2-.91L12 3z" {...p} />,
     chart: <path d="M18 20V10M12 20V4M6 20v-6M3 20h18" {...p} />,
+    wallet: (
+      <>
+        <path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1" {...p} />
+        <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2H5" {...p} />
+        <path d="M16 13h.01" {...p} strokeWidth={3} />
+      </>
+    ),
     mail: (
       <>
         <rect x="3" y="5" width="18" height="14" rx="2" {...p} />
@@ -132,6 +140,8 @@ export default function SupplierBottomNav() {
   const userName = session ? getUserFullName(session.user) : 'Mi cuenta';
   const companyName = activeWorkspace?.company.name ?? (session ? getPrimaryCompanyName(session.user) : 'Mi empresa');
   const showMyCompanies = session ? isSellerAccount(session.user) : false;
+  // La facturación es administración de la empresa: no la ve una cuenta de vendedor.
+  const showBilling = session ? !isSellerAccount(session.user) : false;
 
   useEffect(() => {
     setOpen(false);
@@ -293,7 +303,15 @@ export default function SupplierBottomNav() {
             </div>
 
             <div className="p-2">
-              {[...DRAWER_ITEMS, ...(showMyCompanies ? [{ label: 'Mis empresas', href: '/dashboard/proveedor/empresas', icon: 'users' as IconName }] : [])].map((item) => {
+              {[
+                ...DRAWER_ITEMS,
+                ...(showBilling
+                  ? [{ label: 'Facturación', href: '/dashboard/proveedor/facturacion', icon: 'wallet' as IconName }]
+                  : []),
+                ...(showMyCompanies
+                  ? [{ label: 'Mis empresas', href: '/dashboard/proveedor/empresas', icon: 'users' as IconName }]
+                  : []),
+              ].map((item) => {
                 const active = isActive(item.href);
                 return (
                   <Link
