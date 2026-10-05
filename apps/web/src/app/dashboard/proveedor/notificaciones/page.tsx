@@ -108,28 +108,28 @@ export default function SupplierNotificationsPage() {
   return (
     <SupplierDashboardShell searchPlaceholder="Buscar alertas o novedades..." session={session}>
       <section className="space-y-4">
-        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-[#1f2373]">
+              <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-slate-900">
                 Notificaciones
               </h1>
-              <p className="mt-1 text-sm text-[#7e85b2]">
+              <p className="mt-1 text-sm text-slate-600">
                 Alertas persistentes para mensajes, adjudicaciones, negociaciones y ordenes.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <div className="rounded-full bg-[#f4f6ff] px-4 py-2 text-sm font-semibold text-[#33407a]">
+              <div className="rounded-full bg-seller-surface px-4 py-2 text-sm font-semibold text-slate-700">
                 {summary.total} recientes
               </div>
-              <div className="rounded-full bg-[#ede9ff] px-4 py-2 text-sm font-semibold text-[#5b4bff]">
+              <div className="rounded-full bg-seller-50 px-4 py-2 text-sm font-semibold text-seller-600">
                 {summary.unread} sin leer
               </div>
               <div className="rounded-full bg-[#ecfdf3] px-4 py-2 text-sm font-semibold text-[#0f9f6e]">
                 {summary.awards} adjudicadas
               </div>
               <button
-                className="rounded-full border border-[#c3d0e8] bg-white px-4 py-2 text-sm font-semibold text-[#33407a] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={unreadCount === 0}
                 onClick={() => void markAllAsRead()}
                 type="button"
@@ -143,18 +143,18 @@ export default function SupplierNotificationsPage() {
         <PushOptIn />
 
         {error ?? dashboardError ? (
-          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          <div className="rounded-[20px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">
             {error ?? dashboardError}
           </div>
         ) : null}
 
-        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
           {dashboardLoading || loading ? (
-            <div className="rounded-[18px] bg-[#fbfbff] px-4 py-8">
+            <div className="rounded-[18px] bg-seller-surface px-4 py-8">
               <LoadingState label="Cargando notificaciones..." />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-[#fbfbff] px-4 py-8 text-sm text-[#8d95be]">
+            <div className="rounded-[18px] border border-dashed border-slate-200 bg-seller-surface px-4 py-8 text-sm text-slate-600">
               No hay novedades recientes para mostrar.
             </div>
           ) : (
@@ -164,33 +164,33 @@ export default function SupplierNotificationsPage() {
                   key={notification.id}
                   className={`flex items-start gap-4 rounded-[20px] border px-4 py-4 ${
                     notification.readAt
-                      ? 'border-[#dde5f2] bg-[#fbfbff]'
-                      : 'border-[#dcd7ff] bg-[#f5f3ff]'
+                      ? 'border-slate-200 bg-seller-surface'
+                      : 'border-seller-100 bg-seller-surface'
                   }`}
                 >
-                  <div className="mt-1 h-3 w-3 rounded-full bg-[#5b4bff]" />
+                  <div className="mt-1 h-3 w-3 rounded-full bg-seller-600" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-[#33407a]">{notification.title}</p>
-                      <span className="text-xs text-[#9aa1c8]">
+                      <p className="text-sm font-semibold text-slate-700">{notification.title}</p>
+                      <span className="text-xs text-slate-600">
                         {formatRelative(notification.createdAt)}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm text-[#6a729d]">
+                    <p className="mt-1 text-sm text-slate-500">
                       {notification.detail ?? 'Nueva novedad comercial disponible.'}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {notification.readAt ? (
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94a0c7]">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
                           Leida
                         </span>
                       ) : (
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5b4bff]">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-seller-600">
                           Nueva
                         </span>
                       )}
                       {notification.href ? (
-                        <Link className="text-sm font-semibold text-[#4a3df0] hover:text-[#3d31d6]" href={notification.href}>
+                        <Link className="text-sm font-semibold text-seller-600 hover:text-seller-700" href={notification.href}>
                           {notification.type === 'NEW_MESSAGE' ? 'Ver mensaje' : 'Ver detalle'}
                         </Link>
                       ) : null}

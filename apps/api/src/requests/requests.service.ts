@@ -418,6 +418,13 @@ export class RequestsService {
           },
         },
         order: true,
+        // Los listados del comprador muestran cantidad, proveedores que
+        // respondieron y la mejor oferta: necesitan items y cotizaciones.
+        items: true,
+        quotes: {
+          where: { status: { not: QuoteStatus.DRAFT } },
+          include: { supplierCompany: true },
+        },
         _count: {
           select: {
             quotes: true,

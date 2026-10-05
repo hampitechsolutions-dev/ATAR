@@ -3,7 +3,7 @@ import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
 import type { WebSession } from '@/lib/session';
 
 export const dashboardInputClassName =
-  'w-full rounded-[1.25rem] border border-slate-200/80 bg-white px-4 py-3 text-sm text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100';
+  'w-full rounded-[1.25rem] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100';
 
 export const dashboardTextareaClassName = `${dashboardInputClassName} min-h-32 resize-y`;
 
@@ -26,7 +26,13 @@ export function DashboardShell({
   session: WebSession | null;
 }) {
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_18%,#eef2ff_100%)] text-slate-950">
+    <main
+      className={`min-h-screen text-slate-950 ${
+        role === 'supplier'
+          ? 'bg-[linear-gradient(180deg,#f7f5ff_0%,#ffffff_18%,#f0ecff_100%)]'
+          : 'bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_18%,#eef2ff_100%)]'
+      }`}
+    >
       <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-10 lg:py-8">
         <div className="self-start lg:sticky lg:top-6">
           <DashboardSidebar role={role} session={session} />
@@ -51,7 +57,7 @@ export function DashboardHero({
   aside?: ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-7">
+    <div className="relative overflow-hidden rounded-[2rem] border border-slate-300 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-7">
       <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.18),_transparent_58%)] lg:block" />
       <div className="absolute bottom-0 left-0 h-24 w-24 rounded-full bg-indigo-100/40 blur-3xl" />
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -80,7 +86,7 @@ export function DashboardCard({
 }) {
   return (
     <div
-      className={`rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] ${className}`.trim()}
+      className={`rounded-[2rem] border border-slate-300 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] ${className}`.trim()}
     >
       {children}
     </div>
@@ -96,7 +102,7 @@ export function DashboardMutedCard({
 }) {
   return (
     <div
-      className={`rounded-[1.5rem] border border-slate-200 bg-slate-50/90 p-4 ${className}`.trim()}
+      className={`rounded-[1.5rem] border border-slate-300 bg-slate-50/90 p-4 ${className}`.trim()}
     >
       {children}
     </div>

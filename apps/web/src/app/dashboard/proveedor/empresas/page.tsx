@@ -226,7 +226,7 @@ export default function SellerCompaniesPage() {
       <SupplierDashboardShell searchPlaceholder="Buscar empresas" session={session}>
         <div className="mx-auto w-full max-w-[900px] space-y-4">
           {header}
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+          <div className="rounded-2xl border border-amber-200 bg-amber-100 px-5 py-4 text-sm text-amber-800">
             Esta sección es del perfil de vendedor. Tu cuenta administra una empresa, así que no
             representa a otras: sumá vendedores a tu equipo desde{' '}
             <Link className="font-semibold underline" href="/dashboard/proveedor/equipo">
@@ -245,13 +245,13 @@ export default function SellerCompaniesPage() {
         {header}
 
         {error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          <div className="rounded-2xl border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
 
         {message ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">
             {message}
           </div>
         ) : null}
@@ -290,7 +290,7 @@ export default function SellerCompaniesPage() {
 
                     <div className="flex shrink-0 items-center gap-2">
                       <button
-                        className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-3 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                        className="inline-flex h-9 items-center rounded-xl border border-slate-300 px-3 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
                         disabled={processingId === request.id}
                         onClick={() => void handleRespond(request, 'reject')}
                         type="button"
@@ -309,7 +309,7 @@ export default function SellerCompaniesPage() {
                   </div>
 
                   {request.message ? (
-                    <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-[12px] text-slate-600">
+                    <p className="mt-2 rounded-lg bg-seller-surface px-3 py-2 text-[12px] text-slate-600">
                       &ldquo;{request.message}&rdquo;
                     </p>
                   ) : null}
@@ -320,7 +320,7 @@ export default function SellerCompaniesPage() {
         ) : null}
 
         {/* Empresas que ya representa. */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-950">Empresas que representas</p>
 
           {loading ? (
@@ -337,7 +337,7 @@ export default function SellerCompaniesPage() {
 
                 return (
                   <div
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-3.5 py-3"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 px-3.5 py-3"
                     key={workspace.companyId}
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -360,7 +360,7 @@ export default function SellerCompaniesPage() {
                     </div>
 
                     {isActive ? (
-                      <span className="shrink-0 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-600">
+                      <span className="shrink-0 rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-600">
                         Trabajando aca
                       </span>
                     ) : (
@@ -381,7 +381,7 @@ export default function SellerCompaniesPage() {
 
         {/* Pedidos enviados esperando respuesta. */}
         {inbox.outgoing.length > 0 ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
             <p className="text-sm font-semibold text-slate-950">Pedidos enviados</p>
             <p className="mt-0.5 text-[11px] text-slate-500">
               Esperando que la empresa responda.
@@ -390,7 +390,7 @@ export default function SellerCompaniesPage() {
             <div className="mt-3 space-y-2">
               {inbox.outgoing.map((request) => (
                 <div
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-3.5 py-3"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-300 px-3.5 py-3"
                   key={request.id}
                 >
                   <div className="min-w-0">
@@ -416,14 +416,14 @@ export default function SellerCompaniesPage() {
         ) : null}
 
         {/* Pedir representar a una empresa nueva. */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-950">Representar a otra empresa</p>
           <p className="mt-0.5 text-[11px] text-slate-500">
             Busca la proveedora y mandale tu pedido. Se suma a tu cuenta cuando lo aprueban.
           </p>
 
           <input
-            className="mt-3 h-11 w-full rounded-xl border border-slate-200 px-3.5 text-sm outline-none transition focus:border-indigo-400"
+            className="mt-3 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-sm outline-none transition focus:border-indigo-400"
             onChange={(event) => {
               setSearch(event.target.value);
               setSelectedCompany(null);
@@ -440,7 +440,7 @@ export default function SellerCompaniesPage() {
               </p>
 
               <textarea
-                className="mt-3 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-indigo-400"
+                className="mt-3 w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-indigo-400"
                 maxLength={500}
                 onChange={(event) => setNote(event.target.value)}
                 placeholder="Contales quien sos y que rubro manejas (opcional)"
@@ -458,7 +458,7 @@ export default function SellerCompaniesPage() {
                   {sending ? 'Enviando...' : 'Enviar pedido'}
                 </button>
                 <button
-                  className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-3 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                  className="inline-flex h-9 items-center rounded-xl border border-slate-300 px-3 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50"
                   onClick={() => setSelectedCompany(null)}
                   type="button"
                 >
@@ -477,7 +477,7 @@ export default function SellerCompaniesPage() {
               ) : (
                 options.map((company) => (
                   <button
-                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 px-3.5 py-3 text-left transition hover:bg-slate-50"
+                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-300 px-3.5 py-3 text-left transition hover:bg-slate-50"
                     key={company.id}
                     onClick={() => setSelectedCompany(company)}
                     type="button"
@@ -502,7 +502,7 @@ export default function SellerCompaniesPage() {
 
         {/* Historial de pedidos ya resueltos. */}
         {inbox.history.length > 0 ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
             <p className="text-sm font-semibold text-slate-950">Historial</p>
             <div className="mt-3 space-y-1.5">
               {inbox.history.map((request) => (
@@ -514,7 +514,7 @@ export default function SellerCompaniesPage() {
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                       request.status === 'ACCEPTED'
-                        ? 'bg-emerald-50 text-emerald-600'
+                        ? 'bg-emerald-100 text-emerald-600'
                         : 'bg-slate-100 text-slate-500'
                     }`}
                   >

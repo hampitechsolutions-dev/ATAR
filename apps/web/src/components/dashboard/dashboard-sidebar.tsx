@@ -75,8 +75,6 @@ const supplierItems: ReadonlyArray<SidebarItem> = [
   { section: 'Mi trabajo', label: 'Clientes', href: '/dashboard/proveedor/clientes', icon: 'users' },
   { section: 'Mi trabajo', label: 'Mensajes', href: '/dashboard/proveedor/mensajes', icon: 'mail' },
 
-  { section: 'Empresa', label: 'Catalogo', href: '/dashboard/proveedor/catalogo', icon: 'grid' },
-  { section: 'Empresa', label: 'Produccion', href: '/dashboard/proveedor/produccion', icon: 'factory', managerOnly: true },
   { section: 'Empresa', label: 'Equipo', href: '/dashboard/proveedor/equipo', icon: 'users', managerOnly: true },
   { section: 'Empresa', label: 'Resenas', href: '/dashboard/proveedor/resenas', icon: 'star', managerOnly: true },
   { section: 'Empresa', label: 'Configuracion', href: '/dashboard/proveedor/configuracion', icon: 'gear', managerOnly: true },
@@ -399,17 +397,21 @@ export default function DashboardSidebar({
     router.push('/acceso');
   }
 
+  // Sidebar oscuro del panel de ventas. Los colores salen del tema (variables
+  // --nav-*): verde para el vendedor, violeta para la empresa.
   if (role !== 'buyer') {
     return (
-      <aside className={`flex h-full flex-col border-r border-slate-200 bg-white ${className ?? ''}`}>
-        <div className="px-5 pb-4 pt-4">
+      <aside
+        className={`flex h-full flex-col text-white [background:var(--nav-bg)] ${className ?? ''}`}
+      >
+        <div className="px-5 pb-4 pt-5">
           <div className="flex items-center gap-3">
-            <Image alt="ATAR" height={28} src="/logoatar.png" width={28} />
-            <p className="text-lg font-semibold tracking-tight text-slate-950">ATAR</p>
+            <Image alt="ATAR" height={30} src="/logoatarblanco.png" width={30} />
+            <p className="text-xl font-bold tracking-tight text-white">ATAR</p>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-3 text-[13px]">
+        <nav className="flex-1 overflow-y-auto px-3 pb-3 text-[13px] [scrollbar-color:rgba(255,255,255,0.15)_transparent] [scrollbar-width:thin]">
           {items.map((item, index) => {
             // El encabezado se dibuja al abrir cada grupo, no en cada item.
             const startsSection = item.section && item.section !== items[index - 1]?.section;
@@ -422,29 +424,33 @@ export default function DashboardSidebar({
             const content = (
               <>
                 <span className="flex items-center gap-3">
-                  <span className={`${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-500'}`}>
+                  <span className={`${isActive ? 'text-[var(--nav-active-icon)]' : 'text-seller-300 group-hover:text-white'}`}>
                     <SidebarIcon name={item.icon} />
                   </span>
                   <span className={`${isActive ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>
                 </span>
                 {typeof item.badge === 'number' && item.badge > 0 ? (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                  <span
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                      isActive ? 'bg-[var(--nav-badge-active-bg)] text-[var(--nav-badge-active-fg)]' : 'bg-[var(--nav-badge-bg)] text-[var(--nav-badge-fg)]'
+                    }`}
+                  >
                     {item.badge}
                   </span>
                 ) : null}
               </>
             );
 
-            const classes = `group flex w-full items-center justify-between rounded-xl px-3 py-2 transition ${
+            const classes = `group flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition ${
               isActive
-                ? 'bg-[linear-gradient(90deg,rgba(79,70,229,0.18)_0%,rgba(99,102,241,0.10)_60%,rgba(255,255,255,0)_100%)] text-indigo-700'
+                ? 'text-[var(--nav-active-fg)] shadow-[0_6px_16px_rgba(2,6,23,0.35)] [background:var(--nav-active-bg)]'
                 : item.href
-                  ? 'text-slate-600 hover:bg-slate-50'
-                  : 'cursor-default text-slate-400'
+                  ? 'text-white/85 hover:bg-white/10 hover:text-white'
+                  : 'cursor-default text-white/35'
             }`;
 
             const heading = startsSection ? (
-              <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              <p className="mx-3 mb-1 mt-4 border-t border-white/15 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-seller-300">
                 {item.section}
               </p>
             ) : null;
@@ -463,7 +469,7 @@ export default function DashboardSidebar({
             return (
               <div key={item.href}>
                 {heading}
-                <Link className={classes} href={item.href} onClick={() => onNavigate?.()}>
+                <Link className={classes} data-tour={`nav-${item.href.split('/')[3] ?? 'inicio'}`} href={item.href} onClick={() => onNavigate?.()}>
                   {content}
                 </Link>
               </div>
@@ -472,17 +478,17 @@ export default function DashboardSidebar({
         </nav>
 
         <div className="px-3 pb-4">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-2xl border border-white/15 bg-seller-900 p-3.5">
             <div className="flex items-center gap-3">
               <div className="relative h-10 w-10 overflow-hidden rounded-2xl bg-white">
                 <Image alt="Asistente ATAR" fill sizes="40px" src="/botatar.png" className="object-contain p-1" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-950">¿Necesitás ayuda?</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">Hablá con el Asistente ATAR</p>
+                <p className="text-xs font-semibold text-white">¿Necesitás ayuda?</p>
+                <p className="mt-0.5 text-[11px] text-white/75">Hablá con el Asistente ATAR</p>
               </div>
             </div>
-            <button className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-xs font-semibold text-indigo-700 hover:bg-indigo-100" type="button">
+            <button className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl bg-white text-xs font-semibold text-seller-700 transition hover:bg-seller-50" type="button">
               Iniciar chat
             </button>
           </div>
@@ -492,7 +498,7 @@ export default function DashboardSidebar({
   }
 
   return (
-    <aside className={`flex h-full flex-col border-r border-slate-200 bg-white ${className ?? ''}`}>
+    <aside className={`flex h-full flex-col border-r border-slate-300 bg-white ${className ?? ''}`}>
       <div className="px-6 pb-4 pt-5">
         <div className="flex items-center gap-3">
           <Image alt="ATAR" height={28} src="/logoatar.png" width={28} />
@@ -516,7 +522,7 @@ export default function DashboardSidebar({
               key={item.href ?? item.label}
               className={`group flex items-center justify-between rounded-lg px-3 py-2 transition ${
                 isActive
-                  ? 'bg-[linear-gradient(90deg,rgba(79,70,229,0.16)_0%,rgba(99,102,241,0.10)_60%,rgba(255,255,255,0)_100%)] text-indigo-700'
+                  ? 'bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.16)_0%,rgb(var(--accent-rgb)/0.10)_60%,rgba(255,255,255,0)_100%)] text-indigo-700'
                   : 'text-slate-600 hover:bg-slate-50'
               }`}
               href={item.href ?? '/dashboard/comprador'}
@@ -539,15 +545,15 @@ export default function DashboardSidebar({
       </nav>
 
       <div className="px-4 pb-4">
-        <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+        <div className="mt-3 rounded-2xl border border-slate-300 bg-white p-3">
           <p className="text-xs font-semibold text-slate-950">¿Necesitás ayuda?</p>
           <p className="mt-1 text-xs text-slate-500">Hablá con el Asistente ATAR</p>
-          <button className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-xs font-semibold text-indigo-700 hover:bg-indigo-100" type="button">
+          <button className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-100 text-xs font-semibold text-indigo-700 hover:bg-indigo-100" type="button">
             Iniciar chat
           </button>
         </div>
 
-        <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
+        <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
               {initials}

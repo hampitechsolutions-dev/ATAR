@@ -46,69 +46,68 @@ export default function BuyerFavoritesPage() {
   }, [favorites, suppliers]);
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Base comercial</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Favoritos</h1>
-        <p className="mt-2 text-sm leading-7 text-slate-600">
-          Shortlist real de proveedores guardados desde el directorio conectado a la base.
-        </p>
-      </div>
+    <div className="space-y-5">
+      <header>
+        <h1 className="text-[26px] font-bold leading-tight tracking-[-0.03em] text-slate-950 lg:text-[30px]">Favoritos</h1>
+        <p className="mt-1 text-[13px] text-slate-500 lg:text-sm">Los proveedores que guardaste para tener a mano.</p>
+      </header>
 
-      {favoriteProviders.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-sm text-slate-500 shadow-sm">
-          No tenés proveedores favoritos guardados. Podés agregarlos desde{' '}
-          <Link className="font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/comprador/proveedores">
-            Proveedores
-          </Link>
-          .
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {favoriteProviders.map((provider) => (
-            <article key={provider.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-start gap-3">
-                <CompanyLogo className="h-12 w-12" logoUrl={provider.logoUrl} name={provider.name} />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {provider.category}
-                  </p>
-                  <h2 className="mt-1 text-lg font-semibold text-slate-950">{provider.name}</h2>
-                  <p className="mt-1 text-xs text-slate-500">{provider.city}</p>
+      {/* Una sola superficie con filas, igual que el directorio de proveedores. */}
+      <section className="overflow-hidden rounded-[16px] border border-slate-300 bg-white">
+        {favoriteProviders.length === 0 ? (
+          <p className="px-5 py-12 text-center text-sm text-slate-500">
+            Todavía no guardaste proveedores. Podés agregarlos con el corazón desde{' '}
+            <Link className="font-semibold hover:underline" href="/dashboard/comprador/proveedores">
+              <span className="text-[#1f5bff]">Proveedores</span>
+            </Link>
+            .
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-200">
+            {favoriteProviders.map((provider) => (
+              <li key={provider.id} className="even:bg-[#eef1f7] last:rounded-b-[inherit] flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:gap-6">
+                <div className="flex min-w-0 flex-1 gap-4">
+                  <CompanyLogo
+                    className="h-14 w-14"
+                    logoUrl={provider.logoUrl}
+                    name={provider.name}
+                    rounded="rounded-[12px]"
+                    textClassName="text-[15px]"
+                    tone="bg-[#eef3ff] text-[#1f5bff]"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-[16px] font-bold tracking-[-0.02em] text-slate-950 sm:text-[17px]">
+                      <Link className="hover:underline" href={`/dashboard/comprador/proveedores/${provider.slug}`}>
+                        {provider.name}
+                      </Link>
+                    </h2>
+                    <p className="mt-0.5 text-[12px] text-slate-500">{[provider.city, provider.category].filter(Boolean).join(' · ')}</p>
+                    {provider.description ? <p className="mt-1.5 line-clamp-2 max-w-[760px] text-[13px] leading-5 text-slate-600">{provider.description}</p> : null}
+                    {(provider.mainProducts ?? []).length > 0 ? (
+                      <p className="mt-1.5 truncate text-[12px] font-medium text-slate-700">{(provider.mainProducts ?? []).slice(0, 4).join(' · ')}</p>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-              {provider.description ? (
-                <p className="mt-3 text-sm leading-7 text-slate-600">{provider.description}</p>
-              ) : null}
-              <div className="mt-4 flex flex-wrap gap-2">
-                {provider.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                <div className="grid shrink-0 grid-cols-2 gap-2.5 lg:flex">
+                  <button
+                    className="flex h-10 items-center justify-center rounded-[10px] border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    onClick={() => setFavorites(toggleBuyerFavorite(provider.id))}
+                    type="button"
                   >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-4 grid gap-2">
-                <Link
-                  className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
-                  href={`/dashboard/comprador/proveedores/${provider.slug}`}
-                >
-                  Ver ficha
-                </Link>
-                <button
-                  className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  onClick={() => setFavorites(toggleBuyerFavorite(provider.id))}
-                  type="button"
-                >
-                  Quitar de favoritos
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+                    Quitar
+                  </button>
+                  <Link
+                    className="flex h-10 items-center justify-center rounded-[10px] bg-[#1f5bff] px-4 text-sm font-semibold transition hover:bg-[#194ee6]"
+                    href={`/dashboard/comprador/proveedores/${provider.slug}`}
+                  >
+                    <span className="text-white">Ver ficha</span>
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

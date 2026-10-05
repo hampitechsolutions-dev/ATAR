@@ -148,14 +148,14 @@ export default function BuyerMessagesPage() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {error ?? dashboardError ? (
-        <div className="shrink-0 border-b border-rose-200 bg-rose-50 px-5 py-3 text-sm text-rose-700">
+        <div className="shrink-0 border-b border-rose-200 bg-rose-100 px-5 py-3 text-sm text-rose-700">
           {error ?? dashboardError}
         </div>
       ) : null}
 
-      <div className="grid min-h-0 flex-1 gap-0 overflow-hidden border-t border-slate-200 bg-white xl:grid-cols-[340px_minmax(0,1fr)]">
-        <section className={`min-h-0 flex-col border-b border-slate-200 bg-white p-4 xl:flex xl:border-b-0 xl:border-r ${mobileChatOpen ? 'hidden' : 'flex'}`}>
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+      <div className="grid min-h-0 flex-1 gap-0 overflow-hidden border-t border-slate-300 bg-white xl:grid-cols-[340px_minmax(0,1fr)]">
+        <section className={`min-h-0 flex-col border-b border-slate-300 bg-white p-4 xl:flex xl:border-b-0 xl:border-r ${mobileChatOpen ? 'hidden' : 'flex'}`}>
+          <div className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-3 py-2.5">
             <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
               <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
               <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -168,7 +168,7 @@ export default function BuyerMessagesPage() {
             />
           </div>
 
-          <div className="mt-4 flex items-center gap-6 border-b border-slate-200 pb-3 text-xs font-semibold">
+          <div className="mt-4 flex items-center gap-6 border-b border-slate-300 pb-3 text-xs font-semibold">
             {[
               { key: 'all' as const, label: 'Todas', count: conversations.length },
               { key: 'unread' as const, label: 'No leídos', count: unreadTotal },
@@ -191,11 +191,11 @@ export default function BuyerMessagesPage() {
             })}
           </div>
 
-          <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">
+          <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto">
             {dashboardLoading || loading ? (
-              <div className="rounded-2xl bg-slate-50 px-4 py-8"><LoadingState label="Cargando conversaciones..." /></div>
+              <div className="rounded-2xl bg-[#eef1f7] px-4 py-8"><LoadingState label="Cargando conversaciones..." /></div>
             ) : filteredConversations.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-8 text-sm text-slate-500">
                 Todavía no hay conversaciones.
               </div>
             ) : (
@@ -205,7 +205,7 @@ export default function BuyerMessagesPage() {
                   <button
                     key={conversation.id}
                     className={`flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                      isActive ? 'border-indigo-200 bg-indigo-50/60 shadow-sm xl:shadow-sm' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
+                      isActive ? 'border-indigo-400 bg-indigo-100 shadow-sm' : 'border-slate-300 bg-white hover:border-indigo-300 hover:bg-[#eef1f7]'
                     }`}
                     onClick={() => {
                       setSelectedId(conversation.id);
@@ -218,7 +218,7 @@ export default function BuyerMessagesPage() {
                       logoUrl={conversation.supplierCompanyLogoUrl}
                       name={conversation.supplierCompanyName}
                       rounded="rounded-2xl"
-                      tone="border border-slate-200 bg-white text-slate-950"
+                      tone="border border-slate-300 bg-white text-slate-950"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
@@ -231,7 +231,7 @@ export default function BuyerMessagesPage() {
                         {conversation.lastMessage?.body ?? 'Sin mensajes recientes.'}
                       </p>
                       <div className="mt-2 flex items-center justify-between gap-2">
-                        <span className="truncate rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-600">
+                        <span className="truncate rounded-full bg-indigo-100 px-2 py-1 text-[10px] font-semibold text-indigo-600">
                           {getContextLabel(conversation.contextType)}
                         </span>
                         {conversation.unreadCount > 0 ? (
@@ -252,7 +252,7 @@ export default function BuyerMessagesPage() {
           {selectedId ? (
             <>
               {detailLink ? (
-                <div className="hidden shrink-0 items-center justify-end border-b border-slate-200 bg-white px-4 py-2 xl:flex">
+                <div className="hidden shrink-0 items-center justify-end border-b border-slate-300 bg-white px-4 py-2 xl:flex">
                   <Link
                     className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
                     href={detailLink.href}

@@ -3,6 +3,7 @@ import type {
   RequestCatalogFieldRecord,
   RequestCatalogFieldType,
 } from './atar-api';
+import { isCategoryHidden } from './hidden-categories';
 
 // Catálogo de respaldo del wizard de solicitudes. Espeja el seed del backend
 // (apps/api/prisma/seed.js) para que el paso 1 y el paso 2 funcionen aunque
@@ -327,4 +328,6 @@ const CATALOG: CategoryInput[] = [
   },
 ];
 
-export const FALLBACK_REQUEST_CATEGORIES: RequestCatalogCategoryRecord[] = CATALOG.map(toCategory);
+export const FALLBACK_REQUEST_CATEGORIES: RequestCatalogCategoryRecord[] = CATALOG.filter(
+  (category) => !isCategoryHidden(category.label),
+).map(toCategory);

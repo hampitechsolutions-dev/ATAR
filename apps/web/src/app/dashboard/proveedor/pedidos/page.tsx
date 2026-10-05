@@ -9,15 +9,15 @@ import { useSupplierDashboardData } from '@/lib/dashboard-hooks';
 
 function stageBadgeClass(column: OrderColumnKey) {
   if (column === 'delivered') {
-    return 'bg-emerald-50 text-emerald-600';
+    return 'bg-emerald-100 text-emerald-600';
   }
   if (column === 'transit') {
-    return 'bg-violet-50 text-violet-600';
+    return 'bg-violet-100 text-violet-600';
   }
   if (column === 'production') {
-    return 'bg-sky-50 text-sky-600';
+    return 'bg-sky-100 text-sky-600';
   }
-  return 'bg-amber-50 text-amber-600';
+  return 'bg-amber-100 text-amber-600';
 }
 
 type OrderColumnKey = 'pending' | 'production' | 'transit' | 'delivered';
@@ -219,15 +219,15 @@ function OrderColumnIcon({ kind }: { kind: OrderColumnKey }) {
 function MetricIcon({ kind }: { kind: 'active' | 'production' | 'transit' | 'delivered' }) {
   const tone =
     kind === 'active'
-      ? 'text-[#6c5bff]'
+      ? 'bg-seller-100 text-seller-600'
       : kind === 'production'
-        ? 'text-[#2793ff]'
+        ? 'bg-[#d8ebff] text-[#1677e0]'
         : kind === 'transit'
-          ? 'text-[#7f60ff]'
-          : 'text-[#65c78d]';
+          ? 'bg-[#ffe6bd] text-[#c26a00]'
+          : 'bg-[#d3f3e0] text-[#15803d]';
 
   return (
-    <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-[#f7f7ff] ${tone}`}>
+    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tone}`}>
       <OrderColumnIcon
         kind={
           kind === 'active'
@@ -378,28 +378,28 @@ export default function SupplierOrdersPage() {
       key: 'pending',
       title: 'Pendientes',
       dot: 'bg-[#ffcc7a]',
-      bg: 'bg-[#fffaf1]',
+      bg: 'bg-[#fff1d9]',
       moreLabel: 'Ver 1 pedido mas',
     },
     {
       key: 'production',
       title: 'Produccion',
       dot: 'bg-[#5ba8ff]',
-      bg: 'bg-[#f6faff]',
+      bg: 'bg-[#e4efff]',
       moreLabel: 'Ver 1 pedido mas',
     },
     {
       key: 'transit',
       title: 'En transito',
-      dot: 'bg-[#7f60ff]',
-      bg: 'bg-[#faf7ff]',
+      dot: 'bg-seller-500',
+      bg: 'bg-seller-50',
       moreLabel: 'Agregar pedido',
     },
     {
       key: 'delivered',
       title: 'Entregados',
       dot: 'bg-[#70d299]',
-      bg: 'bg-[#f5fcf7]',
+      bg: 'bg-[#e1f5e8]',
       moreLabel: 'Ver 2 pedidos mas',
     },
   ];
@@ -430,7 +430,7 @@ export default function SupplierOrdersPage() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-950">Pedidos</h1>
 
         {/* Tabs */}
-        <div className="mt-4 flex items-center gap-5 border-b border-slate-200">
+        <div className="mt-4 flex items-center gap-5 border-b border-slate-300" data-tour="sales-orders">
           {mobileTabs.map((tab) => {
             const active = mobileTab === tab.key;
             return (
@@ -465,7 +465,7 @@ export default function SupplierOrdersPage() {
               <path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
             </svg>
             <input
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
+              className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar pedido..."
               value={search}
@@ -474,10 +474,10 @@ export default function SupplierOrdersPage() {
         </div>
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
         ) : null}
         {message ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-100 px-4 py-3 text-sm text-emerald-700">
             {message}
           </div>
         ) : null}
@@ -485,7 +485,7 @@ export default function SupplierOrdersPage() {
         {/* Lista */}
         <div className="mt-4 space-y-3">
           {loading ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10">
+            <div className="rounded-2xl border border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando pedidos..." />
             </div>
           ) : mobileOrders.length === 0 ? (
@@ -497,7 +497,7 @@ export default function SupplierOrdersPage() {
               <Link
                 key={item.quote.id}
                 href={`/dashboard/proveedor/pedidos/${item.quote.requestId}`}
-                className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:bg-slate-50"
+                className="block rounded-2xl border border-slate-300 bg-white p-4 shadow-sm transition active:bg-slate-50"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-[15px] font-bold text-slate-950">Pedido {item.orderNumber}</p>
@@ -532,27 +532,27 @@ export default function SupplierOrdersPage() {
       <section className="hidden space-y-4 lg:block">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
+            <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900 sm:text-[32px]">
               Pedidos
             </h1>
-            <p className="mt-1 text-sm text-[#7e85b2]">
+            <p className="mt-1 text-sm text-slate-600">
               Gestiona el estado de tus pedidos y cumpli cada etapa.
             </p>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-4 text-sm font-semibold text-[#6d739d] transition hover:bg-[#f8f9fe]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
               type="button"
             >
               <FilterIcon />
               Filtros
             </button>
 
-            <label className="flex h-10 min-w-[250px] items-center gap-2 rounded-xl border border-[#c3d0e8] bg-white px-3 text-sm text-[#7f86ad]">
+            <label className="flex h-10 min-w-[250px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-600">
               <SearchIcon />
               <input
-                className="w-full bg-transparent outline-none placeholder:text-[#a4aac9]"
+                className="w-full bg-transparent outline-none placeholder:text-slate-600"
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar en pedidos..."
                 value={search}
@@ -560,7 +560,7 @@ export default function SupplierOrdersPage() {
             </label>
 
             <button
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-[#5546ff] px-4 text-sm font-semibold text-white transition hover:bg-[#4739ea]"
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-seller-600 px-4 text-sm font-semibold text-white transition hover:bg-seller-600"
               type="button"
             >
               + Nuevo pedido manual
@@ -569,80 +569,80 @@ export default function SupplierOrdersPage() {
         </div>
 
         {error ? (
-          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          <div className="rounded-[20px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
         {message ? (
-          <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+          <div className="rounded-[20px] border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">
             {message}
           </div>
         ) : null}
 
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="active" />
               <div>
-                <p className="text-xs font-semibold text-[#8b92bc]">Pedidos activos</p>
-                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.active}</p>
+                <p className="text-xs font-semibold text-slate-600">Pedidos activos</p>
+                <p className="mt-1 text-[22px] font-semibold text-slate-900 sm:text-[30px]">{metrics.active}</p>
               </div>
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="production" />
               <div>
-                <p className="text-xs font-semibold text-[#8b92bc]">En produccion</p>
-                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.production}</p>
+                <p className="text-xs font-semibold text-slate-600">En produccion</p>
+                <p className="mt-1 text-[22px] font-semibold text-slate-900 sm:text-[30px]">{metrics.production}</p>
               </div>
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="transit" />
               <div>
-                <p className="text-xs font-semibold text-[#8b92bc]">En transito</p>
-                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.transit}</p>
+                <p className="text-xs font-semibold text-slate-600">En transito</p>
+                <p className="mt-1 text-[22px] font-semibold text-slate-900 sm:text-[30px]">{metrics.transit}</p>
               </div>
             </div>
           </article>
 
-          <article className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-3">
               <MetricIcon kind="delivered" />
               <div>
-                <p className="text-xs font-semibold text-[#8b92bc]">Entregados</p>
-                <p className="mt-1 text-[22px] font-semibold text-[#1f2373] sm:text-[30px]">{metrics.delivered}</p>
+                <p className="text-xs font-semibold text-slate-600">Entregados</p>
+                <p className="mt-1 text-[22px] font-semibold text-slate-900 sm:text-[30px]">{metrics.delivered}</p>
               </div>
             </div>
           </article>
         </div>
 
         {loading ? (
-          <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10">
+          <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-10">
             <LoadingState label="Cargando pedidos..." />
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="rounded-[24px] border border-[#c3d0e8] bg-white px-6 py-10 text-sm text-[#7e85b2]">
+          <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-10 text-sm text-slate-600">
             No hay pedidos que coincidan con tu busqueda.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" data-tour="sales-orders">
             {columns.map((column) => (
               <section
                 key={column.key}
-                className={`rounded-[24px] border border-[#dde5f2] p-4 ${column.bg}`}
+                className={`rounded-[24px] border border-slate-200 p-4 ${column.bg}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`h-2 w-2 rounded-full ${column.dot}`} />
-                    <h2 className="text-sm font-semibold text-[#2a3266]">{column.title}</h2>
+                    <h2 className="text-sm font-semibold text-slate-900">{column.title}</h2>
                   </div>
                   <button
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#8f95b8] transition hover:bg-white/70"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-white/70"
                     type="button"
                   >
                     <DotsIcon />
@@ -651,7 +651,7 @@ export default function SupplierOrdersPage() {
 
                 <div className="mt-4 space-y-3">
                   {groupedOrders[column.key].length === 0 ? (
-                    <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-white/70 px-4 py-8 text-center text-sm text-[#97a0c6]">
+                    <div className="rounded-[18px] border border-dashed border-slate-200 bg-white/70 px-4 py-8 text-center text-sm text-slate-600">
                       Sin pedidos en esta etapa.
                     </div>
                   ) : (
@@ -666,47 +666,47 @@ export default function SupplierOrdersPage() {
                           className="rounded-[18px] border border-white/80 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
                         >
                           <div className="flex items-start gap-3">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f4f6ff] text-xs font-bold text-[#4f59a7]">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-seller-surface text-xs font-bold text-slate-600">
                               {item.companyShort}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                  <p className="text-[11px] font-semibold text-[#8b92bc]">
+                                  <p className="text-[11px] font-semibold text-slate-600">
                                     {item.orderNumber}
                                   </p>
-                                  <h3 className="truncate text-sm font-semibold text-[#24305f]">
+                                  <h3 className="truncate text-sm font-semibold text-slate-900">
                                     {item.companyName}
                                   </h3>
                                 </div>
-                                <span className="shrink-0 text-[10px] font-medium text-[#9ea5c8]">
+                                <span className="shrink-0 text-[10px] font-medium text-slate-600">
                                   {item.updatedLabel}
                                 </span>
                               </div>
 
-                              <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[#6f77a7]">
+                              <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500">
                                 {item.title}
                               </p>
 
                               {column.key === 'production' ? (
                                 <div className="mt-3">
-                                  <div className="h-1.5 overflow-hidden rounded-full bg-[#e7ebff]">
+                                  <div className="h-1.5 overflow-hidden rounded-full bg-seller-50">
                                     <div
-                                      className="h-full rounded-full bg-[#4f65ff]"
+                                      className="h-full rounded-full bg-seller-500"
                                       style={{ width: `${item.progress}%` }}
                                     />
                                   </div>
                                   <div className="mt-2 flex items-center justify-between text-[11px]">
-                                    <span className="font-medium text-[#7d86b6]">
+                                    <span className="font-medium text-slate-600">
                                       {item.stageLabel}
                                     </span>
-                                    <span className="font-semibold text-[#2b3470]">
+                                    <span className="font-semibold text-slate-900">
                                       {item.progress}%
                                     </span>
                                   </div>
                                 </div>
                               ) : (
-                                <div className="mt-3 text-[11px] font-medium text-[#7d86b6]">
+                                <div className="mt-3 text-[11px] font-medium text-slate-600">
                                   {item.noteLabel}
                                   {column.key === 'transit' ? `: ${item.promisedLabel}` : ''}
                                 </div>
@@ -716,24 +716,24 @@ export default function SupplierOrdersPage() {
                                 <span
                                   className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
                                     column.key === 'delivered'
-                                      ? 'bg-emerald-50 text-emerald-600'
+                                      ? 'bg-emerald-100 text-emerald-600'
                                       : column.key === 'transit'
-                                        ? 'bg-violet-50 text-violet-600'
+                                        ? 'bg-violet-100 text-violet-600'
                                         : column.key === 'production'
-                                          ? 'bg-sky-50 text-sky-600'
-                                          : 'bg-amber-50 text-amber-600'
+                                          ? 'bg-sky-100 text-sky-600'
+                                          : 'bg-amber-100 text-amber-600'
                                   }`}
                                 >
                                   {item.stageLabel}
                                 </span>
-                                <span className="text-sm font-semibold text-[#1f2373]">
+                                <span className="text-sm font-semibold text-slate-900">
                                   {item.amountLabel}
                                 </span>
                               </div>
 
                               {column.key !== 'delivered' ? (
                                 <button
-                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#c3d0e8] bg-white text-sm font-semibold text-[#5546ff] transition hover:bg-[#f7f6ff] disabled:opacity-60"
+                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-seller-600 transition hover:bg-seller-50 disabled:opacity-60"
                                   disabled={
                                     !nextAction || updatingFulfillmentId === item.quote.requestId
                                   }
@@ -761,7 +761,7 @@ export default function SupplierOrdersPage() {
                 </div>
 
                 <button
-                  className="mt-4 text-sm font-semibold text-[#5546ff] transition hover:text-[#4336dc]"
+                  className="mt-4 text-sm font-semibold text-seller-600 transition hover:text-seller-700"
                   type="button"
                 >
                   + {column.moreLabel}
@@ -771,16 +771,16 @@ export default function SupplierOrdersPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-4 rounded-[24px] border border-[#dde5f2] bg-white px-5 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f1ff] text-[#6f57ff]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-seller-50 text-seller-500">
               <OrderColumnIcon kind="pending" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#2b336a]">
+              <p className="text-sm font-semibold text-slate-900">
                 Necesitas ayuda para gestionar tus pedidos?
               </p>
-              <p className="mt-1 text-sm text-[#7e85b2]">
+              <p className="mt-1 text-sm text-slate-600">
                 El Asistente ATAR puede ayudarte a actualizar estados, generar documentos y
                 mas.
               </p>
@@ -788,7 +788,7 @@ export default function SupplierOrdersPage() {
           </div>
 
           <button
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-[#ddd8ff] bg-[#fbfaff] px-4 text-sm font-semibold text-[#5546ff] transition hover:bg-[#f5f2ff]"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-seller-100 bg-seller-surface px-4 text-sm font-semibold text-seller-600 transition hover:bg-seller-50"
             type="button"
           >
             Hablar con el Asistente

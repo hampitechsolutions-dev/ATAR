@@ -50,13 +50,13 @@ export default function SupplierReviewsPage() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-950">Calificaciones</h1>
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
 
         {/* Rating general (sin calificaciones aún: el API no expone reseñas) */}
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Rating general</p>
           <div className="mt-2 flex items-end gap-3">
             <p className="text-4xl font-bold tracking-tight text-slate-950">—</p>
@@ -92,7 +92,7 @@ export default function SupplierReviewsPage() {
 
         <div className="mt-3 space-y-3">
           {loading ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10">
+            <div className="rounded-2xl border border-slate-300 bg-white px-4 py-10">
               <LoadingState label="Cargando..." />
             </div>
           ) : awardedQuotes.length === 0 ? (
@@ -101,7 +101,7 @@ export default function SupplierReviewsPage() {
             </div>
           ) : (
             awardedQuotes.map((quote) => (
-              <article key={quote.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <article key={quote.id} className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-xs font-bold text-white">
@@ -114,7 +114,7 @@ export default function SupplierReviewsPage() {
                       <p className="text-xs text-slate-400">{formatDate(quote.updatedAt)}</p>
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
+                  <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
                     Adjudicada
                   </span>
                 </div>
@@ -143,37 +143,37 @@ export default function SupplierReviewsPage() {
 
       {/* ==================== VISTA DESKTOP ==================== */}
       <section className="hidden space-y-4 lg:block">
-        <div className="rounded-[24px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]">
-          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-[#1f2373] sm:text-[32px]">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+          <h1 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900 sm:text-[32px]">
             Historial comercial
           </h1>
-          <p className="mt-1 text-sm text-[#7e85b2]">
+          <p className="mt-1 text-sm text-slate-600">
             Esta vista muestra operaciones reales adjudicadas. No se inventan reseñas ni puntuaciones.
           </p>
         </div>
 
         {error ? (
-          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+          <div className="rounded-[20px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
-            <p className="text-xs font-semibold text-[#8b92bc]">Cotizaciones adjudicadas</p>
-            <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 [&>*:nth-child(5n+1)]:shadow-[inset_4px_0_0_var(--color-seller-500),0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+2)]:shadow-[inset_4px_0_0_#0ea5e9,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+3)]:shadow-[inset_4px_0_0_#f59e0b,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+4)]:shadow-[inset_4px_0_0_#10b981,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+5)]:shadow-[inset_4px_0_0_var(--color-seller-500),0_8px_22px_rgba(15,23,42,0.07)]">
+          <article className="rounded-[22px] border border-slate-200 bg-white p-5">
+            <p className="text-xs font-semibold text-slate-600">Cotizaciones adjudicadas</p>
+            <p className="mt-2 text-[22px] font-semibold text-slate-900 sm:text-[28px]">
               {loading ? '-' : metrics.total}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
-            <p className="text-xs font-semibold text-[#8b92bc]">Con orden emitida</p>
-            <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
+          <article className="rounded-[22px] border border-slate-200 bg-white p-5">
+            <p className="text-xs font-semibold text-slate-600">Con orden emitida</p>
+            <p className="mt-2 text-[22px] font-semibold text-slate-900 sm:text-[28px]">
               {loading ? '-' : metrics.withOrder}
             </p>
           </article>
-          <article className="rounded-[22px] border border-[#c3d0e8] bg-white p-5">
-            <p className="text-xs font-semibold text-[#8b92bc]">Monto adjudicado</p>
-            <p className="mt-2 text-[22px] font-semibold text-[#1f2373] sm:text-[28px]">
+          <article className="rounded-[22px] border border-slate-200 bg-white p-5">
+            <p className="text-xs font-semibold text-slate-600">Monto adjudicado</p>
+            <p className="mt-2 text-[22px] font-semibold text-slate-900 sm:text-[28px]">
               {loading ? '-' : formatCurrency(metrics.totalAmount)}
             </p>
           </article>
@@ -181,43 +181,43 @@ export default function SupplierReviewsPage() {
 
         <div className="grid gap-3">
           {loading ? (
-            <div className="rounded-[18px] border border-[#dde5f2] bg-white px-4 py-8">
+            <div className="rounded-[18px] border border-slate-200 bg-white px-4 py-8">
               <LoadingState label="Cargando historial comercial..." />
             </div>
           ) : awardedQuotes.length === 0 ? (
-            <div className="rounded-[18px] border border-dashed border-[#c3d0e8] bg-white px-4 py-8 text-sm text-[#8d95be]">
+            <div className="rounded-[18px] border border-dashed border-slate-200 bg-white px-4 py-8 text-sm text-slate-600">
               Todavía no hay operaciones adjudicadas para mostrar.
             </div>
           ) : (
             awardedQuotes.map((quote) => (
               <article
                 key={quote.id}
-                className="rounded-[20px] border border-[#c3d0e8] bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)]"
+                className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.08)]"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-lg font-semibold text-[#33407a]">
+                    <p className="text-lg font-semibold text-slate-700">
                       {quote.request?.buyerCompany?.name ?? 'Cliente'}
                     </p>
-                    <p className="mt-1 text-sm text-[#7e85b2]">{quote.request?.title ?? 'Solicitud adjudicada'}</p>
+                    <p className="mt-1 text-sm text-slate-600">{quote.request?.title ?? 'Solicitud adjudicada'}</p>
                   </div>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
                     Adjudicada
                   </span>
                 </div>
 
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <div className="rounded-2xl bg-seller-surface px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Monto</p>
                     <p className="mt-2 text-sm font-semibold text-slate-950">
                       {typeof quote.amount === 'number' ? formatCurrency(quote.amount) : 'No informado'}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <div className="rounded-2xl bg-seller-surface px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Actualizada</p>
                     <p className="mt-2 text-sm font-semibold text-slate-950">{formatDate(quote.updatedAt)}</p>
                   </div>
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <div className="rounded-2xl bg-seller-surface px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Orden</p>
                     <p className="mt-2 text-sm font-semibold text-slate-950">
                       {quote.request?.order?.orderNumber ?? 'No emitida'}
@@ -226,7 +226,7 @@ export default function SupplierReviewsPage() {
                 </div>
 
                 <div className="mt-4 flex justify-end">
-                  <Link className="text-sm font-semibold text-[#4a3df0] hover:text-[#3d31d6]" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
+                  <Link className="text-sm font-semibold text-seller-600 hover:text-seller-700" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
                     Ver detalle
                   </Link>
                 </div>

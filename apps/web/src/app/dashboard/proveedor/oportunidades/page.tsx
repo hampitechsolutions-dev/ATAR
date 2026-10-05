@@ -17,6 +17,18 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+// El API devuelve el estado en inglés (enum); acá se traduce para mostrarlo.
+const REQUEST_STATUS_LABEL: Record<string, string> = {
+  DRAFT: 'Borrador',
+  PUBLISHED: 'Abierta',
+  REVIEWING: 'En revisión',
+  NEGOTIATING: 'En negociación',
+  AWARDED: 'Adjudicada',
+  ORDER_ISSUED: 'Orden emitida',
+  COMPLETED: 'Completada',
+  CANCELLED: 'Cancelada',
+};
+
 export default function SupplierOpportunitiesPage() {
   const { session, openRequests, loading, error } = useSupplierDashboardData();
   const [search, setSearch] = useState('');
@@ -43,7 +55,7 @@ export default function SupplierOpportunitiesPage() {
       session={session}
     >
       <section className="space-y-6">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-[2rem] border border-slate-300 bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">Pipeline comercial</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
               Oportunidades
@@ -53,7 +65,7 @@ export default function SupplierOpportunitiesPage() {
               cotizar sobre la seleccionada.
             </p>
             <input
-              className="mt-6 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-sky-400"
+              className="mt-6 w-full rounded-2xl border border-slate-300 bg-seller-surface px-4 py-3 text-sm outline-none transition focus:border-sky-400"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar por comprador, categoria o descripcion"
               value={search}
@@ -68,7 +80,7 @@ export default function SupplierOpportunitiesPage() {
 
           <div className="grid gap-4">
             {loading ? (
-              <div className="rounded-[2rem] border border-slate-200 bg-white px-6 py-8 shadow-sm">
+              <div className="rounded-[2rem] border border-slate-300 bg-white px-6 py-8 shadow-sm">
                 <LoadingState label="Cargando oportunidades..." />
               </div>
             ) : filteredRequests.length === 0 ? (
@@ -79,7 +91,7 @@ export default function SupplierOpportunitiesPage() {
               filteredRequests.map((request) => (
                 <article
                   key={request.id}
-                  className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+                  className="rounded-[2rem] border border-slate-300 bg-white p-6 shadow-sm"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -93,7 +105,7 @@ export default function SupplierOpportunitiesPage() {
                         {request.description}
                       </p>
                     </div>
-                    <div className="rounded-[1.5rem] bg-slate-50 p-4 text-sm text-slate-600">
+                    <div className="rounded-[1.5rem] bg-seller-surface p-4 text-sm text-slate-600">
                       <p>
                         Comprador:{' '}
                         <span className="font-semibold text-slate-950">
@@ -109,7 +121,7 @@ export default function SupplierOpportunitiesPage() {
                       <p className="mt-1">
                         Estado:{' '}
                         <span className="font-semibold text-slate-950">
-                          {request.status}
+                          {REQUEST_STATUS_LABEL[request.status] ?? 'Abierta'}
                         </span>
                       </p>
                     </div>

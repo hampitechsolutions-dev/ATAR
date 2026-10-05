@@ -307,7 +307,7 @@ export default function SupplierRequestDetailPage() {
             type="button"
             onClick={() => router.back()}
             aria-label="Volver"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700"
           >
             <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
               <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -320,32 +320,32 @@ export default function SupplierRequestDetailPage() {
             </h1>
           </div>
           {existingQuote ? (
-            <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-600">
+            <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-600">
               Cotizada
             </span>
           ) : (
-            <span className="shrink-0 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-600">
+            <span className="shrink-0 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-600">
               Nueva
             </span>
           )}
         </div>
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div>
         ) : null}
         {submitError ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">
             {submitError}
           </div>
         ) : null}
         {message ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-100 px-4 py-3 text-sm text-emerald-700">
             {message}
           </div>
         ) : null}
 
         {loading && !request ? (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-10">
+          <div className="mt-4 rounded-2xl border border-slate-300 bg-white px-4 py-10">
             <LoadingState label="Cargando solicitud..." />
           </div>
         ) : !request ? (
@@ -355,7 +355,7 @@ export default function SupplierRequestDetailPage() {
         ) : (
           <>
             {/* Comprador */}
-            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-xs font-bold text-white">
                 {(request.buyerCompany?.name ?? 'CL').slice(0, 2).toUpperCase()}
               </span>
@@ -374,7 +374,7 @@ export default function SupplierRequestDetailPage() {
             </div>
 
             {/* Productos solicitados (uno por uno, con su detalle) */}
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">
                 Productos solicitados{requestItems.length > 0 ? ` (${requestItems.length})` : ''}
               </p>
@@ -383,7 +383,7 @@ export default function SupplierRequestDetailPage() {
                   {requestItems.map((item, index) => {
                     const specRows = parseSpecRows(item.specifications);
                     return (
-                      <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                      <div key={item.id} className="rounded-xl border border-slate-300 bg-slate-50/60 p-3">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
@@ -420,9 +420,9 @@ export default function SupplierRequestDetailPage() {
             </div>
 
             {/* Entrega y condiciones (a nivel solicitud) */}
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">Entrega y condiciones</p>
-              <dl className="mt-3 divide-y divide-slate-200">
+              <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-seller-surface">
                 {detailRows.map((row) => (
                   <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
                     <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
@@ -437,7 +437,7 @@ export default function SupplierRequestDetailPage() {
               <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
                 <div className="absolute inset-0 bg-slate-950/50" onClick={() => setShowQuoteForm(false)} />
                 <div className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-t-3xl bg-white shadow-[0_-20px_60px_rgba(2,6,23,0.28)]">
-                  <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                  <div className="flex items-center justify-between border-b border-slate-300 px-5 py-4">
                     <p className="text-base font-bold text-slate-950">
                       {existingQuote ? 'Editar cotización' : 'Nueva cotización'}
                     </p>
@@ -445,7 +445,7 @@ export default function SupplierRequestDetailPage() {
                       type="button"
                       onClick={() => setShowQuoteForm(false)}
                       aria-label="Cerrar"
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-500"
                     >
                       <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                         <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
@@ -461,7 +461,7 @@ export default function SupplierRequestDetailPage() {
                         <label className="flex items-center gap-1 text-xs text-slate-400">
                           Moneda
                           <input
-                            className="w-16 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-center text-xs uppercase text-slate-700 outline-none focus:border-indigo-400"
+                            className="w-16 rounded-lg border border-slate-300 bg-seller-surface px-2 py-1 text-center text-xs uppercase text-slate-700 outline-none focus:border-indigo-400"
                             maxLength={4}
                             onChange={(event) =>
                               setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
@@ -489,7 +489,7 @@ export default function SupplierRequestDetailPage() {
                             availabilities: { ...current.availabilities, [item.id]: value },
                           }));
                         return (
-                          <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <div key={item.id} className="rounded-xl border border-slate-300 bg-seller-surface p-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-slate-900">{item.productName}</p>
@@ -531,7 +531,7 @@ export default function SupplierRequestDetailPage() {
 
                             {/* Precio (oculto si el producto no está disponible) */}
                             {availability !== 'UNAVAILABLE' ? (
-                              <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-indigo-400">
+                              <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:border-indigo-400">
                                 <span className="flex items-center px-3 text-sm text-slate-400">$</span>
                                 <input
                                   className="w-full bg-transparent py-2.5 pr-3 text-sm outline-none"
@@ -555,7 +555,7 @@ export default function SupplierRequestDetailPage() {
                             {/* Nota: motivo de no disponible o detalle del reemplazo */}
                             {availability !== 'QUOTED' ? (
                               <textarea
-                                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
                                 rows={2}
                                 onChange={(event) =>
                                   setDraft((current) => ({
@@ -575,7 +575,7 @@ export default function SupplierRequestDetailPage() {
                         );
                       })}
 
-                      <div className="flex items-center justify-between rounded-xl bg-indigo-50 px-3 py-2.5">
+                      <div className="flex items-center justify-between rounded-xl bg-indigo-100 px-3 py-2.5">
                         <span className="text-xs font-semibold text-indigo-700">Total de la cotización</span>
                         <span className="text-sm font-bold text-indigo-700">
                           {formatCurrency(quoteTotal, draft.currency)}
@@ -584,7 +584,7 @@ export default function SupplierRequestDetailPage() {
                     </div>
                   ) : (
                     <Field label="Precio total">
-                      <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400">
+                      <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-300 bg-seller-surface focus-within:border-indigo-400">
                         <span className="flex items-center px-3 text-sm text-slate-400">$</span>
                         <input
                           className="w-full bg-transparent py-3 pr-3 text-sm outline-none"
@@ -594,7 +594,7 @@ export default function SupplierRequestDetailPage() {
                           value={draft.amount}
                         />
                         <input
-                          className="w-16 border-l border-slate-200 bg-transparent px-2 text-center text-xs uppercase outline-none"
+                          className="w-16 border-l border-slate-300 bg-transparent px-2 text-center text-xs uppercase outline-none"
                           maxLength={4}
                           onChange={(event) =>
                             setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
@@ -632,14 +632,14 @@ export default function SupplierRequestDetailPage() {
                   <Field label="Válida hasta (opcional)">
                     <input
                       type="date"
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none transition focus:border-indigo-400"
+                      className="h-11 w-full rounded-xl border border-slate-300 bg-seller-surface px-3 text-sm outline-none transition focus:border-indigo-400"
                       value={draft.validity}
                       onChange={(event) => setDraft((current) => ({ ...current, validity: event.target.value }))}
                     />
                   </Field>
                   <Field label="Observaciones (opcional)">
                     <textarea
-                      className="min-h-24 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
+                      className="min-h-24 w-full resize-y rounded-xl border border-slate-300 bg-seller-surface px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
                       onChange={(event) =>
                         setDraft((current) => ({ ...current, technicalComment: event.target.value }))
                       }
@@ -667,14 +667,14 @@ export default function SupplierRequestDetailPage() {
 
       {/* Barra de acciones fija (mobile) */}
       {request ? (
-        <div className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:static lg:mt-6 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
+        <div className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-300 bg-white/95 px-4 py-3 backdrop-blur lg:static lg:mt-6 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
           <div className="mx-auto flex w-full max-w-2xl gap-3">
             {/* Chat con el comprador antes de cotizar. */}
             <button
               type="button"
               disabled={openingChat}
               onClick={() => void handleOpenChat()}
-              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 disabled:opacity-60"
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-700 disabled:opacity-60"
             >
               <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                 <path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -717,7 +717,7 @@ function Input({
 }) {
   return (
     <input
-      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
+      className="w-full rounded-xl border border-slate-300 bg-seller-surface px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
       inputMode={inputMode}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}

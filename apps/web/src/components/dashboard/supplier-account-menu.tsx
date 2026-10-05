@@ -76,7 +76,7 @@ export default function SupplierAccountMenu({ session }: SupplierAccountMenuProp
     <div className="relative" ref={menuRef}>
       <button
         aria-expanded={isOpen}
-        className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm transition hover:bg-slate-50"
+        className="flex items-center gap-3 rounded-full border border-slate-300 bg-white px-3 py-1.5 shadow-sm transition hover:bg-slate-50"
         onClick={() => setIsOpen((current) => !current)}
         type="button"
       >
@@ -104,8 +104,8 @@ export default function SupplierAccountMenu({ session }: SupplierAccountMenuProp
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[280px] rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-          <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-3">
+        <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[280px] rounded-2xl border border-slate-300 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+          <div className="flex items-center gap-3 rounded-xl bg-seller-surface px-3 py-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-700 shadow-sm">
               {accountInitials}
             </div>
@@ -118,7 +118,7 @@ export default function SupplierAccountMenu({ session }: SupplierAccountMenuProp
           {/* El selector de empresa tambien vive aca: en mobile el header no
               tiene lugar para el switcher y este menu esta en todas las vistas. */}
           {hasMultipleWorkspaces ? (
-            <div className="mt-2 border-t border-slate-200 pt-2">
+            <div className="mt-2 border-t border-slate-300 pt-2">
               <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                 Representas a
               </p>
@@ -129,7 +129,7 @@ export default function SupplierAccountMenu({ session }: SupplierAccountMenuProp
                   <button
                     aria-pressed={isActive}
                     className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
-                      isActive ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                      isActive ? 'bg-indigo-100' : 'hover:bg-slate-50'
                     }`}
                     key={workspace.companyId}
                     onClick={() => {

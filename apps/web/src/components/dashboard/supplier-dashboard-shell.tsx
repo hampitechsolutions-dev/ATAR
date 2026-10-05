@@ -17,6 +17,9 @@ type SupplierDashboardShellProps = {
   searchPlaceholder?: string;
   // Sin padding y a alto completo (para vistas que llenan todo, como el chat).
   fullBleed?: boolean;
+  /** Si la página lo pasa, el buscador del header filtra su contenido. */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 };
 
 function HeaderActionIcon({ kind }: { kind: 'chat' | 'bell' }) {
@@ -59,13 +62,15 @@ export default function SupplierDashboardShell({
   session,
   searchPlaceholder = 'Buscar solicitudes, clientes, productos...',
   fullBleed = false,
+  searchValue,
+  onSearchChange,
 }: SupplierDashboardShellProps) {
   const counters = useSupplierWorkspaceCounters({
     accessToken: session?.accessToken,
   });
 
   return (
-    <main className="h-screen overflow-hidden bg-[#f5f7fb] text-slate-950">
+    <main className="h-screen overflow-hidden bg-seller-canvas text-slate-950">
       <div className="flex h-full">
         <div className="hidden h-full w-[264px] shrink-0 lg:block">
           <DashboardSidebar
@@ -77,7 +82,9 @@ export default function SupplierDashboardShell({
         </div>
 
         <section className="min-w-0 flex-1 overflow-hidden">
-          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+          {/* Solo escritorio. En mobile no hay header: la navegación, las
+              notificaciones y la cuenta viven en la barra inferior ("Más"). */}
+          <header className="sticky top-0 z-30 hidden border-b border-slate-300 bg-white/90 backdrop-blur lg:block">
             <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
               <div className="flex min-w-0 items-center gap-3">
                 <Link href="/dashboard/proveedor" className="flex shrink-0 items-center gap-2 lg:hidden">
@@ -85,7 +92,7 @@ export default function SupplierDashboardShell({
                   <span className="text-base font-bold text-slate-950">ATAR</span>
                 </Link>
 
-                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm md:flex md:max-w-[460px] xl:max-w-[520px]">
+                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-seller-surface px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
                   <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                     <path
                       d="M21 21l-4.35-4.35"
@@ -103,8 +110,12 @@ export default function SupplierDashboardShell({
                     />
                   </svg>
                   <input
+                    aria-label={searchPlaceholder}
                     className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                    onChange={onSearchChange ? (event) => onSearchChange(event.target.value) : undefined}
                     placeholder={searchPlaceholder}
+                    type="search"
+                    value={onSearchChange ? searchValue ?? '' : undefined}
                   />
                 </div>
               </div>
@@ -113,13 +124,13 @@ export default function SupplierDashboardShell({
                 <CompanySwitcher className="hidden lg:block" />
                 <WorkspaceSwitcher className="hidden sm:inline-flex" />
                 <button
-                  className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex"
+                  className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-100 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex"
                   type="button"
                 >
                   Invitar a un miembro
                 </button>
                 <Link
-                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
                   href="/dashboard/proveedor/mensajes"
                 >
                   <HeaderActionIcon kind="chat" />
@@ -130,7 +141,7 @@ export default function SupplierDashboardShell({
                   ) : null}
                 </Link>
                 <Link
-                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
                   href="/dashboard/proveedor/notificaciones"
                 >
                   <HeaderActionIcon kind="bell" />
@@ -146,11 +157,11 @@ export default function SupplierDashboardShell({
           </header>
 
           {fullBleed ? (
-            <div className="h-[calc(100dvh-73px-68px)] overflow-hidden lg:h-[calc(100dvh-73px)]">
+            <div className="h-[calc(100dvh-68px)] overflow-hidden lg:h-[calc(100dvh-73px)]">
               {children}
             </div>
           ) : (
-            <div className="h-[calc(100dvh-73px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-4 lg:px-6 lg:pb-6">
+            <div className="h-[100dvh] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-5 lg:h-[calc(100dvh-73px)] lg:px-6 lg:pb-6 lg:pt-4">
               {children}
             </div>
           )}

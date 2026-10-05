@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/auth/auth-provider';
 import {
   ApiError,
@@ -22,8 +22,9 @@ const PROFILE_OPTIONS = [
   {
     value: 'BUYER',
     label: 'Cliente',
-    tagline: 'Compro insumos',
-    summary: 'Publicás lo que necesitás y recibís cotizaciones de varios proveedores.',
+    tagline: 'Quiero comprar',
+    summary: 'Para empresas que compran insumos. Publicás lo que necesitás y varios proveedores te envían su cotización.',
+    tone: { row: 'bg-[#eef3ff]', active: 'bg-[#e3ebff] shadow-[inset_4px_0_0_#1f5bff]', icon: 'bg-[#d9e4ff] text-[#1f5bff]', text: 'text-[#1f5bff]' },
     can: [
       'Crear solicitudes de cotización',
       'Comparar propuestas y elegir proveedor',
@@ -34,8 +35,9 @@ const PROFILE_OPTIONS = [
   {
     value: 'SUPPLIER',
     label: 'Empresa',
-    tagline: 'Vendo y administro mi equipo',
-    summary: 'Es la cuenta de tu empresa proveedora. Sos el administrador.',
+    tagline: 'Quiero vender',
+    summary: 'Para empresas proveedoras. Es la cuenta principal: recibís solicitudes, cotizás y administrás a tu equipo de vendedores.',
+    tone: { row: 'bg-[#f3f1ff]', active: 'bg-[#ebe8ff] shadow-[inset_4px_0_0_#6366f1]', icon: 'bg-[#e2ddff] text-indigo-600', text: 'text-indigo-600' },
     can: [
       'Ver todas las solicitudes que recibe la empresa',
       'Asignar y reasignar solicitudes a tus vendedores',
@@ -47,7 +49,8 @@ const PROFILE_OPTIONS = [
     value: 'SELLER',
     label: 'Vendedor',
     tagline: 'Trabajo para una empresa',
-    summary: 'Te sumás al equipo de una empresa que ya está en ATAR.',
+    summary: 'Para personas que venden en nombre de una empresa que ya está en ATAR. Te sumás a su equipo y atendés las solicitudes que te asignan.',
+    tone: { row: 'bg-[#ecfaf3]', active: 'bg-[#dff5ea] shadow-[inset_4px_0_0_#10b981]', icon: 'bg-[#cdefdf] text-emerald-600', text: 'text-emerald-700' },
     can: [
       'Ver solo las solicitudes que te asignan',
       'Responder, cotizar y negociar con el comprador',
@@ -72,7 +75,7 @@ function ProfileIcon({ value }: { value: ProfileValue }) {
 
   if (value === 'BUYER') {
     return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
         <path d="M6 6h15l-1.5 9h-12z" {...common} />
         <path d="M6 6L5 3H3" {...common} />
         <circle cx="9" cy="20" fill="currentColor" r="1.4" />
@@ -99,10 +102,19 @@ function ProfileIcon({ value }: { value: ProfileValue }) {
   );
 }
 
+// La landing enlaza a /acceso?perfil=cliente|vendedor|proveedor.
+const PROFILE_BY_PARAM: Record<string, ProfileValue> = {
+  cliente: 'BUYER',
+  vendedor: 'SELLER',
+  proveedor: 'SUPPLIER',
+};
+
 export default function AccessPanel() {
   const router = useRouter();
+  // Si llega un perfil válido, se abre el registro con ese perfil elegido.
+  const requestedProfile = PROFILE_BY_PARAM[useSearchParams()?.get('perfil') ?? ''];
   const { isHydrated, isAuthenticated, signIn, getDefaultPath } = useAuth();
-  const [mode, setMode] = useState<Mode>('login');
+  const [mode, setMode] = useState<Mode>(requestedProfile ? 'register' : 'login');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionProgress, setTransitionProgress] = useState(0);
@@ -115,7 +127,7 @@ export default function AccessPanel() {
     companyName: '',
     email: '',
     password: '',
-    role: 'BUYER' as ProfileValue,
+    role: requestedProfile ?? ('BUYER' as ProfileValue),
     hybrid: false,
     companyId: '',
   });
@@ -199,16 +211,6 @@ export default function AccessPanel() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function useDemoCredentials(role: RegisterPayload['role']) {
-    setMode('login');
-    setError(null);
-    setMessage(
-      role === 'SUPPLIER'
-        ? 'Ingresa con una cuenta proveedora real registrada en la plataforma.'
-        : 'Ingresa con una cuenta compradora real registrada en la plataforma.',
-    );
-  }
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -279,52 +281,55 @@ export default function AccessPanel() {
         <div className={`mt-4 ${mode === 'register' ? '' : 'hidden'}`}>
           <p className="text-xs font-semibold text-slate-700">¿Qué perfil necesitás?</p>
 
-          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+          {/* Cada perfil es una fila con su propio color: qué es, para quién
+              y, al elegirlo, qué vas a poder hacer. */}
+          <div className="mt-2 space-y-2">
             {PROFILE_OPTIONS.map((option) => {
               const isActive = form.role === option.value;
 
               return (
                 <button
-                  className={`rounded-2xl border px-3 py-2.5 text-left transition ${
-                    isActive
-                      ? 'border-indigo-500 bg-indigo-50 shadow-[0_12px_30px_rgba(79,70,229,0.10)]'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  aria-pressed={isActive}
+                  className={`flex w-full items-center gap-3.5 rounded-[14px] px-3.5 py-3 text-left transition ${
+                    isActive ? option.tone.active : `${option.tone.row} hover:brightness-[0.98]`
                   }`}
                   key={option.value}
                   onClick={() => updateField('role', option.value)}
                   type="button"
                 >
-                  <span
-                    className={`flex h-8 w-8 items-center justify-center rounded-xl ${
-                      isActive ? 'bg-indigo-600/10 text-indigo-600' : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${option.tone.icon}`}>
                     <ProfileIcon value={option.value} />
                   </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="text-[15px] font-bold text-slate-950">{option.label}</span>
+                      <span className={`text-[12px] font-semibold ${option.tone.text}`}>{option.tagline}</span>
+                    </span>
+                    <span className="mt-0.5 block text-[12px] leading-[17px] text-slate-600">{option.summary}</span>
+                  </span>
                   <span
-                    className={`mt-2 block text-sm font-semibold ${
-                      isActive ? 'text-indigo-700' : 'text-slate-950'
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                      isActive ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white'
                     }`}
                   >
-                    {option.label}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
-                    {option.tagline}
+                    {isActive ? (
+                      <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" />
+                      </svg>
+                    ) : null}
                   </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Diferencias entre perfiles */}
-          <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
-            <p className="text-[12px] font-semibold text-slate-950">
-              {selectedProfile.label}: {selectedProfile.summary}
-            </p>
+          {/* Qué incluye el perfil elegido */}
+          <div className={`mt-2 rounded-[14px] px-3.5 py-3 ${selectedProfile.tone.row}`}>
+            <p className="text-[12px] font-bold text-slate-950">Con la cuenta de {selectedProfile.label} vas a poder:</p>
             <ul className="mt-2 grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
               {selectedProfile.can.map((item) => (
-                <li className="flex items-start gap-2 text-[11px] leading-4 text-slate-600" key={item}>
-                  <svg aria-hidden="true" className="mt-0.5 h-3 w-3 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                <li className="flex items-start gap-2 text-[12px] leading-4 text-slate-700" key={item}>
+                  <svg aria-hidden="true" className={`mt-0.5 h-3 w-3 shrink-0 ${selectedProfile.tone.text}`} fill="none" viewBox="0 0 24 24">
                     <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
                   </svg>
                   {item}
@@ -332,7 +337,7 @@ export default function AccessPanel() {
               ))}
               {'cannot' in selectedProfile
                 ? selectedProfile.cannot.map((item) => (
-                    <li className="flex items-start gap-2 text-[11px] leading-4 text-slate-400" key={item}>
+                    <li className="flex items-start gap-2 text-[12px] leading-4 text-slate-500 sm:col-span-2" key={item}>
                       <svg aria-hidden="true" className="mt-0.5 h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24">
                         <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
                       </svg>
@@ -597,25 +602,6 @@ export default function AccessPanel() {
                 : `Crear cuenta de ${selectedProfile.label.toLowerCase()}`}
             <span aria-hidden="true">→</span>
           </button>
-
-          {mode === 'login' ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              <button
-                className="flex h-9 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                onClick={() => useDemoCredentials('BUYER')}
-                type="button"
-              >
-                Ayuda comprador
-              </button>
-              <button
-                className="flex h-9 w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                onClick={() => useDemoCredentials('SUPPLIER')}
-                type="button"
-              >
-                Ayuda proveedor
-              </button>
-            </div>
-          ) : null}
 
           <div className={`relative py-1.5 ${mode === 'register' ? 'hidden' : ''}`}>
             <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-slate-200" />

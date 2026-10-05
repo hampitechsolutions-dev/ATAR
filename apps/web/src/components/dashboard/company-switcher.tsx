@@ -51,7 +51,7 @@ export default function CompanySwitcher({ className = '' }: { className?: string
       <button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="inline-flex h-10 max-w-[240px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-left transition hover:bg-slate-50"
+        className="inline-flex h-10 max-w-[240px] items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-left transition hover:bg-slate-50"
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
@@ -61,7 +61,7 @@ export default function CompanySwitcher({ className = '' }: { className?: string
           name={activeWorkspace.company.name}
           rounded="rounded-lg"
           textClassName="text-[10px]"
-          tone="bg-indigo-50 text-indigo-600"
+          tone="bg-indigo-100 text-indigo-600"
         />
         <span className="min-w-0 leading-tight">
           <span className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -83,7 +83,7 @@ export default function CompanySwitcher({ className = '' }: { className?: string
 
       {open ? (
         <div
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-[0_20px_60px_rgba(15,23,42,0.14)]"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[280px] overflow-hidden rounded-2xl border border-slate-300 bg-white p-1.5 shadow-[0_20px_60px_rgba(15,23,42,0.14)]"
           role="listbox"
         >
           <p className="px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -96,7 +96,7 @@ export default function CompanySwitcher({ className = '' }: { className?: string
               <button
                 aria-selected={isActive}
                 className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition ${
-                  isActive ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                  isActive ? 'bg-indigo-100' : 'hover:bg-slate-50'
                 }`}
                 key={workspace.companyId}
                 onClick={() => {

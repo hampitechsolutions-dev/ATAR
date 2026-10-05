@@ -2,16 +2,17 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo } from 'react';
-import CommercialPanel from '@/components/dashboard/commercial-panel';
+import { useMemo, useState } from 'react';
 import CompanySwitcher from '@/components/dashboard/company-switcher';
 import SupplierAccountMenu from '@/components/dashboard/supplier-account-menu';
 import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
+import ToneRow, { TONES, type Tone } from '@/components/dashboard/tone-row';
 import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
 import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
-import { LoadingState } from '@/components/ui/spinner';
+import { DashboardLoader } from '@/components/ui/spinner';
 import { useWorkspace } from '@/components/auth/workspace-provider';
-import { type OrderFulfillmentStatus, type RequestRecord } from '@/lib/atar-api';
+import { type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
+import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 import { useSupplierDashboardData, useSupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
 import { getPrimaryCompanyName, getUserFirstName } from '@/lib/session';
 
@@ -69,62 +70,22 @@ function getRequestTag(status: RequestRecord['status']) {
 
 function getRequestTagClass(status: RequestRecord['status']) {
   if (status === 'REVIEWING') {
-    return 'bg-indigo-50 text-indigo-600';
+    return 'bg-indigo-100 text-indigo-600';
   }
 
   if (status === 'NEGOTIATING') {
-    return 'bg-emerald-50 text-emerald-600';
+    return 'bg-emerald-100 text-emerald-600';
   }
 
   if (status === 'ORDER_ISSUED') {
-    return 'bg-sky-50 text-sky-600';
+    return 'bg-sky-100 text-sky-600';
   }
 
   if (status === 'AWARDED') {
-    return 'bg-violet-50 text-violet-600';
+    return 'bg-violet-100 text-violet-600';
   }
 
   return 'bg-slate-100 text-slate-600';
-}
-
-function ProviderStatIcon({ kind }: { kind: 'requests' | 'quotes' | 'money' | 'sales' }) {
-  if (kind === 'requests') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M14 2v6h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-
-  if (kind === 'quotes') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M14 2v6h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M9 13h6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M9 17h4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-
-  if (kind === 'money') {
-    return (
-      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path d="M15 9.5c0-1.4-1.34-2.5-3-2.5s-3 1.1-3 2.5 1.34 2.5 3 2.5 3 1.1 3 2.5S13.66 17 12 17s-3-1.1-3-2.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M18 20V10" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M12 20V4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M6 20v-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M3 20h18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
 }
 
 function HeaderActionIcon({ kind }: { kind: 'chat' | 'bell' }) {
@@ -144,45 +105,101 @@ function HeaderActionIcon({ kind }: { kind: 'chat' | 'bell' }) {
   );
 }
 
-function MiniLineChart() {
+/* Inicio de escritorio ------------------------------------------------------ */
+
+type HomeIconName = 'doc' | 'chart' | 'clipboard' | 'user' | 'clock' | 'chat' | 'send' | 'dollar' | 'box';
+
+const HOME_ICON_PATHS: Record<HomeIconName, React.ReactNode> = {
+  doc: <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5zM14 3v5h5M9 13h6M9 17h4" />,
+  chart: <path d="M5 20V12M12 20V5M19 20v-9" />,
+  clipboard: <path d="M9 4h6a1 1 0 011 1v1H8V5a1 1 0 011-1zM8 6H6a1 1 0 00-1 1v13a1 1 0 001 1h12a1 1 0 001-1V7a1 1 0 00-1-1h-2M9 12h6M9 16h4" />,
+  user: <path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0" />,
+  clock: <path d="M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2" />,
+  chat: <path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12zM8.5 12h.01M12 12h.01M15.5 12h.01" />,
+  send: <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
+  dollar: <path d="M12 2v20M17 6.5C17 4.6 14.8 4 12 4S7 5 7 7.5 9.5 10.5 12 11s5 1.5 5 4-2.2 3.5-5 3.5-5-.6-5-2.5" />,
+  box: <path d="M21 16V8l-9-5-9 5v8l9 5 9-5zM3.3 7.3L12 12l8.7-4.7M12 22V12" />,
+};
+
+function HomeIcon({ name, tone }: { name: HomeIconName; tone: string }) {
   return (
-    <svg aria-hidden="true" className="h-24 w-full" fill="none" viewBox="0 0 220 96">
-      <path d="M8 76H212" stroke="#E2E8F0" strokeLinecap="round" strokeWidth="1.5" />
-      <path d="M8 56H212" stroke="#EEF2FF" strokeLinecap="round" strokeWidth="1" />
-      <path d="M8 36H212" stroke="#EEF2FF" strokeLinecap="round" strokeWidth="1" />
-      <path d="M8 66C20 64 29 60 40 58C51 56 61 72 74 68C88 64 102 44 116 40C128 36 140 24 154 30C168 36 182 52 212 40" stroke="#5B4BFF" strokeLinecap="round" strokeWidth="3" />
-      <circle cx="40" cy="58" r="4" fill="white" stroke="#5B4BFF" strokeWidth="2" />
-      <circle cx="74" cy="68" r="4" fill="white" stroke="#5B4BFF" strokeWidth="2" />
-      <circle cx="116" cy="40" r="4" fill="white" stroke="#5B4BFF" strokeWidth="2" />
-      <circle cx="154" cy="30" r="4" fill="white" stroke="#5B4BFF" strokeWidth="2" />
-      <circle cx="212" cy="40" r="4" fill="white" stroke="#5B4BFF" strokeWidth="2" />
+    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tone}`}>
+      <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.9" viewBox="0 0 24 24">
+        {HOME_ICON_PATHS[name]}
+      </svg>
+    </span>
+  );
+}
+
+function HomeArrow() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </svg>
   );
 }
 
-function getProductionLabel(status: OrderFulfillmentStatus) {
-  if (status === 'CONFIRMED') {
-    return 'Pendientes';
-  }
+function HomePin() {
+  return (
+    <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+      <path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
 
-  if (status === 'IN_PRODUCTION') {
-    return 'Produccion';
-  }
+function HomeSeeAll({ href }: { href: string }) {
+  return (
+    // globals.css fija `a { color: inherit }`: el color va en el hijo.
+    <Link className="inline-flex shrink-0 items-center text-[13px] font-semibold" href={href}>
+      <span className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-500">
+        Ver todas
+        <HomeArrow />
+      </span>
+    </Link>
+  );
+}
 
-  if (status === 'DISPATCHED') {
-    return 'En transito';
-  }
+const homeCard = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)]';
 
-  if (status === 'DELIVERED') {
-    return 'Entregados';
-  }
+/** "Hoy, 09:15", "Ayer, 16:03" o "12 sept". */
+function formatDayTime(value: string) {
+  const date = new Date(value);
+  const time = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const diffDays = Math.floor((startOfToday.getTime() - new Date(value).setHours(0, 0, 0, 0)) / 86400000);
+  if (diffDays <= 0) return `Hoy, ${time}`;
+  if (diffDays === 1) return `Ayer, ${time}`;
+  return formatShortDate(value);
+}
 
-  return 'Pendientes';
+function requestImage(request: RequestRecord) {
+  const labels = [request.items?.[0]?.category, request.category].filter(Boolean);
+  for (const label of labels) {
+    const match = FALLBACK_REQUEST_CATEGORIES.find((category) => category.label === label);
+    if (match?.imageSrc) return match.imageSrc;
+  }
+  return '/logoatar.png';
+}
+
+function quoteStatusMeta(status: QuoteRecord['status']) {
+  if (status === 'AWARDED') return { label: 'Aceptada', tone: 'bg-emerald-100 text-emerald-600' };
+  if (status === 'REJECTED') return { label: 'Rechazada', tone: 'bg-rose-100 text-rose-600' };
+  if (status === 'WITHDRAWN') return { label: 'Retirada', tone: 'bg-slate-100 text-slate-600' };
+  if (status === 'DRAFT') return { label: 'Borrador', tone: 'bg-amber-100 text-amber-600' };
+  return { label: 'Enviada', tone: 'bg-indigo-100 text-indigo-600' };
+}
+
+function formatCompactCurrency(value: number) {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toLocaleString('es-AR', { maximumFractionDigits: 1 })} M`;
+  if (value >= 1_000) return `$${Math.round(value / 1_000).toLocaleString('es-AR')} K`;
+  return formatCurrency(value);
 }
 
 export default function DashboardProveedorPage() {
   const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
-  const { activeWorkspace, hasMultipleWorkspaces } = useWorkspace();
+  const { activeWorkspace, hasMultipleWorkspaces, isSeller } = useWorkspace();
   const counters = useSupplierWorkspaceCounters({
     accessToken: session?.accessToken,
     openRequests,
@@ -302,220 +319,517 @@ export default function DashboardProveedorPage() {
     };
   }, [myQuotes, openRequests]);
 
-  const acceptanceRate =
-    myQuotes.length === 0 ? 0 : Math.round((dashboardData.awardedQuotes.length / myQuotes.length) * 100);
-  const donutAccepted = myQuotes.length === 0 ? 0 : Math.round((dashboardData.awardedQuotes.length / myQuotes.length) * 360);
-  const donutPending = myQuotes.length === 0 ? 0 : Math.round((dashboardData.submittedQuotes.length / myQuotes.length) * 360);
-  const todayLabel = new Intl.DateTimeFormat('es-AR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date());
-
-  const pendingTasks = [
-    ...(dashboardData.openOpportunities.length > 0
-      ? [{ label: `Responder ${dashboardData.openOpportunities.length} solicitudes abiertas`, due: 'Pendiente' }]
-      : []),
-    ...(dashboardData.submittedQuotes.length > 0
-      ? [{ label: `Dar seguimiento a ${dashboardData.submittedQuotes.length} cotizaciones enviadas`, due: 'Pendiente' }]
-      : []),
-    ...(dashboardData.activeOrders.length > 0
-      ? [{ label: `Actualizar ${dashboardData.activeOrders.length} pedidos en curso`, due: 'Operativo' }]
-      : []),
-  ];
-
-  // Nivel derivado de la actividad real (no hay tier en el API).
-  const tier =
-    acceptanceRate >= 75 || dashboardData.awardedQuotes.length >= 10
-      ? 'Platino'
-      : acceptanceRate >= 50 || dashboardData.awardedQuotes.length >= 5
-        ? 'Oro'
-        : acceptanceRate >= 25
-          ? 'Plata'
-          : 'Inicial';
-
-  const monthLabel = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(new Date());
-
-  const levelMetrics = [
-    { value: `${acceptanceRate}%`, label: 'Aceptación' },
-    { value: dashboardData.clientsCount, label: 'Clientes' },
-  ];
-
-  const summaryCards = [
+  // --- Inicio de escritorio: tareas, resumen y listados ----------------------
+  // Hora de referencia fija por render de la página (no se recalcula en cada
+  // render para que los cálculos sean puros).
+  const [nowMs] = useState(() => Date.now());
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Buen día' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+  const todayKey = new Date().toDateString();
+  const dueTodayCount = dashboardData.openOpportunities.filter(
+    (request) => request.dueDate && new Date(request.dueDate).toDateString() === todayKey,
+  ).length;
+  const staleQuotesCount = dashboardData.submittedQuotes.filter(
+    (quote) => nowMs - new Date(quote.updatedAt).getTime() > 48 * 3600 * 1000,
+  ).length;
+  const homeTasks: { label: string; detail: string; count: number; icon: HomeIconName; tone: Tone; href: string }[] = [
     {
-      label: 'Solicitudes recibidas',
-      value: openRequests.length,
-      delta: dashboardData.requestsThisMonth > 0 ? `+${dashboardData.requestsThisMonth} este mes` : null,
-      icon: 'requests' as const,
-      tone: 'bg-indigo-50 text-indigo-600',
+      label: 'Nuevas solicitudes de cotización',
+      detail: dueTodayCount > 0 ? `${dueTodayCount} vencen hoy` : 'Todavía sin cotizar',
+      count: dashboardData.openOpportunities.length,
+      icon: 'doc',
+      tone: 'indigo',
+      href: '/dashboard/proveedor/solicitudes',
+    },
+    {
+      label: 'Clientes esperan respuesta',
+      detail: 'Mensajes sin leer',
+      count: counters.unreadMessagesCount,
+      icon: 'user',
+      tone: 'sky',
+      href: '/dashboard/proveedor/mensajes',
+    },
+    {
+      label: 'Cotización sin respuesta',
+      detail: 'Hace más de 48 horas',
+      count: staleQuotesCount,
+      icon: 'clock',
+      tone: 'amber',
+      href: '/dashboard/proveedor/cotizaciones',
+    },
+    {
+      label: 'Notificaciones nuevas',
+      detail: 'Sin leer',
+      count: counters.unreadNotificationsCount,
+      icon: 'chat',
+      tone: 'violet',
+      href: '/dashboard/proveedor/notificaciones',
+    },
+  ];
+  const pendingTotal = homeTasks.reduce((sum, task) => sum + task.count, 0);
+  const salesLast30 = dashboardData.awardedQuotes
+    .filter((quote) => nowMs - new Date(quote.updatedAt).getTime() <= 30 * 86400000)
+    .reduce((sum, quote) => sum + (quote.amount ?? 0), 0);
+  const activityTiles: { label: string; value: string | number; trend: string | null; detail?: string; icon: HomeIconName; href: string }[] = [
+    {
+      label: 'Oportunidades activas',
+      value: dashboardData.openOpportunities.length,
+      trend: dashboardData.requestsThisMonth > 0 ? `${dashboardData.requestsThisMonth} este mes` : null,
+      icon: 'doc',
+      href: '/dashboard/proveedor/solicitudes',
     },
     {
       label: 'Cotizaciones enviadas',
       value: myQuotes.length,
-      delta: dashboardData.quotesThisMonth > 0 ? `+${dashboardData.quotesThisMonth} este mes` : null,
-      icon: 'quotes' as const,
-      tone: 'bg-emerald-50 text-emerald-600',
+      trend: dashboardData.quotesThisMonth > 0 ? `${dashboardData.quotesThisMonth} este mes` : null,
+      icon: 'send',
+      href: '/dashboard/proveedor/cotizaciones',
     },
     {
       label: 'Pedidos en curso',
       value: dashboardData.activeOrders.length,
-      delta: dashboardData.ordersThisMonth > 0 ? `+${dashboardData.ordersThisMonth} este mes` : null,
-      icon: 'money' as const,
-      tone: 'bg-amber-50 text-amber-600',
+      trend: dashboardData.ordersThisMonth > 0 ? `${dashboardData.ordersThisMonth} este mes` : null,
+      icon: 'box',
+      href: '/dashboard/proveedor/pedidos',
     },
     {
-      label: 'Ventas',
-      value: formatCurrency(dashboardData.totalSales),
-      delta: dashboardData.salesThisMonth > 0 ? `+${formatCurrency(dashboardData.salesThisMonth)} este mes` : null,
-      icon: 'sales' as const,
-      tone: 'bg-sky-50 text-sky-600',
+      label: 'Ventas cerradas',
+      value: formatCompactCurrency(salesLast30),
+      trend: null,
+      detail: 'Últimos 30 días',
+      icon: 'dollar',
+      href: '/dashboard/proveedor/reportes',
     },
   ];
+  const recentOpportunities = dashboardData.recentRequests;
+  const recentQuotes = [...myQuotes]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 4);
+  const recentClients = (() => {
+    const map = new Map<string, { name: string; activity: string; at: string; status: string; tone: string }>();
+    const rank: Record<string, number> = { Nuevo: 0, Activo: 1, Cliente: 2 };
+    const push = (name: string | undefined, activity: string, at: string, status: string, tone: string) => {
+      if (!name) return;
+      const current = map.get(name);
+      const newer = !current || new Date(at) > new Date(current.at);
+      // La actividad es la más reciente; el estado, el más avanzado.
+      const best = !current || rank[status] >= rank[current.status] ? { status, tone } : { status: current.status, tone: current.tone };
+      map.set(name, {
+        name,
+        activity: newer ? activity : current.activity,
+        at: newer ? at : current.at,
+        ...best,
+      });
+    };
+    openRequests.forEach((request) =>
+      push(request.buyerCompany?.name, 'Cotización solicitada', request.updatedAt, 'Nuevo', 'bg-rose-100 text-rose-600'),
+    );
+    myQuotes.forEach((quote) =>
+      push(
+        quote.request?.buyerCompany?.name,
+        quote.status === 'AWARDED' ? 'Aceptó tu cotización' : 'Recibió tu cotización',
+        quote.updatedAt,
+        quote.status === 'AWARDED' ? 'Cliente' : 'Activo',
+        quote.status === 'AWARDED' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600',
+      ),
+    );
+    return [...map.values()].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 4);
+  })();
 
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-950">
-        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-          <LoadingState label="Cargando dashboard proveedor..." className="gap-3" />
-        </div>
-      </main>
-    );
+    return <DashboardLoader />;
   }
 
+  // Mismo contenido en mobile y escritorio; cambia solo el marco (header,
+  // sidebar) y, en mobile, las tablas se muestran como tarjetas.
+  const homeBody = (
+    <>
+            {/* Saludo. El vendedor lo ve en una banda verde suave, para que se lea de
+                entrada que es su entorno; la empresa conserva el saludo simple. */}
+            {isSeller ? (
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] border border-seller-200 bg-seller-50 px-5 py-4 shadow-[inset_5px_0_0_var(--color-seller-500)] lg:px-7 lg:py-5">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-seller-700">{greeting},</p>
+                  <h1 className="mt-0.5 text-[1.9rem] font-bold leading-tight tracking-[-0.03em] text-slate-900 lg:text-[2.3rem]">
+                    {sellerName} 👋
+                  </h1>
+                  <p className="mt-0.5 text-[14px] text-slate-600 lg:text-[15px]">Estas son tus tareas y oportunidades de hoy.</p>
+                </div>
+                <div className="rounded-[12px] border border-seller-200 bg-white px-4 py-2.5">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-seller-700">Panel de ventas</p>
+                  <p className="text-[15px] font-bold text-slate-900">{companyName}</p>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-indigo-600">{greeting},</p>
+                <h1 className="mt-0.5 text-[1.9rem] font-bold leading-tight tracking-[-0.03em] text-slate-900 lg:text-[2.3rem]">
+                  {sellerName} 👋
+                </h1>
+                <p className="mt-0.5 text-[14px] text-slate-500 lg:text-[15px]">Estas son las tareas y oportunidades de hoy en {companyName}.</p>
+              </div>
+            )}
+
+            <div className="mt-6 grid gap-5 xl:grid-cols-[1.15fr_1fr]">
+              {/* Tareas pendientes */}
+              <section className={homeCard} data-tour="sales-tasks">
+                <div className="flex items-center justify-between gap-3 px-5 pt-5">
+                  <div className="flex items-center gap-3">
+                    <HomeIcon name="doc" tone="bg-indigo-100 text-indigo-600" />
+                    <h2 className="text-[18px] font-bold text-slate-900">Tareas pendientes</h2>
+                    {pendingTotal > 0 ? (
+                      <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[12px] font-semibold text-white">
+                        {pendingTotal}
+                      </span>
+                    ) : null}
+                  </div>
+                  <HomeSeeAll href="/dashboard/proveedor/solicitudes" />
+                </div>
+                {/* Cada tarea tiene su propio fondo; la que lleva tiempo sin
+                    respuesta se marca con un borde de color. */}
+                <ul className="mt-4 space-y-2.5 px-4 pb-4 sm:px-5 sm:pb-5">
+                  {homeTasks.map((task) => (
+                    <li key={task.label}>
+                      <ToneRow
+                        count={task.count}
+                        detail={task.detail}
+                        highlight={task.tone === 'amber' && task.count > 0}
+                        href={task.href}
+                        icon={
+                          <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.9" viewBox="0 0 24 24">
+                            {HOME_ICON_PATHS[task.icon]}
+                          </svg>
+                        }
+                        title={task.label}
+                        tone={task.tone}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {/* Resumen de actividad */}
+              <section className={`${homeCard} flex flex-col p-5`} data-tour="sales-activity">
+                <div className="flex items-center gap-3">
+                  <HomeIcon name="chart" tone="bg-indigo-100 text-indigo-600" />
+                  <h2 className="text-[18px] font-bold text-slate-900">Resumen de tu actividad</h2>
+                </div>
+                <div className="mt-4 grid flex-1 auto-rows-fr grid-cols-2 gap-3">
+                  {activityTiles.map((tile, index) => {
+                    const tone = TONES[(['indigo', 'violet', 'sky', 'amber'] as Tone[])[index % 4]];
+                    return (
+                    <Link
+                      key={tile.label}
+                      className={`group flex items-center rounded-2xl p-3.5 transition sm:p-4 ${tone.row}`}
+                      href={tile.href}
+                    >
+                      <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+                        <HomeIcon name={tile.icon} tone={tone.icon} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-[20px] font-bold leading-7 text-slate-900 sm:truncate sm:text-[22px]">{tile.value}</p>
+                            {tile.trend ? (
+                              <span className="shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">
+                                ↑ {tile.trend}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-[12px] font-medium text-slate-700">{tile.label}</p>
+                          {tile.detail ? <p className="text-[11px] text-slate-500">{tile.detail}</p> : null}
+                        </div>
+                      </div>
+                    </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+
+            {/* Oportunidades recientes */}
+            <section className={`${homeCard} mt-5`} data-tour="sales-opportunities">
+              <div className="flex items-center justify-between gap-3 px-5 pt-5">
+                <div className="flex items-center gap-3">
+                  <HomeIcon name="clipboard" tone="bg-indigo-100 text-indigo-600" />
+                  <h2 className="text-[18px] font-bold text-slate-900">Oportunidades recientes</h2>
+                </div>
+                <HomeSeeAll href="/dashboard/proveedor/solicitudes" />
+              </div>
+              {/* En mobile, tarjetas; desde md, la tabla completa. */}
+              <ul className="mt-3 divide-y divide-slate-200 pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-seller-surface">
+                {recentOpportunities.length === 0 ? (
+                  <li className="py-6 text-center text-[13px] text-slate-500">Todavía no hay oportunidades para {companyName}.</li>
+                ) : (
+                  recentOpportunities.map((request) => {
+                    const item = request.items?.[0];
+                    const quantity = item?.quantity ?? request.quantityRequested ?? null;
+                    const location = request.deliveryCity ?? request.buyerCompany?.city ?? '—';
+                    const isNew = dashboardData.openOpportunities.some((open) => open.id === request.id);
+                    return (
+                      <li key={request.id}>
+                        <Link className="flex items-center gap-3 py-3" href={`/dashboard/proveedor/solicitudes/${request.id}`}>
+                          <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                            <Image alt="" className="object-cover" fill sizes="48px" src={requestImage(request)} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2">
+                              <span className="truncate text-[14px] font-semibold text-slate-900">{item?.productName ?? request.title}</span>
+                              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${isNew ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
+                                {isNew ? 'Nueva' : 'Cotizada'}
+                              </span>
+                            </span>
+                            <span className="block truncate text-[12px] text-slate-500">
+                              {request.buyerCompany?.name ?? 'Comprador'} · {quantity !== null ? `${quantity.toLocaleString('es-AR')} ${item?.unit ?? 'un.'}` : 'A definir'}
+                            </span>
+                            <span className="block truncate text-[11px] text-slate-400">
+                              {location} · {formatDayTime(request.updatedAt)}
+                            </span>
+                          </span>
+                          <span className="text-indigo-600">
+                            <HomeArrow />
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+              <div className="mt-4 hidden overflow-x-auto px-3 pb-3 md:block">
+                <table className="w-full min-w-[860px] text-left text-[13px]">
+                  <thead>
+                    <tr className="bg-seller-50 text-[12px] font-semibold text-slate-700">
+                      <th className="rounded-l-lg px-3 py-2.5 font-medium">Producto</th>
+                      <th className="px-3 py-2.5 font-medium">Cliente</th>
+                      <th className="px-3 py-2.5 font-medium">Cantidad</th>
+                      <th className="px-3 py-2.5 font-medium">Ubicación</th>
+                      <th className="px-3 py-2.5 font-medium">Fecha</th>
+                      <th className="px-3 py-2.5 font-medium">Estado</th>
+                      <th className="rounded-r-lg px-3 py-2.5 font-medium">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 [&>tr:nth-child(even)]:bg-seller-surface">
+                    {recentOpportunities.length === 0 ? (
+                      <tr>
+                        <td className="px-3 py-8 text-center text-slate-500" colSpan={7}>
+                          Todavía no hay oportunidades para {companyName}.
+                        </td>
+                      </tr>
+                    ) : (
+                      recentOpportunities.map((request) => {
+                        const item = request.items?.[0];
+                        const quantity = item?.quantity ?? request.quantityRequested ?? null;
+                        const location = request.deliveryCity ?? request.buyerCompany?.city ?? '—';
+                        return (
+                          <tr key={request.id} className="text-slate-600">
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-3">
+                                <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                                  <Image alt="" className="object-cover" fill sizes="40px" src={requestImage(request)} />
+                                </span>
+                                <span className="truncate font-semibold text-slate-900">{item?.productName ?? request.title}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5">{request.buyerCompany?.name ?? 'Comprador'}</td>
+                            <td className="px-3 py-2.5">
+                              {quantity !== null ? `${quantity.toLocaleString('es-AR')} ${item?.unit ?? 'un.'}` : 'A definir'}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="text-indigo-500">
+                                  <HomePin />
+                                </span>
+                                {location}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5">{formatDayTime(request.updatedAt)}</td>
+                            <td className="px-3 py-2.5">
+                              {(() => {
+                                // Para el vendedor, una solicitud que todavía no cotizó es "Nueva".
+                                const status = dashboardData.openOpportunities.some((open) => open.id === request.id)
+                                  ? { label: 'Nueva', tone: 'bg-indigo-100 text-indigo-600' }
+                                  : request.status === 'PUBLISHED'
+                                    ? { label: 'Cotizada', tone: 'bg-sky-100 text-sky-600' }
+                                    : { label: getRequestTag(request.status), tone: getRequestTagClass(request.status) };
+                                return (
+                                  <span className={`inline-flex rounded-md px-2 py-1 text-[12px] font-medium ${status.tone}`}>{status.label}</span>
+                                );
+                              })()}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <Link
+                                className="inline-flex h-8 items-center rounded-lg border border-indigo-200 px-4 text-[12px] font-semibold transition hover:bg-indigo-50"
+                                href={`/dashboard/proveedor/solicitudes/${request.id}`}
+                              >
+                                <span className="text-indigo-600">Ver detalle</span>
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <div className="mt-5 grid gap-5 xl:grid-cols-2">
+              {/* Mis cotizaciones */}
+              <section className={homeCard}>
+                <div className="flex items-center justify-between gap-3 px-5 pt-5">
+                  <div className="flex items-center gap-3">
+                    <HomeIcon name="doc" tone="bg-indigo-100 text-indigo-600" />
+                    <h2 className="text-[18px] font-bold text-slate-900">Mis cotizaciones</h2>
+                  </div>
+                  <HomeSeeAll href="/dashboard/proveedor/cotizaciones" />
+                </div>
+                <ul className="mt-3 divide-y divide-slate-200 pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-seller-surface">
+                  {recentQuotes.length === 0 ? (
+                    <li className="py-6 text-center text-[13px] text-slate-500">Todavía no enviaste cotizaciones.</li>
+                  ) : (
+                    recentQuotes.map((quote) => {
+                      const status = quoteStatusMeta(quote.status);
+                      return (
+                        <li key={quote.id}>
+                          <Link className="flex items-center justify-between gap-3 py-3" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
+                            <span className="min-w-0">
+                              <span className="block truncate text-[14px] font-semibold text-slate-900">{quote.request?.buyerCompany?.name ?? 'Cliente'}</span>
+                              <span className="block truncate text-[12px] text-slate-500">{quote.request?.title ?? '—'}</span>
+                            </span>
+                            <span className="shrink-0 text-right">
+                              <span className="block text-[13px] font-semibold text-slate-900">
+                                {typeof quote.amount === 'number'
+                                  ? `${quote.currency === 'USD' ? 'US$' : '$'} ${quote.amount.toLocaleString('es-AR')}`
+                                  : 'A convenir'}
+                              </span>
+                              <span className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${status.tone}`}>{status.label}</span>
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+                <div className="mt-4 hidden px-3 pb-3 md:block">
+                  <table className="w-full text-left text-[13px]">
+                    <thead>
+                      <tr className="bg-seller-50 text-[12px] font-semibold text-slate-700">
+                        <th className="rounded-l-lg px-3 py-2 font-medium">Cliente</th>
+                        <th className="px-3 py-2 font-medium">Producto</th>
+                        <th className="px-3 py-2 font-medium">Monto</th>
+                        <th className="rounded-r-lg px-3 py-2 font-medium">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 [&>tr:nth-child(even)]:bg-seller-surface">
+                      {recentQuotes.length === 0 ? (
+                        <tr>
+                          <td className="px-3 py-6 text-center text-slate-500" colSpan={4}>
+                            Todavía no enviaste cotizaciones.
+                          </td>
+                        </tr>
+                      ) : (
+                        recentQuotes.map((quote) => {
+                          const status = quoteStatusMeta(quote.status);
+                          return (
+                            <tr key={quote.id} className="text-slate-600">
+                              <td className="px-3 py-2.5 font-semibold text-slate-900">
+                                <Link className="hover:underline" href={`/dashboard/proveedor/cotizaciones/${quote.id}`}>
+                                  {quote.request?.buyerCompany?.name ?? 'Cliente'}
+                                </Link>
+                              </td>
+                              <td className="max-w-[180px] truncate px-3 py-2.5">{quote.request?.title ?? '—'}</td>
+                              <td className="px-3 py-2.5">
+                                {typeof quote.amount === 'number'
+                                  ? `${quote.currency === 'USD' ? 'US$' : '$'} ${quote.amount.toLocaleString('es-AR')}`
+                                  : 'A convenir'}
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <span className={`inline-flex rounded-md px-2 py-1 text-[12px] font-medium ${status.tone}`}>{status.label}</span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              {/* Clientes recientes */}
+              <section className={homeCard}>
+                <div className="flex items-center justify-between gap-3 px-5 pt-5">
+                  <div className="flex items-center gap-3">
+                    <HomeIcon name="user" tone="bg-indigo-100 text-indigo-600" />
+                    <h2 className="text-[18px] font-bold text-slate-900">Clientes recientes</h2>
+                  </div>
+                  <HomeSeeAll href="/dashboard/proveedor/clientes" />
+                </div>
+                <ul className="mt-3 divide-y divide-slate-200 pb-3 md:hidden [&>li]:px-5 [&>li:nth-child(even)]:bg-seller-surface">
+                  {recentClients.length === 0 ? (
+                    <li className="py-6 text-center text-[13px] text-slate-500">Todavía no hay clientes con actividad.</li>
+                  ) : (
+                    recentClients.map((client) => (
+                      <li key={client.name} className="flex items-center justify-between gap-3 py-3">
+                        <span className="min-w-0">
+                          <span className="block truncate text-[14px] font-semibold text-slate-900">{client.name}</span>
+                          <span className="block truncate text-[12px] text-slate-500">
+                            {client.activity} · {formatDayTime(client.at)}
+                          </span>
+                        </span>
+                        <span className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium ${client.tone}`}>{client.status}</span>
+                      </li>
+                    ))
+                  )}
+                </ul>
+                <div className="mt-4 hidden px-3 pb-3 md:block">
+                  <table className="w-full text-left text-[13px]">
+                    <thead>
+                      <tr className="bg-seller-50 text-[12px] font-semibold text-slate-700">
+                        <th className="rounded-l-lg px-3 py-2 font-medium">Cliente</th>
+                        <th className="px-3 py-2 font-medium">Última actividad</th>
+                        <th className="rounded-r-lg px-3 py-2 font-medium">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 [&>tr:nth-child(even)]:bg-seller-surface">
+                      {recentClients.length === 0 ? (
+                        <tr>
+                          <td className="px-3 py-6 text-center text-slate-500" colSpan={3}>
+                            Todavía no hay clientes con actividad.
+                          </td>
+                        </tr>
+                      ) : (
+                        recentClients.map((client) => (
+                          <tr key={client.name} className="text-slate-600">
+                            <td className="px-3 py-2.5 font-semibold text-slate-900">{client.name}</td>
+                            <td className="px-3 py-2.5">
+                              {client.activity} · {formatDayTime(client.at)}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <span className={`inline-flex rounded-md px-2 py-1 text-[12px] font-medium ${client.tone}`}>{client.status}</span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+    </>
+  );
+
   return (
-    <main className="bg-[#f5f7fb] text-slate-950 lg:h-screen lg:overflow-hidden">
+    <main className="bg-seller-canvas text-slate-950 lg:h-screen lg:overflow-hidden">
       {/* ==================== VISTA MOBILE ==================== */}
       <div className="lg:hidden">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
-          <Link href="/dashboard/proveedor" className="flex items-center gap-2">
-            <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
-            <span className="text-base font-bold tracking-tight text-slate-950">ATAR</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700"
-              href="/dashboard/proveedor/notificaciones"
-            >
-              <HeaderActionIcon kind="bell" />
-              {counters.unreadNotificationsCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-semibold text-white">
-                  {counters.unreadNotificationsCount}
-                </span>
-              ) : null}
-            </Link>
-            <SupplierAccountMenu session={session} />
-          </div>
-        </header>
-
         {error ? (
-          <div className="mx-4 mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mx-4 mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
 
         <div className="px-4 pb-28 pt-5">
-          <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-slate-950">
-            Hola, {sellerName} 👋
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Panel de vendedor · {companyName}
-          </p>
-
-          {/* En mobile el selector va debajo del saludo: no entra en el header. */}
-          {hasMultipleWorkspaces ? <CompanySwitcher className="mt-3" /> : null}
-
-          {/* Nivel */}
-          <section className="mt-5 overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#4f46e5_0%,#6d5cf5_52%,#7c3aed_100%)] p-5 text-white shadow-lg shadow-indigo-600/25">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 text-sm font-semibold">
-                <svg aria-hidden="true" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 7.1-1.01L12 2z" />
-                </svg>
-                Nivel {tier}
-              </span>
-              <Link
-                className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/95"
-                href="/dashboard/proveedor/reportes"
-              >
-                Ver beneficios
-                <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                </svg>
-              </Link>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              {levelMetrics.map((metric) => (
-                <div key={metric.label} className="text-center">
-                  <p className="text-xl font-bold tracking-tight">{metric.value}</p>
-                  <p className="mt-0.5 text-[11px] text-white/70">{metric.label}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Resumen del mes */}
-          <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-950">Resumen del mes</h2>
-            <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold capitalize text-slate-600">
-              {monthLabel}
-              <svg aria-hidden="true" className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-              </svg>
-            </span>
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            {summaryCards.map((card) => (
-              <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.tone}`}>
-                  <ProviderStatIcon kind={card.icon} />
-                </span>
-                <p className="mt-3 text-lg font-bold tracking-tight text-slate-950">{card.value}</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">{card.label}</p>
-                {card.delta ? (
-                  <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                    <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
-                      <path d="M6 15l6-6 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                    </svg>
-                    {card.delta}
-                  </p>
-                ) : null}
-              </article>
-            ))}
-          </div>
-
-          {/* Stats comerciales: consolidado de todas las empresas + filtro. */}
-          <h2 className="mt-6 text-base font-bold text-slate-950">Tus estadísticas</h2>
-          <CommercialPanel className="mt-3" />
-
-          {/* Actividad reciente */}
-          <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-950">Actividad reciente</h2>
-            <Link className="text-xs font-semibold text-indigo-600" href="/dashboard/proveedor/reportes">
-              Ver todas
-            </Link>
-          </div>
-
-          <div className="mt-3 space-y-2">
-            {dashboardData.recentActivity.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
-                Todavía no hay actividad para mostrar.
-              </div>
-            ) : (
-              dashboardData.recentActivity.slice(0, 4).map((item) => (
-                <article key={item.id} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                  <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm ${item.tone}`}>
-                    {item.glyph === 'check' ? '✓' : item.glyph === 'quote' ? '✦' : '★'}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold leading-5 text-slate-950">{item.title}</p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">{item.detail}</p>
-                  </div>
-                  <span className="shrink-0 text-[11px] text-slate-400">{item.time}</span>
-                </article>
-              ))
-            )}
-          </div>
+          {/* En mobile el selector de empresa va arriba: no entra en el header. */}
+          {hasMultipleWorkspaces ? <CompanySwitcher className="mb-4" /> : null}
+          {homeBody}
         </div>
       </div>
 
@@ -531,7 +845,7 @@ export default function DashboardProveedorPage() {
         </div>
 
         <section className="min-w-0 flex-1 overflow-hidden">
-          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+          <header className="sticky top-0 z-30 border-b border-slate-300 bg-white/90 backdrop-blur">
             <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
               <div className="flex min-w-0 items-center gap-3">
                 <Link href="/dashboard/proveedor" className="flex shrink-0 items-center gap-2 lg:hidden">
@@ -539,7 +853,7 @@ export default function DashboardProveedorPage() {
                   <span className="text-base font-bold text-slate-950">ATAR</span>
                 </Link>
 
-                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm md:flex md:max-w-[460px] xl:max-w-[520px]">
+                <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-transparent bg-seller-surface px-4 py-2.5 transition focus-within:border-indigo-300 focus-within:bg-white md:flex md:w-[360px] xl:w-[480px]">
                   <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                     <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                     <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -551,11 +865,11 @@ export default function DashboardProveedorPage() {
               <div className="flex items-center gap-2">
                 <CompanySwitcher className="hidden lg:block" />
                 <WorkspaceSwitcher className="hidden sm:inline-flex" />
-                <button className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
+                <button className="hidden h-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-100 px-4 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 sm:inline-flex" type="button">
                   Invitar a un miembro
                 </button>
                 <Link
-                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
                   href="/dashboard/proveedor/mensajes"
                 >
                   <HeaderActionIcon kind="chat" />
@@ -566,7 +880,7 @@ export default function DashboardProveedorPage() {
                   ) : null}
                 </Link>
                 <Link
-                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex"
                   href="/dashboard/proveedor/notificaciones"
                 >
                   <HeaderActionIcon kind="bell" />
@@ -581,7 +895,7 @@ export default function DashboardProveedorPage() {
             </div>
 
             <div className="px-4 pb-3 md:hidden">
-              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
+              <div className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 shadow-sm">
                 <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                   <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                   <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -591,303 +905,14 @@ export default function DashboardProveedorPage() {
             </div>
           </header>
 
-          <div className="h-[calc(100dvh-121px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-4 md:h-[calc(100dvh-73px)] lg:px-6 lg:pb-6">
+          <div className="h-[calc(100dvh-121px)] overflow-y-auto overflow-x-hidden px-4 pb-24 pt-5 md:h-[calc(100dvh-73px)] lg:px-8 lg:pb-8">
             {error ? (
-              <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">
                 {error}
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <h1 className="text-[1.85rem] font-semibold tracking-tight text-slate-950">
-                  Hola, {sellerName}! 👋
-                </h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  Resumen de tu actividad de hoy en {companyName}.
-                </p>
-              </div>
-              <button className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50" type="button">
-                <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
-                  <path d="M8 2v4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  <path d="M16 2v4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  <path d="M3 10h18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  <rect height="18" rx="2" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" width="18" x="3" y="4" />
-                </svg>
-                {todayLabel}
-              </button>
-            </div>
-
-            <div className="mt-4">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                    En {companyName}
-                  </p>
-                  <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {[
-                      { label: 'Solicitudes nuevas', value: openRequests.length, detail: `${dashboardData.privateRequests.length} privadas para tu empresa`, icon: 'requests' as const, tone: 'bg-indigo-50 text-indigo-600' },
-                      { label: 'Cotizaciones aceptadas', value: dashboardData.awardedQuotes.length, detail: `${dashboardData.submittedQuotes.length} pendientes de respuesta`, icon: 'quotes' as const, tone: 'bg-emerald-50 text-emerald-600' },
-                      { label: 'Oportunidades', value: dashboardData.openOpportunities.length, detail: `${Math.max(0, openRequests.length - dashboardData.openOpportunities.length)} ya respondidas`, icon: 'money' as const, tone: 'bg-amber-50 text-amber-600' },
-                      { label: 'Ventas concretadas', value: formatCurrency(dashboardData.totalSales), detail: `${dashboardData.activeOrders.length} pedidos activos`, icon: 'sales' as const, tone: 'bg-sky-50 text-sky-600' },
-                    ].map((card) => (
-                      <article key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.tone}`}>
-                          <ProviderStatIcon kind={card.icon} />
-                        </span>
-                        <p className="mt-4 text-[1.55rem] font-semibold tracking-tight text-slate-950">{card.value}</p>
-                        <p className="mt-1 text-xs font-semibold text-slate-950">{card.label}</p>
-                        <p className="mt-2 text-[11px] text-slate-500">{card.detail}</p>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <CommercialPanel />
-
-                <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.3fr_1fr]">
-                  <div className="space-y-4">
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-950">Solicitudes recientes</p>
-                        <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
-                          Ver todas
-                        </Link>
-                      </div>
-                      <div className="mt-3 space-y-3">
-                        {dashboardData.recentRequests.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
-                            No hay solicitudes para mostrar.
-                          </div>
-                        ) : (
-                          dashboardData.recentRequests.map((request) => (
-                            <article key={request.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-3 py-3">
-                              <div className="flex min-w-0 items-start gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                                  <ProviderStatIcon kind="requests" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-semibold text-slate-950">{request.title}</p>
-                                  <p className="mt-0.5 text-[11px] text-slate-500">
-                                    {request.buyerCompany?.name ?? 'Cliente'}
-                                  </p>
-                                  <p className="mt-0.5 text-[11px] text-slate-400">
-                                    {request.buyerCompany?.city ?? request.buyerCompany?.country ?? 'Sin ubicacion'}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="shrink-0 text-right">
-                                <p className="text-[11px] text-slate-400">{formatRelativeTime(request.updatedAt)}</p>
-                                <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${getRequestTagClass(request.status)}`}>
-                                  {getRequestTag(request.status)}
-                                </span>
-                              </div>
-                            </article>
-                          ))
-                        )}
-                      </div>
-                      <Link className="mt-3 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
-                        Ver todas las solicitudes
-                        <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                        </svg>
-                      </Link>
-                    </section>
-
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-950">Rendimiento de cotizaciones</p>
-                        <button className="inline-flex h-8 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-semibold text-slate-600" type="button">
-                          Datos acumulados
-                        </button>
-                      </div>
-                      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[210px_1fr] lg:items-center">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <div
-                            className="relative h-36 w-36 rounded-full"
-                            style={{
-                              background: `conic-gradient(#6EE7B7 0deg ${donutAccepted}deg, #FCD34D ${donutAccepted}deg ${donutAccepted + donutPending}deg, #FCA5A5 ${donutAccepted + donutPending}deg 360deg)`,
-                            }}
-                          >
-                            <div className="absolute inset-[18px] flex flex-col items-center justify-center rounded-full bg-white">
-                              <p className="text-[11px] text-slate-400">Total</p>
-                              <p className="text-2xl font-semibold text-slate-950">{myQuotes.length}</p>
-                              <p className="text-[11px] text-slate-500">cotizaciones</p>
-                            </div>
-                          </div>
-                          <div className="w-full space-y-2 text-[11px] text-slate-500">
-                            {[
-                              { label: 'Aceptadas', value: dashboardData.awardedQuotes.length, tone: 'bg-emerald-400' },
-                              { label: 'Pendientes', value: dashboardData.submittedQuotes.length, tone: 'bg-amber-400' },
-                              { label: 'Rechazadas', value: dashboardData.rejectedQuotes.length, tone: 'bg-rose-400' },
-                            ].map((item) => (
-                              <div key={item.label} className="flex items-center justify-between gap-3">
-                                <span className="flex items-center gap-2">
-                                  <span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />
-                                  {item.label}
-                                </span>
-                                <span className="font-semibold text-slate-700">{item.value}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-[11px] text-slate-400">Tasa de aceptacion</p>
-                          <div className="mt-1 flex items-baseline gap-2">
-                            <p className="text-3xl font-semibold tracking-tight text-slate-950">{acceptanceRate}%</p>
-                            <span className="text-xs text-slate-500">
-                              {dashboardData.awardedQuotes.length} cotizaciones adjudicadas
-                            </span>
-                          </div>
-                          <div className="mt-4">
-                            <MiniLineChart />
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                  </div>
-
-                  <div className="space-y-4">
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <p className="text-sm font-semibold text-slate-950">Tareas pendientes</p>
-                      <div className="mt-4 space-y-3">
-                        {pendingTasks.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
-                            No hay tareas pendientes generadas por tus pedidos y cotizaciones actuales.
-                          </div>
-                        ) : (
-                          pendingTasks.map((task) => (
-                            <div key={task.label} className="flex items-start gap-3 rounded-2xl border border-slate-200 px-3 py-3">
-                              <span className="mt-0.5 h-4 w-4 rounded border border-slate-300 bg-white" />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-medium text-slate-700">{task.label}</p>
-                              </div>
-                              <span className="shrink-0 text-[11px] text-slate-400">
-                                {task.due}
-                              </span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                      <Link className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/solicitudes">
-                        Ver todas las tareas
-                        <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                        </svg>
-                      </Link>
-                    </section>
-
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-950">Pedidos activos</p>
-                        <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/pedidos">
-                          Ver todos
-                        </Link>
-                      </div>
-                      <p className="mt-4 text-[2rem] font-semibold tracking-tight text-slate-950">
-                        {dashboardData.activeOrders.length}
-                      </p>
-                      <p className="text-xs text-slate-500">Pedidos en proceso</p>
-                      <div className="mt-4 grid grid-cols-4 gap-2 text-center">
-                        {Object.entries(dashboardData.stageCounts).map(([key, value]) => (
-                          <div key={key} className="rounded-xl bg-slate-50 px-2 py-2">
-                            <p className="text-base font-semibold text-slate-950">{value}</p>
-                            <p className="mt-1 text-[10px] text-slate-500">
-                              {getProductionLabel(
-                                key === 'production'
-                                  ? 'IN_PRODUCTION'
-                                  : key === 'transit'
-                                    ? 'DISPATCHED'
-                                    : key === 'delivered'
-                                      ? 'DELIVERED'
-                                      : 'CONFIRMED',
-                              )}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-4 flex items-center justify-between rounded-2xl bg-indigo-50 px-3 py-3 text-[11px] text-indigo-700">
-                        <span>
-                          Proxima entrega:{' '}
-                          <span className="font-semibold">
-                            {dashboardData.nextPromisedDate
-                              ? formatShortDate(dashboardData.nextPromisedDate)
-                              : 'sin fecha'}
-                          </span>
-                        </span>
-                        <Link className="font-semibold" href="/dashboard/proveedor/pedidos">
-                          Revisar
-                        </Link>
-                      </div>
-                    </section>
-
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-950">Clientes destacados</p>
-                        <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
-                          Ver todos
-                        </Link>
-                      </div>
-                      <div className="mt-4 space-y-3">
-                        {dashboardData.topClients.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-sm text-slate-500">
-                            Aun no hay clientes destacados para mostrar.
-                          </div>
-                        ) : (
-                          dashboardData.topClients.map((client) => (
-                            <article key={client.name} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-3 py-3">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-xs font-semibold text-slate-700">
-                                  {client.name.slice(0, 2).toUpperCase()}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-semibold text-slate-950">{client.name}</p>
-                                  <p className="mt-0.5 text-[11px] text-slate-500">{client.orders} cotizaciones</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xs font-semibold text-slate-950">{formatCurrency(client.amount)}</p>
-                                <p className="mt-1 text-[11px] text-slate-500">{client.orders} cotizaciones</p>
-                              </div>
-                            </article>
-                          ))
-                        )}
-                      </div>
-                    </section>
-
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-950">Actividad reciente</p>
-                        <Link className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
-                          Ver todo
-                        </Link>
-                      </div>
-                      <div className="mt-4 space-y-3">
-                        {dashboardData.recentActivity.map((item) => (
-                          <article key={item.id} className="flex items-start gap-3">
-                            <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl ${item.tone}`}>
-                              {item.glyph === 'check' ? '✓' : item.glyph === 'quote' ? '✦' : '★'}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold leading-5 text-slate-950">{item.title}</p>
-                              <p className="mt-0.5 text-[11px] text-slate-500">{item.detail}</p>
-                            </div>
-                            <span className="shrink-0 text-[11px] text-slate-400">{item.time}</span>
-                          </article>
-                        ))}
-                      </div>
-                      <Link className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500" href="/dashboard/proveedor/reportes">
-                        Ver toda la actividad
-                        <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                        </svg>
-                      </Link>
-                    </section>
-                  </div>
-                </div>
-
-              </div>
-            </div>
+            {homeBody}
           </div>
         </section>
       </div>

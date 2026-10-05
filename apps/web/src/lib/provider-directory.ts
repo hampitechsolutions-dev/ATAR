@@ -12,6 +12,9 @@ export type ProviderDirectoryItem = {
   leadTimeDays: number | null;
   minimumOrder: number | null;
   logoUrl: string | null;
+  isVerified?: boolean;
+  certifications?: string[];
+  mainProducts?: string[];
 };
 
 export function getSupplierCategoryLabel(companyType: CompanyType) {
@@ -45,5 +48,8 @@ export function mapSupplierToProviderDirectoryItem(
     companyType: supplier.companyType,
     leadTimeDays: supplier.leadTimeDays,
     minimumOrder: supplier.minimumOrder,
+    isVerified: supplier.isVerified,
+    certifications: supplier.certifications ?? [],
+    mainProducts: supplier.mainProducts ?? [],
   };
 }

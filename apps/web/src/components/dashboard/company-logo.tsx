@@ -36,7 +36,7 @@ export default function CompanyLogo({
   if (logoUrl) {
     return (
       <span
-        className={`flex shrink-0 items-center justify-center overflow-hidden border border-slate-200 bg-white ${rounded} ${className}`}
+        className={`flex shrink-0 items-center justify-center overflow-hidden border border-slate-300 bg-white ${rounded} ${className}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img alt={name} className="max-h-full max-w-full object-contain" src={logoUrl} />

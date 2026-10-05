@@ -5,11 +5,14 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { clearSession, type WebSession } from '@/lib/session';
+import BuyerHomeSearch from './buyer-home-search';
 import WorkspaceSwitcher from './workspace-switcher';
 
 type NavItem = {
   label: string;
   href: string;
+  /** Solo entra en la barra desde 1280 px; antes queda en el menú de la cuenta. */
+  wideOnly?: boolean;
 };
 
 function Icon({
@@ -55,16 +58,18 @@ export default function BuyerMarketplaceHeader({
   session,
   notificationCount = 0,
   wide = false,
+  marketplace = false,
 }: {
   session: WebSession | null;
   notificationCount?: number;
   // Las vistas full-bleed (detalle de cotizacion) alinean el header con el contenido.
   wide?: boolean;
+  // Home del comprador: el buscador ocupa la fila principal y la navegación
+  // baja a una segunda fila, como en un marketplace.
+  marketplace?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isProductsOpen, setIsProductsOpen] = useState(false);
-  const productsRef = useRef<HTMLDivElement | null>(null);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement | null>(null);
 
@@ -100,32 +105,6 @@ export default function BuyerMarketplaceHeader({
     router.push('/acceso');
   }
 
-  useEffect(() => {
-    if (!isProductsOpen) {
-      return;
-    }
-
-    function handlePointerDown(event: MouseEvent) {
-      if (!productsRef.current?.contains(event.target as Node)) {
-        setIsProductsOpen(false);
-      }
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsProductsOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isProductsOpen]);
-
   const profileName = useMemo(() => {
     const full = `${session?.user.firstName ?? ''} ${session?.user.lastName ?? ''}`.trim();
     return full || session?.user.email || 'Tu cuenta';
@@ -150,120 +129,117 @@ export default function BuyerMarketplaceHeader({
       { label: 'Inicio', href: '/dashboard/comprador' },
       { label: 'Proveedores', href: '/dashboard/comprador/proveedores' },
       { label: 'Mis solicitudes', href: '/dashboard/comprador/solicitudes' },
+      { label: 'Cotizaciones', href: '/dashboard/comprador/cotizaciones', wideOnly: true },
       { label: 'Mis pedidos', href: '/dashboard/comprador/pedidos' },
+      { label: 'Favoritos', href: '/dashboard/comprador/favoritos', wideOnly: true },
     ];
   }, []);
 
+  const underline = marketplace ? '-bottom-[9px]' : '-bottom-[11px]';
+  // Variante marketplace: la barra va en el azul de ATAR, así que los textos y
+  // botones se invierten a blanco.
+  const navActive = marketplace ? 'text-white' : 'text-slate-950';
+  const navHover = marketplace ? 'hover:text-white' : 'hover:text-slate-950';
+  const iconButton = marketplace
+    ? 'border-white/50 bg-white/10 text-white hover:bg-white/20'
+    : 'border-slate-300 bg-white text-slate-700';
+  const nav = (
+    <nav className={`hidden items-center gap-5 text-[13px] font-semibold lg:flex ${marketplace ? 'text-white/85' : 'text-slate-600'}`}>
+      <Link
+        className={pathname === '/dashboard/comprador' ? `relative ${navActive}` : navHover}
+        href="/dashboard/comprador"
+      >
+        Inicio
+        {pathname === '/dashboard/comprador' ? (
+          <span className={`absolute ${underline} left-0 h-[2px] w-full rounded-full ${marketplace ? 'bg-white' : 'bg-[#4f46ff]'}`} />
+        ) : null}
+      </Link>
+
+      <Link
+        className={
+          pathname?.startsWith('/dashboard/comprador/panel')
+            ? `relative ${navActive}`
+            : navHover
+        }
+        data-tour="nav-panel"
+        href="/dashboard/comprador/panel"
+      >
+        Panel
+        {pathname?.startsWith('/dashboard/comprador/panel') ? (
+          <span className={`absolute ${underline} left-0 h-[2px] w-full rounded-full ${marketplace ? 'bg-white' : 'bg-[#4f46ff]'}`} />
+        ) : null}
+      </Link>
+
+      {navItems.slice(1).map((item) => {
+        const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+        // Entre 1024 y 1280 px no entran todos: los `wideOnly` quedan en el menú de la cuenta.
+        return (
+          <Link
+            key={item.href}
+            data-tour={`nav-${item.href.split('/').pop()}`}
+            className={`relative ${isActive ? navActive : navHover} ${item.wideOnly ? 'hidden xl:inline' : ''}`}
+            href={item.href}
+          >
+            {item.label}
+            {isActive ? <span className={`absolute ${underline} left-0 h-[2px] w-full rounded-full ${marketplace ? 'bg-white' : 'bg-[#4f46ff]'}`} /> : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
   return (
-    <header className="hidden border-b border-slate-200 bg-white lg:block">
+    <header className={`hidden border-b lg:block ${marketplace ? 'border-[#0f2fb8] bg-[#1847ff]' : 'border-slate-300 bg-white'}`}>
       <div
         className={`mx-auto flex items-center justify-between gap-5 px-4 py-2.5 ${
           wide ? 'max-w-none xl:px-6' : 'max-w-[1320px]'
         }`}
       >
         <div className="flex items-center gap-3">
-          <Image alt="ATAR" height={26} src="/logoatar.png" width={26} />
+          <Image alt="ATAR" height={26} src={marketplace ? '/logoatarblanco.png' : '/logoatar.png'} width={26} />
           <div className="leading-tight">
-            <p className="text-sm font-bold text-slate-950">ATAR</p>
+            <p className={`text-sm font-bold ${marketplace ? 'text-white' : 'text-slate-950'}`}>ATAR</p>
           </div>
         </div>
 
-        <nav className="hidden items-center gap-5 text-[13px] font-semibold text-slate-600 lg:flex">
-          <Link
-            className={pathname === '/dashboard/comprador' ? 'relative text-slate-950' : 'hover:text-slate-950'}
-            href="/dashboard/comprador"
-          >
-            Inicio
-            {pathname === '/dashboard/comprador' ? (
-              <span className="absolute -bottom-[11px] left-0 h-[2px] w-full rounded-full bg-[#4f46ff]" />
-            ) : null}
-          </Link>
-
-          <Link
-            className={
-              pathname?.startsWith('/dashboard/comprador/panel')
-                ? 'relative text-slate-950'
-                : 'hover:text-slate-950'
-            }
-            href="/dashboard/comprador/panel"
-          >
-            Panel
-            {pathname?.startsWith('/dashboard/comprador/panel') ? (
-              <span className="absolute -bottom-[11px] left-0 h-[2px] w-full rounded-full bg-[#4f46ff]" />
-            ) : null}
-          </Link>
-
-          <div className="relative" ref={productsRef}>
-            <button
-              className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-950"
-              onClick={() => setIsProductsOpen((current) => !current)}
-              type="button"
-            >
-              Productos
-              <span className={`transition ${isProductsOpen ? 'rotate-180' : ''}`}>
-                <Icon name="chev-down" />
-              </span>
-            </button>
-
-            {isProductsOpen ? (
-              <div className="absolute left-0 top-[calc(100%+14px)] z-50 w-[320px] rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-                <Link
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  href="/dashboard/comprador/solicitudes/nueva"
-                  onClick={() => setIsProductsOpen(false)}
-                >
-                  Cotizar por categoria
-                  <Icon name="chev-right" />
-                </Link>
-                <Link
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  href="/dashboard/comprador/proveedores"
-                  onClick={() => setIsProductsOpen(false)}
-                >
-                  Buscar proveedores
-                  <Icon name="chev-right" />
-                </Link>
-              </div>
-            ) : null}
+        {marketplace ? (
+          <div className="min-w-0 max-w-[760px] flex-1" data-tour="buyer-search">
+            <BuyerHomeSearch size="header" />
           </div>
-
-          {navItems.slice(1).map((item) => {
-            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
-            return (
-              <Link key={item.href} className={isActive ? 'text-slate-950' : 'hover:text-slate-950'} href={item.href}>
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        ) : (
+          nav
+        )}
 
         <div className="flex items-center gap-3">
           <WorkspaceSwitcher className="hidden lg:inline-flex" />
 
           <Link
-            className="inline-flex h-9 items-center gap-2 rounded-xl bg-[#1847ff] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#0f3ff5]"
+            className={`inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition ${
+              marketplace ? 'bg-white text-[#1238d6] shadow-[0_2px_0_rgba(8,24,110,0.35)] hover:bg-[#eef2ff]' : 'bg-[#1847ff] text-white hover:bg-[#0f3ff5]'
+            }`}
+            data-tour="buyer-cta"
             href="/dashboard/comprador/solicitudes/nueva"
           >
             <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
             </svg>
-            Nueva solicitud
+            {marketplace ? 'Solicitar cotización' : 'Nueva solicitud'}
           </Link>
 
           <Link
-            className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700"
+            className={`relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border transition ${iconButton}`}
             href="/dashboard/comprador/mensajes"
           >
             <Icon name="msg" />
           </Link>
 
           <Link
-            className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700"
+            className={`relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-xl border transition ${iconButton}`}
             href="/dashboard/comprador/notificaciones"
           >
             <Icon name="bell" />
             {notificationCount > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#4f46ff] px-1 text-[10px] font-semibold text-white">
+              <span className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold ${marketplace ? 'bg-white text-[#1238d6]' : 'bg-[#4f46ff] text-white'}`}>
                 {Math.min(notificationCount, 9)}
               </span>
             ) : null}
@@ -272,7 +248,7 @@ export default function BuyerMarketplaceHeader({
           <div className="relative hidden lg:block" ref={accountRef}>
             <button
               aria-expanded={isAccountOpen}
-              className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-3 py-1 transition hover:bg-slate-50"
+              className="flex items-center gap-2.5 rounded-full border border-slate-300 bg-white px-3 py-1 transition hover:bg-slate-50"
               onClick={() => setIsAccountOpen((current) => !current)}
               type="button"
             >
@@ -289,8 +265,8 @@ export default function BuyerMarketplaceHeader({
             </button>
 
             {isAccountOpen ? (
-              <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[260px] rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-3">
+              <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[260px] rounded-2xl border border-slate-300 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+                <div className="flex items-center gap-3 rounded-xl bg-[#eef1f7] px-3 py-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#4f46ff]">
                     {profileInitials}
                   </span>
@@ -301,6 +277,22 @@ export default function BuyerMarketplaceHeader({
                 </div>
 
                 <div className="mt-2 space-y-1">
+                  {[
+                    { href: '/dashboard/comprador/cotizaciones', label: 'Cotizaciones', path: 'M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L2 12V2h10l8.6 8.6a2 2 0 010 2.8zM7 7h.01' },
+                    { href: '/dashboard/comprador/favoritos', label: 'Favoritos', path: 'M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21.3l7.8-7.8 1-1.1a5.5 5.5 0 000-7.8z' },
+                  ].map((item) => (
+                    <Link
+                      key={item.href}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                      href={item.href}
+                      onClick={() => setIsAccountOpen(false)}
+                    >
+                      <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                        <path d={item.path} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                      {item.label}
+                    </Link>
+                  ))}
                   <Link
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     href="/dashboard/comprador/configuracion"
@@ -331,6 +323,11 @@ export default function BuyerMarketplaceHeader({
           </div>
         </div>
       </div>
+      {marketplace ? (
+        <div className="border-t border-white/25">
+          <div className={`mx-auto px-4 py-2 ${wide ? 'max-w-none xl:px-6' : 'max-w-[1320px]'}`}>{nav}</div>
+        </div>
+      ) : null}
     </header>
   );
 }
