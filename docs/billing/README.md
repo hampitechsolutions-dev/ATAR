@@ -1,7 +1,6 @@
 # ATAR — Sistema de comisiones y liquidación (Billing)
 
-> **Estado: DISEÑO (Fase 0).** Este documento es la propuesta técnica y de negocio.
-> La implementación arranca una vez confirmadas las **decisiones de negocio** (§3).
+> **Estado: EN IMPLEMENTACIÓN.** Decisiones de negocio confirmadas (§3). Fases 1–2 hechas (ver §11).
 > Principio rector: *Business Operations ≠ Commissions ≠ Billing ≠ Payments ≠ Tax* (§59 del pedido): responsabilidades separadas, trazable, auditable, idempotente y seguro.
 
 ---
@@ -39,11 +38,11 @@ Punto de enganche en el código: dentro de `progress(CONFIRM_RECEIPT)` (donde ho
 
 Estas tres decisiones son del cliente y cambian la implementación; se dejan **configurables**, con el default recomendado:
 
-| # | Decisión | Opciones | **Recomendado (default)** |
-|---|---|---|---|
-| D1 | **¿Quién paga la comisión?** | Proveedor adjudicado · Comprador · Ambos | **Proveedor adjudicado** (success fee sobre la venta ganada). Configurable por `BillingRule.payer`. |
-| D2 | **% por defecto** | 1–5% / personalizado | **3 %** (vigencia desde hoy). Siempre configurable por regla; nunca hardcode. |
-| D3 | **Medio de pago v1** | Manual (transferencia + comprobante) · MercadoPago · Ambos | **Manual v1** con validación admin, detrás de una abstracción `PaymentProvider`; **MercadoPago como fase futura** (requiere credenciales). |
+| # | Decisión | **CONFIRMADA** |
+|---|---|---|
+| D1 | **¿Quién paga la comisión?** | **Proveedor adjudicado** (`BillingRule.payer = SUPPLIER`). Success fee sobre la venta ganada. Configurable. |
+| D2 | **% por defecto** | **1 %** (regla semilla `ratePercent = 1`, vigencia desde hoy). Siempre configurable/versionado; nunca hardcode. |
+| D3 | **Medio de pago v1** | **Manual / transferencia** con validación admin, detrás de la abstracción `PaymentProvider`. **MercadoPago = fase futura** (requiere credenciales). |
 
 Decisiones ya resueltas por la auditoría (documentadas, no requieren input):
 
@@ -262,10 +261,10 @@ SETTLEMENT → vence dueAt → OVERDUE → PAGO
 
 ## 11. Plan de implementación por fases
 
-| Fase | Contenido | Toca schema |
+| Fase | Contenido | Estado |
 |---|---|---|
-| **1** | Modelo de datos (enums + tablas Billing*) + migración (`db push`) + `BillingSettings`/`BillingRule` semilla. | Sí |
-| **2** | Motor de cálculo (`computeCommission*`) + generación de `BillingCommission` al `COMPLETED` (idempotente) + tests de cálculo. | — |
+| **1** | Modelo de datos (enums + tablas Billing*) + migración (`db push`) + defaults (`BillingSettings` + regla 1% semilla vía `ensureDefaults`). | ✅ Hecha |
+| **2** | Motor de cálculo (`billing.util.computeCommission`, fuente única) + generación idempotente de `BillingCommission` al cerrar la operación (`CONFIRM_RECEIPT → COMPLETED`) + 8 tests de cálculo (PASS). | ✅ Hecha |
 | **3** | Liquidaciones: job mensual idempotente + generación manual (admin) + preview. | — |
 | **4** | Dashboard ATAR (admin): resumen, por período, por empresa, reglas, cierre, ajustes, reportes/export. | — (UI) |
 | **5** | Dashboard empresa: mis liquidaciones, detalle trazable, documento descargable. | — (UI) |

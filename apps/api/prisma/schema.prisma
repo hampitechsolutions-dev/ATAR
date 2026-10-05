@@ -204,6 +204,8 @@ model Company {
   requestAssignments RequestAssignment[] @relation("SupplierAssignments")
   requestTargets  RequestTargetSupplier[] @relation("RequestTargets")
   representationRequests RepresentationRequest[]
+  billingCommissions BillingCommission[]
+  billingSettlements BillingSettlement[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -353,6 +355,7 @@ model Request {
   assignments    RequestAssignment[]
   items          RequestItem[]
   targetSuppliers RequestTargetSupplier[]
+  billingCommissions BillingCommission[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -419,6 +422,7 @@ model Quote {
   conversations     Conversation[]
   items             QuoteItem[]
   revisions         QuoteRevision[]
+  billingCommissions BillingCommission[]
   request           Request     @relation("RequestQuotes", fields: [requestId], references: [id], onDelete: Cascade)
   supplierCompany   Company     @relation("SupplierQuotes", fields: [supplierCompanyId], references: [id], onDelete: Cascade)
   createdAt         DateTime    @default(now())
@@ -605,4 +609,270 @@ model PushEndpoint {
 
   @@index([userId, channel, isActive])
   @@index([companyId, channel, isActive])
+}
+
+// ============================================================================
+// BILLING / COMISIONES  (ver docs/billing/README.md)
+// Dominio aislado: Operacion (Request) != Comision != Liquidacion != Pago.
+// La comision se genera cuando una operacion se cierra (Request -> COMPLETED).
+// ============================================================================
+
+enum BillingPayer {
+  SUPPLIER // proveedor adjudicado (default: success fee sobre la venta ganada)
+  BUYER
+}
+
+enum CommissionType {
+  SUCCESS_FEE
+}
+
+enum CommissionStatus {
+  PENDING    // identificada al cerrar la operacion
+  CONFIRMED  // confirmada (lista para liquidar)
+  INVOICED   // incluida en una liquidacion
+  PAID
+  VOID       // anulada (antes de liquidar)
+  ADJUSTED   // corregida via ajuste
+}
+
+enum BillingPeriodStatus {
+  OPEN
+  PROCESSING
+  GENERATED
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CLOSED
+  CANCELLED
+}
+
+enum SettlementStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum BillingPaymentMethod {
+  MANUAL_TRANSFER
+  MERCADOPAGO
+}
+
+enum BillingPaymentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  REFUNDED
+}
+
+enum BillingAdjustmentType {
+  CREDIT
+  DEBIT
+  VOID
+  REFUND
+  CORRECTION
+}
+
+// Regla de comision, versionada. Cambiar el % crea una nueva version vigente;
+// las comisiones ya calculadas conservan su snapshot (no se recalculan).
+model BillingRule {
+  id             String         @id @default(cuid())
+  version        Int            @default(1)
+  label          String
+  payer          BillingPayer   @default(SUPPLIER)
+  commissionType CommissionType @default(SUCCESS_FEE)
+  ratePercent    Float?         // 1.0 = 1%
+  fixedAmount    Float?
+  minAmount      Float?
+  maxAmount      Float?
+  currency       String?        // null = aplica a todas las monedas
+  scopeCompanyId String?        // null = global
+  scopeCategory  String?
+  effectiveFrom  DateTime       @default(now())
+  effectiveTo    DateTime?
+  isActive       Boolean        @default(true)
+  createdByUserId String?
+  commissions    BillingCommission[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([isActive, effectiveFrom])
+  @@index([scopeCompanyId])
+}
+
+// Comision de UNA operacion. unique(requestId, commissionType) => 1 operacion
+// genera 0 o 1 comision principal (idempotencia).
+model BillingCommission {
+  id                  String           @id @default(cuid())
+  companyId           String           // empresa que PAGA (segun payer)
+  requestId           String
+  quoteId             String
+  ruleId              String
+  ruleVersion         Int
+  commissionType      CommissionType   @default(SUCCESS_FEE)
+  payer               BillingPayer
+  baseAmount          Float
+  ratePercentSnapshot Float?
+  fixedAmountSnapshot Float?
+  commissionAmount    Float
+  currency            String
+  status              CommissionStatus @default(PENDING)
+  periodId            String?
+  settlementId        String?
+  generatedAt         DateTime         @default(now())
+  confirmedAt         DateTime?
+  voidedAt            DateTime?
+  paidAt              DateTime?
+  metadata            Json?
+  company             Company            @relation(fields: [companyId], references: [id])
+  request             Request            @relation(fields: [requestId], references: [id])
+  quote               Quote              @relation(fields: [quoteId], references: [id])
+  rule                BillingRule        @relation(fields: [ruleId], references: [id])
+  period              BillingPeriod?     @relation(fields: [periodId], references: [id])
+  settlement          BillingSettlement? @relation(fields: [settlementId], references: [id])
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@unique([requestId, commissionType])
+  @@index([companyId, status])
+  @@index([periodId])
+  @@index([settlementId])
+  @@index([status, currency])
+}
+
+// Periodo mensual de liquidacion (global). Las liquidaciones por empresa
+// cuelgan de aca.
+model BillingPeriod {
+  id          String              @id @default(cuid())
+  code        String              @unique // "2026-09"
+  startsAt    DateTime
+  endsAt      DateTime
+  status      BillingPeriodStatus @default(OPEN)
+  generatedAt DateTime?
+  closedAt    DateTime?
+  dueAt       DateTime?
+  settlements BillingSettlement[]
+  commissions BillingCommission[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+// Liquidacion de una empresa en un periodo y moneda. Unidad que la empresa ve
+// y paga. unique(periodId, companyId, currency) => re-ejecutar no duplica.
+model BillingSettlement {
+  id               String           @id @default(cuid())
+  periodId         String
+  companyId        String
+  currency         String
+  payer            BillingPayer
+  operationsCount  Int              @default(0)
+  baseTotal        Float            @default(0)
+  commissionTotal  Float            @default(0)
+  adjustmentsTotal Float            @default(0)
+  grandTotal       Float            @default(0)
+  status           SettlementStatus @default(DRAFT)
+  documentNumber   String           @unique
+  issuedAt         DateTime?
+  dueAt            DateTime?
+  paidAt           DateTime?
+  voidedAt         DateTime?
+  period           BillingPeriod       @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  company          Company             @relation(fields: [companyId], references: [id])
+  commissions      BillingCommission[]
+  adjustments      BillingAdjustment[]
+  payments         BillingPayment[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@unique([periodId, companyId, currency])
+  @@index([companyId, status])
+  @@index([status])
+}
+
+// Ajuste sobre una liquidacion/comision. Nunca se edita un monto historico:
+// toda correccion es un ajuste con trazabilidad.
+model BillingAdjustment {
+  id             String                @id @default(cuid())
+  settlementId   String
+  commissionId   String?
+  type           BillingAdjustmentType
+  amount         Float
+  currency       String
+  reason         String
+  note           String?
+  previousAmount Float?
+  newAmount      Float?
+  createdByUserId String?
+  settlement     BillingSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  createdAt      DateTime          @default(now())
+
+  @@index([settlementId])
+}
+
+// Pago de una liquidacion. Confirmacion SIEMPRE server-side (webhook o
+// aprobacion admin del manual). Nunca por retorno del frontend.
+model BillingPayment {
+  id                 String               @id @default(cuid())
+  settlementId       String
+  method             BillingPaymentMethod
+  status             BillingPaymentStatus @default(PENDING)
+  amount             Float
+  currency           String
+  externalReference  String               @unique
+  providerPaymentId  String?
+  receiptUrl         String?
+  registeredByUserId String?
+  confirmedByUserId  String?
+  paidAt             DateTime?
+  confirmedAt        DateTime?
+  rejectedAt         DateTime?
+  metadata           Json?
+  settlement         BillingSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([settlementId, status])
+}
+
+// Idempotencia de webhooks: un mismo evento no se procesa dos veces.
+model BillingWebhookEvent {
+  id          String   @id @default(cuid())
+  provider    String
+  eventId     String
+  payload     Json
+  status      String   @default("RECEIVED") // RECEIVED | PROCESSED | IGNORED | ERROR
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@unique([provider, eventId])
+}
+
+// Auditoria de acciones administrativas relevantes.
+model BillingAuditLog {
+  id            String   @id @default(cuid())
+  actorUserId   String?
+  action        String
+  entity        String
+  entityId      String
+  previousValue Json?
+  newValue      Json?
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+// Configuracion de negocio editable sin tocar codigo (fila unica, key = "default").
+model BillingSettings {
+  id                     String   @id @default("default")
+  isEnabled              Boolean  @default(true)
+  generationDayOfMonth   Int      @default(1)
+  dueDays                Int      @default(15)
+  defaultRuleId          String?
+  paymentProviderDefault BillingPaymentMethod @default(MANUAL_TRANSFER)
+  updatedAt              DateTime @updatedAt
 }
