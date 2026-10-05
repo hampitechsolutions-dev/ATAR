@@ -265,7 +265,7 @@ SETTLEMENT → vence dueAt → OVERDUE → PAGO
 |---|---|---|
 | **1** | Modelo de datos (enums + tablas Billing*) + migración (`db push`) + defaults (`BillingSettings` + regla 1% semilla vía `ensureDefaults`). | ✅ Hecha |
 | **2** | Motor de cálculo (`billing.util.computeCommission`, fuente única) + generación idempotente de `BillingCommission` al cerrar la operación (`CONFIRM_RECEIPT → COMPLETED`) + 8 tests de cálculo (PASS). | ✅ Hecha |
-| **3** | Liquidaciones: job mensual idempotente + generación manual (admin) + preview. | — |
+| **3** | Liquidaciones: generación idempotente por período (`BillingSettlementsService`) + preview + emisión, endpoints admin. Agrupa comisiones `CONFIRMED` por empresa+moneda en `BillingSettlement` (nº de documento `ATAR-YYYY-MM-NNNNNN`, vencimiento = fin de mes + `dueDays`), marca comisiones `INVOICED`, con auditoría. Re-ejecutar no duplica. *(Cron automático = pendiente: hoy trigger manual admin; `@nestjs/schedule` en fase futura.)* | ✅ Hecha |
 | **4** | Dashboard ATAR (admin): resumen, por período, por empresa, reglas, cierre, ajustes, reportes/export. | — (UI) |
 | **5** | Dashboard empresa: mis liquidaciones, detalle trazable, documento descargable. | — (UI) |
 | **6** | Pagos: `PaymentProvider` + manual (registro + validación admin) + external_reference. | — |
