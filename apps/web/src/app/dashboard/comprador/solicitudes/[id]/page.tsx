@@ -64,7 +64,7 @@ function QuoteCell({
         ) : null}
       </div>
       {subtotal != null ? (
-        <p className="tabular-nums text-[10px] text-slate-400">{formatCurrency(subtotal, currency)}</p>
+        <p className="tabular-nums text-[10px] text-slate-600">{formatCurrency(subtotal, currency)}</p>
       ) : null}
       {line.note ? <p className="mt-1 text-[10px] leading-4 text-slate-500">{line.note}</p> : null}
     </div>
@@ -95,10 +95,10 @@ function QuoteComparison({
 }) {
   const multiProduct = items.length > 1;
   return (
-    <div className="mt-4 overflow-hidden rounded-[18px] border border-slate-300 bg-white">
+    <div className="mt-4 overflow-hidden rounded-[12px] border border-slate-300 bg-white">
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <p className="text-[13px] font-semibold text-slate-900">Comparar lado a lado</p>
-        <p className="hidden text-[11px] text-slate-400 sm:block">Deslizá para ver todos los proveedores →</p>
+        <p className="hidden text-[11px] text-slate-600 sm:block">Deslizá para ver todos los proveedores →</p>
       </div>
       <div className="overflow-x-auto">
         <table
@@ -107,7 +107,7 @@ function QuoteComparison({
         >
           <thead>
             <tr className="border-b border-slate-200">
-              <th className="sticky left-0 z-10 w-[150px] bg-white px-4 py-3 align-bottom text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+              <th className="sticky left-0 z-10 w-[150px] bg-white px-4 py-3 align-bottom text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-600">
                 Proveedor
               </th>
               {quotes.map((quote) => {
@@ -128,7 +128,7 @@ function QuoteComparison({
                       {quote.supplierCompany?.name ?? 'Proveedor'}
                     </p>
                     {quote.supplierCompany?.supplierProfile?.supplierRole ? (
-                      <p className="mt-0.5 text-[10px] font-medium text-slate-400">
+                      <p className="mt-0.5 text-[10px] font-medium text-slate-600">
                         {SUPPLIER_ROLE_LABELS[quote.supplierCompany.supplierProfile.supplierRole]}
                       </p>
                     ) : null}
@@ -139,7 +139,7 @@ function QuoteComparison({
                     ) : null}
                     <div className="mt-1 flex flex-wrap gap-1">
                       {bestPriceId === quote.id ? (
-                        <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[9px] font-semibold text-[#4f46ff]">Mejor precio</span>
+                        <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[9px] font-semibold text-[#1847ff]">Mejor precio</span>
                       ) : null}
                       {fastestId === quote.id ? (
                         <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[9px] font-semibold text-teal-700">Más rápida</span>
@@ -160,7 +160,7 @@ function QuoteComparison({
                     <th className="sticky left-0 z-10 bg-inherit px-4 py-2.5 text-left align-top">
                       <p className="text-[12px] font-semibold text-slate-800">{item.productName}</p>
                       {item.quantity ? (
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-[10px] text-slate-600">
                           {item.quantity} {item.unit ?? 'u.'}
                         </p>
                       ) : null}
@@ -186,7 +186,7 @@ function QuoteComparison({
                 const awarded = quote.id === awardedQuoteId;
                 return (
                   <td key={quote.id} className={`px-3 py-3 align-top ${awarded ? 'bg-emerald-50/60' : ''}`}>
-                    <span className={`text-[15px] font-bold tabular-nums ${best ? 'text-[#4f46ff]' : 'text-slate-950'}`}>
+                    <span className={`text-[15px] font-bold tabular-nums ${best ? 'text-[#1847ff]' : 'text-slate-950'}`}>
                       {formatCurrency(quote.amount, quote.currency)}
                     </span>
                   </td>
@@ -297,7 +297,7 @@ function getQuoteStatusStyles(status: QuoteStatus) {
 
 function getRequestStatusStyles(status: RequestRecord['status']) {
   if (status === 'ORDER_ISSUED') {
-    return 'bg-indigo-100 text-indigo-700';
+    return 'bg-[#dbe6ff] text-[#1238d6]';
   }
 
   if (status === 'NEGOTIATING') {
@@ -320,7 +320,7 @@ function getRequestStatusStyles(status: RequestRecord['status']) {
     return 'bg-emerald-100 text-emerald-700';
   }
 
-  return 'bg-indigo-100 text-indigo-700';
+  return 'bg-[#dbe6ff] text-[#1238d6]';
 }
 
 function getRequestStatusLabel(status: RequestRecord['status']) {
@@ -329,7 +329,7 @@ function getRequestStatusLabel(status: RequestRecord['status']) {
   }
 
   if (status === 'NEGOTIATING') {
-    return 'En negociacion';
+    return 'En negociación';
   }
 
   if (status === 'ORDER_ISSUED') {
@@ -338,6 +338,22 @@ function getRequestStatusLabel(status: RequestRecord['status']) {
 
   if (status === 'COMPLETED') {
     return 'Completada';
+  }
+
+  if (status === 'DRAFT') {
+    return 'Borrador';
+  }
+
+  if (status === 'PUBLISHED') {
+    return 'Publicada';
+  }
+
+  if (status === 'REVIEWING') {
+    return 'En evaluación';
+  }
+
+  if (status === 'CANCELLED') {
+    return 'Cancelada';
   }
 
   return status;
@@ -365,7 +381,7 @@ function getFulfillmentLabel(status: OrderFulfillmentStatus) {
 
 function getFulfillmentTone(status: OrderFulfillmentStatus) {
   if (status === 'CONFIRMED') {
-    return 'bg-indigo-100 text-indigo-800';
+    return 'bg-[#dbe6ff] text-indigo-800';
   }
 
   if (status === 'IN_PRODUCTION') {
@@ -380,7 +396,7 @@ function getFulfillmentTone(status: OrderFulfillmentStatus) {
     return 'bg-emerald-100 text-emerald-800';
   }
 
-  return 'bg-violet-100 text-violet-800';
+  return 'bg-[#dbe6ff] text-violet-800';
 }
 
 const FULFILLMENT_STEPS: OrderFulfillmentStatus[] = [
@@ -1025,7 +1041,7 @@ export default function BuyerRequestDetailPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#eef1f7] text-slate-950">
-        <div className="rounded-[2rem] border border-slate-300 bg-white px-6 py-5 shadow-sm">
+        <div className="rounded-[12px] border border-slate-300 bg-white px-6 py-5 shadow-sm">
           <LoadingState label="Cargando detalle..." className="gap-3" />
         </div>
       </main>
@@ -1045,17 +1061,17 @@ export default function BuyerRequestDetailPage() {
           Volver a solicitudes
         </Link>
 
-        {error ? <div className="rounded-[18px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">{error}</div> : null}
-        {message ? <div className="rounded-[18px] border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">{message}</div> : null}
+        {error ? <div className="rounded-[12px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">{error}</div> : null}
+        {message ? <div className="rounded-[12px] border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">{message}</div> : null}
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_360px] 2xl:grid-cols-[minmax(0,1.7fr)_380px]">
-          <section className="rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)] sm:p-6">
+          <section className="rounded-[12px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)] sm:p-6">
             <div className="flex flex-col gap-4 border-b border-slate-300 pb-6 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#4f46ff]">Solicitud publicada</p>
-                <h1 className="mt-3 text-[26px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[32px] lg:text-[40px] lg:tracking-[-0.05em]">{request?.title ?? 'Solicitud no encontrada'}</h1>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1847ff]">Detalle de solicitud</p>
+                <h1 className="mt-1 text-[24px] font-bold tracking-[-0.03em] text-slate-950 sm:text-[28px] lg:text-[30px]">{request?.title ?? 'Solicitud no encontrada'}</h1>
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-slate-500">
-                  <span>Solicitud: <span className="font-semibold text-[#6474a3]">{formatRequestCode(request?.id ?? requestId)}</span></span>
+                  <span>Solicitud: <span className="font-semibold text-[#334155]">{formatRequestCode(request?.id ?? requestId)}</span></span>
                   <span className="h-1 w-1 rounded-full bg-slate-300" />
                   <span>Creada el {requestCreatedLabel}</span>
                   {request ? (
@@ -1071,18 +1087,18 @@ export default function BuyerRequestDetailPage() {
               <div className="relative shrink-0" ref={actionsRef}>
                 <button
                   aria-expanded={actionsOpen}
-                  className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                   onClick={() => setActionsOpen((current) => !current)}
                   type="button"
                 >
                   Acciones
-                  <svg aria-hidden="true" className={`h-4 w-4 text-slate-400 transition ${actionsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" className={`h-4 w-4 text-slate-600 transition ${actionsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24">
                     <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                   </svg>
                 </button>
 
                 {actionsOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[16px] border border-slate-300 bg-white p-1.5 shadow-[0_20px_50px_rgba(15,23,42,0.14)]">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[12px] border border-slate-300 bg-white p-1.5 shadow-[0_20px_50px_rgba(15,23,42,0.14)]">
                     <button
                       className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={!canEditRequest}
@@ -1092,7 +1108,7 @@ export default function BuyerRequestDetailPage() {
                       }}
                       type="button"
                     >
-                      <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" className="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24">
                         <path d="M12 20h9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         <path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                       </svg>
@@ -1106,7 +1122,7 @@ export default function BuyerRequestDetailPage() {
                       }}
                       type="button"
                     >
-                      <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" className="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24">
                         <path d="M12 3v12M7 10l5 5 5-5M5 21h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                       </svg>
                       Descargar especificaciones
@@ -1138,7 +1154,7 @@ export default function BuyerRequestDetailPage() {
                       {deleting ? 'Eliminando...' : 'Eliminar solicitud'}
                     </button>
                     {!canEditRequest ? (
-                      <p className="px-3 pb-1.5 pt-1 text-[11px] leading-4 text-slate-400">
+                      <p className="px-3 pb-1.5 pt-1 text-[11px] leading-4 text-slate-600">
                         Editar y eliminar están disponibles solo mientras la solicitud no tenga cotizaciones.
                       </p>
                     ) : null}
@@ -1150,7 +1166,7 @@ export default function BuyerRequestDetailPage() {
             <div className="space-y-6 pt-6">
               <section>
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#1847ff]">
                     <DetailIcon type="file" />
                   </span>
                   <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">
@@ -1162,10 +1178,10 @@ export default function BuyerRequestDetailPage() {
                     {(request?.items ?? []).map((item, index) => {
                       const specRows = parseRequestDescription(item.specifications ?? '');
                       return (
-                        <article key={item.id} className="rounded-[16px] border border-slate-300 bg-white p-4">
+                        <article key={item.id} className="rounded-[12px] border border-slate-300 bg-white p-4">
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4f46ff]">Producto {index + 1}</p>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1847ff]">Producto {index + 1}</p>
                               <h3 className="mt-0.5 text-[16px] font-semibold text-slate-950">{item.productName}</h3>
                               {item.category ? <p className="text-[12px] text-slate-500">{item.category}</p> : null}
                             </div>
@@ -1177,13 +1193,13 @@ export default function BuyerRequestDetailPage() {
                             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                               {specRows.map((row, rowIndex) => (
                                 <div key={`${row.label}-${rowIndex}`} className="rounded-[12px] bg-[#eef1f7] px-3 py-2">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">{row.label}</p>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-600">{row.label}</p>
                                   <p className="mt-0.5 text-[13px] font-medium leading-5 text-slate-900">{row.value || '-'}</p>
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <p className="mt-3 text-[12px] text-slate-400">Sin especificaciones adicionales.</p>
+                            <p className="mt-3 text-[12px] text-slate-600">Sin especificaciones adicionales.</p>
                           )}
                         </article>
                       );
@@ -1192,10 +1208,10 @@ export default function BuyerRequestDetailPage() {
                 ) : (
                   <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
                     {detailItems.map((item) => (
-                      <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-300 bg-white px-4 py-4">
-                        <div className="flex items-center gap-2 text-slate-400">
+                      <article key={`${item.label}-${item.value}`} className="rounded-[12px] border border-slate-300 bg-white px-4 py-4">
+                        <div className="flex items-center gap-2 text-slate-600">
                           <DetailIcon type={getDetailIcon(item.label)} />
-                          <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
+                          <p className="text-[11px] font-semibold text-slate-600">{item.label}</p>
                         </div>
                         <p className="mt-3 text-[15px] font-semibold leading-6 text-slate-950">{item.value || '-'}</p>
                       </article>
@@ -1207,7 +1223,7 @@ export default function BuyerRequestDetailPage() {
               {/* ==================== COTIZACIONES RECIBIDAS ==================== */}
               <section className="border-t border-slate-300 pt-6">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#1847ff]">
                     <DetailIcon type="scale" />
                   </span>
                   <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">
@@ -1219,7 +1235,7 @@ export default function BuyerRequestDetailPage() {
                 </div>
 
                 {awardedQuote ? (
-                  <div className="mt-4 flex items-start gap-3 rounded-[16px] border border-emerald-200 bg-emerald-100 px-4 py-3">
+                  <div className="mt-4 flex items-start gap-3 rounded-[12px] border border-emerald-200 bg-emerald-100 px-4 py-3">
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
                       <svg aria-hidden="true" className="h-3 w-3" fill="none" viewBox="0 0 24 24">
                         <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
@@ -1240,8 +1256,8 @@ export default function BuyerRequestDetailPage() {
 
                 {/* Ayuda de decisión: los ejes en lenguaje simple */}
                 {decisionHints.length > 0 ? (
-                  <div className="mt-4 rounded-[16px] border border-indigo-100 bg-indigo-50/60 px-4 py-3">
-                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-indigo-600">
+                  <div className="mt-4 rounded-[12px] border border-[#dbe6ff] bg-[#eef2ff]/60 px-4 py-3">
+                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#1847ff]">
                       <DetailIcon type="scale" />
                       Para ayudarte a decidir
                     </p>
@@ -1284,7 +1300,7 @@ export default function BuyerRequestDetailPage() {
                       return (
                         <article
                           key={quote.id}
-                          className={`rounded-[18px] border p-4 transition ${
+                          className={`rounded-[12px] border p-4 transition ${
                             isAwarded
                               ? 'border-emerald-300 bg-emerald-50/60'
                               : isRejected
@@ -1295,8 +1311,8 @@ export default function BuyerRequestDetailPage() {
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="flex min-w-0 gap-3">
                               <span
-                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-sm font-bold ${
-                                  isAwarded ? 'bg-emerald-100 text-emerald-700' : 'bg-[#eef2ff] text-[#4f46ff]'
+                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] text-sm font-bold ${
+                                  isAwarded ? 'bg-emerald-100 text-emerald-700' : 'bg-[#eef2ff] text-[#1847ff]'
                                 }`}
                               >
                                 {supplierName.slice(0, 2).toUpperCase()}
@@ -1328,7 +1344,7 @@ export default function BuyerRequestDetailPage() {
                                     </span>
                                   )}
                                   {!isRejected && bestPrice?.id === quote.id ? (
-                                    <span className="rounded-full bg-[#eef2ff] px-2.5 py-1 text-[10px] font-semibold text-[#4f46ff]">
+                                    <span className="rounded-full bg-[#eef2ff] px-2.5 py-1 text-[10px] font-semibold text-[#1847ff]">
                                       Mejor precio
                                     </span>
                                   ) : null}
@@ -1345,21 +1361,21 @@ export default function BuyerRequestDetailPage() {
                               <p className="text-[20px] font-semibold tracking-[-0.02em] text-slate-950">
                                 {formatCurrency(quote.amount, quote.currency)}
                               </p>
-                              <p className="mt-0.5 text-[11px] text-slate-400">
+                              <p className="mt-0.5 text-[11px] text-slate-600">
                                 Enviada el {formatDate(quote.createdAt)}
                               </p>
                             </div>
                           </div>
 
                           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="rounded-[14px] bg-[#eef1f7] px-3 py-2.5">
-                              <p className="text-[11px] font-semibold text-slate-400">Plazo de entrega</p>
+                            <div className="rounded-[10px] bg-[#eef1f7] px-3 py-2.5">
+                              <p className="text-[11px] font-semibold text-slate-600">Plazo de entrega</p>
                               <p className="mt-1 text-[13px] font-semibold text-slate-900">
                                 {typeof quote.leadTimeDays === 'number' ? `${quote.leadTimeDays} días` : 'A convenir'}
                               </p>
                             </div>
-                            <div className="rounded-[14px] bg-[#eef1f7] px-3 py-2.5">
-                              <p className="text-[11px] font-semibold text-slate-400">Condiciones de pago</p>
+                            <div className="rounded-[10px] bg-[#eef1f7] px-3 py-2.5">
+                              <p className="text-[11px] font-semibold text-slate-600">Condiciones de pago</p>
                               <p className="mt-1 text-[13px] font-semibold text-slate-900">
                                 {quote.paymentTerms || 'A convenir'}
                               </p>
@@ -1367,8 +1383,8 @@ export default function BuyerRequestDetailPage() {
                           </div>
 
                           {quote.items && quote.items.length > 0 && (request?.items?.length ?? 0) > 1 ? (
-                            <div className="mt-3 rounded-[14px] border border-slate-200 bg-slate-50/70 px-3 py-2.5">
-                              <p className="text-[11px] font-semibold text-slate-400">Precio por producto</p>
+                            <div className="mt-3 rounded-[10px] border border-slate-200 bg-slate-50/70 px-3 py-2.5">
+                              <p className="text-[11px] font-semibold text-slate-600">Precio por producto</p>
                               <ul className="mt-1.5 space-y-1">
                                 {quote.items.map((line) => {
                                   const reqItem = request?.items?.find((item) => item.id === line.requestItemId);
@@ -1416,7 +1432,7 @@ export default function BuyerRequestDetailPage() {
                           ) : null}
 
                           {quote.technicalComment ? (
-                            <p className="mt-3 whitespace-pre-wrap rounded-[14px] bg-[#eef1f7] px-3 py-2.5 text-[12px] leading-6 text-slate-600">
+                            <p className="mt-3 whitespace-pre-wrap rounded-[10px] bg-[#eef1f7] px-3 py-2.5 text-[12px] leading-6 text-slate-600">
                               {quote.technicalComment}
                             </p>
                           ) : null}
@@ -1452,7 +1468,7 @@ export default function BuyerRequestDetailPage() {
                       );
                     })
                   ) : (
-                    <div className="rounded-[18px] border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-5 text-sm text-slate-500">
+                    <div className="rounded-[12px] border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-5 text-sm text-slate-500">
                       Todavía no recibiste cotizaciones para esta solicitud.
                     </div>
                   )}
@@ -1462,14 +1478,14 @@ export default function BuyerRequestDetailPage() {
               {awardedQuote ? (
                 <section className="border-t border-slate-300 pt-6">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#1847ff]">
                       <DetailIcon type="file" />
                     </span>
                     <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Orden y cumplimiento</h2>
                   </div>
 
                   {request?.status === 'AWARDED' || request?.status === 'NEGOTIATING' ? (
-                    <div className="mt-4 rounded-[18px] border border-slate-300 bg-white p-4">
+                    <div className="mt-4 rounded-[12px] border border-slate-300 bg-white p-4">
                       <p className="text-[13px] leading-6 text-slate-600">
                         Ya adjudicaste la compra a{' '}
                         <span className="font-semibold text-slate-900">{awardedQuote.supplierCompany?.name ?? 'el proveedor'}</span>. Emití la orden de compra para que el proveedor pueda empezar a preparar el pedido y puedas seguir su cumplimiento.
@@ -1499,10 +1515,10 @@ export default function BuyerRequestDetailPage() {
 
                   {request?.status === 'ORDER_ISSUED' && request?.order ? (
                     <div className="mt-4 space-y-4">
-                      <div className="rounded-[18px] border border-slate-300 bg-white p-4">
+                      <div className="rounded-[12px] border border-slate-300 bg-white p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Orden {request.order.orderNumber}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">Orden {request.order.orderNumber}</p>
                             <p className="mt-1 text-[13px] text-slate-600">Seguimiento del cumplimiento a cargo del proveedor.</p>
                           </div>
                           <span className={`inline-flex rounded-full px-3 py-1 text-[12px] font-semibold ${getFulfillmentTone(request.order.fulfillmentStatus)}`}>
@@ -1514,8 +1530,8 @@ export default function BuyerRequestDetailPage() {
                             const done = index <= fulfillmentIndex;
                             return (
                               <div key={step} className="flex flex-1 flex-col items-center gap-1.5">
-                                <span className={`h-1.5 w-full rounded-full ${done ? 'bg-[#4f46ff]' : 'bg-slate-200'}`} />
-                                <span className={`text-center text-[10px] font-semibold leading-tight ${done ? 'text-[#4f46ff]' : 'text-slate-400'}`}>
+                                <span className={`h-1.5 w-full rounded-full ${done ? 'bg-[#1847ff]' : 'bg-slate-200'}`} />
+                                <span className={`text-center text-[10px] font-semibold leading-tight ${done ? 'text-[#1847ff]' : 'text-slate-600'}`}>
                                   {getFulfillmentLabel(step)}
                                 </span>
                               </div>
@@ -1525,7 +1541,7 @@ export default function BuyerRequestDetailPage() {
                       </div>
 
                       {request.order.fulfillmentStatus === 'DELIVERED' ? (
-                        <div className="rounded-[18px] border border-emerald-200 bg-emerald-100 p-4">
+                        <div className="rounded-[12px] border border-emerald-200 bg-emerald-100 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <p className="text-[13px] leading-6 text-emerald-800">
                               El proveedor marcó el pedido como <span className="font-semibold">entregado</span>. Confirmá la recepción para cerrar la operación.
@@ -1542,14 +1558,14 @@ export default function BuyerRequestDetailPage() {
                         </div>
                       ) : null}
 
-                      <form className="rounded-[18px] border border-slate-300 bg-white p-4" onSubmit={handleSaveOrder}>
+                      <form className="rounded-[12px] border border-slate-300 bg-white p-4" onSubmit={handleSaveOrder}>
                         <p className="text-[14px] font-semibold text-slate-900">Datos de la orden</p>
                         <p className="mt-1 text-[12px] text-slate-500">Información operativa para tu registro y el del proveedor.</p>
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <label className="block">
                             <span className="text-[11px] font-semibold text-slate-500">Número de orden</span>
                             <input
-                              className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                              className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#1847ff]"
                               onChange={(event) => setOrderForm((form) => ({ ...form, orderNumber: event.target.value }))}
                               value={orderForm.orderNumber}
                             />
@@ -1557,7 +1573,7 @@ export default function BuyerRequestDetailPage() {
                           <label className="block">
                             <span className="text-[11px] font-semibold text-slate-500">Fecha prometida</span>
                             <input
-                              className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                              className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#1847ff]"
                               onChange={(event) => setOrderForm((form) => ({ ...form, promisedDate: event.target.value }))}
                               type="date"
                               value={orderForm.promisedDate}
@@ -1567,7 +1583,7 @@ export default function BuyerRequestDetailPage() {
                         <label className="mt-3 block">
                           <span className="text-[11px] font-semibold text-slate-500">Notas</span>
                           <textarea
-                            className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#4f46ff]"
+                            className="mt-1 w-full rounded-[12px] border border-slate-300 px-3 py-2 text-[13px] text-slate-900 outline-none transition focus:border-[#1847ff]"
                             onChange={(event) => setOrderForm((form) => ({ ...form, notes: event.target.value }))}
                             rows={2}
                             value={orderForm.notes}
@@ -1587,7 +1603,7 @@ export default function BuyerRequestDetailPage() {
                   ) : null}
 
                   {request?.status === 'COMPLETED' ? (
-                    <div className="mt-4 rounded-[18px] border border-emerald-200 bg-emerald-100 p-4">
+                    <div className="mt-4 rounded-[12px] border border-emerald-200 bg-emerald-100 p-4">
                       <div className="flex items-start gap-3">
                         <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
                           <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
@@ -1608,7 +1624,7 @@ export default function BuyerRequestDetailPage() {
 
               <section className="border-t border-slate-300 pt-6">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#1847ff]">
                     <DetailIcon type="pin" />
                   </span>
                   <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Información de entrega y contacto</h2>
@@ -1616,16 +1632,16 @@ export default function BuyerRequestDetailPage() {
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {deliveryItems.length ? (
                     deliveryItems.map((item) => (
-                      <article key={`${item.label}-${item.value}`} className="rounded-[16px] border border-slate-300 bg-white px-4 py-4">
-                        <div className="flex items-center gap-2 text-slate-400">
+                      <article key={`${item.label}-${item.value}`} className="rounded-[12px] border border-slate-300 bg-white px-4 py-4">
+                        <div className="flex items-center gap-2 text-slate-600">
                           <DetailIcon type={getDetailIcon(item.label)} />
-                          <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
+                          <p className="text-[11px] font-semibold text-slate-600">{item.label}</p>
                         </div>
                         <p className="mt-3 text-[15px] font-semibold leading-6 text-slate-950">{item.value || '-'}</p>
                       </article>
                     ))
                   ) : (
-                    <article className="rounded-[16px] border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-5 text-sm text-slate-500 md:col-span-2 xl:col-span-3">
+                    <article className="rounded-[12px] border border-dashed border-slate-300 bg-[#eef1f7] px-4 py-5 text-sm text-slate-500 md:col-span-2 xl:col-span-3">
                       Aún no hay información de entrega cargada en esta solicitud.
                     </article>
                   )}
@@ -1634,15 +1650,15 @@ export default function BuyerRequestDetailPage() {
 
               <section className="border-t border-slate-300 pt-6">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#4f46ff]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#1847ff]">
                     <DetailIcon type="file" />
                   </span>
                   <h2 className="min-w-0 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">Especificaciones</h2>
                 </div>
-                <div className="mt-4 rounded-[18px] border border-slate-300 bg-white p-4">
+                <div className="mt-4 rounded-[12px] border border-slate-300 bg-white p-4">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-rose-100 text-[11px] font-bold text-rose-500">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-rose-100 text-[11px] font-bold text-rose-500">
                         PDF
                       </span>
                       <div className="min-w-0">
@@ -1665,9 +1681,9 @@ export default function BuyerRequestDetailPage() {
                 </div>
               </section>
 
-              <div className="rounded-[16px] bg-[#eceafb] px-4 py-4">
+              <div className="rounded-[12px] bg-[#dbe6ff] px-4 py-4">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white text-[#4f46ff] shadow-sm">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white text-[#1847ff] shadow-sm">
                     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                       <path d="M12 22s8-4 8-10V6l-8-3-8 3v6c0 6 8 10 8 10z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                       <path d="M9 12l2 2 4-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -1675,7 +1691,7 @@ export default function BuyerRequestDetailPage() {
                   </span>
                   <div>
                     <p className="text-[13px] font-semibold text-[#243252]">Tu información está protegida</p>
-                    <p className="mt-1 text-[12px] leading-5 text-[#6474a3]">Solo los proveedores seleccionados pueden ver los detalles completos de esta solicitud.</p>
+                    <p className="mt-1 text-[12px] leading-5 text-[#334155]">Solo los proveedores seleccionados pueden ver los detalles completos de esta solicitud.</p>
                   </div>
                 </div>
               </div>
@@ -1683,7 +1699,7 @@ export default function BuyerRequestDetailPage() {
           </section>
 
           <aside className="space-y-5">
-            <section className="rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+            <section className="rounded-[12px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-slate-950">Proveedores seleccionados</h2>
                 {supplierCards.length ? (
@@ -1696,9 +1712,9 @@ export default function BuyerRequestDetailPage() {
               <div className="mt-3 space-y-2">
                 {supplierCards.length ? (
                   supplierCards.map((provider) => (
-                    <article key={provider.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-slate-300 bg-white px-3 py-2.5">
+                    <article key={provider.id} className="flex items-center justify-between gap-3 rounded-[10px] border border-slate-300 bg-white px-3 py-2.5">
                       <div className="flex min-w-0 items-center gap-2.5">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#eef2ff] text-sm font-bold text-[#4f46ff]">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#eef2ff] text-sm font-bold text-[#1847ff]">
                           {provider.name.slice(0, 1).toUpperCase()}
                         </span>
                         <div className="min-w-0">
@@ -1714,13 +1730,13 @@ export default function BuyerRequestDetailPage() {
                     </article>
                   ))
                 ) : (
-                  <div className="rounded-[14px] border border-dashed border-slate-300 bg-[#eef1f7] px-3 py-4 text-[13px] text-slate-500">
+                  <div className="rounded-[10px] border border-dashed border-slate-300 bg-[#eef1f7] px-3 py-4 text-[13px] text-slate-500">
                     Todavía no hay proveedores vinculados a esta solicitud.
                   </div>
                 )}
 
                 <button
-                  className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#eef1f7] px-4 py-2.5 text-[12px] font-semibold text-[#4f46ff] transition hover:bg-[#f5f7ff]"
+                  className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#eef1f7] px-4 py-2.5 text-[12px] font-semibold text-[#1847ff] transition hover:bg-[#f4f6fb]"
                   onClick={() => router.push(`/dashboard/comprador/solicitudes/nueva?category=${encodeURIComponent(request?.category ?? '')}&step=4`)}
                   type="button"
                 >
@@ -1730,9 +1746,9 @@ export default function BuyerRequestDetailPage() {
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+            <section className="rounded-[12px] border border-slate-300 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-slate-950">Timeline</h2>
+                <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-slate-950">Historial</h2>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
                   {requestTimeline.length} evento{requestTimeline.length === 1 ? '' : 's'}
                 </span>
@@ -1743,7 +1759,7 @@ export default function BuyerRequestDetailPage() {
                   <div className="relative space-y-2.5 pl-5 before:absolute before:left-[7px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-slate-200">
                     {requestTimeline.map((event) => (
                       <div key={event.id} className="relative">
-                        <span className="absolute -left-5 top-2.5 h-[8px] w-[8px] rounded-full bg-[#4f46ff] ring-4 ring-white" />
+                        <span className="absolute -left-5 top-2.5 h-[8px] w-[8px] rounded-full bg-[#1847ff] ring-4 ring-white" />
                         <article className="rounded-[12px] border border-slate-300 bg-white px-3 py-2.5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -1751,7 +1767,7 @@ export default function BuyerRequestDetailPage() {
                               <p className="mt-0.5 text-[12px] leading-5 text-slate-500">{event.detail ?? 'La solicitud registró un cambio operativo.'}</p>
                               <p className="mt-1.5 text-[11px] font-semibold text-slate-500">{event.actorCompanyName ?? request?.buyerCompany?.name ?? 'Comprador'}</p>
                             </div>
-                            <span className="shrink-0 text-right text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400">
+                            <span className="shrink-0 text-right text-[10px] font-medium uppercase tracking-[0.1em] text-slate-600">
                               {formatDateTime(event.createdAt)}
                             </span>
                           </div>
@@ -1769,9 +1785,9 @@ export default function BuyerRequestDetailPage() {
           </aside>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-[20px] border border-slate-300 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-[12px] border border-slate-300 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between">
           <Link
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             href="/dashboard/comprador/solicitudes"
           >
             <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -1781,7 +1797,7 @@ export default function BuyerRequestDetailPage() {
           </Link>
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-slate-300 bg-white px-4 text-sm font-semibold text-[#4f46ff] transition hover:bg-[#f8f9ff]"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] border border-slate-300 bg-white px-4 text-sm font-semibold text-[#1847ff] transition hover:bg-[#f4f6fb]"
               onClick={() => setMessage('Borrador guardado localmente.')}
               type="button"
             >
@@ -1792,7 +1808,7 @@ export default function BuyerRequestDetailPage() {
             </button>
             {request && (request.status === 'DRAFT' || request.status === 'PUBLISHED') && (request.quotes?.length ?? 0) === 0 ? (
               <button
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-[#1847ff] px-5 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(24,71,255,0.24)] transition hover:bg-[#0f3ff5]"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-[#1847ff] px-5 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(24,71,255,0.24)] transition hover:bg-[#0f3ff5]"
                 onClick={() => router.push(`/dashboard/comprador/solicitudes/nueva?edit=${request.id}`)}
                 type="button"
               >

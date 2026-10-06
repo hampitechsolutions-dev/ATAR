@@ -17,6 +17,9 @@ function introKey(userId?: string) {
   return userId ? `${INTRO_KEY}:${userId}` : INTRO_KEY;
 }
 
+/** Evento para abrir el asistente desde otros botones ("Iniciar chat", "Hablar con el Asistente"). */
+export const ASSISTANT_OPEN_EVENT = 'atar:assistant:open';
+
 function BotAvatar({ className = 'h-full w-full' }: { className?: string }) {
   return (
     <Image
@@ -82,6 +85,12 @@ export default function AssistantFab() {
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const openPanel = () => setOpen(true);
+    window.addEventListener(ASSISTANT_OPEN_EVENT, openPanel);
+    return () => window.removeEventListener(ASSISTANT_OPEN_EVENT, openPanel);
+  }, []);
 
   useEffect(() => {
     if (!open) {

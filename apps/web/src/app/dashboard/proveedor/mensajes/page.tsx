@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import CompanyLogo from '@/components/dashboard/company-logo';
 import ConversationPanel from '@/components/chat/conversation-panel';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
@@ -39,12 +40,26 @@ function getInitials(value: string | null | undefined) {
 }
 
 export default function SupplierMessagesPage() {
+  return (
+    <Suspense fallback={null}>
+      <SupplierMessagesWithParams />
+    </Suspense>
+  );
+}
+
+function SupplierMessagesWithParams() {
+  // El Inicio enlaza con ?tab=sin-leer para abrir solo las conversaciones pendientes.
+  const unread = useSearchParams()?.get('tab') === 'sin-leer';
+  return <SupplierMessagesContent key={String(unread)} initialTab={unread ? 'unread' : 'all'} />;
+}
+
+function SupplierMessagesContent({ initialTab }: { initialTab: 'all' | 'unread' }) {
   const { session, loading: dashboardLoading, error: dashboardError } = useSupplierDashboardData();
   const [conversations, setConversations] = useState<ConversationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'unread'>(initialTab);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Chat estilo Instagram en mobile: lista -> tocar -> conversación a pantalla completa.
   const [mobileChatOpen, setMobileChatOpen] = useState(false);

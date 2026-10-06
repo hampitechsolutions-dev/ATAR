@@ -70,7 +70,7 @@ function getStatusTone(status: QuoteStatus) {
   }
 
   if (status === 'SUBMITTED') {
-    return { label: 'Enviada', text: 'text-[#4f46ff]', dot: 'bg-[#4f46ff]', helper: 'En evaluación' };
+    return { label: 'Enviada', text: 'text-[#1847ff]', dot: 'bg-[#1847ff]', helper: 'En evaluación' };
   }
 
   return { label: 'Borrador', text: 'text-slate-500', dot: 'bg-slate-400', helper: 'Sin enviar' };
@@ -260,7 +260,6 @@ export default function BuyerQuoteDetailPage() {
   const parsed = useMemo(() => parseDescription(request?.description ?? ''), [request?.description]);
   const statusTone = getStatusTone(quote?.status ?? 'DRAFT');
   const productName = request?.productName || request?.title || 'Cotización';
-  const [productHead, ...productRest] = productName.split(' - ');
   const dueInDays = daysUntil(request?.dueDate);
   const canAward = Boolean(
     quote && request && quote.status === 'SUBMITTED' && !request.awardedQuoteId && request.status !== 'CANCELLED',
@@ -322,7 +321,7 @@ export default function BuyerQuoteDetailPage() {
       <div className="min-w-0 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <Link
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#4f46ff] transition hover:text-[#3f39d6]"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#1847ff] transition hover:text-[#0f3ff5]"
             href="/dashboard/comprador/cotizaciones"
           >
             <Icon name="arrow-left" />
@@ -331,72 +330,45 @@ export default function BuyerQuoteDetailPage() {
         </div>
 
         {error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">{error}</div>
+          <div className="rounded-[12px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">{error}</div>
         ) : null}
 
         {message ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">
+          <div className="rounded-[12px] border border-emerald-200 bg-emerald-100 px-5 py-4 text-sm text-emerald-700">
             {message}
           </div>
         ) : null}
 
         {loading ? (
-          <div className="rounded-3xl border border-slate-300 bg-white px-6 py-16">
+          <div className="rounded-[12px] border border-slate-300 bg-white px-6 py-16">
             <LoadingState label="Cargando detalle de cotización..." />
           </div>
         ) : !quote ? (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-sm text-slate-500">
+          <div className="rounded-[12px] border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-sm text-slate-500">
             No encontramos esta cotización o ya no está disponible.
           </div>
         ) : (
           <>
-            {/* ---------- Hero ---------- */}
-            <section className="relative isolate overflow-hidden rounded-3xl border border-slate-300 bg-[linear-gradient(110deg,#eef0ff_0%,#f4f5ff_42%,#fafaff_60%,#ffffff_100%)]">
-              <div className="absolute inset-y-0 right-0 hidden w-[38%] lg:block">
-                <Image
-                  alt=""
-                  className="object-cover"
-                  fill
-                  sizes="40vw"
-                  src={getCategoryImage(request?.category)}
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,#eef0ff_0%,rgba(238,240,255,0.7)_18%,rgba(238,240,255,0)_60%)]" />
-              </div>
-
-              <div className="relative z-10 max-w-2xl px-7 py-8">
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#4f46ff]">
-                  Detalle de cotización
+            {/* ---------- Encabezado ---------- */}
+            <section className="flex flex-wrap items-center gap-4 rounded-[12px] border border-slate-300 bg-white p-4 lg:p-5">
+              <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
+                <Image alt="" className="object-cover" fill sizes="64px" src={getCategoryImage(request?.category)} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1847ff]">Detalle de cotización</p>
+                <h1 className="mt-1 text-[24px] font-bold leading-tight tracking-[-0.03em] text-slate-950 lg:text-[30px]">{productName}</h1>
+                <p className="mt-1 text-[13px] text-slate-600">
+                  {request ? formatRequestCode(request.id) : '—'} · Creada el {formatDateTime(request?.createdAt)}
                 </p>
-                <h1 className="mt-3 text-[34px] font-bold leading-tight tracking-[-0.03em] text-slate-950">
-                  {productHead}
-                  {productRest.length ? (
-                    <>
-                      {' - '}
-                      <span className="text-[#4f46ff]">{productRest.join(' - ')}</span>
-                    </>
-                  ) : null}
-                </h1>
-                <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
-                  Revisá la propuesta completa y conversá con el proveedor sin salir del detalle comercial.
-                </p>
-
-                <div className="mt-5 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
-                    {request ? formatRequestCode(request.id) : '—'}
-                  </span>
-                  <span className="rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
-                    Creada el {formatDateTime(request?.createdAt)}
-                  </span>
-                </div>
               </div>
             </section>
 
             {/* ---------- Métricas ---------- */}
-            <section className="grid gap-3 rounded-2xl border border-slate-300 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <section className="grid gap-3 rounded-[12px] border border-slate-300 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <MetricCard icon="users" label="Proveedor">
                 <p className="text-[17px] font-bold text-slate-950">{quote.supplierCompany?.name ?? 'Proveedor'}</p>
                 {quote.supplierCompany?.city ? (
-                  <p className="mt-1.5 text-[11px] text-slate-400">
+                  <p className="mt-1.5 text-[11px] text-slate-600">
                     {[quote.supplierCompany.city, quote.supplierCompany.country].filter(Boolean).join(', ')}
                   </p>
                 ) : null}
@@ -406,14 +378,14 @@ export default function BuyerQuoteDetailPage() {
                 <p className="text-[20px] font-bold tracking-[-0.02em] text-slate-950">
                   {formatCurrency(quote.amount, quote.currency)}
                 </p>
-                <p className="mt-1 text-[11px] text-slate-400">{quote.currency}</p>
+                <p className="mt-1 text-[11px] text-slate-600">{quote.currency}</p>
               </MetricCard>
 
               <MetricCard icon="truck" label="Plazo de entrega">
                 <p className="text-[20px] font-bold tracking-[-0.02em] text-slate-950">
                   {typeof quote.leadTimeDays === 'number' ? `${quote.leadTimeDays} días` : 'A convenir'}
                 </p>
-                <p className="mt-1 text-[11px] text-slate-400">Desde la confirmación</p>
+                <p className="mt-1 text-[11px] text-slate-600">Desde la confirmación</p>
               </MetricCard>
 
               <MetricCard icon="doc" label="Estado">
@@ -421,13 +393,13 @@ export default function BuyerQuoteDetailPage() {
                   {statusTone.label}
                   <span className={`h-2 w-2 rounded-full ${statusTone.dot}`} />
                 </p>
-                <p className="mt-1 text-[11px] text-slate-400">{statusTone.helper}</p>
+                <p className="mt-1 text-[11px] text-slate-600">{statusTone.helper}</p>
               </MetricCard>
 
               {quote.validUntil ? (
                 <MetricCard icon="calendar" label="Oferta válida hasta">
                   <p className="text-[18px] font-bold text-slate-950">{formatDate(quote.validUntil)}</p>
-                  <p className="mt-1 text-[11px] text-slate-400">
+                  <p className="mt-1 text-[11px] text-slate-600">
                     {new Date(quote.validUntil).getTime() >= Date.now() ? 'Vigente' : 'Vencida'}
                   </p>
                 </MetricCard>
@@ -443,7 +415,7 @@ export default function BuyerQuoteDetailPage() {
 
               <MetricCard highlight icon="calendar" label="Cierre de la solicitud">
                 <p className="text-[18px] font-bold text-slate-950">{formatDate(request?.dueDate)}</p>
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-slate-600">
                   {typeof dueInDays === 'number'
                     ? dueInDays >= 0
                       ? `Quedan ${dueInDays} días`
@@ -455,7 +427,7 @@ export default function BuyerQuoteDetailPage() {
 
             {/* ---------- Propuesta + chat ---------- */}
             <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_440px]">
-              <section className="rounded-2xl border border-slate-300 bg-white p-5">
+              <section className="rounded-[12px] border border-slate-300 bg-white p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-[17px] font-bold tracking-[-0.02em] text-slate-950">Propuesta del proveedor</h2>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
@@ -507,7 +479,7 @@ export default function BuyerQuoteDetailPage() {
                                 ) : null}
                               </div>
                               {!unavailable && line.unitPrice != null ? (
-                                <p className="text-[11px] text-slate-400">
+                                <p className="text-[11px] text-slate-600">
                                   {qty
                                     ? `${qty} ${reqItem?.unit ?? 'u.'} × ${formatCurrency(line.unitPrice, quote.currency)}`
                                     : `${formatCurrency(line.unitPrice, quote.currency)}/u`}
@@ -564,7 +536,7 @@ export default function BuyerQuoteDetailPage() {
                                   Versión {rev.version}
                                   {isCurrent ? ' · vigente' : ''}
                                 </span>
-                                <span className="text-[11px] text-slate-400">
+                                <span className="text-[11px] text-slate-600">
                                   {new Intl.DateTimeFormat('es-AR', {
                                     day: '2-digit',
                                     month: 'short',
@@ -574,15 +546,15 @@ export default function BuyerQuoteDetailPage() {
                                 </span>
                               </div>
                               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-slate-600">
-                                <span className={priceChanged ? 'font-semibold text-[#4f46ff]' : ''}>
+                                <span className={priceChanged ? 'font-semibold text-[#1847ff]' : ''}>
                                   {formatCurrency(rev.amount, rev.currency)}
                                   {priceChanged && prev ? ` (antes ${formatCurrency(prev.amount, prev.currency)})` : ''}
                                 </span>
-                                <span className={leadChanged ? 'font-semibold text-[#4f46ff]' : ''}>
+                                <span className={leadChanged ? 'font-semibold text-[#1847ff]' : ''}>
                                   Plazo: {typeof rev.leadTimeDays === 'number' ? `${rev.leadTimeDays} días` : 'a convenir'}
                                 </span>
                                 {rev.paymentTerms ? (
-                                  <span className={termsChanged ? 'font-semibold text-[#4f46ff]' : ''}>
+                                  <span className={termsChanged ? 'font-semibold text-[#1847ff]' : ''}>
                                     Pago: {rev.paymentTerms}
                                   </span>
                                 ) : null}
@@ -591,7 +563,7 @@ export default function BuyerQuoteDetailPage() {
                           );
                         })}
                     </ul>
-                    <p className="mt-2 text-[10px] leading-4 text-slate-400">
+                    <p className="mt-2 text-[10px] leading-4 text-slate-600">
                       Cada vez que el proveedor actualiza su propuesta se guarda una versión. En violeta, lo que cambió respecto de la anterior.
                     </p>
                   </div>
@@ -618,7 +590,7 @@ export default function BuyerQuoteDetailPage() {
 
                   {canAward ? (
                     <button
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#4f46ff] px-5 text-[13px] font-semibold text-white shadow-[0_14px_30px_rgba(79,70,255,0.24)] transition hover:bg-[#3f39d6] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1847ff] px-5 text-[13px] font-semibold text-white shadow-[0_14px_30px_rgba(24,71,255,0.24)] transition hover:bg-[#0f3ff5] disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={awarding}
                       onClick={() => void handleAward()}
                       type="button"
@@ -630,7 +602,7 @@ export default function BuyerQuoteDetailPage() {
                 </div>
               </section>
 
-              <section className="flex h-[620px] flex-col overflow-hidden rounded-2xl border border-slate-300 bg-white">
+              <section className="flex h-[620px] flex-col overflow-hidden rounded-[12px] border border-slate-300 bg-white">
                 <ConversationPanel
                   mode="quote"
                   quoteId={quote.id}
@@ -642,7 +614,7 @@ export default function BuyerQuoteDetailPage() {
 
             {/* ---------- Timeline + consejo ---------- */}
             <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_440px]">
-              <section className="rounded-2xl border border-slate-300 bg-white p-5">
+              <section className="rounded-[12px] border border-slate-300 bg-white p-5">
                 <h2 className="text-[17px] font-bold tracking-[-0.02em] text-slate-950">Estado de la cotización</h2>
 
                 <div className="mt-6 flex items-start">
@@ -651,7 +623,7 @@ export default function BuyerQuoteDetailPage() {
                       {index > 0 ? (
                         <span
                           className={`absolute right-1/2 top-[11px] h-0.5 w-full ${
-                            step.done ? 'bg-[#4f46ff]' : 'bg-slate-200'
+                            step.done ? 'bg-[#1847ff]' : 'bg-slate-200'
                           }`}
                         />
                       ) : null}
@@ -660,8 +632,8 @@ export default function BuyerQuoteDetailPage() {
                         className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-white ${
                           step.done
                             ? step.current
-                              ? 'border-[#4f46ff] text-[#4f46ff]'
-                              : 'border-[#4f46ff] bg-[#4f46ff] text-white'
+                              ? 'border-[#1847ff] text-[#1847ff]'
+                              : 'border-[#1847ff] bg-[#1847ff] text-white'
                             : 'border-slate-300 text-transparent'
                         }`}
                       >
@@ -671,12 +643,12 @@ export default function BuyerQuoteDetailPage() {
 
                       <p
                         className={`mt-3 px-1 text-[12px] font-semibold ${
-                          step.done ? 'text-slate-950' : 'text-slate-400'
+                          step.done ? 'text-slate-950' : 'text-slate-600'
                         }`}
                       >
                         {step.label}
                       </p>
-                      <p className="mt-1 text-[11px] text-slate-400">
+                      <p className="mt-1 text-[11px] text-slate-600">
                         {step.date ? formatDateTime(step.date) : '—'}
                       </p>
                     </div>
@@ -684,21 +656,21 @@ export default function BuyerQuoteDetailPage() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-indigo-100 bg-[#eceafb] p-5">
+              <section className="rounded-[12px] border border-[#dbe6ff] bg-[#dbe6ff] p-5">
                 <div className="flex items-start gap-2">
-                  <span className="mt-0.5 text-[#4f46ff]">
+                  <span className="mt-0.5 text-[#1847ff]">
                     <Icon name="info" />
                   </span>
                   <div>
-                    <p className="text-[13px] font-bold text-[#3b3a7a]">Consejo ATAR</p>
-                    <p className="mt-1 text-[12px] leading-6 text-[#5a5a94]">
+                    <p className="text-[13px] font-bold text-[#1e293b]">Consejo ATAR</p>
+                    <p className="mt-1 text-[12px] leading-6 text-[#475569]">
                       Compará esta cotización con las otras propuestas de la solicitud antes de asignar la compra.
                     </p>
                   </div>
                 </div>
 
                 <Link
-                  className="mt-4 inline-flex items-center gap-2 text-[12px] font-bold text-[#4f46ff] transition hover:text-[#3f39d6]"
+                  className="mt-4 inline-flex items-center gap-2 text-[12px] font-bold text-[#1847ff] transition hover:text-[#0f3ff5]"
                   href={request ? `/dashboard/comprador/solicitudes/${request.id}` : '/dashboard/comprador/solicitudes'}
                 >
                   Ver otras cotizaciones
@@ -726,19 +698,19 @@ function MetricCard({
 }) {
   return (
     <div
-      className={`flex items-start gap-3 rounded-xl px-4 py-3.5 ${
-        highlight ? 'bg-[#eceafb]' : 'bg-white'
+      className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 ${
+        highlight ? 'border-[#1847ff] bg-[#eef2ff]' : 'border-slate-300 bg-[#f4f6fb]'
       }`}
     >
       <span
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-          highlight ? 'bg-white text-[#4f46ff]' : 'bg-[#eef1f7] text-[#4f46ff]'
+          highlight ? 'bg-white text-[#1847ff]' : 'bg-[#dbe6ff] text-[#1847ff]'
         }`}
       >
         <Icon name={icon} />
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] font-medium text-slate-400">{label}</p>
+        <p className="text-[12px] font-medium text-slate-600">{label}</p>
         <div className="mt-0.5">{children}</div>
       </div>
     </div>

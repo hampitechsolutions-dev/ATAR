@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useWorkspace } from '@/components/auth/workspace-provider';
 import AssignSellerDialog from '@/components/dashboard/assign-seller-dialog';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
@@ -309,10 +309,12 @@ function getFileStyle(fileName: string) {
 
 /* ============================ VISTA DESKTOP ============================ */
 
-type StageKey = 'all' | 'new' | 'review' | 'answered';
+type StageKey = 'all' | 'unquoted' | 'new' | 'review' | 'answered';
 
 const STAGE_TABS: { key: StageKey; label: string }[] = [
   { key: 'all', label: 'Todas' },
+  // Todo lo que todavía no respondí: las nuevas más las que estoy revisando.
+  { key: 'unquoted', label: 'Sin cotizar' },
   { key: 'new', label: 'Nuevas' },
   { key: 'review', label: 'En revisión' },
   { key: 'answered', label: 'Respondidas' },
@@ -322,6 +324,7 @@ const STAGE_TABS: { key: StageKey; label: string }[] = [
 function matchesStage(stage: StageKey, assignment: RequestAssignmentRecord) {
   const answered = Boolean(assignment.quote) || ['QUOTED', 'NEGOTIATING', 'WON', 'LOST'].includes(assignment.status);
   if (stage === 'answered') return answered;
+  if (stage === 'unquoted') return !answered;
   if (stage === 'review') return !answered && assignment.status === 'IN_RESPONSE';
   if (stage === 'new') return !answered && assignment.status !== 'IN_RESPONSE';
   return true;
@@ -380,7 +383,24 @@ function answerState(assignment: RequestAssignmentRecord) {
 
 /* ============================ PAGINA ============================ */
 
+// El Inicio enlaza con ?etapa=sin-cotizar para abrir la lista ya filtrada.
+const STAGE_BY_PARAM: Record<string, StageKey> = { 'sin-cotizar': 'unquoted', nuevas: 'new', 'en-revision': 'review', respondidas: 'answered' };
+
 export default function SupplierRequestsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SupplierRequestsWithParams />
+    </Suspense>
+  );
+}
+
+function SupplierRequestsWithParams() {
+  const etapa = useSearchParams()?.get('etapa') ?? '';
+  // La key reinicia el filtro si se llega con otra etapa en la URL.
+  return <SupplierRequestsContent key={etapa} initialStage={STAGE_BY_PARAM[etapa] ?? 'all'} />;
+}
+
+function SupplierRequestsContent({ initialStage }: { initialStage: StageKey }) {
   const router = useRouter();
   const { isManager } = useWorkspace();
   const [search, setSearch] = useState('');
@@ -394,7 +414,7 @@ export default function SupplierRequestsPage() {
   const [openingChat, setOpeningChat] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [stage, setStage] = useState<StageKey>('all');
+  const [stage, setStage] = useState<StageKey>(initialStage);
   const [detailMenuOpen, setDetailMenuOpen] = useState(false);
 
   const { session, assignments, team, loading, error, refresh } = useSupplierInbox();

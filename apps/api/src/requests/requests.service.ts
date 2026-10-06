@@ -888,25 +888,61 @@ export class RequestsService {
       throw new NotFoundException('Pedido no encontrado.');
     }
 
-    if (!request.order || request.status !== RequestStatus.ORDER_ISSUED) {
-      throw new BadRequestException('La solicitud debe tener una orden emitida para actualizar su cumplimiento.');
-    }
-
     if (!request.awardedQuote || request.awardedQuote.supplierCompanyId !== supplierCompanyId) {
       throw new ForbiddenException('Solo el proveedor adjudicado puede actualizar el cumplimiento de esta orden.');
     }
 
-    const transition = this.resolveFulfillmentTransition(request.order.fulfillmentStatus, action);
+    // El proveedor adjudicado puede empezar a mover el pedido aunque el
+    // comprador todavia no haya emitido la orden: en ese caso la orden se abre
+    // en este mismo paso, con los mismos datos que generaria el comprador.
+    const opensOrder =
+      !request.order &&
+      (request.status === RequestStatus.AWARDED || request.status === RequestStatus.NEGOTIATING);
+
+    if (!opensOrder && (!request.order || request.status !== RequestStatus.ORDER_ISSUED)) {
+      throw new BadRequestException('La solicitud debe estar adjudicada para actualizar su cumplimiento.');
+    }
+
+    const transition = this.resolveFulfillmentTransition(
+      request.order?.fulfillmentStatus ?? OrderFulfillmentStatus.ISSUED,
+      action,
+    );
 
     await this.prisma.$transaction([
-      this.prisma.purchaseOrder.update({
-        where: {
-          requestId: id,
-        },
-        data: {
-          fulfillmentStatus: transition.nextStatus,
-        },
-      }),
+      ...(opensOrder
+        ? [
+            this.prisma.purchaseOrder.create({
+              data: {
+                requestId: id,
+                orderNumber: this.generateOrderNumber(id),
+                fulfillmentStatus: transition.nextStatus,
+              },
+            }),
+            this.prisma.request.update({
+              where: { id },
+              data: { status: RequestStatus.ORDER_ISSUED },
+            }),
+            this.prisma.requestEvent.create({
+              data: {
+                requestId: id,
+                type: RequestEventType.ORDER_ISSUED,
+                title: 'Orden emitida',
+                detail: `${supplierCompanyName ?? 'El proveedor adjudicado'} abrio la orden al comenzar a gestionar el pedido.`,
+                actorRole: MembershipRole.SUPPLIER,
+                actorCompanyName: supplierCompanyName ?? undefined,
+              },
+            }),
+          ]
+        : [
+            this.prisma.purchaseOrder.update({
+              where: {
+                requestId: id,
+              },
+              data: {
+                fulfillmentStatus: transition.nextStatus,
+              },
+            }),
+          ]),
       this.prisma.requestEvent.create({
         data: {
           requestId: id,
