@@ -944,6 +944,44 @@ export type BillingReconciliation = {
 
 export type BillingReminderResult = { scanned: number; dueSoon: number; overdue: number };
 
+// ---- Admin de plataforma: analítica de proveedores/compradores ----
+export type AdminCompanyRankRow = {
+  companyId: string;
+  name: string;
+  legalName: string | null;
+  taxId: string | null;
+  operationsCount: number;
+  salesVolume: number;
+  commissionTotal: number;
+  currency: string;
+};
+
+export type AdminTransaction = {
+  requestId: string;
+  title: string;
+  counterpartyName: string;
+  products: string[];
+  saleAmount: number;
+  commissionAmount: number;
+  currency: string;
+  commissionStatus: BillingCommissionStatus;
+  settlementNumber?: string | null;
+  date: string;
+};
+
+export type AdminCompanyDetail = {
+  company: {
+    id: string;
+    name: string;
+    legalName: string | null;
+    taxId: string | null;
+    city: string | null;
+    country: string;
+  };
+  totals: { operationsCount: number; salesVolume: number; commissionTotal: number };
+  transactions: AdminTransaction[];
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export const ACTIVE_COMPANY_STORAGE_KEY = 'atar.activeCompanyId';
@@ -1450,6 +1488,18 @@ export const atarApi = {
   },
   runBillingReminders(token: string) {
     return request<BillingReminderResult>('/billing/admin/reminders/run', { method: 'POST' }, token);
+  },
+  getAdminSuppliers(token: string) {
+    return request<AdminCompanyRankRow[]>('/admin/suppliers', undefined, token);
+  },
+  getAdminSupplierDetail(companyId: string, token: string) {
+    return request<AdminCompanyDetail>(`/admin/suppliers/${companyId}`, undefined, token);
+  },
+  getAdminBuyers(token: string) {
+    return request<AdminCompanyRankRow[]>('/admin/buyers', undefined, token);
+  },
+  getAdminBuyerDetail(companyId: string, token: string) {
+    return request<AdminCompanyDetail>(`/admin/buyers/${companyId}`, undefined, token);
   },
 };
 
