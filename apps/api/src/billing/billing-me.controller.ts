@@ -31,4 +31,10 @@ export class BillingMeController {
   ) {
     return this.payments.registerManualPayment(user, id, dto);
   }
+
+  /** Comprobante propio (para re-verlo). */
+  @Get('payments/:id/receipt')
+  paymentReceipt(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.payments.getReceipt(user, id);
+  }
 }

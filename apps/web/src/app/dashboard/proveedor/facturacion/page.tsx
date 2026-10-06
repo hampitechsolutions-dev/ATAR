@@ -34,6 +34,20 @@ import {
   outstanding,
 } from '@/lib/billing-format';
 
+/** Lee un archivo y devuelve su contenido en base64 (sin el prefijo data:). */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      const [, base64 = ''] = result.split(',');
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('No se pudo leer el archivo.'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function SupplierBillingPage() {
   const { session, isHydrated } = useAuth();
   const token = session?.accessToken;
@@ -209,7 +223,7 @@ function SettlementDetailDrawer({
 
   const [payOpen, setPayOpen] = useState(false);
   const [amount, setAmount] = useState('');
-  const [receiptUrl, setReceiptUrl] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -255,11 +269,15 @@ function SettlementDetailDrawer({
       return;
     }
     setAmount(String(saldo));
-    setReceiptUrl('');
+    setReceiptFile(null);
     setNote('');
     setFormError(null);
     setPayOpen(true);
   }
+
+  const amountValue = Number(amount);
+  const amountMismatch =
+    Number.isFinite(amountValue) && amountValue > 0 && Math.abs(amountValue - saldo) >= 0.01;
 
   async function submitPayment() {
     if (!token || !detail) {
@@ -270,19 +288,27 @@ function SettlementDetailDrawer({
       setFormError('Ingresá un importe válido mayor a 0.');
       return;
     }
+    if (!receiptFile) {
+      setFormError('Adjuntá el comprobante de pago: es obligatorio.');
+      return;
+    }
     setSubmitting(true);
     setFormError(null);
     try {
+      const receiptBase64 = await fileToBase64(receiptFile);
       await atarApi.payMySettlement(
         detail.id,
         {
           amount: value,
-          receiptUrl: receiptUrl.trim() || undefined,
+          receiptName: receiptFile.name,
+          receiptMimeType: receiptFile.type || 'application/octet-stream',
+          receiptSize: receiptFile.size,
+          receiptBase64,
           note: note.trim() || undefined,
         },
         token,
       );
-      setOkMessage('Pago informado. Queda pendiente de validación por ATAR.');
+      setOkMessage('Pago informado con comprobante. Queda pendiente de validación por ATAR.');
       setPayOpen(false);
       await load();
       onPaid();
@@ -450,30 +476,42 @@ function SettlementDetailDrawer({
             {payOpen ? (
               <div className="space-y-3">
                 {formError ? <p className="text-sm font-medium text-rose-600">{formError}</p> : null}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-600">
-                      Importe ({detail.currency})
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-slate-600">
+                    Importe ({detail.currency})
+                  </span>
+                  <input
+                    className={dashboardInputClassName}
+                    inputMode="decimal"
+                    onChange={(event) => setAmount(event.target.value)}
+                    type="number"
+                    value={amount}
+                  />
+                </label>
+                {amountMismatch ? (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    El importe no coincide con el saldo adeudado ({formatMoney(saldo, detail.currency)}). Podés
+                    informarlo igual: ATAR lo revisará y decidirá.
+                  </p>
+                ) : null}
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-slate-600">
+                    Comprobante de pago (obligatorio)
+                  </span>
+                  <input
+                    accept="image/*,application/pdf"
+                    className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100"
+                    onChange={(event) => setReceiptFile(event.target.files?.[0] ?? null)}
+                    type="file"
+                  />
+                  {receiptFile ? (
+                    <span className="mt-1 block text-xs text-slate-500">
+                      {receiptFile.name} ({Math.ceil(receiptFile.size / 1024)} KB)
                     </span>
-                    <input
-                      className={dashboardInputClassName}
-                      inputMode="decimal"
-                      onChange={(event) => setAmount(event.target.value)}
-                      type="number"
-                      value={amount}
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-600">Comprobante (URL, opcional)</span>
-                    <input
-                      className={dashboardInputClassName}
-                      onChange={(event) => setReceiptUrl(event.target.value)}
-                      placeholder="https://…"
-                      type="url"
-                      value={receiptUrl}
-                    />
-                  </label>
-                </div>
+                  ) : (
+                    <span className="mt-1 block text-xs text-slate-400">Adjuntá la transferencia o recibo (PDF o imagen).</span>
+                  )}
+                </label>
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-600">Nota (opcional)</span>
                   <input
@@ -490,7 +528,7 @@ function SettlementDetailDrawer({
                 <div className="flex gap-3">
                   <button
                     className={dashboardPrimaryButtonClassName}
-                    disabled={submitting}
+                    disabled={submitting || !receiptFile}
                     onClick={() => void submitPayment()}
                     type="button"
                   >

@@ -93,7 +93,11 @@ describe('BillingPaymentsService — seguridad', () => {
       period: { code: '2026-09' },
     });
     await expect(
-      service.registerManualPayment(supplier, 's1', { amount: 100 }),
+      service.registerManualPayment(supplier, 's1', {
+        amount: 100,
+        receiptName: 'comprobante.pdf',
+        receiptBase64: 'ZmFrZQ==',
+      }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });
@@ -108,11 +112,13 @@ describe('BillingPaymentsService — registro de pago', () => {
     period: { code: '2026-09' },
   };
 
+  const receipt = { receiptName: 'comprobante.pdf', receiptBase64: 'ZmFrZQ==', receiptMimeType: 'application/pdf' };
+
   it('rechaza importe <= 0', async () => {
     const { service, prisma } = makeService();
     prisma.billingSettlement.findUnique.mockResolvedValueOnce(issuedSettlement);
     await expect(
-      service.registerManualPayment(supplier, 's1', { amount: 0 }),
+      service.registerManualPayment(supplier, 's1', { amount: 0, ...receipt }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
@@ -123,24 +129,64 @@ describe('BillingPaymentsService — registro de pago', () => {
       status: SettlementStatus.DRAFT,
     });
     await expect(
-      service.registerManualPayment(supplier, 's1', { amount: 100 }),
+      service.registerManualPayment(supplier, 's1', { amount: 100, ...receipt }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('crea el pago en estado PENDING (nunca pagado por el cliente)', async () => {
+  it('exige el comprobante de pago (obligatorio)', async () => {
     const { service, prisma } = makeService();
     prisma.billingSettlement.findUnique.mockResolvedValueOnce(issuedSettlement);
+    await expect(
+      service.registerManualPayment(supplier, 's1', {
+        amount: 100,
+        receiptName: '',
+        receiptBase64: '',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('crea el pago PENDING con comprobante y marca amountMatchesDue', async () => {
+    const { service, prisma } = makeService();
+    prisma.billingSettlement.findUnique.mockResolvedValueOnce(issuedSettlement);
+    prisma.billingPayment.findMany.mockResolvedValueOnce([]); // nada pagado aún → adeuda 100
     prisma.billingPayment.create.mockImplementation(
       ({ data }: { data: unknown }) => Promise.resolve(data),
     );
 
     const created = (await service.registerManualPayment(supplier, 's1', {
       amount: 100,
+      ...receipt,
       note: 'transfer 123',
-    })) as { status: BillingPaymentStatus; externalReference: string };
+    })) as unknown as {
+      status: BillingPaymentStatus;
+      receiptName: string;
+      metadata: { amountMatchesDue: boolean };
+    };
 
     expect(created.status).toBe(BillingPaymentStatus.PENDING);
-    expect(created.externalReference).toContain('ATAR-BILLING');
+    expect(created.receiptName).toBe('comprobante.pdf');
+    expect(created.metadata.amountMatchesDue).toBe(true);
+  });
+
+  it('permite pagar un monto distinto al adeudado, pero lo marca para el admin', async () => {
+    const { service, prisma } = makeService();
+    prisma.billingSettlement.findUnique.mockResolvedValueOnce(issuedSettlement);
+    prisma.billingPayment.findMany.mockResolvedValueOnce([]);
+    prisma.billingPayment.create.mockImplementation(
+      ({ data }: { data: unknown }) => Promise.resolve(data),
+    );
+
+    const created = (await service.registerManualPayment(supplier, 's1', {
+      amount: 60, // adeuda 100
+      ...receipt,
+    })) as unknown as {
+      status: BillingPaymentStatus;
+      metadata: { amountMatchesDue: boolean; expectedAmount: number };
+    };
+
+    expect(created.status).toBe(BillingPaymentStatus.PENDING); // NO bloquea
+    expect(created.metadata.amountMatchesDue).toBe(false);
+    expect(created.metadata.expectedAmount).toBe(100);
   });
 });
 

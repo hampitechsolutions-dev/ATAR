@@ -812,6 +812,9 @@ export type BillingPaymentRecord = {
   currency: string;
   externalReference: string | null;
   receiptUrl: string | null;
+  receiptName: string | null;
+  receiptMimeType: string | null;
+  receiptSize: number | null;
   registeredByUserId: string | null;
   confirmedByUserId: string | null;
   confirmedAt: string | null;
@@ -911,7 +914,16 @@ export type BillingAdminPaymentRecord = BillingPaymentRecord & {
   } | null;
 };
 
-export type RegisterPaymentPayload = { amount: number; receiptUrl?: string; note?: string };
+export type RegisterPaymentPayload = {
+  amount: number;
+  receiptName: string;
+  receiptMimeType?: string;
+  receiptSize?: number;
+  receiptBase64: string;
+  note?: string;
+};
+
+export type BillingReceiptFile = { name: string; mimeType: string; base64: string };
 
 export type BillingOverviewCurrency = {
   currency: string;
@@ -1465,6 +1477,9 @@ export const atarApi = {
       undefined,
       token,
     );
+  },
+  getBillingPaymentReceipt(scope: 'admin' | 'me', paymentId: string, token: string) {
+    return request<BillingReceiptFile>(`/billing/${scope}/payments/${paymentId}/receipt`, undefined, token);
   },
   confirmBillingPayment(paymentId: string, token: string) {
     return request<BillingPaymentRecord>(

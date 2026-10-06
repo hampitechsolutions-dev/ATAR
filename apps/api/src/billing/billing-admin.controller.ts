@@ -121,6 +121,12 @@ export class BillingAdminController {
     return this.payments.confirmPayment(user, id);
   }
 
+  /** Devuelve el comprobante (archivo) de un pago para revisarlo. */
+  @Get('payments/:id/receipt')
+  paymentReceipt(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.payments.getReceipt(user, id);
+  }
+
   /** Rechaza un pago pendiente. */
   @Post('payments/:id/reject')
   rejectPayment(

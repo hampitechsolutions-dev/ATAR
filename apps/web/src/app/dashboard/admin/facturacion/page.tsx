@@ -45,6 +45,26 @@ function Panel({ children, className = '' }: { children: React.ReactNode; classN
   );
 }
 
+/** El pago informó un monto distinto al adeudado (lo marca el backend en metadata). */
+function paymentAmountMismatch(payment: BillingAdminPaymentRecord): boolean {
+  return (payment.metadata as { amountMatchesDue?: boolean } | null)?.amountMatchesDue === false;
+}
+
+function expectedAmount(payment: BillingAdminPaymentRecord): number {
+  const value = (payment.metadata as { expectedAmount?: number } | null)?.expectedAmount;
+  return typeof value === 'number' ? value : 0;
+}
+
+/** Convierte base64 a Blob para abrir/descargar el comprobante. */
+function base64ToBlob(base64: string, mimeType: string): Blob {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mimeType });
+}
+
 export default function AdminBillingPage() {
   const { session } = useAuth();
   const token = session?.accessToken;
@@ -472,6 +492,26 @@ function PaymentsSection({ token }: { token: string | undefined }) {
   const [actingId, setActingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [receiptBusy, setReceiptBusy] = useState<string | null>(null);
+
+  async function viewReceipt(paymentId: string) {
+    if (!token) {
+      return;
+    }
+    setReceiptBusy(paymentId);
+    setError(null);
+    try {
+      const receipt = await atarApi.getBillingPaymentReceipt('admin', paymentId, token);
+      const blob = base64ToBlob(receipt.base64, receipt.mimeType);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo abrir el comprobante.');
+    } finally {
+      setReceiptBusy(null);
+    }
+  }
 
   const load = useCallback(async () => {
     if (!token) {
@@ -582,20 +622,31 @@ function PaymentsSection({ token }: { token: string | undefined }) {
                       <DashboardInfoBadge tone={PAYMENT_STATUS_TONE[payment.status]}>
                         {PAYMENT_STATUS_LABEL[payment.status]}
                       </DashboardInfoBadge>
+                      {paymentAmountMismatch(payment) ? (
+                        <DashboardInfoBadge tone="amber">Monto no coincide</DashboardInfoBadge>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-xs text-slate-400">
                       {formatDateTime(payment.createdAt)} · Ref {payment.externalReference ?? '—'}
                     </p>
-                    {payment.receiptUrl ? (
-                      <a
-                        className="mt-1 inline-block text-xs font-semibold text-indigo-600 hover:underline"
-                        href={payment.receiptUrl}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
-                        Ver comprobante
-                      </a>
+                    {paymentAmountMismatch(payment) ? (
+                      <p className="mt-1 text-xs text-amber-600">
+                        Informó {formatMoney(payment.amount, payment.currency)} y se adeudaba{' '}
+                        {formatMoney(expectedAmount(payment), payment.currency)}. Revisá el comprobante.
+                      </p>
                     ) : null}
+                    {payment.receiptName ? (
+                      <button
+                        className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline disabled:opacity-60"
+                        disabled={receiptBusy === payment.id}
+                        onClick={() => void viewReceipt(payment.id)}
+                        type="button"
+                      >
+                        {receiptBusy === payment.id ? 'Abriendo…' : `Ver comprobante (${payment.receiptName})`}
+                      </button>
+                    ) : (
+                      <p className="mt-1 text-xs text-rose-500">Sin comprobante adjunto</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">

@@ -32,6 +32,8 @@ const prisma = new PrismaClient();
 
 const PASSWORD = 'Atar.Demo2026';
 const RATE = 1; // 1%
+// Comprobante de ejemplo (texto) para los pagos demo.
+const DEMO_RECEIPT_B64 = Buffer.from('Comprobante de pago demo - ATAR').toString('base64');
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 const d = (iso) => new Date(iso);
 
@@ -462,11 +464,16 @@ async function main() {
     } else {
       const amount = plan.kind === 'partial' ? plan.amount : commissionTotal;
       const confirmed = plan.kind !== 'pending';
+      const matchesDue = plan.kind !== 'partial'; // el parcial no cubre el total
       await prisma.billingPayment.upsert({
         where: { id: paymentId },
         update: {
           amount,
           status: confirmed ? BillingPaymentStatus.CONFIRMED : BillingPaymentStatus.PENDING,
+          receiptName: 'comprobante-demo.txt',
+          receiptMimeType: 'text/plain',
+          receiptBase64: DEMO_RECEIPT_B64,
+          metadata: { note: 'Transferencia demo', amountMatchesDue: matchesDue, expectedAmount: commissionTotal },
         },
         create: {
           id: paymentId,
@@ -476,11 +483,15 @@ async function main() {
           amount,
           currency: 'ARS',
           externalReference: `ATAR-BILLING-2026-09-${s.key}-demo`,
+          receiptName: 'comprobante-demo.txt',
+          receiptMimeType: 'text/plain',
+          receiptSize: DEMO_RECEIPT_B64.length,
+          receiptBase64: DEMO_RECEIPT_B64,
           registeredByUserId: supplierUserIds[s.key],
           confirmedByUserId: confirmed ? admin.userId : null,
           confirmedAt: confirmed ? d('2026-10-05T10:00:00Z') : null,
           paidAt: confirmed ? d('2026-10-04T15:00:00Z') : null,
-          metadata: { note: 'Transferencia demo' },
+          metadata: { note: 'Transferencia demo', amountMatchesDue: matchesDue, expectedAmount: commissionTotal },
         },
       });
     }

@@ -74,7 +74,8 @@ export class BillingPaymentsService {
       },
       include: {
         period: { select: { code: true } },
-        payments: { orderBy: { createdAt: 'desc' } },
+        // No mandamos el base64 del comprobante en los listados (es pesado).
+        payments: { omit: { receiptBase64: true }, orderBy: { createdAt: 'desc' } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -94,7 +95,7 @@ export class BillingPaymentsService {
           orderBy: { generatedAt: 'asc' },
         },
         adjustments: true,
-        payments: { orderBy: { createdAt: 'desc' } },
+        payments: { omit: { receiptBase64: true }, orderBy: { createdAt: 'desc' } },
       },
     });
     if (!settlement) {
@@ -122,7 +123,14 @@ export class BillingPaymentsService {
   async registerManualPayment(
     user: AuthUser,
     settlementId: string,
-    input: { amount: number; receiptUrl?: string; note?: string },
+    input: {
+      amount: number;
+      receiptName: string;
+      receiptMimeType?: string;
+      receiptSize?: number;
+      receiptBase64: string;
+      note?: string;
+    },
   ) {
     const settlement = await this.prisma.billingSettlement.findUnique({
       where: { id: settlementId },
@@ -151,6 +159,27 @@ export class BillingPaymentsService {
       throw new BadRequestException('El importe del pago debe ser mayor a 0.');
     }
 
+    // El comprobante es OBLIGATORIO. No validamos su contenido acá: lo revisa el
+    // admin al confirmar/rechazar.
+    const receiptName = input.receiptName?.trim();
+    const receiptBase64 = input.receiptBase64?.trim();
+    if (!receiptName || !receiptBase64) {
+      throw new BadRequestException('Adjuntá el comprobante de pago para informarlo.');
+    }
+
+    // Verificación de monto: NO bloquea (el cliente puede pagar parcial o de más).
+    // Si no coincide con lo adeudado, se marca para que el admin lo revise.
+    const alreadyPaid = roundMoney(
+      (
+        await this.prisma.billingPayment.findMany({
+          where: { settlementId, status: BillingPaymentStatus.CONFIRMED },
+          select: { amount: true },
+        })
+      ).reduce((sum, payment) => sum + payment.amount, 0),
+    );
+    const outstanding = roundMoney(Math.max(0, settlement.grandTotal - alreadyPaid));
+    const amountMatchesDue = Math.abs(amount - outstanding) < 0.01;
+
     const charge = await this.manualProvider.createCharge({
       settlementId,
       periodCode: settlement.period.code,
@@ -167,11 +196,48 @@ export class BillingPaymentsService {
         amount,
         currency: settlement.currency,
         externalReference: charge.externalReference,
-        receiptUrl: input.receiptUrl?.trim() || null,
+        receiptName,
+        receiptMimeType: input.receiptMimeType?.trim() || null,
+        receiptSize: input.receiptSize ?? null,
+        receiptBase64,
         registeredByUserId: user.userId,
-        metadata: input.note?.trim() ? { note: input.note.trim() } : undefined,
+        metadata: {
+          ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+          amountMatchesDue,
+          expectedAmount: outstanding,
+        },
       },
     });
+  }
+
+  /**
+   * Devuelve el archivo del comprobante de un pago. Accesible por el admin o por
+   * la empresa dueña de la liquidación. Separado del listado para no mandar el
+   * base64 en cada respuesta.
+   */
+  async getReceipt(user: AuthUser, paymentId: string) {
+    const payment = await this.prisma.billingPayment.findUnique({
+      where: { id: paymentId },
+      select: {
+        receiptName: true,
+        receiptMimeType: true,
+        receiptBase64: true,
+        settlement: { select: { companyId: true } },
+      },
+    });
+    if (!payment || !payment.receiptBase64) {
+      throw new NotFoundException('Comprobante no encontrado.');
+    }
+    const allowed =
+      isPlatformAdmin(user) || this.companyIdsOf(user).includes(payment.settlement.companyId);
+    if (!allowed) {
+      throw new ForbiddenException('No tenés acceso a este comprobante.');
+    }
+    return {
+      name: payment.receiptName,
+      mimeType: payment.receiptMimeType ?? 'application/octet-stream',
+      base64: payment.receiptBase64,
+    };
   }
 
   // ---------- Admin ----------
@@ -181,6 +247,8 @@ export class BillingPaymentsService {
     this.assertAdmin(user);
     return this.prisma.billingPayment.findMany({
       where: status ? { status } : {},
+      // El base64 del comprobante se sirve aparte (getReceipt); acá solo su nombre.
+      omit: { receiptBase64: true },
       include: {
         settlement: {
           select: {

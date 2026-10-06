@@ -832,6 +832,12 @@ model BillingPayment {
   externalReference  String               @unique
   providerPaymentId  String?
   receiptUrl         String?
+  // Comprobante de pago adjunto (obligatorio en pago manual). Mismo patrón que
+  // los adjuntos del chat: el archivo se guarda como base64 en la DB.
+  receiptName        String?
+  receiptMimeType    String?
+  receiptSize        Int?
+  receiptBase64      String?
   registeredByUserId String?
   confirmedByUserId  String?
   paidAt             DateTime?
