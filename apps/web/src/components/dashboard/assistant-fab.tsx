@@ -30,14 +30,6 @@ function BotAvatar({ className = 'h-full w-full' }: { className?: string }) {
   );
 }
 
-function ArrowIcon() {
-  return (
-    <svg aria-hidden="true" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24">
-      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
-
 export default function AssistantFab() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -52,6 +44,10 @@ export default function AssistantFab() {
   const welcomeTour = getWelcomeTour(tour.profile);
   const sectionTour = getSectionTour(tour.profile, pathname);
   const tutorials = tour.tours.filter((item) => !item.welcome);
+  const firstName = session?.user.firstName ?? '';
+  // ATARIA "escribe" un instante antes de responder.
+  const [typing, setTyping] = useState(false);
+  const replyTimer = useRef<number | null>(null);
   // Primera entrada: el asistente se presenta con un globo. Después queda
   // medio escondido contra el borde y vuelve a salir al pasarle el mouse.
   const [introVisible, setIntroVisible] = useState(false);
@@ -112,10 +108,16 @@ export default function AssistantFab() {
   // Al abrir, el panel arranca arriba (recorridos y tutoriales). Solo baja
   // cuando hay una respuesta nueva en el chat.
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 || typing) {
       endRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, typing]);
+
+  useEffect(() => () => {
+    if (replyTimer.current) {
+      window.clearTimeout(replyTimer.current);
+    }
+  }, []);
 
   if (pathname?.endsWith('/mensajes')) {
     return null;
@@ -129,25 +131,54 @@ export default function AssistantFab() {
     tour.start(tourId);
   }
 
+  /** Arma la respuesta de ATARIA a lo que escribió el usuario. */
+  function buildReply(text: string): Omit<ChatMessage, 'id' | 'role'> {
+    const plain = text
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
+    const lower = (title: string) => title.charAt(0).toLowerCase() + title.slice(1);
+
+    if (plain.includes('reinici')) {
+      tour.reset();
+      return welcomeTour
+        ? { text: 'Listo, dejé los recorridos como nuevos. ¿Arrancamos por el inicial?', tourId: welcomeTour.id }
+        : { text: 'Listo, dejé los recorridos como nuevos.' };
+    }
+    if (/(esta|la) (seccion|pantalla|pagina)|que (es|hago|puedo hacer) (aca|aqui)/.test(plain) && sectionTour) {
+      return { text: `Te cuento cómo funciona esta pantalla: ${lower(sectionTour.title)}.`, tourId: sectionTour.id };
+    }
+    const match = findTourForQuestion(tour.profile, text);
+    if (match) {
+      return { text: `Claro. Te muestro cómo ${lower(match.title)}, paso a paso sobre la pantalla.`, tourId: match.id };
+    }
+    if (/tutorial|recorrido|ayuda|que podes|que sabes|que haces|opciones/.test(plain)) {
+      return { text: `Te puedo mostrar cómo ${tutorials.map((item) => lower(item.title)).join(', ')}. ¿Con cuál empezamos?` };
+    }
+    if (/^(hola|buenas|buen dia|que tal)/.test(plain)) {
+      return { text: '¡Hola! ¿Qué necesitás hacer hoy?' };
+    }
+    if (plain.includes('gracias')) {
+      return { text: '¡De nada! Cualquier cosa, acá estoy.' };
+    }
+    return {
+      text: 'Mmm, con eso todavía no te puedo ayudar. Contame qué querés hacer, por ejemplo algo sobre tus solicitudes, cotizaciones o pedidos, y te guío.',
+    };
+  }
+
   function handleSend() {
     const text = draft.trim();
-    if (!text) {
+    if (!text || typing) {
       return;
     }
     setDraft('');
-    // Busca el tutorial que mejor responde la pregunta, entre los del perfil.
-    const match = findTourForQuestion(tour.profile, text);
-    setMessages((prev) => [
-      ...prev,
-      { id: ++idRef.current, role: 'user', text },
-      match
-        ? { id: ++idRef.current, role: 'bot', text: `Te lo muestro paso a paso en el tutorial "${match.title}".`, tourId: match.id }
-        : {
-            id: ++idRef.current,
-            role: 'bot',
-            text: 'Todavía no tengo un tutorial para eso. Probá con otras palabras o elegí uno de la lista de arriba.',
-          },
-    ]);
+    setMessages((prev) => [...prev, { id: ++idRef.current, role: 'user', text }]);
+    setTyping(true);
+    replyTimer.current = window.setTimeout(() => {
+      const reply = buildReply(text);
+      setMessages((prev) => [...prev, { id: ++idRef.current, role: 'bot', ...reply }]);
+      setTyping(false);
+    }, 750);
   }
 
   // Durante un recorrido el panel no se muestra: el protagonista es el globo.
@@ -165,7 +196,8 @@ export default function AssistantFab() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold leading-tight">ATARIA</p>
               <p className="flex items-center gap-1.5 text-[11px] text-white/80">
-                Tu guía en ATAR
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                En línea
               </p>
             </div>
             <button
@@ -186,101 +218,31 @@ export default function AssistantFab() {
                 <BotAvatar />
               </span>
               <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-slate-300 bg-white px-3 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
-                ¡Hola! Soy <span className="font-semibold text-indigo-600">ATARIA</span>. Puedo mostrarte la plataforma paso a paso, sobre la pantalla real.
+                ¡Hola{firstName ? `, ${firstName}` : ''}! Soy <span className="font-semibold text-indigo-600">ATARIA</span>. Contame qué necesitás hacer y te lo muestro en pantalla.
               </div>
             </div>
 
-            {/* Recorridos: continuar o empezar, y el de la pantalla actual. */}
-            <div className="flex flex-col gap-2">
-              {tour.paused ? (
-                <button
-                  className="flex items-center justify-between gap-3 rounded-2xl bg-indigo-600 px-3.5 py-3 text-left text-white transition hover:bg-indigo-700"
-                  onClick={() => {
-                    setOpen(false);
-                    tour.resume();
-                  }}
-                  type="button"
-                >
-                  <span>
-                    <span className="block text-[13px] font-bold">Continuar el recorrido</span>
-                    <span className="block text-[12px] text-white/85">
-                      {tour.paused.tour.title} · paso {tour.paused.index + 1} de {tour.paused.tour.steps.length}
-                    </span>
-                  </span>
-                  <ArrowIcon />
-                </button>
-              ) : welcomeTour ? (
-                <button
-                  className="flex items-center justify-between gap-3 rounded-2xl bg-indigo-600 px-3.5 py-3 text-left text-white transition hover:bg-indigo-700"
-                  onClick={() => startTour(welcomeTour.id)}
-                  type="button"
-                >
-                  <span>
-                    <span className="block text-[13px] font-bold">
-                      {tour.isCompleted(welcomeTour.id) ? 'Repetir el recorrido inicial' : 'Empezar el recorrido inicial'}
-                    </span>
-                    <span className="block text-[12px] text-white/85">{welcomeTour.description}</span>
-                  </span>
-                  <ArrowIcon />
-                </button>
-              ) : null}
-
-              {sectionTour && sectionTour.id !== welcomeTour?.id ? (
-                <button
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-indigo-300 bg-indigo-50 px-3.5 py-3 text-left transition hover:bg-indigo-100"
-                  onClick={() => startTour(sectionTour.id)}
-                  type="button"
-                >
-                  <span>
-                    <span className="block text-[13px] font-bold text-indigo-900">Aprender esta sección</span>
-                    <span className="block text-[12px] text-slate-700">{sectionTour.title}</span>
-                  </span>
-                  <span className="text-indigo-700">
-                    <ArrowIcon />
-                  </span>
-                </button>
-              ) : null}
-            </div>
-
-            {/* Tutoriales del perfil. */}
-            <div>
-              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">¿Cómo hago para…?</p>
-              <ul className="overflow-hidden rounded-2xl border border-slate-300 bg-white">
-                {tutorials.map((item) => (
-                  <li key={item.id} className="border-b border-slate-200 last:border-b-0">
-                    <button
-                      className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-indigo-50"
-                      onClick={() => startTour(item.id)}
-                      type="button"
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-[13px] font-semibold text-slate-900">{item.title}</span>
-                        <span className="block text-[12px] leading-4 text-slate-600">{item.description}</span>
-                      </span>
-                      {tour.isCompleted(item.id) ? (
-                        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">Visto</span>
-                      ) : (
-                        <span className="shrink-0 text-indigo-600">
-                          <ArrowIcon />
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <button
-                className="mt-2 px-1 text-[12px] font-semibold text-slate-600 underline underline-offset-2 transition hover:text-slate-950"
-                onClick={() => {
-                  tour.reset();
-                  if (welcomeTour) {
-                    startTour(welcomeTour.id);
-                  }
-                }}
-                type="button"
-              >
-                Reiniciar los recorridos
-              </button>
-            </div>
+            {/* Si quedó un recorrido por la mitad, ATARIA lo menciona como parte de la charla. */}
+            {tour.paused ? (
+              <div className="flex items-end gap-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white p-0.5">
+                  <BotAvatar />
+                </span>
+                <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-slate-300 bg-white px-3 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
+                  La última vez dejamos por la mitad “{tour.paused.tour.title}”. ¿Lo seguimos?
+                  <button
+                    className="mt-2 flex h-8 items-center rounded-lg bg-indigo-600 px-3 text-[12px] font-semibold text-white transition hover:bg-indigo-700"
+                    onClick={() => {
+                      setOpen(false);
+                      tour.resume();
+                    }}
+                    type="button"
+                  >
+                    Dale, sigamos
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {messages.map((message) =>
               message.role === 'user' ? (
@@ -310,6 +272,19 @@ export default function AssistantFab() {
               ),
             )}
 
+            {typing ? (
+              <div aria-label="ATARIA está escribiendo" className="flex items-end gap-2" role="status">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white p-0.5">
+                  <BotAvatar />
+                </span>
+                <div className="flex items-center gap-1 rounded-2xl rounded-bl-md border border-slate-300 bg-white px-3 py-3 shadow-sm">
+                  {[0, 150, 300].map((delay) => (
+                    <span key={delay} className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 motion-reduce:animate-none" style={{ animationDelay: `${delay}ms` }} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div ref={endRef} />
           </div>
 
@@ -324,8 +299,8 @@ export default function AssistantFab() {
               <input
                 className="w-full bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
                 onChange={(event) => setDraft(event.target.value)}
-                aria-label="Preguntale a ATARIA cómo hacer algo"
-                placeholder="Preguntame cómo hacer algo…"
+                aria-label="Mensaje para ATARIA"
+                placeholder="Escribí tu mensaje…"
                 value={draft}
               />
               <button
