@@ -329,38 +329,67 @@ export default function DashboardProveedorPage() {
   const dueTodayCount = dashboardData.openOpportunities.filter(
     (request) => request.dueDate && new Date(request.dueDate).toDateString() === todayKey,
   ).length;
-  const staleQuotesCount = dashboardData.submittedQuotes.filter(
+  const staleQuotes = dashboardData.submittedQuotes.filter(
     (quote) => nowMs - new Date(quote.updatedAt).getTime() > 48 * 3600 * 1000,
-  ).length;
+  );
+  // Cada tarea lleva al lugar exacto: si hay una sola, a ese elemento; si hay
+  // varias, al listado ya filtrado.
+  const open = dashboardData.openOpportunities;
+  const openName = (request: (typeof open)[number]) => request.items?.[0]?.productName ?? request.productName ?? request.title;
+  const quoteName = (quote: (typeof staleQuotes)[number]) => quote.request?.productName ?? quote.request?.title ?? 'Cotización';
+  const unread = counters.unreadMessagesCount;
+  const unreadNotifications = counters.unreadNotificationsCount;
   const homeTasks: { label: string; detail: string; count: number; icon: HomeIconName; tone: Tone; href: string }[] = [
     {
-      label: 'Nuevas solicitudes de cotización',
-      detail: dueTodayCount > 0 ? `${dueTodayCount} vencen hoy` : 'Todavía sin cotizar',
-      count: dashboardData.openOpportunities.length,
+      label: open.length === 1 ? 'Solicitud nueva sin cotizar' : 'Solicitudes nuevas sin cotizar',
+      detail:
+        open.length === 1
+          ? `${openName(open[0])} · ${open[0].buyerCompany?.name ?? 'Comprador'}`
+          : open.length === 0
+            ? 'No tenés solicitudes pendientes'
+            : dueTodayCount > 0
+              ? `${dueTodayCount} ${dueTodayCount === 1 ? 'vence' : 'vencen'} hoy`
+              : 'Ver las que faltan cotizar',
+      count: open.length,
       icon: 'doc',
       tone: 'indigo',
-      href: '/dashboard/proveedor/solicitudes',
+      href:
+        open.length === 1
+          ? `/dashboard/proveedor/solicitudes/${open[0].id}`
+          : open.length > 1
+            ? '/dashboard/proveedor/solicitudes?etapa=sin-cotizar'
+            : '/dashboard/proveedor/solicitudes',
     },
     {
-      label: 'Clientes esperan respuesta',
-      detail: 'Mensajes sin leer',
-      count: counters.unreadMessagesCount,
+      label: unread === 1 ? 'Conversación con mensajes sin leer' : 'Conversaciones con mensajes sin leer',
+      detail: unread > 0 ? 'Un cliente espera tu respuesta' : 'Estás al día con tus clientes',
+      count: unread,
       icon: 'user',
       tone: 'sky',
-      href: '/dashboard/proveedor/mensajes',
+      href: unread > 0 ? '/dashboard/proveedor/mensajes?tab=sin-leer' : '/dashboard/proveedor/mensajes',
     },
     {
-      label: 'Cotización sin respuesta',
-      detail: 'Hace más de 48 horas',
-      count: staleQuotesCount,
+      label: staleQuotes.length === 1 ? 'Cotización sin respuesta del cliente' : 'Cotizaciones sin respuesta del cliente',
+      detail:
+        staleQuotes.length === 1
+          ? `${quoteName(staleQuotes[0])} · hace más de 48 horas`
+          : staleQuotes.length === 0
+            ? 'Ninguna lleva más de 48 horas'
+            : 'Enviadas hace más de 48 horas',
+      count: staleQuotes.length,
       icon: 'clock',
       tone: 'amber',
-      href: '/dashboard/proveedor/cotizaciones',
+      href:
+        staleQuotes.length === 1
+          ? `/dashboard/proveedor/cotizaciones/${staleQuotes[0].id}`
+          : staleQuotes.length > 1
+            ? '/dashboard/proveedor/cotizaciones?tab=enviadas'
+            : '/dashboard/proveedor/cotizaciones',
     },
     {
-      label: 'Notificaciones nuevas',
-      detail: 'Sin leer',
-      count: counters.unreadNotificationsCount,
+      label: unreadNotifications === 1 ? 'Notificación nueva' : 'Notificaciones nuevas',
+      detail: unreadNotifications > 0 ? 'Sin leer' : 'No hay novedades',
+      count: unreadNotifications,
       icon: 'chat',
       tone: 'violet',
       href: '/dashboard/proveedor/notificaciones',

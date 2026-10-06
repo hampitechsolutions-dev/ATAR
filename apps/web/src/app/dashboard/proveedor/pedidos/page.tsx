@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { ASSISTANT_OPEN_EVENT } from '@/components/dashboard/assistant-fab';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { atarApi, type OrderFulfillmentStatus, type QuoteRecord } from '@/lib/atar-api';
 import { LoadingState } from '@/components/ui/spinner';
@@ -24,6 +25,10 @@ type OrderColumnKey = 'pending' | 'production' | 'transit' | 'delivered';
 
 type OrderCard = {
   quote: QuoteRecord;
+  /** null = adjudicada, pero el comprador todavía no emitió la orden. */
+  order: NonNullable<QuoteRecord['request']>['order'] | null;
+  href: string;
+  sortDate: string;
   column: OrderColumnKey;
   companyShort: string;
   companyName: string;
@@ -262,38 +267,52 @@ function FilterIcon() {
   );
 }
 
-function DotsIcon() {
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M12 5h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-      <path d="M12 12h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-      <path d="M12 19h.01" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-    </svg>
-  );
-}
-
 export default function SupplierOrdersPage() {
   const { session, myQuotes, loading, error, setError, refresh } = useSupplierDashboardData();
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  // Filtro por cliente ('all' = todos).
+  const [clientFilter, setClientFilter] = useState('all');
   const [updatingFulfillmentId, setUpdatingFulfillmentId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<'curso' | 'completados' | 'cancelados'>('curso');
 
   const orderCards = useMemo<OrderCard[]>(() => {
     return myQuotes
-      .filter((quote) => quote.status === 'AWARDED' && quote.request?.order)
+      // Toda cotización adjudicada es un pedido. Si el comprador todavía no
+      // emitió la orden, se muestra igual en "Pendientes", a la espera.
+      .filter((quote) => quote.status === 'AWARDED')
       .map((quote) => {
-        const order = quote.request!.order!;
+        const order = quote.request?.order ?? null;
         const companyName = quote.request?.buyerCompany?.name ?? 'Comprador';
-
-        return {
+        const base = {
           quote,
-          column: getColumnFromStatus(order.fulfillmentStatus),
+          order,
           companyShort: getCompanyShort(companyName),
           companyName,
-          orderNumber: order.orderNumber,
           title: quote.request?.title ?? 'Pedido sin titulo',
           amountLabel: formatCurrency(quote.amount),
+          // La orden vive en el detalle del pedido; sin orden, se abre la cotización.
+          href: order ? `/dashboard/proveedor/pedidos/${quote.requestId}` : `/dashboard/proveedor/cotizaciones/${quote.id}`,
+          sortDate: order?.updatedAt ?? quote.updatedAt,
+        };
+
+        if (!order) {
+          return {
+            ...base,
+            column: 'pending' as OrderColumnKey,
+            orderNumber: 'Sin orden',
+            updatedLabel: formatShortDate(quote.updatedAt),
+            promisedLabel: 'A coordinar',
+            progress: 0,
+            stageLabel: 'Adjudicada',
+            noteLabel: 'Te adjudicaron esta cotización. Confirmá el pedido para empezar.',
+          };
+        }
+
+        return {
+          ...base,
+          column: getColumnFromStatus(order.fulfillmentStatus),
+          orderNumber: order.orderNumber,
           updatedLabel: formatShortDate(order.updatedAt),
           promisedLabel: formatDate(order.promisedDate),
           progress: getProgressFromStatus(order.fulfillmentStatus),
@@ -301,27 +320,26 @@ export default function SupplierOrdersPage() {
           noteLabel: order.notes ?? getNoteLabel(order.fulfillmentStatus),
         };
       })
-      .sort(
-        (left, right) =>
-          new Date(right.quote.request!.order!.updatedAt).getTime() -
-          new Date(left.quote.request!.order!.updatedAt).getTime(),
-      );
+      .sort((left, right) => new Date(right.sortDate).getTime() - new Date(left.sortDate).getTime());
   }, [myQuotes]);
 
   const filteredOrders = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const byClient = clientFilter === 'all' ? orderCards : orderCards.filter((item) => item.companyName === clientFilter);
     if (!query) {
-      return orderCards;
+      return byClient;
     }
 
-    return orderCards.filter((item) => {
+    return byClient.filter((item) => {
       return (
         item.orderNumber.toLowerCase().includes(query) ||
         item.companyName.toLowerCase().includes(query) ||
         item.title.toLowerCase().includes(query)
       );
     });
-  }, [orderCards, search]);
+  }, [clientFilter, orderCards, search]);
+
+  const clients = useMemo(() => Array.from(new Set(orderCards.map((item) => item.companyName))).sort((a, b) => a.localeCompare(b, 'es')), [orderCards]);
 
   const groupedOrders = useMemo(() => {
     return {
@@ -496,11 +514,11 @@ export default function SupplierOrdersPage() {
             mobileOrders.map((item) => (
               <Link
                 key={item.quote.id}
-                href={`/dashboard/proveedor/pedidos/${item.quote.requestId}`}
+                href={item.href}
                 className="block rounded-2xl border border-slate-300 bg-white p-4 shadow-sm transition active:bg-slate-50"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[15px] font-bold text-slate-950">Pedido {item.orderNumber}</p>
+                  <p className="text-[15px] font-bold text-slate-950">{item.order ? `Pedido ${item.orderNumber}` : 'Adjudicada · sin orden'}</p>
                   <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${stageBadgeClass(item.column)}`}>
                     {item.stageLabel}
                   </span>
@@ -541,13 +559,18 @@ export default function SupplierOrdersPage() {
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
-              type="button"
-            >
+            <label className="flex h-10 items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-700">
               <FilterIcon />
-              Filtros
-            </button>
+              <span className="sr-only">Filtrar por cliente</span>
+              <select className="h-full bg-transparent pr-1 font-semibold outline-none" onChange={(event) => setClientFilter(event.target.value)} value={clientFilter}>
+                <option value="all">Todos los clientes</option>
+                {clients.map((client) => (
+                  <option key={client} value={client}>
+                    {client}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             <label className="flex h-10 min-w-[250px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-600">
               <SearchIcon />
@@ -559,12 +582,6 @@ export default function SupplierOrdersPage() {
               />
             </label>
 
-            <button
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-seller-600 px-4 text-sm font-semibold text-white transition hover:bg-seller-600"
-              type="button"
-            >
-              + Nuevo pedido manual
-            </button>
           </div>
         </div>
 
@@ -641,12 +658,7 @@ export default function SupplierOrdersPage() {
                     <span className={`h-2 w-2 rounded-full ${column.dot}`} />
                     <h2 className="text-sm font-semibold text-slate-900">{column.title}</h2>
                   </div>
-                  <button
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-white/70"
-                    type="button"
-                  >
-                    <DotsIcon />
-                  </button>
+                  <span className="rounded-full bg-white/80 px-2 py-0.5 text-[12px] font-semibold text-slate-700">{groupedOrders[column.key].length}</span>
                 </div>
 
                 <div className="mt-4 space-y-3">
@@ -656,9 +668,8 @@ export default function SupplierOrdersPage() {
                     </div>
                   ) : (
                     groupedOrders[column.key].map((item) => {
-                      const nextAction = getNextFulfillmentAction(
-                        item.quote.request!.order!.fulfillmentStatus,
-                      );
+                      // Sin orden emitida, el primer paso (confirmar) la abre.
+                      const nextAction = getNextFulfillmentAction(item.order?.fulfillmentStatus ?? 'ISSUED');
 
                       return (
                         <article
@@ -675,7 +686,7 @@ export default function SupplierOrdersPage() {
                                   <p className="text-[11px] font-semibold text-slate-600">
                                     {item.orderNumber}
                                   </p>
-                                  <h3 className="truncate text-sm font-semibold text-slate-900">
+                                  <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
                                     {item.companyName}
                                   </h3>
                                 </div>
@@ -731,9 +742,16 @@ export default function SupplierOrdersPage() {
                                 </span>
                               </div>
 
+                              <Link
+                                className="mt-3 flex h-9 w-full items-center justify-center rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 transition hover:border-slate-500"
+                                href={item.href}
+                              >
+                                Ver detalle
+                              </Link>
+
                               {column.key !== 'delivered' ? (
                                 <button
-                                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-seller-600 transition hover:bg-seller-50 disabled:opacity-60"
+                                  className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-xl bg-seller-600 text-sm font-semibold text-white transition hover:bg-seller-50 disabled:opacity-60"
                                   disabled={
                                     !nextAction || updatingFulfillmentId === item.quote.requestId
                                   }
@@ -760,12 +778,6 @@ export default function SupplierOrdersPage() {
                   )}
                 </div>
 
-                <button
-                  className="mt-4 text-sm font-semibold text-seller-600 transition hover:text-seller-700"
-                  type="button"
-                >
-                  + {column.moreLabel}
-                </button>
               </section>
             ))}
           </div>
@@ -781,14 +793,14 @@ export default function SupplierOrdersPage() {
                 Necesitas ayuda para gestionar tus pedidos?
               </p>
               <p className="mt-1 text-sm text-slate-600">
-                El Asistente ATAR puede ayudarte a actualizar estados, generar documentos y
-                mas.
+                ATARIA te muestra paso a paso cómo gestionar clientes y pedidos.
               </p>
             </div>
           </div>
 
           <button
             className="inline-flex h-10 items-center justify-center rounded-xl border border-seller-100 bg-seller-surface px-4 text-sm font-semibold text-seller-600 transition hover:bg-seller-50"
+            onClick={() => window.dispatchEvent(new Event(ASSISTANT_OPEN_EVENT))}
             type="button"
           >
             Hablar con el Asistente

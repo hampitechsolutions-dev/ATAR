@@ -298,9 +298,220 @@ export default function SupplierRequestDetailPage() {
       ]
     : [];
 
+  // Formulario de cotización. Se usa en dos lugares: dentro de la página en
+  // escritorio y en el panel que sube desde abajo en mobile.
+  const quoteForm = (
+    <>
+          <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-4 lg:gap-y-2.5 lg:space-y-0">
+        {requestItems.length > 0 ? (
+          <div className="space-y-2 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-600">Precio unitario por producto</span>
+              <label className="flex items-center gap-1 text-xs text-slate-400">
+                Moneda
+                <input
+                  className="w-16 rounded-lg border border-slate-300 bg-seller-surface px-2 py-1 text-center text-xs uppercase text-slate-700 outline-none focus:border-indigo-400"
+                  maxLength={4}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
+                  }
+                  value={draft.currency}
+                />
+              </label>
+            </div>
+
+            {requestItems.map((item) => {
+              const availability = draft.availabilities[item.id] ?? 'QUOTED';
+              const price = Number(draft.unitPrices[item.id] ?? '');
+              const subtotal =
+                availability !== 'UNAVAILABLE' && Number.isFinite(price) && item.quantity
+                  ? price * item.quantity
+                  : null;
+              const options: { value: QuoteItemAvailability; label: string }[] = [
+                { value: 'QUOTED', label: 'Cotizo' },
+                { value: 'ALTERNATIVE', label: 'Alternativa' },
+                { value: 'UNAVAILABLE', label: 'No disponible' },
+              ];
+              const setAvailability = (value: QuoteItemAvailability) =>
+                setDraft((current) => ({
+                  ...current,
+                  availabilities: { ...current.availabilities, [item.id]: value },
+                }));
+              return (
+                <div key={item.id} className="rounded-xl border border-slate-300 bg-seller-surface p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900">{item.productName}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cantidad a definir'}
+                      </p>
+                    </div>
+                    {subtotal != null ? (
+                      <p className="shrink-0 text-xs font-semibold text-slate-700">
+                        {formatCurrency(subtotal, draft.currency)}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {/* Disponibilidad de este producto */}
+                  <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-white p-1 ring-1 ring-slate-200">
+                    {options.map((opt) => {
+                      const active = availability === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setAvailability(opt.value)}
+                          className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition ${
+                            active
+                              ? opt.value === 'UNAVAILABLE'
+                                ? 'bg-rose-500 text-white'
+                                : opt.value === 'ALTERNATIVE'
+                                  ? 'bg-amber-500 text-white'
+                                  : 'bg-indigo-600 text-white'
+                              : 'text-slate-500 hover:bg-slate-50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Precio (oculto si el producto no está disponible) */}
+                  {availability !== 'UNAVAILABLE' ? (
+                    <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:border-indigo-400">
+                      <span className="flex items-center px-3 text-sm text-slate-400">$</span>
+                      <input
+                        className="w-full bg-transparent py-2.5 pr-3 text-sm outline-none"
+                        inputMode="decimal"
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            unitPrices: { ...current.unitPrices, [item.id]: event.target.value },
+                          }))
+                        }
+                        placeholder={
+                          availability === 'ALTERNATIVE'
+                            ? 'Precio de la alternativa (opcional)'
+                            : 'Precio por unidad'
+                        }
+                        value={draft.unitPrices[item.id] ?? ''}
+                      />
+                    </div>
+                  ) : null}
+
+                  {/* Nota: motivo de no disponible o detalle del reemplazo */}
+                  {availability !== 'QUOTED' ? (
+                    <textarea
+                      className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                      rows={2}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          itemNotes: { ...current.itemNotes, [item.id]: event.target.value },
+                        }))
+                      }
+                      placeholder={
+                        availability === 'UNAVAILABLE'
+                          ? 'Motivo / cuándo lo tendrías (opcional)'
+                          : 'Detalle del reemplazo que ofrecés'
+                      }
+                      value={draft.itemNotes[item.id] ?? ''}
+                    />
+                  ) : null}
+                </div>
+              );
+            })}
+
+            <div className="flex items-center justify-between rounded-xl bg-indigo-100 px-3 py-2.5">
+              <span className="text-xs font-semibold text-indigo-700">Total de la cotización</span>
+              <span className="text-sm font-bold text-indigo-700">
+                {formatCurrency(quoteTotal, draft.currency)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <Field className="lg:col-span-2" label="Precio total">
+            <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-300 bg-seller-surface focus-within:border-indigo-400">
+              <span className="flex items-center px-3 text-sm text-slate-400">$</span>
+              <input
+                className="w-full bg-transparent py-3 pr-3 text-sm outline-none"
+                inputMode="decimal"
+                onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
+                placeholder="26000"
+                value={draft.amount}
+              />
+              <input
+                className="w-16 border-l border-slate-300 bg-transparent px-2 text-center text-xs uppercase outline-none"
+                maxLength={4}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
+                }
+                value={draft.currency}
+              />
+            </div>
+          </Field>
+        )}
+        <p className="text-[11px] text-slate-500 lg:col-span-2">
+          Estos datos vienen de tu perfil. Podés dejarlos como están o ajustarlos para esta cotización.
+        </p>
+        <Field label="Cantidad mínima (opcional)">
+          <Input
+            value={draft.minimumOrder}
+            onChange={(value) => setDraft((current) => ({ ...current, minimumOrder: value }))}
+            placeholder="500 unidades"
+          />
+        </Field>
+        <Field label="Tiempo de entrega en días (opcional)">
+          <Input
+            value={draft.leadTimeDays}
+            onChange={(value) => setDraft((current) => ({ ...current, leadTimeDays: value }))}
+            placeholder="7"
+            inputMode="numeric"
+          />
+        </Field>
+        <Field label="Condiciones de pago (opcional)">
+          <Input
+            value={draft.paymentTerms}
+            onChange={(value) => setDraft((current) => ({ ...current, paymentTerms: value }))}
+            placeholder="30 días"
+          />
+        </Field>
+        <Field label="Válida hasta (opcional)">
+          <input
+            type="date"
+            className="h-11 w-full rounded-xl border border-slate-300 bg-seller-surface px-3 text-sm outline-none transition focus:border-indigo-400"
+            value={draft.validity}
+            onChange={(event) => setDraft((current) => ({ ...current, validity: event.target.value }))}
+          />
+        </Field>
+        <Field className="lg:col-span-2" label="Observaciones (opcional)">
+          <textarea
+            className="min-h-24 w-full resize-y rounded-xl lg:min-h-[60px] border border-slate-300 bg-seller-surface px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, technicalComment: event.target.value }))
+            }
+            placeholder="Incluye flete a destino. Calidad premium garantizada."
+            value={draft.technicalComment}
+          />
+        </Field>
+      </div>
+
+      <button
+        type="button"
+        disabled={submitting}
+        onClick={() => void handleSubmitQuote()}
+        className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-indigo-600 lg:mt-4 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+      >
+        {submitting ? 'Enviando...' : existingQuote ? 'Actualizar cotización' : 'Enviar cotización'}
+          </button>
+    </>
+  );
+
   return (
     <SupplierDashboardShell session={session}>
-      <div className="mx-auto w-full max-w-2xl pb-32 lg:pb-0">
+      <div className="mx-auto w-full max-w-2xl pb-32 lg:max-w-none lg:pb-0">
         {/* Encabezado */}
         <div className="flex items-center gap-3">
           <button
@@ -354,87 +565,119 @@ export default function SupplierRequestDetailPage() {
           </div>
         ) : (
           <>
-            {/* Comprador */}
-            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-xs font-bold text-white">
-                {(request.buyerCompany?.name ?? 'CL').slice(0, 2).toUpperCase()}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-950">
-                  {request.buyerCompany?.name ?? 'Comprador'}
-                </p>
-                <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-emerald-600">
-                  <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  </svg>
-                  Comprador verificado
-                </p>
-              </div>
-            </div>
-
-            {/* Productos solicitados (uno por uno, con su detalle) */}
-            <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
-              <p className="text-sm font-bold text-slate-950">
-                Productos solicitados{requestItems.length > 0 ? ` (${requestItems.length})` : ''}
-              </p>
-              {requestItems.length > 0 ? (
-                <div className="mt-3 space-y-3">
-                  {requestItems.map((item, index) => {
-                    const specRows = parseSpecRows(item.specifications);
-                    return (
-                      <div key={item.id} className="rounded-xl border border-slate-300 bg-slate-50/60 p-3">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
-                              Producto {index + 1}
-                            </p>
-                            <p className="mt-0.5 text-sm font-semibold text-slate-950">{item.productName}</p>
-                            {item.category ? <p className="text-[11px] text-slate-500">{item.category}</p> : null}
-                          </div>
-                          <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200">
-                            {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cant. a definir'}
-                          </span>
-                        </div>
-                        {specRows.length ? (
-                          <dl className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                            {specRows.map((row, rowIndex) => (
-                              <div key={`${row.label}-${rowIndex}`} className="rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-slate-100">
-                                <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">{row.label}</dt>
-                                <dd className="mt-0.5 text-xs font-medium text-slate-900">{row.value || '-'}</dd>
-                              </div>
-                            ))}
-                          </dl>
-                        ) : (
-                          <p className="mt-2 text-[11px] text-slate-400">Sin especificaciones adicionales.</p>
-                        )}
+            {/* Escritorio: a la izquierda lo que pide el comprador y, a la derecha,
+                el formulario de cotización siempre a la vista. Mobile: una columna
+                y el formulario se abre desde la barra de abajo. */}
+            <div className="mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-5">
+              <div className="space-y-4">
+                <div className="grid gap-4 min-[1700px]:grid-cols-2">
+                  {/* Comprador, con el acceso al chat. En pantallas anchas la tarjeta
+                      acompaña el alto de "Entrega y condiciones" y el botón va abajo. */}
+                  <div className="flex flex-col gap-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm lg:max-[1699px]:flex-row lg:max-[1699px]:items-center lg:max-[1699px]:justify-between min-[1700px]:justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-xs font-bold text-white">
+                        {(request.buyerCompany?.name ?? 'CL').slice(0, 2).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-950">
+                          {request.buyerCompany?.name ?? 'Comprador'}
+                        </p>
+                        <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-emerald-600">
+                          <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                            <path d="M9 12l2 2 4-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                          </svg>
+                          Comprador verificado
+                        </p>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                  {request.description || 'Sin especificaciones.'}
-                </p>
-              )}
-            </div>
-
-            {/* Entrega y condiciones (a nivel solicitud) */}
-            <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
-              <p className="text-sm font-bold text-slate-950">Entrega y condiciones</p>
-              <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-seller-surface">
-                {detailRows.map((row) => (
-                  <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
-                    <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
-                    <dd className="text-right text-sm font-medium text-slate-900">{row.value}</dd>
+                    </div>
+                    {/* En mobile el chat se abre desde la barra fija de abajo. */}
+                    <button
+                      type="button"
+                      disabled={openingChat}
+                      onClick={() => void handleOpenChat()}
+                      className="hidden h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60 lg:flex"
+                    >
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                      {openingChat ? 'Abriendo...' : 'Contactar al comprador'}
+                    </button>
                   </div>
-                ))}
-              </dl>
+
+                  {/* Entrega y condiciones (a nivel solicitud) */}
+                  <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+                    <p className="text-sm font-bold text-slate-950">Entrega y condiciones</p>
+                    <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-seller-surface">
+                      {detailRows.map((row) => (
+                        <div key={row.label} className="flex items-start justify-between gap-4 py-2.5">
+                          <dt className="shrink-0 text-xs text-slate-500">{row.label}</dt>
+                          <dd className="text-right text-sm font-medium text-slate-900">{row.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+
+                </div>
+                {/* Productos solicitados (uno por uno, con su detalle) */}
+                <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+                  <p className="text-sm font-bold text-slate-950">
+                    Productos solicitados{requestItems.length > 0 ? ` (${requestItems.length})` : ''}
+                  </p>
+                  {requestItems.length > 0 ? (
+                    <div className="mt-3 space-y-3">
+                      {requestItems.map((item, index) => {
+                        const specRows = parseSpecRows(item.specifications);
+                        return (
+                          <div key={item.id} className="rounded-xl border border-slate-300 bg-slate-50/60 p-3">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
+                                  Producto {index + 1}
+                                </p>
+                                <p className="mt-0.5 text-sm font-semibold text-slate-950">{item.productName}</p>
+                                {item.category ? <p className="text-[11px] text-slate-500">{item.category}</p> : null}
+                              </div>
+                              <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200">
+                                {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cant. a definir'}
+                              </span>
+                            </div>
+                            {specRows.length ? (
+                              <dl className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2 2xl:grid-cols-3">
+                                {specRows.map((row, rowIndex) => (
+                                  <div key={`${row.label}-${rowIndex}`} className="rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-slate-100">
+                                    <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">{row.label}</dt>
+                                    <dd className="mt-0.5 text-xs font-medium text-slate-900">{row.value || '-'}</dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            ) : (
+                              <p className="mt-2 text-[11px] text-slate-400">Sin especificaciones adicionales.</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                      {request.description || 'Sin especificaciones.'}
+                    </p>
+                  )}
+                </div>
+
+              </div>
+
+              <section className="hidden rounded-2xl border border-slate-300 bg-white px-5 py-4 shadow-sm lg:sticky lg:top-0 lg:block">
+                <div className="mb-3">
+                  <h2 className="text-base font-bold text-slate-950">{existingQuote ? 'Tu cotización' : 'Enviá tu cotización'}</h2>
+                </div>
+                {quoteForm}
+              </section>
             </div>
 
             {/* Formulario de cotización (bottom sheet flotante) */}
             {showQuoteForm ? (
-              <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
+              <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
                 <div className="absolute inset-0 bg-slate-950/50" onClick={() => setShowQuoteForm(false)} />
                 <div className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[88vh] w-full max-w-2xl flex-col rounded-t-3xl bg-white shadow-[0_-20px_60px_rgba(2,6,23,0.28)]">
                   <div className="flex items-center justify-between border-b border-slate-300 px-5 py-4">
@@ -453,210 +696,7 @@ export default function SupplierRequestDetailPage() {
                     </button>
                   </div>
                   <div className="overflow-y-auto px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4">
-                    <div className="space-y-4">
-                  {requestItems.length > 0 ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-600">Precio unitario por producto</span>
-                        <label className="flex items-center gap-1 text-xs text-slate-400">
-                          Moneda
-                          <input
-                            className="w-16 rounded-lg border border-slate-300 bg-seller-surface px-2 py-1 text-center text-xs uppercase text-slate-700 outline-none focus:border-indigo-400"
-                            maxLength={4}
-                            onChange={(event) =>
-                              setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
-                            }
-                            value={draft.currency}
-                          />
-                        </label>
-                      </div>
-
-                      {requestItems.map((item) => {
-                        const availability = draft.availabilities[item.id] ?? 'QUOTED';
-                        const price = Number(draft.unitPrices[item.id] ?? '');
-                        const subtotal =
-                          availability !== 'UNAVAILABLE' && Number.isFinite(price) && item.quantity
-                            ? price * item.quantity
-                            : null;
-                        const options: { value: QuoteItemAvailability; label: string }[] = [
-                          { value: 'QUOTED', label: 'Cotizo' },
-                          { value: 'ALTERNATIVE', label: 'Alternativa' },
-                          { value: 'UNAVAILABLE', label: 'No disponible' },
-                        ];
-                        const setAvailability = (value: QuoteItemAvailability) =>
-                          setDraft((current) => ({
-                            ...current,
-                            availabilities: { ...current.availabilities, [item.id]: value },
-                          }));
-                        return (
-                          <div key={item.id} className="rounded-xl border border-slate-300 bg-seller-surface p-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-900">{item.productName}</p>
-                                <p className="text-[11px] text-slate-500">
-                                  {item.quantity ? `${item.quantity} ${item.unit ?? 'u.'}` : 'Cantidad a definir'}
-                                </p>
-                              </div>
-                              {subtotal != null ? (
-                                <p className="shrink-0 text-xs font-semibold text-slate-700">
-                                  {formatCurrency(subtotal, draft.currency)}
-                                </p>
-                              ) : null}
-                            </div>
-
-                            {/* Disponibilidad de este producto */}
-                            <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-white p-1 ring-1 ring-slate-200">
-                              {options.map((opt) => {
-                                const active = availability === opt.value;
-                                return (
-                                  <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => setAvailability(opt.value)}
-                                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition ${
-                                      active
-                                        ? opt.value === 'UNAVAILABLE'
-                                          ? 'bg-rose-500 text-white'
-                                          : opt.value === 'ALTERNATIVE'
-                                            ? 'bg-amber-500 text-white'
-                                            : 'bg-indigo-600 text-white'
-                                        : 'text-slate-500 hover:bg-slate-50'
-                                    }`}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-
-                            {/* Precio (oculto si el producto no está disponible) */}
-                            {availability !== 'UNAVAILABLE' ? (
-                              <div className="mt-2 flex items-stretch overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:border-indigo-400">
-                                <span className="flex items-center px-3 text-sm text-slate-400">$</span>
-                                <input
-                                  className="w-full bg-transparent py-2.5 pr-3 text-sm outline-none"
-                                  inputMode="decimal"
-                                  onChange={(event) =>
-                                    setDraft((current) => ({
-                                      ...current,
-                                      unitPrices: { ...current.unitPrices, [item.id]: event.target.value },
-                                    }))
-                                  }
-                                  placeholder={
-                                    availability === 'ALTERNATIVE'
-                                      ? 'Precio de la alternativa (opcional)'
-                                      : 'Precio por unidad'
-                                  }
-                                  value={draft.unitPrices[item.id] ?? ''}
-                                />
-                              </div>
-                            ) : null}
-
-                            {/* Nota: motivo de no disponible o detalle del reemplazo */}
-                            {availability !== 'QUOTED' ? (
-                              <textarea
-                                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
-                                rows={2}
-                                onChange={(event) =>
-                                  setDraft((current) => ({
-                                    ...current,
-                                    itemNotes: { ...current.itemNotes, [item.id]: event.target.value },
-                                  }))
-                                }
-                                placeholder={
-                                  availability === 'UNAVAILABLE'
-                                    ? 'Motivo / cuándo lo tendrías (opcional)'
-                                    : 'Detalle del reemplazo que ofrecés'
-                                }
-                                value={draft.itemNotes[item.id] ?? ''}
-                              />
-                            ) : null}
-                          </div>
-                        );
-                      })}
-
-                      <div className="flex items-center justify-between rounded-xl bg-indigo-100 px-3 py-2.5">
-                        <span className="text-xs font-semibold text-indigo-700">Total de la cotización</span>
-                        <span className="text-sm font-bold text-indigo-700">
-                          {formatCurrency(quoteTotal, draft.currency)}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <Field label="Precio total">
-                      <div className="flex items-stretch overflow-hidden rounded-xl border border-slate-300 bg-seller-surface focus-within:border-indigo-400">
-                        <span className="flex items-center px-3 text-sm text-slate-400">$</span>
-                        <input
-                          className="w-full bg-transparent py-3 pr-3 text-sm outline-none"
-                          inputMode="decimal"
-                          onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
-                          placeholder="26000"
-                          value={draft.amount}
-                        />
-                        <input
-                          className="w-16 border-l border-slate-300 bg-transparent px-2 text-center text-xs uppercase outline-none"
-                          maxLength={4}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))
-                          }
-                          value={draft.currency}
-                        />
-                      </div>
-                    </Field>
-                  )}
-                  <p className="text-[11px] text-slate-400">
-                    Estos datos vienen de tu perfil. Podés dejarlos como están o ajustarlos para esta cotización.
-                  </p>
-                  <Field label="Cantidad mínima (opcional)">
-                    <Input
-                      value={draft.minimumOrder}
-                      onChange={(value) => setDraft((current) => ({ ...current, minimumOrder: value }))}
-                      placeholder="500 unidades"
-                    />
-                  </Field>
-                  <Field label="Tiempo de entrega en días (opcional)">
-                    <Input
-                      value={draft.leadTimeDays}
-                      onChange={(value) => setDraft((current) => ({ ...current, leadTimeDays: value }))}
-                      placeholder="7"
-                      inputMode="numeric"
-                    />
-                  </Field>
-                  <Field label="Condiciones de pago (opcional)">
-                    <Input
-                      value={draft.paymentTerms}
-                      onChange={(value) => setDraft((current) => ({ ...current, paymentTerms: value }))}
-                      placeholder="30 días"
-                    />
-                  </Field>
-                  <Field label="Válida hasta (opcional)">
-                    <input
-                      type="date"
-                      className="h-11 w-full rounded-xl border border-slate-300 bg-seller-surface px-3 text-sm outline-none transition focus:border-indigo-400"
-                      value={draft.validity}
-                      onChange={(event) => setDraft((current) => ({ ...current, validity: event.target.value }))}
-                    />
-                  </Field>
-                  <Field label="Observaciones (opcional)">
-                    <textarea
-                      className="min-h-24 w-full resize-y rounded-xl border border-slate-300 bg-seller-surface px-3 py-3 text-sm outline-none transition focus:border-indigo-400"
-                      onChange={(event) =>
-                        setDraft((current) => ({ ...current, technicalComment: event.target.value }))
-                      }
-                      placeholder="Incluye flete a destino. Calidad premium garantizada."
-                      value={draft.technicalComment}
-                    />
-                  </Field>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => void handleSubmitQuote()}
-                  className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-indigo-600 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
-                >
-                  {submitting ? 'Enviando...' : existingQuote ? 'Actualizar cotización' : 'Enviar cotización'}
-                    </button>
+                    {quoteForm}
                   </div>
                 </div>
               </div>
@@ -667,7 +707,7 @@ export default function SupplierRequestDetailPage() {
 
       {/* Barra de acciones fija (mobile) */}
       {request ? (
-        <div className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-300 bg-white/95 px-4 py-3 backdrop-blur lg:static lg:mt-6 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
+        <div className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-300 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
           <div className="mx-auto flex w-full max-w-2xl gap-3">
             {/* Chat con el comprador antes de cotizar. */}
             <button
@@ -695,9 +735,9 @@ export default function SupplierRequestDetailPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <label className="block">
+    <label className={`block ${className}`}>
       <span className="mb-1.5 block text-xs font-medium text-slate-600">{label}</span>
       {children}
     </label>

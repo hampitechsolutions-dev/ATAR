@@ -1,5 +1,6 @@
 'use client';
 
+import { ASSISTANT_OPEN_EVENT } from './assistant-fab';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -488,7 +489,7 @@ export default function DashboardSidebar({
                 <p className="mt-0.5 text-[11px] text-white/75">Hablá con el Asistente ATAR</p>
               </div>
             </div>
-            <button className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl bg-white text-xs font-semibold text-seller-700 transition hover:bg-seller-50" type="button">
+            <button className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl bg-white text-xs font-semibold text-seller-700 transition hover:bg-seller-50" onClick={() => window.dispatchEvent(new Event(ASSISTANT_OPEN_EVENT))} type="button">
               Iniciar chat
             </button>
           </div>
@@ -548,7 +549,7 @@ export default function DashboardSidebar({
         <div className="mt-3 rounded-2xl border border-slate-300 bg-white p-3">
           <p className="text-xs font-semibold text-slate-950">¿Necesitás ayuda?</p>
           <p className="mt-1 text-xs text-slate-500">Hablá con el Asistente ATAR</p>
-          <button className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-100 text-xs font-semibold text-indigo-700 hover:bg-indigo-100" type="button">
+          <button className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-100 text-xs font-semibold text-indigo-700 hover:bg-indigo-100" onClick={() => window.dispatchEvent(new Event(ASSISTANT_OPEN_EVENT))} type="button">
             Iniciar chat
           </button>
         </div>

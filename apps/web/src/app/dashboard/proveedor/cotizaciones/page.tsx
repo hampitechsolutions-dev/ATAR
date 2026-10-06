@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useMemo, useState, type ReactNode } from 'react';
 import SupplierDashboardShell from '@/components/dashboard/supplier-dashboard-shell';
 import { type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
 import { LoadingState } from '@/components/ui/spinner';
@@ -144,10 +145,26 @@ const card = 'rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30p
 
 /* Página ------------------------------------------------------------------- */
 
+// El Inicio enlaza con ?tab=enviadas para abrir la lista ya filtrada.
+const TAB_BY_PARAM: Record<string, QuoteTab> = { 'por-responder': 'pending', enviadas: 'submitted', aceptadas: 'awarded', vencidas: 'expired' };
+
 export default function SupplierQuotesPage() {
+  return (
+    <Suspense fallback={null}>
+      <SupplierQuotesWithParams />
+    </Suspense>
+  );
+}
+
+function SupplierQuotesWithParams() {
+  const tab = useSearchParams()?.get('tab') ?? '';
+  return <SupplierQuotesContent key={tab} initialTab={TAB_BY_PARAM[tab] ?? 'all'} />;
+}
+
+function SupplierQuotesContent({ initialTab }: { initialTab: QuoteTab }) {
   const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<QuoteTab>('all');
+  const [activeTab, setActiveTab] = useState<QuoteTab>(initialTab);
   const [page, setPage] = useState(1);
   const [menuRow, setMenuRow] = useState<string | null>(null);
   // Hora de referencia fija para que los cálculos del render sean puros.
