@@ -403,7 +403,7 @@ export default function ComoFuncionaPage() {
               cotizaciones y hacer crecer su negocio.
             </p>
             <VideoTrigger className={`${primaryCta} mt-7 text-white`}>
-              Reproducir video (0:57)
+              Reproducir video (1:20)
               <Icon name="play" className="h-4 w-4" />
             </VideoTrigger>
           </Reveal>

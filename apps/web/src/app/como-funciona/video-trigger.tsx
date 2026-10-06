@@ -3,12 +3,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-const VIDEO_SRC = '/atarvideo.mp4';
+// Video de YouTube (https://youtu.be/kpeCiSX2BgY). Se usa youtube-nocookie para
+// que YouTube no deje cookies hasta que la persona le dé a reproducir.
+const VIDEO_ID = 'kpeCiSX2BgY';
+const VIDEO_SRC = `https://www.youtube-nocookie.com/embed/${VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`;
 
 /**
- * Botón que abre el video de "Cómo funciona" (public/atarvideo.mp4, 0:57) en un
- * modal. Si el archivo falla al cargar, el modal lo dice en vez de mostrar un
- * reproductor roto.
+ * Botón que abre el video de "Cómo funciona" en un modal. El reproductor se
+ * carga recién al abrir el modal, así la página no descarga nada de YouTube
+ * hasta que hace falta.
  */
 export default function VideoTrigger({
   children,
@@ -20,7 +23,6 @@ export default function VideoTrigger({
   label?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -68,24 +70,14 @@ export default function VideoTrigger({
               </svg>
             </button>
             <div className="overflow-hidden rounded-[16px] bg-black shadow-[0_30px_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
-              {failed ? (
-                <div className="flex aspect-video flex-col items-center justify-center gap-2 px-6 text-center text-white">
-                  <p className="text-lg font-semibold">El video estará disponible pronto.</p>
-                  <p className="text-sm text-white/60">Mientras tanto, recorré los pasos de esta página.</p>
-                </div>
-              ) : (
-                <video
-                  autoPlay
-                  className="aspect-video w-full"
-                  controls
-                  onError={() => setFailed(true)}
-                  playsInline
-                  poster="/cf.png"
-                  src={VIDEO_SRC}
-                >
-                  Tu navegador no soporta la reproducción de video.
-                </video>
-              )}
+              <iframe
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="aspect-video w-full"
+                referrerPolicy="strict-origin-when-cross-origin"
+                src={VIDEO_SRC}
+                title="Cómo funciona ATAR"
+              />
             </div>
           </div>
         </div>,

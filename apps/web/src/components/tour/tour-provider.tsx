@@ -239,6 +239,12 @@ function TourOverlay({
   // false mientras se navega o se busca el elemento: el globo espera.
   const [ready, setReady] = useState(false);
   const [bubble, setBubble] = useState<{ top: number; left: number; width: number } | null>(null);
+  // El aviso de espera solo aparece si el paso tarda en cargar (cambio de pantalla lento).
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSlow(true), 900);
+    return () => window.clearTimeout(timer);
+  }, []);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const nextRef = useRef<HTMLButtonElement | null>(null);
   // La ruta del paso ya se alcanzó: si después cambia, es el usuario yéndose.
@@ -287,6 +293,7 @@ function TourOverlay({
     const startedAt = Date.now();
     let element: HTMLElement | null = null;
     let cancelled = false;
+    let lastPosition = '';
 
     const measure = () => {
       if (!element || !element.isConnected) {
@@ -309,12 +316,11 @@ function TourOverlay({
         element = findTarget(candidates);
         if (element) {
           const box = element.getBoundingClientRect();
-          if (box.top < 72 || box.bottom > window.innerHeight - 72) {
+          // Solo se desplaza la página si el elemento no entra entero en la pantalla.
+          if (box.top < 0 || box.bottom > window.innerHeight) {
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             element.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
           }
-          measure();
-          setReady(true);
         } else if (Date.now() - startedAt > TARGET_TIMEOUT_MS) {
           window.clearInterval(timer);
           if (active.misses + 1 >= total) {
@@ -327,8 +333,16 @@ function TourOverlay({
         return;
       }
       measure();
+      // El resaltado aparece recién cuando el elemento dejó de moverse (terminó
+      // el desplazamiento o la animación de entrada): así nunca se ve corrido.
+      const box = element.getBoundingClientRect();
+      const position = `${Math.round(box.top)}:${Math.round(box.left)}:${Math.round(box.width)}:${Math.round(box.height)}`;
+      if (position === lastPosition) {
+        setReady(true);
+      }
+      lastPosition = position;
     };
-    const timer = window.setInterval(tick, 140);
+    const timer = window.setInterval(tick, 70);
     const frame = window.requestAnimationFrame(tick);
 
     window.addEventListener('resize', measure);
@@ -438,7 +452,7 @@ function TourOverlay({
       {ready && rect ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute rounded-[12px] transition-[top,left,width,height] duration-200 ease-out motion-reduce:transition-none"
+          className="pointer-events-none absolute rounded-[12px]"
           style={{
             top: rect.top - pad,
             left: rect.left - pad,
@@ -462,7 +476,7 @@ function TourOverlay({
           aria-describedby={bodyId}
           aria-labelledby={titleId}
           aria-modal="true"
-          className={`absolute rounded-[16px] border border-slate-300 bg-white shadow-[0_24px_60px_rgba(2,6,23,0.35)] transition-[top,left,opacity] duration-200 ease-out motion-reduce:transition-none ${
+          className={`absolute rounded-[16px] border border-slate-300 bg-white shadow-[0_24px_60px_rgba(2,6,23,0.35)] transition-opacity duration-200 ease-out motion-reduce:transition-none ${
             bubble ? 'opacity-100' : 'opacity-0'
           }`}
           role="dialog"
@@ -538,11 +552,11 @@ function TourOverlay({
             </div>
           </div>
         </div>
-      ) : (
+      ) : slow ? (
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-slate-800 shadow-lg" role="status">
           ATARIA te está llevando…
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
