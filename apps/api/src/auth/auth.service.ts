@@ -1,6 +1,7 @@
 ﻿import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -19,6 +20,14 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    // El rol ADMIN es el dueño/operador de la plataforma ATAR y da acceso al
+    // panel de facturación y a todos los endpoints de administración. NUNCA se
+    // puede obtener por registro público: se asigna fuera de banda (script
+    // `prisma:grant-admin`). Sin esta guarda, cualquiera podría auto-asignárselo.
+    if (dto.role === MembershipRole.ADMIN) {
+      throw new ForbiddenException('El rol de administrador no se puede elegir al registrarse.');
+    }
+
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException('Ya existe un usuario registrado con ese email.');

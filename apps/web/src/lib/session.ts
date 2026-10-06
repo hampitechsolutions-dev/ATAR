@@ -138,6 +138,11 @@ export function canAccessDashboard(user: AuthUser, side: MembershipRole): boolea
   return true;
 }
 
+/** Admin de la plataforma ATAR: tiene al menos una membresía con rol ADMIN. */
+export function isPlatformAdmin(user: AuthUser): boolean {
+  return user.memberships.some((membership) => membership.role === 'ADMIN');
+}
+
 export function getDefaultDashboardPath(user: AuthUser): string {
   const role = getPrimaryMembershipRole(user);
   if (role === 'SUPPLIER' || role === 'SELLER') {

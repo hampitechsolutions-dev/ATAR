@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -15,6 +16,7 @@ import {
   RequestStatus,
 } from '@prisma/client';
 import { AuthUser } from '../auth/auth-user.interface';
+import { BillingService } from '../billing/billing.service';
 import { resolveCompanyId, resolveOptionalCompanyId } from '../common/workspace.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -26,10 +28,13 @@ import { UpsertOrderDto } from './dto/upsert-order.dto';
 
 @Injectable()
 export class RequestsService {
+  private readonly logger = new Logger(RequestsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     private readonly assignmentsService: AssignmentsService,
+    private readonly billingService: BillingService,
   ) {}
 
   async create(user: AuthUser, dto: CreateRequestDto, activeCompanyId?: string) {
@@ -752,6 +757,19 @@ export class RequestsService {
           quoteId: request.awardedQuote.id,
         },
       });
+    }
+
+    // La operación quedó cerrada (COMPLETED): se genera la comisión de ATAR de
+    // forma idempotente. Best-effort: un fallo de billing no debe tumbar el
+    // cierre de la operación comercial.
+    if (action === 'CONFIRM_RECEIPT' && nextState === RequestStatus.COMPLETED) {
+      try {
+        await this.billingService.generateCommissionForClosedRequest(id);
+      } catch (error) {
+        this.logger.error(
+          `No se pudo generar la comisión de la operación ${id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
     }
 
     return updatedRequest;
