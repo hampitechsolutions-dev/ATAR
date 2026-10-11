@@ -160,7 +160,7 @@ export default function SupplierOrderDetailPage() {
             <p className="mt-2 text-sm text-slate-500">{buyerName}</p>
 
             {/* Timeline */}
-            <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-5 shadow-sm">
+            <div data-tour="order-timeline" className="mt-4 rounded-2xl border border-slate-300 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between">
                 {TIMELINE_STEPS.map((step, index) => {
                   const stepIndex = STATUS_ORDER.indexOf(step.reached);
@@ -198,7 +198,7 @@ export default function SupplierOrderDetailPage() {
             </div>
 
             {/* Información */}
-            <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+            <div data-tour="order-info" className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">Información del pedido</p>
               <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-seller-surface">
                 {infoRows.map((row) => (
@@ -211,7 +211,7 @@ export default function SupplierOrderDetailPage() {
             </div>
 
             {/* Documentos */}
-            <div className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+            <div data-tour="order-docs" className="mt-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
               <p className="text-sm font-bold text-slate-950">Documentos</p>
               {order.notes ? (
                 <p className="mt-2 text-sm text-slate-600">{order.notes}</p>
@@ -236,7 +236,7 @@ export default function SupplierOrderDetailPage() {
 
       {/* Acción de avance (fija en mobile) */}
       {order && nextAction ? (
-        <div className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-300 bg-white/95 px-4 py-3 backdrop-blur lg:static lg:mt-6 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
+        <div data-tour="order-action" className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-300 bg-white/95 px-4 py-3 backdrop-blur lg:static lg:mt-6 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
           <div className="mx-auto w-full max-w-2xl">
             <button
               type="button"

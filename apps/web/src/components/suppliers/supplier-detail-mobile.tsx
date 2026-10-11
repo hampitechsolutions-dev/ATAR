@@ -291,7 +291,7 @@ export default function SupplierDetailMobile({
   const { about, subtitle, cover, featured, highlights, companyRows, capacityRows } = buildSupplierView(supplier, products);
 
   const tabsNav = (
-    <nav className="flex overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav data-tour="supplier-tabs" className="flex overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.key}

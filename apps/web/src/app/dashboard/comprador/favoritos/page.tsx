@@ -53,7 +53,7 @@ export default function BuyerFavoritesPage() {
       </header>
 
       {/* Una sola superficie con filas, igual que el directorio de proveedores. */}
-      <section className="overflow-hidden rounded-[16px] border border-slate-300 bg-white">
+      <section data-tour="favorites-list" className="overflow-hidden rounded-[16px] border border-slate-300 bg-white">
         {favoriteProviders.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-slate-500">
             Todavía no guardaste proveedores. Podés agregarlos con el corazón desde{' '}

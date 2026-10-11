@@ -108,9 +108,11 @@ export default function SupplierDetailDesktop({
   const chip = 'inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] text-slate-700';
 
   return (
-    <>
+    // Columna de la ficha: desde xl scrollea entera (portada, datos y contenido),
+    // mientras el chat queda fijo al lado a todo el alto.
+    <div ref={contentRef} className={isPreview ? '' : '[scrollbar-width:thin] xl:min-h-0 xl:overflow-y-auto'}>
       {/* ------------------------------------------------- portada + identidad */}
-      <header className="hidden bg-white lg:block xl:col-span-2">
+      <header data-tour="supplier-header" className="hidden bg-white lg:block">
         <div className="relative h-[130px] bg-slate-200 2xl:h-[170px]">
           <Image alt="" className="object-cover" fill priority sizes="100vw" src={cover} />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/25 to-transparent" />
@@ -204,7 +206,10 @@ export default function SupplierDetailDesktop({
           </div>
         </div>
 
-        <nav className="mt-3 flex gap-1 border-b border-slate-200 px-4">
+      </header>
+
+      {/* Las pestañas quedan pegadas arriba al bajar, para saltar entre secciones. */}
+      <nav data-tour="supplier-tabs" className="sticky top-0 z-10 hidden gap-1 border-b border-slate-200 bg-white px-4 lg:flex">
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -217,11 +222,10 @@ export default function SupplierDetailDesktop({
               {active === tab.key ? <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-indigo-600" /> : null}
             </button>
           ))}
-        </nav>
-      </header>
+      </nav>
 
       {/* ------------------------------------------------------------ contenido */}
-      <div ref={contentRef} className={`hidden bg-white px-6 pb-10 pt-6 [scrollbar-width:thin] lg:block ${isPreview ? '' : 'xl:min-h-0 xl:overflow-y-auto'}`}>
+      <div className="hidden bg-white px-6 pb-10 pt-6 lg:block">
         {isPreview ? (
           <p className="mb-6 rounded-xl bg-indigo-50 px-4 py-2.5 text-[13px] text-indigo-800">
             Así ven tu empresa los compradores. A ellos además les aparecen los botones para contactarte y pedirte una cotización, y el chat.
@@ -231,7 +235,7 @@ export default function SupplierDetailDesktop({
 
         <div className="space-y-9">
           {/* ---------------------------------------------------------- resumen */}
-          <section ref={(node) => { sectionRefs.current.resumen = node; }} className="scroll-mt-4 space-y-8">
+          <section ref={(node) => { sectionRefs.current.resumen = node; }} className="scroll-mt-16 space-y-8">
             <div className="grid gap-10 2xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
               <div>
                 <h2 className={heading}>Sobre la empresa</h2>
@@ -282,7 +286,7 @@ export default function SupplierDetailDesktop({
           </section>
 
           {/* -------------------------------------------------------- productos */}
-          <section ref={(node) => { sectionRefs.current.productos = node; }} className="scroll-mt-4 border-t border-slate-100 pt-8">
+          <section ref={(node) => { sectionRefs.current.productos = node; }} className="scroll-mt-16 border-t border-slate-100 pt-8">
             <div className="flex items-center justify-between">
               <h2 className={heading}>Catálogo completo</h2>
               <span className="text-[13px] text-slate-500">
@@ -313,7 +317,7 @@ export default function SupplierDetailDesktop({
           </section>
 
           {/* ---------------------------------------------------- ficha técnica */}
-          <section ref={(node) => { sectionRefs.current.ficha = node; }} className="scroll-mt-4 border-t border-slate-100 pt-8">
+          <section ref={(node) => { sectionRefs.current.ficha = node; }} className="scroll-mt-16 border-t border-slate-100 pt-8">
             <div className="grid gap-10 2xl:grid-cols-2">
               {capacityRows.length > 0 ? (
                 <div>
@@ -357,7 +361,7 @@ export default function SupplierDetailDesktop({
           </section>
 
           {/* -------------------------------------------------------- ubicación */}
-          <section ref={(node) => { sectionRefs.current.ubicacion = node; }} className="scroll-mt-4 border-t border-slate-100 pt-8">
+          <section ref={(node) => { sectionRefs.current.ubicacion = node; }} className="scroll-mt-16 border-t border-slate-100 pt-8">
             <div className="flex items-center justify-between">
               <h2 className={heading}>Ubicación</h2>
               <a className="text-[13px] font-medium hover:underline" href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`} rel="noreferrer" target="_blank">
@@ -380,6 +384,6 @@ export default function SupplierDetailDesktop({
           </section>
         </div>
       </div>
-    </>
+    </div>
   );
 }

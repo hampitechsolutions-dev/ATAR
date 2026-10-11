@@ -573,7 +573,7 @@ export default function SupplierRequestDetailPage() {
                 <div className="grid gap-4 min-[1700px]:grid-cols-2">
                   {/* Comprador, con el acceso al chat. En pantallas anchas la tarjeta
                       acompaña el alto de "Entrega y condiciones" y el botón va abajo. */}
-                  <div className="flex flex-col gap-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm lg:max-[1699px]:flex-row lg:max-[1699px]:items-center lg:max-[1699px]:justify-between min-[1700px]:justify-between">
+                  <div data-tour="rq-buyer" className="flex flex-col gap-4 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm lg:max-[1699px]:flex-row lg:max-[1699px]:items-center lg:max-[1699px]:justify-between min-[1700px]:justify-between">
                     <div className="flex items-center gap-3">
                       <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-xs font-bold text-white">
                         {(request.buyerCompany?.name ?? 'CL').slice(0, 2).toUpperCase()}
@@ -606,7 +606,7 @@ export default function SupplierRequestDetailPage() {
                   </div>
 
                   {/* Entrega y condiciones (a nivel solicitud) */}
-                  <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+                  <div data-tour="rq-delivery" className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
                     <p className="text-sm font-bold text-slate-950">Entrega y condiciones</p>
                     <dl className="mt-3 [&>div]:rounded-[8px] [&>div]:px-2.5 [&>div:nth-child(odd)]:bg-seller-surface">
                       {detailRows.map((row) => (
@@ -620,7 +620,7 @@ export default function SupplierRequestDetailPage() {
 
                 </div>
                 {/* Productos solicitados (uno por uno, con su detalle) */}
-                <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+                <div data-tour="rq-products" className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
                   <p className="text-sm font-bold text-slate-950">
                     Productos solicitados{requestItems.length > 0 ? ` (${requestItems.length})` : ''}
                   </p>
@@ -667,7 +667,7 @@ export default function SupplierRequestDetailPage() {
 
               </div>
 
-              <section className="hidden rounded-2xl border border-slate-300 bg-white px-5 py-4 shadow-sm lg:sticky lg:top-0 lg:block">
+              <section data-tour="rq-form" className="hidden rounded-2xl border border-slate-300 bg-white px-5 py-4 shadow-sm lg:sticky lg:top-0 lg:block">
                 <div className="mb-3">
                   <h2 className="text-base font-bold text-slate-950">{existingQuote ? 'Tu cotización' : 'Enviá tu cotización'}</h2>
                 </div>
@@ -707,7 +707,7 @@ export default function SupplierRequestDetailPage() {
 
       {/* Barra de acciones fija (mobile) */}
       {request ? (
-        <div className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-300 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+        <div data-tour="rq-actions" className="fixed inset-x-0 bottom-[68px] z-30 border-t border-slate-300 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
           <div className="mx-auto flex w-full max-w-2xl gap-3">
             {/* Chat con el comprador antes de cotizar. */}
             <button

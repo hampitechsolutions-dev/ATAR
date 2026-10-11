@@ -137,7 +137,7 @@ export default function SupplierTeamMemberPage() {
           </div>
         ) : (
           <>
-            <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-sm">
+            <div data-tour="member-header" className="rounded-2xl border border-slate-300 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-sm font-bold text-indigo-600">
@@ -180,7 +180,7 @@ export default function SupplierTeamMemberPage() {
               { title: 'Cotizadas y en negociación', items: grouped.quoted },
               { title: 'Cerradas', items: grouped.closed },
             ].map((group) => (
-              <section className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm" key={group.title}>
+              <section data-tour="member-groups" className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm" key={group.title}>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-slate-950">{group.title}</p>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500">

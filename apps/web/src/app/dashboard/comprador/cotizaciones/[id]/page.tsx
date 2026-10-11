@@ -350,7 +350,7 @@ export default function BuyerQuoteDetailPage() {
         ) : (
           <>
             {/* ---------- Encabezado ---------- */}
-            <section className="flex flex-wrap items-center gap-4 rounded-[12px] border border-slate-300 bg-white p-4 lg:p-5">
+            <section data-tour="quote-header" className="flex flex-wrap items-center gap-4 rounded-[12px] border border-slate-300 bg-white p-4 lg:p-5">
               <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
                 <Image alt="" className="object-cover" fill sizes="64px" src={getCategoryImage(request?.category)} />
               </span>
@@ -364,7 +364,7 @@ export default function BuyerQuoteDetailPage() {
             </section>
 
             {/* ---------- Métricas ---------- */}
-            <section className="grid gap-3 rounded-[12px] border border-slate-300 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <section data-tour="quote-metrics" className="grid gap-3 rounded-[12px] border border-slate-300 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <MetricCard icon="users" label="Proveedor">
                 <p className="text-[17px] font-bold text-slate-950">{quote.supplierCompany?.name ?? 'Proveedor'}</p>
                 {quote.supplierCompany?.city ? (
@@ -602,7 +602,7 @@ export default function BuyerQuoteDetailPage() {
                 </div>
               </section>
 
-              <section className="flex h-[620px] flex-col overflow-hidden rounded-[12px] border border-slate-300 bg-white">
+              <section data-tour="quote-chat" className="flex h-[620px] flex-col overflow-hidden rounded-[12px] border border-slate-300 bg-white">
                 <ConversationPanel
                   mode="quote"
                   quoteId={quote.id}
@@ -613,7 +613,7 @@ export default function BuyerQuoteDetailPage() {
             </div>
 
             {/* ---------- Timeline + consejo ---------- */}
-            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_440px]">
+            <div data-tour="quote-timeline" className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_440px]">
               <section className="rounded-[12px] border border-slate-300 bg-white p-5">
                 <h2 className="text-[17px] font-bold tracking-[-0.02em] text-slate-950">Estado de la cotización</h2>
 

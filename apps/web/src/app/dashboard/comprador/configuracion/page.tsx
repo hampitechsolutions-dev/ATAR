@@ -140,7 +140,7 @@ export default function BuyerSettingsPage() {
       ) : null}
 
       <div className="mt-5 divide-y divide-slate-200 rounded-[16px] border border-slate-300 bg-white px-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
-        <div className="-mx-5 flex items-center gap-4 rounded-t-[16px] bg-[#eef0ff] px-5 py-5">
+        <div data-tour="settings-account" className="-mx-5 flex items-center gap-4 rounded-t-[16px] bg-[#eef0ff] px-5 py-5">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-lg font-bold text-white">{initials}</span>
           <div className="min-w-0">
             <p className="truncate text-[18px] font-bold leading-6 text-slate-950">{loading || !session ? 'Cargando…' : companyName}</p>
@@ -149,7 +149,7 @@ export default function BuyerSettingsPage() {
             </p>
           </div>
         </div>
-        <section className="py-5">
+        <section data-tour="settings-preferences" className="py-5">
           <h2 className={sectionTitle}>Preferencias</h2>
           <div className="mt-1 divide-y divide-slate-200">
             <div className="flex items-center justify-between gap-4 py-3.5">
@@ -202,7 +202,7 @@ export default function BuyerSettingsPage() {
           </div>
         </section>
 
-        <section className="py-5">
+        <section data-tour="settings-links" className="py-5">
           <h2 className={sectionTitle}>Mi cuenta</h2>
           <div className="-mx-2 mt-2">
             {links.map((item) => (

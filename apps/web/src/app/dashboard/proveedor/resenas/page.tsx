@@ -86,7 +86,7 @@ export default function SupplierReviewsPage() {
 
         {/* Operaciones adjudicadas (datos reales) */}
         <div className="mt-6 flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-950">Operaciones adjudicadas</h2>
+          <h2 data-tour="reviews-list" className="text-base font-bold text-slate-950">Operaciones adjudicadas</h2>
           <span className="text-xs text-slate-400">{loading ? '' : metrics.total}</span>
         </div>
 
@@ -158,7 +158,7 @@ export default function SupplierReviewsPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 [&>*:nth-child(5n+1)]:shadow-[inset_4px_0_0_var(--color-seller-500),0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+2)]:shadow-[inset_4px_0_0_#0ea5e9,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+3)]:shadow-[inset_4px_0_0_#f59e0b,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+4)]:shadow-[inset_4px_0_0_#10b981,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+5)]:shadow-[inset_4px_0_0_var(--color-seller-500),0_8px_22px_rgba(15,23,42,0.07)]">
+        <div data-tour="reviews-kpis" className="grid grid-cols-2 gap-4 md:grid-cols-3 [&>*:nth-child(5n+1)]:shadow-[inset_4px_0_0_var(--color-seller-500),0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+2)]:shadow-[inset_4px_0_0_#0ea5e9,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+3)]:shadow-[inset_4px_0_0_#f59e0b,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+4)]:shadow-[inset_4px_0_0_#10b981,0_8px_22px_rgba(15,23,42,0.07)] [&>*:nth-child(5n+5)]:shadow-[inset_4px_0_0_var(--color-seller-500),0_8px_22px_rgba(15,23,42,0.07)]">
           <article className="rounded-[22px] border border-slate-200 bg-white p-5">
             <p className="text-xs font-semibold text-slate-600">Cotizaciones adjudicadas</p>
             <p className="mt-2 text-[22px] font-semibold text-slate-900 sm:text-[28px]">
@@ -179,7 +179,7 @@ export default function SupplierReviewsPage() {
           </article>
         </div>
 
-        <div className="grid gap-3">
+        <div data-tour="reviews-list" className="grid gap-3">
           {loading ? (
             <div className="rounded-[18px] border border-slate-200 bg-white px-4 py-8">
               <LoadingState label="Cargando historial comercial..." />
