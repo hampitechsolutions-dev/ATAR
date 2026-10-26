@@ -121,7 +121,7 @@ export default function BuyerNotificationsPage() {
             Actividad comercial real del comprador: cotizaciones, mensajes y avances operativos.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div data-tour="notifications-summary" className="flex flex-wrap gap-3">
           <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
             {summary.total} recientes
           </div>
@@ -150,7 +150,7 @@ export default function BuyerNotificationsPage() {
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-300 bg-white shadow-sm">
+      <section data-tour="notifications-list" className="rounded-2xl border border-slate-300 bg-white shadow-sm">
         {dashboardLoading || loading ? (
           <div className="px-6 py-8"><LoadingState label="Cargando notificaciones..." /></div>
         ) : notifications.length === 0 ? (

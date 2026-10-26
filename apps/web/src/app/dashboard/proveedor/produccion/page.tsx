@@ -153,7 +153,7 @@ export default function SupplierProductionPage() {
       {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-100 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
       {/* Contadores: también filtran la lista. */}
-      <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-5 sm:gap-4">
+      <div data-tour="production-kpis" className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-5 sm:gap-4">
         {kpis.map((kpi) => {
           const active = filter === kpi.key;
           return (
@@ -193,7 +193,7 @@ export default function SupplierProductionPage() {
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:mt-5 xl:grid-cols-2">
+      <div data-tour="production-list" className="mt-4 grid grid-cols-1 gap-3 sm:mt-5 xl:grid-cols-2">
         {loading ? (
           <div className={`${card} col-span-full px-4 py-10`}>
             <LoadingState label="Cargando producción..." />

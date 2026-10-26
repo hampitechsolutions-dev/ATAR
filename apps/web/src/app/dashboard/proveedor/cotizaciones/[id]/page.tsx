@@ -194,7 +194,7 @@ export default function SupplierQuoteDetailPage() {
         </div>
       ) : quote && status ? (
         <div className="mt-5 space-y-5 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] xl:gap-5 xl:space-y-0">
-          <section className={`${card} xl:overflow-y-auto`}>
+          <section data-tour="sq-summary" className={`${card} xl:overflow-y-auto`}>
             <div className="grid grid-cols-2 gap-3 [&>div]:rounded-[12px] [&>div]:border [&>div]:border-slate-300 [&>div]:bg-seller-surface [&>div]:px-4 [&>div]:py-3">
               <div>
                 <p className="text-[13px] text-slate-500">Comprador</p>
@@ -230,7 +230,7 @@ export default function SupplierQuoteDetailPage() {
               ) : null}
             </div>
             {/* Qué pidió el comprador */}
-            <h2 className="mt-5 text-[15px] font-bold text-slate-950">Lo que pidió el cliente</h2>
+            <h2 data-tour="sq-requested" className="mt-5 text-[15px] font-bold text-slate-950">Lo que pidió el cliente</h2>
             <ul className="mt-2 space-y-2">
               {requested.map((item) => (
                 <li key={item.id} className="rounded-[12px] border border-slate-300 bg-seller-surface p-3">
@@ -257,7 +257,7 @@ export default function SupplierQuoteDetailPage() {
             {delivery.length > 0 ? <p className="mt-2 text-[12px] text-slate-600">{delivery.join(' · ')}</p> : null}
 
             {/* Qué se cotizó */}
-            <h2 className="mt-5 text-[15px] font-bold text-slate-950">Lo que cotizaste</h2>
+            <h2 data-tour="sq-quoted" className="mt-5 text-[15px] font-bold text-slate-950">Lo que cotizaste</h2>
             {lines.length > 0 ? (
               <ul className="mt-2 overflow-hidden rounded-[12px] border border-slate-300">
                 {lines.map((line) => (
@@ -319,7 +319,7 @@ export default function SupplierQuoteDetailPage() {
             )}
           </section>
 
-          <div className="overflow-hidden rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)] xl:h-full xl:min-h-0">
+          <div data-tour="sq-chat" className="overflow-hidden rounded-[18px] border border-slate-300 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.07)] xl:h-full xl:min-h-0">
             <ConversationPanel mode="quote" quoteId={quote.id} session={session} title="Chat sobre esta cotización" />
           </div>
         </div>

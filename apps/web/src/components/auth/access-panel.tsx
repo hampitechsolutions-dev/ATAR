@@ -115,6 +115,9 @@ export default function AccessPanel() {
   const requestedProfile = PROFILE_BY_PARAM[useSearchParams()?.get('perfil') ?? ''];
   const { isHydrated, isAuthenticated, signIn, getDefaultPath } = useAuth();
   const [mode, setMode] = useState<Mode>(requestedProfile ? 'register' : 'login');
+  // Si se llegó desde un botón de perfil de la landing, se muestra solo ese
+  // perfil. "Cambiar de perfil" vuelve a mostrar los tres.
+  const [profileLocked, setProfileLocked] = useState(Boolean(requestedProfile));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionProgress, setTransitionProgress] = useState(0);
@@ -279,12 +282,23 @@ export default function AccessPanel() {
         {/* El perfil solo se elige al crear la cuenta: al ingresar ya viene dado
             por las membresias del usuario. */}
         <div className={`mt-4 ${mode === 'register' ? '' : 'hidden'}`}>
-          <p className="text-xs font-semibold text-slate-700">¿Qué perfil necesitás?</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold text-slate-700">{profileLocked ? 'Tu perfil' : '¿Qué perfil necesitás?'}</p>
+            {profileLocked ? (
+              <button
+                className="text-xs font-semibold text-indigo-700 underline-offset-2 hover:underline"
+                onClick={() => setProfileLocked(false)}
+                type="button"
+              >
+                Cambiar de perfil
+              </button>
+            ) : null}
+          </div>
 
           {/* Cada perfil es una fila con su propio color: qué es, para quién
               y, al elegirlo, qué vas a poder hacer. */}
           <div className="mt-2 space-y-2">
-            {PROFILE_OPTIONS.map((option) => {
+            {PROFILE_OPTIONS.filter((option) => !profileLocked || option.value === form.role).map((option) => {
               const isActive = form.role === option.value;
 
               return (

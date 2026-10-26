@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useWorkspace } from '@/components/auth/workspace-provider';
-import { getTour, getTourProfile, getToursFor, type Tour, type TourProfile } from '@/lib/tours';
+import { getTour, getTourProfile, getToursFor, matchesRoute, type Tour, type TourProfile } from '@/lib/tours';
 
 /* Persistencia --------------------------------------------------------------
  * Por usuario y por navegador, igual que los favoritos y la presentación del
@@ -272,11 +272,23 @@ function TourOverlay({
       return;
     }
 
-    if (pathname !== step.route) {
+    if (!matchesRoute(step.route, pathname)) {
       if (arrivedRef.current) {
         // El usuario salió de la pantalla del paso (por ejemplo, con Atrás).
         onStop({ pause: true });
         return;
+      }
+      if (step.route.endsWith('/*')) {
+        // Pantalla de detalle (un pedido, una solicitud): no se puede adivinar
+        // cuál abrir, así que el paso se saltea si no estamos en una.
+        const frame = window.requestAnimationFrame(() => {
+          if (active.misses + 1 >= total) {
+            onStop();
+          } else {
+            goTo(active.index + active.direction, active.direction, true);
+          }
+        });
+        return () => window.cancelAnimationFrame(frame);
       }
       router.push(step.route);
       return;

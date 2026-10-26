@@ -63,7 +63,6 @@ function normalize(value: string) {
 const CUTOUTS: Record<string, string> = {
   'big bags': '/bigbag.png',
   'bolsas pp': '/bolsapp.png',
-  sacos: '/saco.png',
   'rollos y telas': '/rollo.png',
   'a medida': '/amedida.png',
 };
@@ -496,13 +495,10 @@ function BuyerHome() {
           <section className="relative isolate overflow-hidden bg-[#0b1f66] text-white">
             {/* Productos recortados (PNG), no fotos de fondo. */}
             <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 hidden w-[52%] lg:block">
-              <div className="absolute left-[80%] top-[-7%] aspect-[3/2] h-[110%] -translate-x-1/2">
+              <div className="absolute left-[76%] top-[-7%] aspect-[3/2] h-[110%] -translate-x-1/2">
                 <Image alt="" className="object-contain" fill sizes="50vw" src="/rollo.png" />
               </div>
-              <div className="absolute left-[21%] top-[-4%] aspect-[3/2] h-full -translate-x-1/2">
-                <Image alt="" className="object-contain" fill sizes="50vw" src="/saco.png" />
-              </div>
-              <div className="absolute left-1/2 top-[-14%] aspect-[3/2] h-[118%] -translate-x-1/2">
+              <div className="absolute left-[40%] top-[-14%] aspect-[3/2] h-[118%] -translate-x-1/2">
                 <Image alt="" className="object-contain" fill priority sizes="50vw" src="/bigbag.png" />
               </div>
             </div>

@@ -301,12 +301,13 @@ export default function SupplierDetail({
         variant={variant}
       />
     {/* Escritorio: una sola superficie blanca a todo el ancho. Desde xl ocupa
-        exactamente el alto visible; el contenido y el chat scrollean por dentro. */}
+        exactamente el alto visible: la ficha scrollea entera (portada incluida) y
+        el chat queda fijo a la derecha, del header hacia abajo. */}
     <div
       className={
         isPreview
           ? 'lg:-mx-6 lg:-mt-4 lg:bg-white'
-          : `lg:bg-white xl:grid xl:grid-cols-[minmax(0,1fr)_400px] xl:grid-rows-[auto_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1fr)_440px] ${
+          : `lg:bg-white xl:grid xl:grid-cols-[minmax(0,1fr)_400px] xl:grid-rows-[minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1fr)_440px] ${
               variant === 'app'
                 ? 'lg:-mx-4 lg:-my-3 xl:-mx-6 xl:h-[calc(100dvh-102px)]'
                 : 'lg:-mx-6 lg:-my-4 xl:h-[calc(100dvh-69px)]'

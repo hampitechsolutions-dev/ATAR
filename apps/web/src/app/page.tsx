@@ -215,8 +215,8 @@ const TRUST = ['Braskem', 'ALPE', 'LyondellBasell', 'Indorama', 'Sinteplast', 'E
 // que en los <Link> el color del texto va en un <span> hijo.
 // Accesos del hero. El perfil viaja a /acceso, que abre el registro con ese
 // perfil preseleccionado (ver AccessPanel).
-const HERO_ROLES: { label: string; hint: string; href: string; primary?: boolean }[] = [
-  { label: 'CLIENTE', hint: 'Quiero comprar', href: '/acceso?perfil=cliente', primary: true },
+const HERO_ROLES: { label: string; hint: string; href: string }[] = [
+  { label: 'CLIENTE', hint: 'Quiero comprar', href: '/acceso?perfil=cliente' },
   { label: 'VENDEDOR', hint: 'Trabajo para una empresa', href: '/acceso?perfil=vendedor' },
   { label: 'PROVEEDOR', hint: 'Quiero vender', href: '/acceso?perfil=proveedor' },
 ];
@@ -257,16 +257,12 @@ export default function Home() {
               {HERO_ROLES.map((role) => (
                 <Link
                   key={role.label}
-                  className={`group flex h-[60px] items-center justify-between gap-3 rounded-[10px] px-5 transition hover:-translate-y-0.5 ${
-                    role.primary
-                      ? 'bg-[#1f5bff] text-white shadow-[0_14px_36px_rgba(31,91,255,0.35)] hover:bg-[#194ee6]'
-                      : 'border border-white/70 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20'
-                  }`}
+                  className="group flex h-[60px] items-center justify-between gap-3 rounded-[10px] border border-white/70 bg-transparent px-5 text-white transition hover:-translate-y-0.5 hover:border-[#1f5bff] hover:bg-[#1f5bff] hover:shadow-[0_14px_36px_rgba(31,91,255,0.35)] focus-visible:border-[#1f5bff] focus-visible:bg-[#1f5bff]"
                   href={role.href}
                 >
                   <span className="leading-tight">
                     <span className="block text-[15px] font-bold tracking-[0.08em]">{role.label}</span>
-                    <span className={`block text-[12px] ${role.primary ? 'text-white/85' : 'text-white/75'}`}>{role.hint}</span>
+                    <span className={`block text-[12px] text-white/85`}>{role.hint}</span>
                   </span>
                   <Icon name="arrow" className="h-4 w-4 shrink-0 transition group-hover:translate-x-0.5" />
                 </Link>

@@ -118,7 +118,7 @@ export default function SupplierNotificationsPage() {
                 Alertas persistentes para mensajes, adjudicaciones, negociaciones y ordenes.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div data-tour="notifications-summary" className="flex flex-wrap gap-3">
               <div className="rounded-full bg-seller-surface px-4 py-2 text-sm font-semibold text-slate-700">
                 {summary.total} recientes
               </div>
@@ -140,7 +140,9 @@ export default function SupplierNotificationsPage() {
           </div>
         </div>
 
-        <PushOptIn />
+        <div data-tour="notifications-push">
+          <PushOptIn />
+        </div>
 
         {error ?? dashboardError ? (
           <div className="rounded-[20px] border border-rose-200 bg-rose-100 px-5 py-4 text-sm text-rose-700">
@@ -158,7 +160,7 @@ export default function SupplierNotificationsPage() {
               No hay novedades recientes para mostrar.
             </div>
           ) : (
-            <div className="space-y-3">
+            <div data-tour="notifications-list" className="space-y-3">
               {notifications.map((notification) => (
                 <article
                   key={notification.id}

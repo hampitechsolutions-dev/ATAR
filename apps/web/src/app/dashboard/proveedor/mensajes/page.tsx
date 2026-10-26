@@ -169,7 +169,7 @@ function SupplierMessagesContent({ initialTab }: { initialTab: 'all' | 'unread' 
         ) : null}
 
         <div className="grid min-h-0 flex-1 gap-0 overflow-hidden border-t border-slate-300 bg-white xl:grid-cols-[340px_minmax(0,1fr)]">
-          <section className={`min-h-0 flex-col border-b border-slate-300 bg-white p-4 xl:flex xl:border-b-0 xl:border-r ${mobileChatOpen ? 'hidden' : 'flex'}`}>
+          <section data-tour="messages-list" className={`min-h-0 flex-col border-b border-slate-300 bg-white p-4 xl:flex xl:border-b-0 xl:border-r ${mobileChatOpen ? 'hidden' : 'flex'}`}>
             <div className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-3 py-2.5">
               <svg aria-hidden="true" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                 <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -263,7 +263,7 @@ function SupplierMessagesContent({ initialTab }: { initialTab: 'all' | 'unread' 
             </div>
           </section>
 
-          <section className={`min-h-0 flex-col overflow-hidden bg-white xl:flex ${mobileChatOpen ? 'flex' : 'hidden'}`}>
+          <section data-tour="messages-chat" className={`min-h-0 flex-col overflow-hidden bg-white xl:flex ${mobileChatOpen ? 'flex' : 'hidden'}`}>
             {selectedId ? (
               <>
                 {detailLink ? (

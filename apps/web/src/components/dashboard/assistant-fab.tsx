@@ -231,6 +231,25 @@ export default function AssistantFab() {
               </div>
             </div>
 
+            {/* Si esta pantalla tiene instructivo y todavía no lo vio, ATARIA lo ofrece. */}
+            {sectionTour && !tour.paused && !tour.isCompleted(sectionTour.id) && messages.length === 0 ? (
+              <div className="flex items-end gap-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white p-0.5">
+                  <BotAvatar />
+                </span>
+                <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-slate-300 bg-white px-3 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
+                  ¿Querés que te muestre cómo funciona esta pantalla? Son {sectionTour.steps.length} pasos.
+                  <button
+                    className="mt-2 flex h-8 items-center rounded-lg bg-indigo-600 px-3 text-[12px] font-semibold text-white transition hover:bg-indigo-700"
+                    onClick={() => startTour(sectionTour.id)}
+                    type="button"
+                  >
+                    Dale, mostrame
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             {/* Si quedó un recorrido por la mitad, ATARIA lo menciona como parte de la charla. */}
             {tour.paused ? (
               <div className="flex items-end gap-2">

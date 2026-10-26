@@ -320,7 +320,7 @@ export default function SellerCompaniesPage() {
         ) : null}
 
         {/* Empresas que ya representa. */}
-        <section className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+        <section data-tour="companies-mine" className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-950">Empresas que representas</p>
 
           {loading ? (
@@ -416,7 +416,7 @@ export default function SellerCompaniesPage() {
         ) : null}
 
         {/* Pedir representar a una empresa nueva. */}
-        <section className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+        <section data-tour="companies-join" className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-950">Representar a otra empresa</p>
           <p className="mt-0.5 text-[11px] text-slate-500">
             Busca la proveedora y mandale tu pedido. Se suma a tu cuenta cuando lo aprueban.

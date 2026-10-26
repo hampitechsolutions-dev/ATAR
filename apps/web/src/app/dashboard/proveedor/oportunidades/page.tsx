@@ -78,7 +78,7 @@ export default function SupplierOpportunitiesPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-4">
+          <div data-tour="opportunities-list" className="grid gap-4">
             {loading ? (
               <div className="rounded-[2rem] border border-slate-300 bg-white px-6 py-8 shadow-sm">
                 <LoadingState label="Cargando oportunidades..." />
