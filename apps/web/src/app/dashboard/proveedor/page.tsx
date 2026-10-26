@@ -2,27 +2,19 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CompanySwitcher from '@/components/dashboard/company-switcher';
 import SupplierAccountMenu from '@/components/dashboard/supplier-account-menu';
 import DashboardSidebar from '@/components/dashboard/dashboard-sidebar';
-import ToneRow, { TONES, type Tone } from '@/components/dashboard/tone-row';
+import ToneRow, { type Tone } from '@/components/dashboard/tone-row';
 import SupplierBottomNav from '@/components/dashboard/supplier-bottom-nav';
 import WorkspaceSwitcher from '@/components/dashboard/workspace-switcher';
 import { DashboardLoader } from '@/components/ui/spinner';
 import { useWorkspace } from '@/components/auth/workspace-provider';
-import { type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
+import { atarApi, type ConversationRecord, type QuoteRecord, type RequestRecord } from '@/lib/atar-api';
 import { FALLBACK_REQUEST_CATEGORIES } from '@/lib/request-catalog-fallback';
 import { useSupplierDashboardData, useSupplierWorkspaceCounters } from '@/lib/dashboard-hooks';
 import { getPrimaryCompanyName, getUserFirstName } from '@/lib/session';
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 function formatRelativeTime(value: string) {
   const diffMs = Date.now() - new Date(value).getTime();
@@ -191,12 +183,6 @@ function quoteStatusMeta(status: QuoteRecord['status']) {
   return { label: 'Enviada', tone: 'bg-indigo-100 text-indigo-600' };
 }
 
-function formatCompactCurrency(value: number) {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toLocaleString('es-AR', { maximumFractionDigits: 1 })} M`;
-  if (value >= 1_000) return `$${Math.round(value / 1_000).toLocaleString('es-AR')} K`;
-  return formatCurrency(value);
-}
-
 export default function DashboardProveedorPage() {
   const { session, openRequests, myQuotes, loading, error } = useSupplierDashboardData();
   const { activeWorkspace, hasMultipleWorkspaces, isSeller } = useWorkspace();
@@ -323,6 +309,43 @@ export default function DashboardProveedorPage() {
   // Hora de referencia fija por render de la página (no se recalcula en cada
   // render para que los cálculos sean puros).
   const [nowMs] = useState(() => Date.now());
+
+  // Últimos mensajes recibidos, para el bloque del inicio.
+  const [conversations, setConversations] = useState<ConversationRecord[] | null>(null);
+  const accessToken = session?.accessToken;
+  useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
+    let cancelled = false;
+    atarApi
+      .getConversations(undefined, accessToken)
+      .then((items) => {
+        if (!cancelled) {
+          setConversations(items);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setConversations([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
+  const latestMessages = useMemo(
+    () =>
+      [...(conversations ?? [])]
+        .filter((conversation) => conversation.lastMessage)
+        .sort(
+          (left, right) =>
+            new Date(right.lastMessageAt ?? right.lastMessage?.createdAt ?? 0).getTime() -
+            new Date(left.lastMessageAt ?? left.lastMessage?.createdAt ?? 0).getTime(),
+        )
+        .slice(0, 5),
+    [conversations],
+  );
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Buen día' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
   const todayKey = new Date().toDateString();
@@ -396,41 +419,9 @@ export default function DashboardProveedorPage() {
     },
   ];
   const pendingTotal = homeTasks.reduce((sum, task) => sum + task.count, 0);
-  const salesLast30 = dashboardData.awardedQuotes
-    .filter((quote) => nowMs - new Date(quote.updatedAt).getTime() <= 30 * 86400000)
-    .reduce((sum, quote) => sum + (quote.amount ?? 0), 0);
-  const activityTiles: { label: string; value: string | number; trend: string | null; detail?: string; icon: HomeIconName; href: string }[] = [
-    {
-      label: 'Oportunidades activas',
-      value: dashboardData.openOpportunities.length,
-      trend: dashboardData.requestsThisMonth > 0 ? `${dashboardData.requestsThisMonth} este mes` : null,
-      icon: 'doc',
-      href: '/dashboard/proveedor/solicitudes',
-    },
-    {
-      label: 'Cotizaciones enviadas',
-      value: myQuotes.length,
-      trend: dashboardData.quotesThisMonth > 0 ? `${dashboardData.quotesThisMonth} este mes` : null,
-      icon: 'send',
-      href: '/dashboard/proveedor/cotizaciones',
-    },
-    {
-      label: 'Pedidos en curso',
-      value: dashboardData.activeOrders.length,
-      trend: dashboardData.ordersThisMonth > 0 ? `${dashboardData.ordersThisMonth} este mes` : null,
-      icon: 'box',
-      href: '/dashboard/proveedor/pedidos',
-    },
-    {
-      label: 'Ventas cerradas',
-      value: formatCompactCurrency(salesLast30),
-      trend: null,
-      detail: 'Últimos 30 días',
-      icon: 'dollar',
-      href: '/dashboard/proveedor/reportes',
-    },
-  ];
-  const recentOpportunities = dashboardData.recentRequests;
+
+  // El vendedor ve solo lo que todavía puede cotizar; la empresa, todo lo reciente.
+  const recentOpportunities = isSeller ? dashboardData.openOpportunities.slice(0, 6) : dashboardData.recentRequests;
   const recentQuotes = [...myQuotes]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 4);
@@ -537,40 +528,51 @@ export default function DashboardProveedorPage() {
                 </ul>
               </section>
 
-              {/* Resumen de actividad */}
-              <section className={`${homeCard} flex flex-col p-5`} data-tour="sales-activity">
-                <div className="flex items-center gap-3">
-                  <HomeIcon name="chart" tone="bg-indigo-100 text-indigo-600" />
-                  <h2 className="text-[18px] font-bold text-slate-900">Resumen de tu actividad</h2>
+              {/* Últimos mensajes: reemplazan al resumen de actividad, que vive en Estadísticas. */}
+              <section className={homeCard} data-tour="sales-messages">
+                <div className="flex items-center justify-between gap-3 px-5 pt-5">
+                  <div className="flex items-center gap-3">
+                    <HomeIcon name="chat" tone="bg-indigo-100 text-indigo-600" />
+                    <h2 className="text-[18px] font-bold text-slate-900">Últimos mensajes</h2>
+                  </div>
+                  <HomeSeeAll href="/dashboard/proveedor/mensajes" />
                 </div>
-                <div className="mt-4 grid flex-1 auto-rows-fr grid-cols-2 gap-3">
-                  {activityTiles.map((tile, index) => {
-                    const tone = TONES[(['indigo', 'violet', 'sky', 'amber'] as Tone[])[index % 4]];
-                    return (
-                    <Link
-                      key={tile.label}
-                      className={`group flex items-center rounded-2xl p-3.5 transition sm:p-4 ${tone.row}`}
-                      href={tile.href}
-                    >
-                      <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
-                        <HomeIcon name={tile.icon} tone={tone.icon} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-[20px] font-bold leading-7 text-slate-900 sm:truncate sm:text-[22px]">{tile.value}</p>
-                            {tile.trend ? (
-                              <span className="shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">
-                                ↑ {tile.trend}
+                {conversations === null ? (
+                  <p className="px-5 py-8 text-center text-[13px] text-slate-500">Cargando mensajes…</p>
+                ) : latestMessages.length === 0 ? (
+                  <p className="px-5 py-8 text-center text-[13px] text-slate-500">Todavía no recibiste mensajes.</p>
+                ) : (
+                  <ul className="mt-3 divide-y divide-slate-200 pb-2 [&>li:nth-child(even)]:bg-seller-surface">
+                    {latestMessages.map((conversation) => (
+                      <li key={conversation.id}>
+                        <Link className="flex items-center gap-3 px-5 py-3 transition hover:bg-indigo-50" href="/dashboard/proveedor/mensajes">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[12px] font-bold text-white">
+                            {conversation.buyerCompanyName.slice(0, 2).toUpperCase()}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-baseline justify-between gap-3">
+                              <span className="truncate text-[14px] font-semibold text-slate-900">{conversation.buyerCompanyName}</span>
+                              <span className="shrink-0 text-[12px] text-slate-500">
+                                {new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(
+                                  new Date(conversation.lastMessageAt ?? conversation.lastMessage?.createdAt ?? nowMs),
+                                )}
                               </span>
-                            ) : null}
-                          </div>
-                          <p className="mt-1 text-[12px] font-medium text-slate-700">{tile.label}</p>
-                          {tile.detail ? <p className="text-[11px] text-slate-500">{tile.detail}</p> : null}
-                        </div>
-                      </div>
-                    </Link>
-                    );
-                  })}
-                </div>
+                            </span>
+                            <span className="block truncate text-[12px] text-slate-500">{conversation.contextTitle}</span>
+                            <span className={`block truncate text-[13px] ${conversation.unreadCount > 0 ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>
+                              {conversation.lastMessage?.body}
+                            </span>
+                          </span>
+                          {conversation.unreadCount > 0 ? (
+                            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[11px] font-bold text-white">
+                              {conversation.unreadCount}
+                            </span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </section>
             </div>
 
@@ -579,7 +581,7 @@ export default function DashboardProveedorPage() {
               <div className="flex items-center justify-between gap-3 px-5 pt-5">
                 <div className="flex items-center gap-3">
                   <HomeIcon name="clipboard" tone="bg-indigo-100 text-indigo-600" />
-                  <h2 className="text-[18px] font-bold text-slate-900">Oportunidades recientes</h2>
+                  <h2 className="text-[18px] font-bold text-slate-900">{isSeller ? 'Últimas solicitudes disponibles' : 'Oportunidades recientes'}</h2>
                 </div>
                 <HomeSeeAll href="/dashboard/proveedor/solicitudes" />
               </div>
@@ -700,6 +702,8 @@ export default function DashboardProveedorPage() {
               </div>
             </section>
 
+            {/* Mis cotizaciones y clientes: solo en el inicio de la empresa. */}
+            {isSeller ? null : (
             <div className="mt-5 grid gap-5 xl:grid-cols-2">
               {/* Mis cotizaciones */}
               <section className={homeCard}>
@@ -842,6 +846,7 @@ export default function DashboardProveedorPage() {
                 </div>
               </section>
             </div>
+            )}
     </>
   );
 

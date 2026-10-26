@@ -15,7 +15,7 @@ import { getDefaultDashboardPath, loadSession } from '@/lib/session';
 /**
  * Los tres perfiles de ATAR.
  * - Cliente: compra. Publica solicitudes y recibe cotizaciones.
- * - Empresa: vende. Es la cuenta de la proveedora y administra su equipo.
+ * - Proveedor: vende. Es la cuenta de la empresa proveedora y administra su equipo.
  * - Vendedor: trabaja dentro de una o varias empresas proveedoras.
  */
 const PROFILE_OPTIONS = [
@@ -34,7 +34,7 @@ const PROFILE_OPTIONS = [
   },
   {
     value: 'SUPPLIER',
-    label: 'Empresa',
+    label: 'Proveedor',
     tagline: 'Quiero vender',
     summary: 'Para empresas proveedoras. Es la cuenta principal: recibís solicitudes, cotizás y administrás a tu equipo de vendedores.',
     tone: { row: 'bg-[#f3f1ff]', active: 'bg-[#ebe8ff] shadow-[inset_4px_0_0_#6366f1]', icon: 'bg-[#e2ddff] text-indigo-600', text: 'text-indigo-600' },

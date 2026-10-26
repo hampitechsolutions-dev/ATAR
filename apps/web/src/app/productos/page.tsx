@@ -6,7 +6,6 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CompanyLogo from '@/components/dashboard/company-logo';
 import Reveal from '@/components/ui/reveal';
-import { isCategoryHidden, withoutHiddenCategories } from '@/lib/hidden-categories';
 import { atarApi, type RequestCatalogCategoryRecord, type SupplierDirectoryRecord } from '@/lib/atar-api';
 import { getSupplierCategoryLabel } from '@/lib/provider-directory';
 
@@ -105,9 +104,9 @@ const FALLBACK_CATEGORIES: ProductCategory[] = [
     imageSrc: '/telaplana.png',
     imageClassName: 'object-cover',
   },
-].filter((category) => !isCategoryHidden(category.label));
+];
 
-const MOST_SEARCHED = withoutHiddenCategories(['Big Bags', 'Polímeros', 'Maquinarias', 'Bolsas', 'Tintas']);
+const MOST_SEARCHED = ['Big Bags', 'Polímeros', 'Maquinarias', 'Bolsas', 'Tintas'];
 
 const HERO_IMAGES = ['/bigbags.png', '/cuerdas.png', '/tintas.png', '/hilomulti.png'];
 
@@ -172,7 +171,7 @@ type FamilyIconName = 'bag' | 'fabric' | 'spool' | 'molecule' | 'drop' | 'gear';
 type ProductFamily = {
   id: string;
   title: string;
-  /** Etiqueta corta para los filtros de productos destacados. */
+  /** Nombre corto de la familia. */
   tab: string;
   icon: FamilyIconName;
   image: string;
@@ -226,7 +225,7 @@ const ALL_FAMILIES: ProductFamily[] = [
   },
   {
     id: 'materias',
-    title: 'Materias primas',
+    title: 'Polímeros',
     tab: 'Polímeros',
     icon: 'molecule',
     image: '/polimero.png',
@@ -234,7 +233,7 @@ const ALL_FAMILIES: ProductFamily[] = [
       { label: 'Polipropileno', category: 'Polipropileno' },
       { label: 'Polietileno', category: 'Polietileno' },
     ],
-    keywords: ['polímero', 'polimero', 'polipropileno', 'polietileno', 'pellet', 'resina', 'masterbatch'],
+    keywords: ['polímero', 'polimero', 'polimeros', 'materia prima', 'polipropileno', 'polietileno', 'pellet', 'resina', 'masterbatch'],
   },
   {
     id: 'impresion',
@@ -264,18 +263,13 @@ const ALL_FAMILIES: ProductFamily[] = [
   },
 ];
 
-const FAMILIES = ALL_FAMILIES.filter((family) => !isCategoryHidden(family.tab));
+const FAMILIES = ALL_FAMILIES;
 
 function normalize(value: string) {
   return value
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase();
-}
-
-function familyFor(text: string) {
-  const haystack = normalize(text);
-  return FAMILIES.find((family) => family.keywords.some((keyword) => haystack.includes(normalize(keyword)))) ?? null;
 }
 
 function familyMatches(family: ProductFamily, query: string) {
@@ -289,61 +283,6 @@ function familyMatches(family: ProductFamily, query: string) {
 /** Solicitud nueva, con la categoría del catálogo preseleccionada si se conoce. */
 function newRequestHref(category?: string) {
   return `/dashboard/comprador/solicitudes/nueva${category ? `?category=${encodeURIComponent(category)}` : ''}`;
-}
-
-/* Productos destacados ------------------------------------------------------ */
-
-type FeaturedProduct = {
-  id: string;
-  name: string;
-  supplier: SupplierDirectoryRecord;
-  family: ProductFamily | null;
-  image: string;
-  /** Categoría del catálogo de solicitudes que mejor le corresponde. */
-  category?: string;
-};
-
-/**
- * No hay un catálogo de productos publicado: los destacados salen de los
- * productos principales que declara cada proveedor en su ficha. Se intercalan
- * proveedores para que la primera fila no sea toda de la misma empresa.
- */
-function buildFeaturedProducts(suppliers: SupplierDirectoryRecord[]): FeaturedProduct[] {
-  const perSupplier = suppliers.map((supplier) => {
-    const names = (supplier.mainProducts.length > 0 ? supplier.mainProducts : supplier.tags).slice(0, 4);
-    return names.map((name) => {
-      const family = familyFor(name) ?? familyFor(supplier.tags.join(' '));
-      const product = normalize(name);
-      // Coincidencia por la primera palabra significativa (evita que "a" o
-      // "de" emparejen cualquier categoría).
-      const catalogMatch = FALLBACK_CATEGORIES.find((category) => {
-        const label = normalize(category.label);
-        const labelWord = label.split(/[ /]/)[0];
-        const productWord = product.split(' ').find((word) => word.length >= 4) ?? '';
-        return (labelWord.length >= 4 && product.includes(labelWord)) || (productWord && label.includes(productWord));
-      });
-      const image = product.includes('medida') ? '/amedida.png' : catalogMatch?.imageSrc ?? family?.image ?? '/logoatar.png';
-      return {
-        id: `${supplier.id}-${name}`,
-        name,
-        supplier,
-        family,
-        image,
-        category: family?.items.find((item) => normalize(name).includes(normalize(item.label).split(' ')[0]))?.category ?? family?.items[0]?.category,
-      };
-    });
-  });
-
-  const merged: FeaturedProduct[] = [];
-  const longest = Math.max(0, ...perSupplier.map((list) => list.length));
-  for (let index = 0; index < longest; index += 1) {
-    for (const list of perSupplier) {
-      if (list[index]) {
-        merged.push(list[index]);
-      }
-    }
-  }
-  return merged;
 }
 
 function FamilyIcon({ name, className = 'h-6 w-6' }: { name: FamilyIconName; className?: string }) {
@@ -441,7 +380,6 @@ function ProductosContent({ initialQuery }: { initialQuery: string }) {
   const [suppliers, setSuppliers] = useState<SupplierDirectoryRecord[]>([]);
   const [suppliersLoaded, setSuppliersLoaded] = useState(false);
   const [search, setSearch] = useState(initialQuery);
-  const [productFamily, setProductFamily] = useState('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -461,7 +399,7 @@ function ProductosContent({ initialQuery }: { initialQuery: string }) {
       if (stats.status === 'fulfilled') {
         setSupplierCount(stats.value.suppliersCount);
       }
-      // Verificados primero: son los que se muestran como destacados.
+      // Verificados primero: son los que se muestran en "Empresas".
       setSuppliers(
         directory.status === 'fulfilled'
           ? [...directory.value].sort((left, right) => Number(right.isVerified) - Number(left.isVerified))
@@ -477,32 +415,14 @@ function ProductosContent({ initialQuery }: { initialQuery: string }) {
     };
   }, []);
 
-  const products = useMemo(() => buildFeaturedProducts(suppliers), [suppliers]);
   const visibleFamilies = useMemo(() => FAMILIES.filter((family) => familyMatches(family, search)), [search]);
-  const visibleProducts = useMemo(() => {
-    const needle = normalize(search.trim());
-    return products
-      .filter((product) => productFamily === 'all' || product.family?.id === productFamily)
-      .filter(
-        (product) =>
-          !needle ||
-          normalize([product.name, product.supplier.name, product.family?.title ?? '', ...product.supplier.tags].join(' ')).includes(needle),
-      )
-      .slice(0, 12);
-  }, [productFamily, products, search]);
   const featuredSuppliers = suppliers.slice(0, 5);
 
   const supplierLabel = supplierCount === null ? '1200+' : `${supplierCount}+`;
   const supplierBadge = supplierCount === null ? '+1200' : `+${supplierCount}`;
 
-  function showFamilyProducts(familyId: string) {
-    setProductFamily(familyId);
-    document.getElementById('destacados')?.scrollIntoView({ behavior: 'smooth' });
-  }
-
   function showAllFamilies() {
     setSearch('');
-    setProductFamily('all');
   }
 
   return (
@@ -629,60 +549,7 @@ function ProductosContent({ initialQuery }: { initialQuery: string }) {
             <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
               {visibleFamilies.map((family, index) => (
                 <Reveal key={family.id} className="h-full" delay={index * 70}>
-                  <FamilyCard family={family} onSelect={() => showFamilyProducts(family.id)} />
-                </Reveal>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ==================== PRODUCTOS DESTACADOS ==================== */}
-      <section className="scroll-mt-24 bg-[#f5f7fc]" id="destacados">
-        <div className="mx-auto w-full max-w-[1440px] px-6 py-16 lg:px-12 lg:py-20">
-          <Reveal className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-3xl font-bold tracking-[-0.03em] text-slate-950 sm:text-[2.2rem]">Productos destacados</h2>
-              <p className="mt-2 text-[15px] text-slate-500">Explorá algunos de los productos más buscados de la industria.</p>
-            </div>
-            <Link className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold" href="/proveedores">
-              <span className="inline-flex items-center gap-2 text-[#1f5bff]">
-                Ver todos los proveedores
-                <ArrowIcon />
-              </span>
-            </Link>
-          </Reveal>
-
-          <div className="mt-8 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <FilterTab active={productFamily === 'all'} onClick={() => setProductFamily('all')}>
-              Todos
-            </FilterTab>
-            {FAMILIES.map((family) => (
-              <FilterTab key={family.id} active={productFamily === family.id} onClick={() => setProductFamily(family.id)}>
-                {family.tab}
-              </FilterTab>
-            ))}
-          </div>
-
-          {!suppliersLoaded ? (
-            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-[330px] animate-pulse rounded-[14px] bg-white" />
-              ))}
-            </div>
-          ) : visibleProducts.length === 0 ? (
-            <div className="mt-6 rounded-[14px] border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-slate-500">
-              Todavía no hay productos publicados en esta familia.{' '}
-              <Link className="font-semibold" href={newRequestHref()}>
-                <span className="text-[#1f5bff]">Pedí una cotización igual</span>
-              </Link>{' '}
-              y te conectamos con proveedores.
-            </div>
-          ) : (
-            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-              {visibleProducts.map((product, index) => (
-                <Reveal key={product.id} className="h-full" delay={index * 60}>
-                  <ProductCard product={product} />
+                  <FamilyCard family={family} />
                 </Reveal>
               ))}
             </div>
@@ -778,31 +645,7 @@ function ProductosContent({ initialQuery }: { initialQuery: string }) {
 
 /* Subcomponentes ---------------------------------------------------------- */
 
-function FilterTab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      className={`shrink-0 rounded-[10px] px-4 py-2 text-sm font-medium transition ${
-        active
-          ? 'bg-[#1f5bff] text-white shadow-[0_8px_20px_rgba(31,91,255,0.25)]'
-          : 'border border-slate-200 bg-white text-slate-700 hover:border-[#1f5bff]/40 hover:text-slate-950'
-      }`}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-}
-
-function FamilyCard({ family, onSelect }: { family: ProductFamily; onSelect: () => void }) {
+function FamilyCard({ family }: { family: ProductFamily }) {
   return (
     <div className="group flex h-full flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:border-[#1f5bff]/40 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
@@ -828,57 +671,13 @@ function FamilyCard({ family, onSelect }: { family: ProductFamily; onSelect: () 
             </li>
           ))}
         </ul>
-        <button
-          aria-label={`Ver productos de ${family.title}`}
-          className="mt-auto flex h-8 w-8 items-center justify-center self-end rounded-full pt-0 text-[#1f5bff] transition hover:bg-[#eef2ff] group-hover:translate-x-0.5"
-          onClick={onSelect}
-          type="button"
+        <Link
+          aria-label={`Solicitar cotización de ${family.title}`}
+          className="mt-auto flex h-8 w-8 items-center justify-center self-end rounded-full text-[#1f5bff] transition hover:bg-[#eef2ff] group-hover:translate-x-0.5"
+          href={newRequestHref(family.items[0]?.category)}
         >
           <ArrowIcon />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ProductCard({ product }: { product: FeaturedProduct }) {
-  const location = [product.supplier.city, product.supplier.country].filter(Boolean).join(', ');
-  return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-        <Image
-          alt={product.name}
-          className="object-cover transition duration-500 group-hover:scale-105"
-          fill
-          sizes="(min-width:1280px) 16vw, (min-width:768px) 33vw, 50vw"
-          src={product.image}
-        />
-      </div>
-      <div className="flex flex-1 flex-col p-3.5">
-        <p className="line-clamp-2 text-[14px] font-bold leading-5 text-slate-950">{product.name}</p>
-        <p className="mt-0.5 truncate text-[12px] text-slate-500">
-          {[product.family?.title, location].filter(Boolean).join(' · ')}
-        </p>
-        <Link className="mt-3 flex min-w-0 items-center gap-1.5" href={`/productos/${product.supplier.slug}`}>
-          <span className="truncate text-[13px] font-medium text-slate-800 hover:underline">{product.supplier.name}</span>
-          {product.supplier.isVerified ? <VerifiedIcon /> : null}
         </Link>
-        {typeof product.supplier.minimumOrder === 'number' ? (
-          <span className="mt-2 self-start rounded-md bg-[#eef3ff] px-2 py-1 text-[11px] font-medium text-slate-600">
-            Mín. {product.supplier.minimumOrder.toLocaleString('es-AR')}
-          </span>
-        ) : null}
-        <div className="mt-auto pt-3">
-          <Link
-            className="flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-[#1f5bff]/40 text-[12px] font-semibold transition hover:bg-[#f3f6ff]"
-            href={newRequestHref(product.category)}
-          >
-            <span className="inline-flex items-center gap-1.5 text-[#1f5bff]">
-              Solicitar cotización
-              <ArrowIcon className="h-3.5 w-3.5" />
-            </span>
-          </Link>
-        </div>
       </div>
     </div>
   );

@@ -1,13 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Caveat } from 'next/font/google';
 import LatamMap from '@/components/home/latam-map';
 import LandingAuthRedirect from '@/components/layout/landing-auth-redirect';
 import CountUp from '@/components/ui/count-up';
-import { isCategoryHidden } from '@/lib/hidden-categories';
 import Reveal from '@/components/ui/reveal';
 
-const script = Caveat({ subsets: ['latin'], weight: ['500', '600'] });
 
 /* ============================ ICONOS ============================ */
 
@@ -181,8 +178,9 @@ const CATEGORIES: { title: string; text: string; img: string }[] = [
   { title: 'Telas y rafia', text: 'Tejidos de alto rendimiento.', img: '/telasweb.png' },
   { title: 'Hilos y cuerdas', text: 'Resistencia y calidad industrial.', img: '/hilosweb.png' },
   { title: 'Polímeros', text: 'Materia prima para producir.', img: '/polimero.png' },
+  { title: 'Tintas', text: 'Para impresión y terminación.', img: '/tintasweb.png' },
   { title: 'Maquinaria', text: 'Equipos y soluciones para tu planta.', img: '/maquinariaweb.png' },
-].filter((category) => !isCategoryHidden(category.title));
+];
 
 const STEPS: { label: string; text: string; icon: IconName }[] = [
   { label: 'Buscá', text: 'Encontrá productos o proveedores.', icon: 'search' },
@@ -279,15 +277,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        <div className={`${script.className} pointer-events-none absolute right-10 top-16 z-10 hidden animate-float-soft rounded-2xl bg-[#0b1530]/45 px-6 py-4 text-right text-[32px] leading-[1.1] text-white backdrop-blur-sm xl:block`}>
-          Más industria.
-          <br />
-          Más oportunidades.
-          <svg aria-hidden="true" className="ml-auto mt-1 h-4 w-48 text-[#3b7bff]" viewBox="0 0 200 16">
-            <path className="animate-draw-line" d="M4 12 C60 4, 130 2, 196 6" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="4" />
-          </svg>
-        </div>
       </section>
 
       {/* ==================== CATEGORÍAS ==================== */}
@@ -308,7 +297,7 @@ export default function Home() {
             </Link>
           </Reveal>
 
-          <div className={`mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 ${CATEGORIES.length === 5 ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
+          <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-7">
             {CATEGORIES.map((cat, index) => (
               <Reveal key={cat.title} delay={index * 80}>
               <Link
