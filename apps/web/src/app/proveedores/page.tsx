@@ -572,16 +572,17 @@ export default function ProveedoresPage() {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#0b1530_0%,#0b1530_38%,rgba(11,21,48,0.7)_54%,rgba(11,21,48,0.1)_78%)]" />
         <div className="absolute inset-0 bg-[#0b1530]/60 lg:hidden" />
         <Reveal className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-14 lg:px-12 lg:py-16">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">¿No encontrás el proveedor que buscás?</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">¿Fabricás o distribuís para la industria?</p>
           <h2 className="mt-4 max-w-[640px] text-3xl font-bold leading-[1.1] tracking-[-0.03em] sm:text-[2.5rem]">
-            Contanos tu necesidad y te conectamos con las empresas indicadas.
+            Mostrá tus productos a compradores de todo el país.
           </h2>
           <p className="mt-4 max-w-[500px] text-base leading-7 text-white/75">
-            Nuestro equipo te ayuda a encontrar los proveedores ideales según tus requerimientos.
+            Sumá tu empresa a ATAR, recibí solicitudes de cotización y respondelas desde un solo lugar.
           </p>
-          <Link className={`${primaryCta} mt-7`} href="/dashboard/comprador/solicitudes/nueva">
+          {/* Abre el registro con el perfil de proveedor ya elegido. */}
+          <Link className={`${primaryCta} mt-7`} href="/acceso?perfil=proveedor">
             <span className="inline-flex items-center gap-2 text-white">
-              Solicitar cotización
+              Quiero ser proveedor
               <ArrowIcon />
             </span>
           </Link>

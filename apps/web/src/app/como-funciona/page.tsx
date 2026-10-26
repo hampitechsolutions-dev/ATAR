@@ -229,7 +229,7 @@ export default function ComoFuncionaPage() {
               <span className="text-[#3b7bff]">en simples pasos.</span>
             </h1>
             <p className="animate-fade-up mt-5 max-w-[520px] text-[17px] leading-7 text-white/80 [animation-delay:200ms]">
-              Encontrá proveedores, compará opciones y solicitá cotizaciones para tus proyectos industriales.
+              Encontrá proveedores, solicitá cotizaciones y compará opciones para tus proyectos industriales.
             </p>
             <div className="animate-fade-up mt-8 flex flex-col gap-3 [animation-delay:300ms] sm:flex-row">
               <VideoTrigger className={`${primaryCta} text-white`}>
